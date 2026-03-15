@@ -6,16 +6,20 @@
     <parent>
         <groupId>com.yyyouth</groupId>
         <artifactId>computer-favorites-back</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>cf-model</artifactId>
 
     <properties>
-        <cf.version>1.0.0</cf.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+
+
+    </dependencies>
 
 </project>

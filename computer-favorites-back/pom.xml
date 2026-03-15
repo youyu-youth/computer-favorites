@@ -15,7 +15,7 @@
 
     <groupId>com.yyyouth</groupId>
     <artifactId>computer-favorites-back</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
     <modules>
         <module>cf-web</module>
@@ -41,6 +41,8 @@
         <redisson.version>3.45.0</redisson.version>
         <validator.version>3.4.12</validator.version>
         <spring-ai.version>1.0.0</spring-ai.version>
+        <lombok.version>1.18.38</lombok.version>
+        <sensitive-word.version>0.29.3</sensitive-word.version>
     </properties>
 
     <dependencyManagement>
@@ -48,7 +50,12 @@
 
         <dependencies>
 
-
+            <!-- 敏感词检测框架 -->
+            <dependency>
+                <groupId>com.github.houbb</groupId>
+                <artifactId>sensitive-word</artifactId>
+                <version>${sensitive-word.version}</version>
+            </dependency>
 
        <!--       spring ai-->
                 <dependency>
@@ -165,13 +172,14 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.38</version>
+            <version>${lombok.version}</version>
         </dependency>
 
         <!-- knife4j -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-spring-boot-starter</artifactId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <version>4.4.0</version>
         </dependency>
 
         <dependency>
