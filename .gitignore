@@ -46,3 +46,5 @@ build/
 docs
 docs/
 *-dev.properties
+
+context7.json
