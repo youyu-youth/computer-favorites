@@ -1,0 +1,28 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: ${CF_DB_URL:jdbc:mysql://127.0.0.1:3306/computer_favorites?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    username: ${CF_DB_USERNAME:root}
+    password: ${CF_DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${CF_REDIS_HOST:127.0.0.1}
+      port: ${CF_REDIS_PORT:6379}
+      database: ${CF_REDIS_DB:0}
+      timeout: 3000ms
+
+server:
+  port: 18080
+
+logging:
+  level:
+    com.yyyouth: INFO
+
+cf:
+  auth:
+    enable: false
+  profile:
+    marker: local

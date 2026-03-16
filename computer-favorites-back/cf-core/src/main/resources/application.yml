@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: computer-favorites
+  profiles:
+    default: local
+  mail:
+    host: ${CF_MAIL_HOST:127.0.0.1}
+    port: ${CF_MAIL_PORT:25}
+    username: ${CF_MAIL_USERNAME:}
+    password: ${CF_MAIL_PASSWORD:}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: ${CF_MAIL_AUTH:false}
+          starttls:
+            enable: ${CF_MAIL_STARTTLS:false}
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.yyyouth: INFO
+
+cf:
+  auth:
+    enable: true
+  profile:
+    marker: base

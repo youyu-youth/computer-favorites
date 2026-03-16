@@ -12,6 +12,7 @@
     <artifactId>cf-model</artifactId>
 
     <properties>
+        <cf.version>1.0.0</cf.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,6 +20,13 @@
 
     <dependencies>
 
+
+
+<!--        通用模块-->
+        <dependency>
+            <groupId>com.yyyouth</groupId>
+            <artifactId>cf-common</artifactId>
+        </dependency>
 
     </dependencies>
 
