@@ -9,7 +9,7 @@ import com.yyyouth.model.dto.auth.AuthLoginDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
 import com.yyyouth.model.vo.auth.AuthUserVO;
-import com.yyyouth.service.auth.AuthService;
+import com.yyyouth.service.auth.impl.AuthService;
 import com.yyyouth.web.config.GlobalExceptionHandler;
 import com.yyyouth.web.controller.auth.AuthController;
 import org.junit.jupiter.api.BeforeEach;

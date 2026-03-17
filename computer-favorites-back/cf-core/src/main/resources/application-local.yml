@@ -5,7 +5,7 @@ spring:
   datasource:
     url: ${CF_DB_URL:jdbc:mysql://127.0.0.1:3306/computer_favorites?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
     username: ${CF_DB_USERNAME:root}
-    password: ${CF_DB_PASSWORD:root}
+    password: ${CF_DB_PASSWORD:zougen.1024}
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:

@@ -5,7 +5,9 @@ import com.yyyouth.common.web.HttpResult;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
-import com.yyyouth.service.auth.AuthService;
+import com.yyyouth.service.auth.impl.AuthService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * 认证接口控制器
  */
+@Api(tags = "认证接口")
 @Validated
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +40,7 @@ public class AuthController {
      * @param loginDTO 登录参数
      * @return 登录结果
      */
+    @ApiOperation(value = "登录接口")
     @PostMapping("/login")
     public HttpResult login(@RequestBody @Valid AuthLoginDTO loginDTO) {
         AuthLoginVO authLoginVO = authService.login(loginDTO);
@@ -48,6 +52,7 @@ public class AuthController {
      *
      * @return 执行结果
      */
+    @ApiOperation(value = "续期接口")
     @PutMapping("/session/renew")
     @SaCheckPermission("auth:session:renew")
     public HttpResult renewSession() {
@@ -60,6 +65,7 @@ public class AuthController {
      *
      * @return 执行结果
      */
+    @ApiOperation(value = "退出接口")
     @DeleteMapping("/session")
     @SaCheckPermission("auth:session:delete")
     public HttpResult logout() {
@@ -72,6 +78,7 @@ public class AuthController {
      *
      * @return 当前会话
      */
+    @ApiOperation(value = "查询当前会话")
     @GetMapping("/session/current")
     @SaCheckPermission("auth:session:detail")
     public HttpResult currentSession() {

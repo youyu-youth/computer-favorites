@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 用户会话实体
  */
 @Data
-@TableName("cf_user_session")
+@TableName("tb_user_session")
 public class UserSession {
 
     /**

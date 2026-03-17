@@ -34,7 +34,7 @@
         <minio.version>7.1.0</minio.version>
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
         <mysql.version>8.2.0</mysql.version>
-        <knife4j.version>3.0.2</knife4j.version>
+        <knife4j.version>4.4.0</knife4j.version>
         <satoken.version>1.44.0</satoken.version>
         <hutool.version>5.8.38</hutool.version>
         <druid.version>1.2.23</druid.version>
@@ -178,7 +178,7 @@
         <!-- knife4j -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <artifactId>knife4j-openapi2-spring-boot-starter</artifactId>
             <version>4.4.0</version>
         </dependency>
 

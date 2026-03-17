@@ -14,12 +14,15 @@ import com.yyyouth.model.pojo.auth.UserSession;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
 import com.yyyouth.model.vo.auth.AuthUserVO;
+import com.yyyouth.service.auth.impl.AuthService;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.auth.UserSessionMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -30,6 +33,7 @@ import java.time.LocalDateTime;
  *
  * 认证服务实现
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -58,8 +62,13 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public AuthLoginVO login(AuthLoginDTO loginDTO) {
+        log.info("登录：loginDTO: {}", JSONUtil.toJsonStr(loginDTO));
+        String loginIdentity = loginDTO.getUsername();
         UserAccount userAccount = userAccountMapper.selectOne(new LambdaQueryWrapper<UserAccount>()
-                .eq(UserAccount::getUsername, loginDTO.getUsername())
+                .eq(UserAccount::getDeleted, 0)
+                .and(wrapper -> wrapper.eq(UserAccount::getUsername, loginIdentity)
+                        .or()
+                        .eq(UserAccount::getEmail, loginIdentity))
                 .last("limit 1"));
         if (userAccount == null) {
             throw new BusinessException(AuthErrorCode.INVALID_CREDENTIAL.getCode(), AuthErrorCode.INVALID_CREDENTIAL.getMessage());
@@ -67,7 +76,8 @@ public class AuthServiceImpl implements AuthService {
         if (!Integer.valueOf(ENABLED_STATUS).equals(userAccount.getStatus())) {
             throw new BusinessException(AuthErrorCode.USER_DISABLED.getCode(), AuthErrorCode.USER_DISABLED.getMessage());
         }
-        if (!passwordEncoder.matches(loginDTO.getPassword(), userAccount.getPasswordHash())) {
+        String encodedPassword = resolveEncodedPassword(userAccount);
+        if (!StringUtils.hasText(encodedPassword) || !passwordEncoder.matches(loginDTO.getPassword(), encodedPassword)) {
             throw new BusinessException(AuthErrorCode.INVALID_CREDENTIAL.getCode(), AuthErrorCode.INVALID_CREDENTIAL.getMessage());
         }
 
@@ -272,5 +282,18 @@ public class AuthServiceImpl implements AuthService {
             return "unknown";
         }
         return String.valueOf(deviceType);
+    }
+
+    /**
+     * 解析数据库中的加密密码
+     *
+     * @param userAccount 用户账号
+     * @return 加密密码
+     */
+    private String resolveEncodedPassword(UserAccount userAccount) {
+        if (StringUtils.hasText(userAccount.getPasswordHash())) {
+            return userAccount.getPasswordHash();
+        }
+        return userAccount.getPassword();
     }
 }

@@ -1,6 +1,7 @@
 package com.yyyouth.model.pojo.auth;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
  * 用户账号实体
  */
 @Data
-@TableName("cf_user_account")
+@TableName("t_user")
 public class UserAccount {
 
     /**
@@ -29,9 +30,30 @@ public class UserAccount {
     private String username;
 
     /**
+     * 邮箱
+     */
+    private String email;
+
+    /**
+     * 手机号
+     */
+    private String phone;
+
+    /**
+     * 密码
+     */
+    private String password;
+
+    /**
      * 加密密码
      */
+    @TableField("password_hash")
     private String passwordHash;
+
+    /**
+     * 头像
+     */
+    private String avatar;
 
     /**
      * 用户昵称
@@ -44,6 +66,26 @@ public class UserAccount {
     private Integer status;
 
     /**
+     * 邮箱是否验证 1已验证 0未验证
+     */
+    private Integer emailVerified;
+
+    /**
+     * 手机号是否验证 1已验证 0未验证
+     */
+    private Integer phoneVerified;
+
+    /**
+     * 最后登录时间
+     */
+    private LocalDateTime lastLoginTime;
+
+    /**
+     * 最后登录IP
+     */
+    private String lastLoginIp;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
@@ -52,4 +94,9 @@ public class UserAccount {
      * 更新时间
      */
     private LocalDateTime updateTime;
+
+    /**
+     * 逻辑删除标记 0未删除 1已删除
+     */
+    private Integer deleted;
 }
