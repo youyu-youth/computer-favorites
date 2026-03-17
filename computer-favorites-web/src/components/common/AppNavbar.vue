@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAppStore } from '@/stores/app'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 const appStore = useAppStore()
 const router = useRouter()
@@ -12,7 +12,7 @@ const goToLogin = () => {
 
 <template>
   <nav
-    class="sticky top-0 z-50 glass-nav bg-white/70 dark:bg-dark-bg/80 border-b border-gray-200 dark:border-dark-border"
+    class="fixed inset-x-0 top-0 z-50 glass-nav border-b border-gray-200 bg-white/70 dark:border-dark-border dark:bg-dark-bg/80"
   >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
@@ -49,10 +49,10 @@ const goToLogin = () => {
             class="text-sm font-medium text-gray-600 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400 transition-colors"
             >网站分类</a
           >
-          <a
-            href="#"
+          <RouterLink
+            :to="{ name: 'profile' }"
             class="text-sm font-medium text-gray-600 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400 transition-colors"
-            >我的收藏</a
+            >个人主页</RouterLink
           >
           <a
             href="#"

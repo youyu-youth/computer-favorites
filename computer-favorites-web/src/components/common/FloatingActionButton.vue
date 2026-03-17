@@ -6,7 +6,7 @@ const emit = defineEmits<{
 
 <template>
   <button
-    class="fixed bottom-8 right-8 p-4 bg-primary-500 text-white rounded-full shadow-lg hover:bg-primary-600 hover:scale-105 transition-all focus:outline-none"
+    class="fixed z-50 inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-500 p-0 text-white shadow-lg ring-1 ring-black/5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/70 active:scale-95 hover:scale-105 hover:bg-primary-600 bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] sm:bottom-[max(1.5rem,env(safe-area-inset-bottom))] sm:right-[max(1.5rem,env(safe-area-inset-right))]"
     @click="emit('click')"
   >
     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

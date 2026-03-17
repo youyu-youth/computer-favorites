@@ -1,22 +1,16 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useAppStore } from '@/stores/app'
 import AppToast from '@/components/common/AppToast.vue'
-
-const appStore = useAppStore()
-
-onMounted(() => {
-  appStore.initTheme()
-})
 </script>
 
 <template>
-  <AppToast />
-  <RouterView v-slot="{ Component, route }">
-    <Transition name="page-fade" mode="out-in">
-      <component :is="Component" :key="route.fullPath" />
-    </Transition>
-  </RouterView>
+  <UApp>
+    <AppToast />
+    <RouterView v-slot="{ Component, route }">
+      <Transition name="page-fade" mode="out-in">
+        <component :is="Component" :key="route.fullPath" />
+      </Transition>
+    </RouterView>
+  </UApp>
 </template>
 
 <style>

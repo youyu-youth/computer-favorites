@@ -2,11 +2,16 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useAppStore = defineStore('app', () => {
-  const isDark = ref(false)
+  const isDark = ref(true)
 
   const initTheme = () => {
     const savedTheme = localStorage.getItem('theme')
-    isDark.value = savedTheme === 'dark'
+    if (savedTheme === null) {
+      isDark.value = true
+      localStorage.setItem('theme', 'dark')
+    } else {
+      isDark.value = savedTheme === 'dark'
+    }
 
     if (isDark.value) {
       document.documentElement.classList.add('dark')

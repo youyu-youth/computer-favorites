@@ -1,11 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config '../../../tailwind.config.js';
+@import 'tailwindcss';
+@import '@nuxt/ui';
 
-@layer base {
-  body {
-    @apply bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-gray-100 transition-colors duration-300;
-  }
+body {
+  background-color: #f9fafb;
+  color: #111827;
+  transition: color 0.3s, background-color 0.3s;
+}
+
+.dark body {
+  background-color: #121212;
+  color: #f3f4f6;
 }
 
 /* Custom scrollbar */
@@ -75,7 +80,7 @@
   background-color: rgba(180, 83, 9, 0.1);
 }
 
-.neon-bg > * {
+.neon-bg > :not(.fixed) {
   position: relative;
   z-index: 1;
 }
