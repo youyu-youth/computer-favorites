@@ -3,12 +3,14 @@ import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { login, register } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
 
 type Mode = 'login' | 'register'
 
 const mode = ref<Mode>('login')
 const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const form = reactive({
   account: '',
@@ -45,11 +47,21 @@ const submit = async () => {
     if (mode.value === 'login') {
       const res = await login({ username: form.account.trim(), password: form.password, deviceType: 'web' })
       authStore.setToken(res.accessToken)
-      await router.push('/')
+      toast.add({
+        title: '登录成功',
+        description: '欢迎回来，开启你的探索之旅',
+        type: 'success'
+      })
+      await router.push({ name: 'home' })
       return
     }
 
     await register({ email: form.account.trim(), password: form.password })
+    toast.add({
+      title: '注册成功',
+      description: '请使用新账号登录',
+      type: 'success'
+    })
     switchMode('login')
   } catch (e) {
     if (e instanceof Error) {
@@ -217,3 +229,23 @@ const submit = async () => {
     </form>
   </div>
 </template>
+
+<style>
+.dark #account:-webkit-autofill,
+.dark #account:-webkit-autofill:hover,
+.dark #account:-webkit-autofill:focus,
+.dark #password:-webkit-autofill,
+.dark #password:-webkit-autofill:hover,
+.dark #password:-webkit-autofill:focus,
+.dark #confirm:-webkit-autofill,
+.dark #confirm:-webkit-autofill:hover,
+.dark #confirm:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff !important;
+  /* Use a solid dark color to override the white/yellow browser default */
+  -webkit-box-shadow: 0 0 0 1000px #09090b inset !important;
+  box-shadow: 0 0 0 1000px #09090b inset !important;
+  background-color: transparent !important;
+  caret-color: #ffffff !important;
+  transition: background-color 999999s ease-out 0s;
+}
+</style>

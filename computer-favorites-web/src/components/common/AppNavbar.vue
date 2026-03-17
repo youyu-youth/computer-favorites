@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { useAppStore } from '@/stores/app'
+import { useRouter } from 'vue-router'
 
 const appStore = useAppStore()
+const router = useRouter()
+
+const goToLogin = () => {
+  router.push({ name: 'login' })
+}
 </script>
 
 <template>
@@ -87,6 +93,7 @@ const appStore = useAppStore()
           </button>
           <!-- Login / Register -->
           <button
+            @click="goToLogin"
             class="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 rounded-md transition-colors shadow-sm"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
