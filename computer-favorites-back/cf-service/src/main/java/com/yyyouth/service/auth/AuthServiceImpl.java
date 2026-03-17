@@ -122,7 +122,7 @@ public class AuthServiceImpl implements AuthService {
 
         Long userId = StpUtil.getLoginIdAsLong();
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expireTime = calculateExpireTime(renewTimeout, now);
+        LocalDateTime expireTime = calculateExpireTime(renewTimeout, now);  
         updateSessionOnRenew(userId, tokenValue, now, expireTime);
         writeSessionToRedis(userId, tokenValue, getCurrentDeviceType(), renewTimeout, expireTime);
     }

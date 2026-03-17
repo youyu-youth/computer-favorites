@@ -9,6 +9,8 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:searchQuery': [value: string]
+  'copy-link': [website: Website]
+  visit: [website: Website]
 }>()
 
 const handleSearchInput = (event: Event) => {
@@ -58,8 +60,8 @@ const handleSearchInput = (event: Event) => {
         v-for="site in websites"
         :key="site.id"
         :website="site"
-        @copy-link="$emit('copy-link', site)"
-        @visit="$emit('visit', site)"
+        @copy-link="emit('copy-link', site)"
+        @visit="emit('visit', site)"
       />
     </div>
 

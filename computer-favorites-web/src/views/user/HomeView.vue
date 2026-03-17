@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useWebsiteStore } from '@/stores/website'
-import { useAppStore } from '@/stores/app'
 import type { FilterLogic, Website } from '@/types/website'
 import HeroSection from '@/components/user/HeroSection.vue'
 import WebsiteFilter from '@/components/user/WebsiteFilter.vue'
 import WebsiteGrid from '@/components/user/WebsiteGrid.vue'
 
+defineOptions({
+  name: 'HomeView',
+})
+
 const websiteStore = useWebsiteStore()
-const appStore = useAppStore()
 
 const searchQuery = ref('')
 const activeCategories = ref<string[]>([])
