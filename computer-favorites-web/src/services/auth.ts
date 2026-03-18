@@ -1,4 +1,4 @@
-import { postJson } from '@/utils/http'
+import { deleteJson, postJson, putJson } from '@/utils/http'
 
 export type LoginRequest = {
   username: string
@@ -48,5 +48,23 @@ export async function login(req: LoginRequest): Promise<AuthTokenResponse> {
 }
 
 export async function register(req: RegisterRequest): Promise<unknown> {
-  return postJson('/api/auth/register', req)
+  const res = await postJson<ApiResult<null>>('/api/auth/register', req)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '注册失败')
+  }
+  return res.data
+}
+
+export async function logout(): Promise<void> {
+  const res = await deleteJson<ApiResult<null>>('/api/auth/session')
+  if (res.code !== 200) {
+    throw new Error(res.msg || '退出失败')
+  }
+}
+
+export async function renewSession(): Promise<void> {
+  const res = await putJson<ApiResult<null>>('/api/auth/session/renew')
+  if (res.code !== 200) {
+    throw new Error(res.msg || '续期失败')
+  }
 }

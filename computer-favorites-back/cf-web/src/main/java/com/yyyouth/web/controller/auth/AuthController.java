@@ -3,6 +3,7 @@ package com.yyyouth.web.controller.auth;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.yyyouth.common.web.HttpResult;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
+import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
 import com.yyyouth.service.auth.impl.AuthService;
@@ -45,6 +46,19 @@ public class AuthController {
     public HttpResult login(@RequestBody @Valid AuthLoginDTO loginDTO) {
         AuthLoginVO authLoginVO = authService.login(loginDTO);
         return HttpResult.success("登录成功", authLoginVO);
+    }
+
+    /**
+     * 注册接口
+     *
+     * @param registerDTO 注册参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "注册接口")
+    @PostMapping("/register")
+    public HttpResult register(@RequestBody @Valid AuthRegisterDTO registerDTO) {
+        authService.register(registerDTO);
+        return HttpResult.success("注册成功");
     }
 
     /**

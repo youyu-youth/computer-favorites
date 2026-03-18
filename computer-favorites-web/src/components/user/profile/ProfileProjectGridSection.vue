@@ -13,7 +13,7 @@ defineProps<{
       <UIcon name="i-lucide-folder-tree" class="size-5 text-primary-500" />
       <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ title }}</h3>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <UCard v-for="item in items" :key="item.name" class="h-full !ring-0 shadow-sm dark:shadow-md bg-white dark:bg-gray-900 rounded-xl">
         <div class="space-y-3">
           <div class="flex items-center gap-2">

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
 import ProfileContributionSection from '@/components/user/profile/ProfileContributionSection.vue'
 import ProfileHeatmapSection from '@/components/user/profile/ProfileHeatmapSection.vue'
 import ProfileHeroSection from '@/components/user/profile/ProfileHeroSection.vue'
@@ -6,26 +7,277 @@ import ProfileProjectGridSection from '@/components/user/profile/ProfileProjectG
 import ProfileSidebarCard from '@/components/user/profile/ProfileSidebarCard.vue'
 import ProfileSiteGridSection from '@/components/user/profile/ProfileSiteGridSection.vue'
 import ProfileSkillsSection from '@/components/user/profile/ProfileSkillsSection.vue'
-import { getHeatValue, heatmapCols, heatmapRows, profileMockData } from './mock/profile.mock'
+import { getCurrentUserProfile, type LoginUserProfileResponse } from '@/services/profile'
+import { useToast } from '@/composables/useToast'
+import type { ProfileData, ProfileSiteItem, ProfileSocialLink } from '@/types/profile'
 
 defineOptions({
   name: 'ProfileView',
 })
+
+const toast = useToast()
+const loading = ref(true)
+const errorText = ref('')
+const profileData = ref<ProfileData | null>(null)
+const heatmapRows = 7
+const heatmapCols = 52
+const heatSeed = ref(17)
+
+const getHeatValue = (row: number, col: number) => {
+  const seed = (row * 97 + col * 53 + row * col * 11 + heatSeed.value) % 100
+  if (seed > 92) return 4
+  if (seed > 78) return 3
+  if (seed > 58) return 2
+  if (seed > 35) return 1
+  return 0
+}
+
+const normalizeStringArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item).trim())
+      .filter((item) => item.length > 0)
+  }
+
+  if (typeof value !== 'string') {
+    return []
+  }
+
+  const input = value.trim()
+  if (!input) {
+    return []
+  }
+
+  if (input.startsWith('[') && input.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(input)
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) => String(item).trim())
+          .filter((item) => item.length > 0)
+      }
+    } catch {
+      return []
+    }
+  }
+
+  return input
+    .split(/[，,、|]/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
+}
+
+const normalizeSiteItems = (value: unknown, defaultIcon: string): ProfileSiteItem[] => {
+  const arrayValue: Array<string | Record<string, unknown>> = Array.isArray(value)
+    ? value
+    : normalizeStringArray(value)
+
+  return arrayValue
+    .map((item, index): ProfileSiteItem | null => {
+      if (typeof item === 'string') {
+        const name = item.trim()
+        if (!name) {
+          return null
+        }
+        return {
+          name: `网站 ${index + 1}`,
+          description: name,
+          icon: defaultIcon,
+        }
+      }
+
+      const name = String(item.name || item.title || item.url || `网站 ${index + 1}`).trim()
+      const description = String(item.description || item.url || item.link || name).trim()
+      const icon = String(item.icon || defaultIcon)
+      return {
+        name: name || `网站 ${index + 1}`,
+        description: description || name || `网站 ${index + 1}`,
+        icon: icon || defaultIcon,
+      }
+    })
+    .filter((item): item is ProfileSiteItem => Boolean(item))
+}
+
+const createNoticeLabel = (value?: number) => (value === 1 ? '开启' : '关闭')
+
+const completionPercent = (payload: LoginUserProfileResponse) => {
+  const fields = [
+    payload.user?.nickname,
+    payload.user?.avatar,
+    payload.user?.email,
+    payload.profile?.signature,
+    payload.profile?.country,
+    payload.profile?.city,
+    payload.profile?.githubUrl,
+    payload.profile?.giteeUrl,
+    payload.profile?.blogUrl,
+    payload.profile?.hobbyTags,
+    payload.profile?.techStack,
+    payload.profile?.favoriteWebsites,
+    payload.profile?.uploadedWebsites,
+    payload.setting?.language,
+    payload.setting?.theme,
+    payload.setting?.emailNotice,
+    payload.setting?.collectNotice,
+    payload.setting?.commentNotice,
+    payload.setting?.homepageStyle,
+    payload.setting?.pageSize,
+  ]
+  const completed = fields.filter(Boolean).length
+  return Math.min(100, Math.round((completed / fields.length) * 100))
+}
+
+const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
+  const username = payload.user?.username || 'guest'
+  const displayName = payload.user?.nickname || username
+  const city = payload.profile?.city?.trim()
+  const country = payload.profile?.country?.trim()
+  const rawLocation = [country, city].filter(Boolean).join(' · ')
+  const location = rawLocation || '未设置地区'
+  const website = payload.profile?.blogUrl
+  const email = payload.user?.email
+  const hobbyTags = normalizeStringArray(payload.profile?.hobbyTags)
+  const techStack = normalizeStringArray(payload.profile?.techStack)
+  const favoriteSites = normalizeSiteItems(payload.profile?.favoriteWebsites, 'i-lucide-link-2')
+  const uploadedProjects = normalizeSiteItems(payload.profile?.uploadedWebsites, 'i-lucide-folder')
+  const profileTags = [
+    ...hobbyTags,
+    payload.setting?.homepageStyle ? `主页样式：${payload.setting.homepageStyle}` : null,
+    payload.setting?.pageSize ? `分页大小：${payload.setting.pageSize}` : null,
+    payload.setting?.language ? `语言：${payload.setting.language}` : null,
+    payload.setting?.theme ? `主题：${payload.setting.theme}` : null,
+    `邮件提醒：${createNoticeLabel(payload.setting?.emailNotice)}`,
+    `收藏提醒：${createNoticeLabel(payload.setting?.collectNotice)}`,
+    `评论提醒：${createNoticeLabel(payload.setting?.commentNotice)}`,
+    payload.user?.emailVerified === 1 ? '邮箱已验证' : '邮箱未验证',
+    payload.user?.phoneVerified === 1 ? '手机号已验证' : '手机号未验证',
+  ].filter((item): item is string => Boolean(item))
+
+  const socialLinkList = [
+    payload.profile?.githubUrl ? { label: 'GitHub', icon: 'i-lucide-github', url: payload.profile.githubUrl } : null,
+    payload.profile?.giteeUrl ? { label: 'Gitee', icon: 'i-lucide-code-2', url: payload.profile.giteeUrl } : null,
+    payload.profile?.blogUrl ? { label: '博客', icon: 'i-lucide-rss', url: payload.profile.blogUrl } : null,
+    website ? { label: '个人网站', icon: 'i-lucide-globe', url: website } : null,
+    email ? { label: '邮箱', icon: 'i-lucide-mail', url: `mailto:${email}` } : null,
+  ].filter((item): item is ProfileSocialLink => Boolean(item))
+  const socialLinks = socialLinkList.filter(
+    (item, index, list) => list.findIndex((target) => target.url === item.url) === index,
+  )
+
+  const timeline = [
+    payload.profile?.createTime ? { title: '资料创建时间', date: payload.profile.createTime } : null,
+    payload.profile?.updateTime ? { title: '资料更新时间', date: payload.profile.updateTime } : null,
+    rawLocation ? { title: '所在地区已更新', date: rawLocation } : null,
+    payload.user?.email ? { title: '邮箱已绑定', date: payload.user.email } : null,
+    payload.user?.phone ? { title: '手机号已绑定', date: payload.user.phone } : null,
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item))
+
+  const contactCount = [payload.user?.email, payload.user?.phone, payload.profile?.githubUrl, payload.profile?.giteeUrl, website].filter(Boolean).length
+  const contributionText = payload.profile?.contribution?.trim() || ''
+  const contributionValueMatch = contributionText.match(/\d+/)
+  const contributionValue = contributionValueMatch ? Number(contributionValueMatch[0]) : 0
+  const contributions = [
+    payload.profile?.signature
+      ? { title: '个性签名', summary: payload.profile.signature }
+      : null,
+    contributionText
+      ? { title: '贡献说明', summary: contributionText }
+      : null,
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item))
+
+  return {
+    name: displayName,
+    role: techStack[0] || '程序员',
+    location,
+    organization: country || '未设置国家',
+    signature: payload.profile?.signature || '这个人很懒，还没有填写个性签名。',
+    avatarUrl:
+      payload.user?.avatar ||
+      `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=f8f9fa`,
+    tags: profileTags,
+    timeline,
+    socialLinks,
+    favoriteSites: favoriteSites.length > 0
+      ? favoriteSites
+      : website
+        ? [{ name: '个人网站', description: website, icon: 'i-lucide-link-2' }]
+        : [],
+    uploadedProjects,
+    skills: techStack.map((item) => ({ name: item, level: '熟练' as const })),
+    contributions: contributions.length > 0
+      ? contributions
+      : [{ title: '贡献记录', summary: '暂无贡献记录，继续保持创作吧。' }],
+    stats: [
+      { label: '资料完整度', value: `${completionPercent(payload)}%` },
+      { label: '联系方式', value: `${contactCount}` },
+      { label: '贡献值', value: `${contributionValue}` },
+    ],
+  }
+}
+
+const hasProfile = computed(() => Boolean(profileData.value))
+
+const loadProfile = async () => {
+  loading.value = true
+  errorText.value = ''
+  try {
+    const data = await getCurrentUserProfile()
+    profileData.value = mapToProfileData(data)
+    heatSeed.value = Number(data.user?.id || 17) % 97
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '获取个人资料失败'
+    errorText.value = message
+    profileData.value = null
+    toast.add({
+      title: '获取资料失败',
+      description: message,
+      type: 'error',
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadProfile()
+})
 </script>
 
 <template>
-  <UContainer class="py-8 md:py-10">
-    <div class="flex flex-col lg:flex-row gap-6 lg:gap-8">
-      <ProfileSidebarCard :profile="profileMockData" />
+  <div class="min-h-screen dark:bg-black transition-colors duration-300">
+    <UContainer class="py-8 md:py-10">
+      <div v-if="loading" class="space-y-4">
+        <USkeleton class="h-52 w-full rounded-xl" />
+        <USkeleton class="h-40 w-full rounded-xl" />
+        <USkeleton class="h-40 w-full rounded-xl" />
+      </div>
 
-      <main class="flex-1 min-w-0 space-y-6">
-        <ProfileHeroSection :profile="profileMockData" />
-        <ProfileHeatmapSection :rows="heatmapRows" :cols="heatmapCols" :get-heat-value="getHeatValue" />
-        <ProfileSiteGridSection title="收藏网站" :items="profileMockData.favoriteSites" />
-        <ProfileProjectGridSection title="上传网站（文件夹）" :items="profileMockData.uploadedProjects" />
-        <ProfileSkillsSection :skills="profileMockData.skills" />
-        <ProfileContributionSection :stats="profileMockData.stats" :contributions="profileMockData.contributions" />
-      </main>
-    </div>
-  </UContainer>
+      <div v-else-if="hasProfile && profileData" class="flex flex-col lg:flex-row gap-6 lg:gap-8">
+        <ProfileSidebarCard :profile="profileData" />
+
+        <main class="flex-1 min-w-0 space-y-6">
+          <ProfileHeroSection :profile="profileData" />
+          <ProfileHeatmapSection :rows="heatmapRows" :cols="heatmapCols" :get-heat-value="getHeatValue" />
+          
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <ProfileSiteGridSection title="收藏网站" :items="profileData.favoriteSites" />
+            <ProfileProjectGridSection title="上传网站（文件夹）" :items="profileData.uploadedProjects" />
+          </div>
+
+          <ProfileSkillsSection :skills="profileData.skills" />
+          <ProfileContributionSection :stats="profileData.stats" :contributions="profileData.contributions" />
+        </main>
+      </div>
+
+      <UCard
+        v-else
+        class="!ring-0 rounded-xl bg-white dark:bg-gray-900 shadow-sm dark:shadow-md"
+      >
+        <div class="space-y-3">
+          <p class="text-sm text-gray-600 dark:text-gray-300">{{ errorText || '暂无个人资料数据' }}</p>
+          <UButton color="neutral" variant="soft" @click="loadProfile">重新加载</UButton>
+        </div>
+      </UCard>
+    </UContainer>
+  </div>
 </template>

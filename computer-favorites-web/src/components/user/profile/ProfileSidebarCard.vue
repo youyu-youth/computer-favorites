@@ -11,19 +11,15 @@ defineProps<{
     <div class="lg:sticky lg:top-24 space-y-4">
       <UCard class="!ring-0 shadow-sm dark:shadow-md bg-white dark:bg-gray-900 rounded-xl">
         <div class="flex flex-col items-center text-center gap-3">
-          <UAvatar :src="profile.avatarUrl" :alt="profile.name" size="3xl" class="ring-2 ring-primary/30" />
+          <UAvatar :src="profile.avatarUrl" :alt="profile.name" class="!w-32 !h-32 !rounded-full ring-2 ring-primary/30" :ui="{ rounded: 'rounded-full' }" />
           <div>
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ profile.name }}</h2>
             <p class="text-sm text-gray-600 dark:text-gray-300">{{ profile.role }}</p>
           </div>
           <div class="w-full space-y-1 text-sm text-gray-600 dark:text-gray-300">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center justify-center gap-2">
               <UIcon name="i-lucide-map-pin" class="size-4 text-primary-500" />
               <span>{{ profile.location }}</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-building-2" class="size-4 text-primary-500" />
-              <span>{{ profile.organization }}</span>
             </div>
           </div>
         </div>

@@ -26,7 +26,12 @@ public enum AuthErrorCode {
     /**
      * 用户不存在或已禁用
      */
-    USER_DISABLED(100204, "用户不存在或已被禁用");
+    USER_DISABLED(100204, "用户不存在或已被禁用"),
+
+    /**
+     * 注册邮箱已存在
+     */
+    REGISTER_EMAIL_EXISTS(100205, "该邮箱已被注册");
 
     private final int code;
 

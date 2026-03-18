@@ -1,0 +1,21 @@
+<script setup lang="ts">
+defineOptions({
+  name: 'SettingsView',
+})
+</script>
+
+<template>
+  <section class="min-h-[calc(100vh-8rem)] bg-slate-50/70 px-4 py-6 dark:bg-slate-950/40 sm:px-6 md:py-8">
+    <UContainer>
+      <UCard class="rounded-2xl border border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+        <div class="space-y-3">
+          <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100 sm:text-2xl">设置</h1>
+          <p class="text-sm text-slate-600 dark:text-slate-300">
+            设置页面正在建设中，后续会在这里提供主题、通知、隐私等配置能力。
+          </p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">访问路径：/computer/settings</p>
+        </div>
+      </UCard>
+    </UContainer>
+  </section>
+</template>

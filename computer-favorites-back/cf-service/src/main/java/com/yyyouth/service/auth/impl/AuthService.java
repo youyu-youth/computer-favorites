@@ -1,6 +1,7 @@
 package com.yyyouth.service.auth.impl;
 
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
+import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
 
@@ -19,6 +20,13 @@ public interface AuthService {
      * @return 登录结果
      */
     AuthLoginVO login(AuthLoginDTO loginDTO);
+
+    /**
+     * 用户注册
+     *
+     * @param registerDTO 注册参数
+     */
+    void register(AuthRegisterDTO registerDTO);
 
     /**
      * 会话续期

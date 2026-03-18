@@ -27,5 +27,8 @@ logging:
 cf:
   auth:
     enable: true
+    whitelist:
+      - /api/auth/login
+      - /api/auth/register
   profile:
     marker: base

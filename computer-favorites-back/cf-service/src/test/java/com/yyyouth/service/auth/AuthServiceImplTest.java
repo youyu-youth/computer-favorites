@@ -6,14 +6,18 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yyyouth.common.constants.AuthErrorCode;
-import com.yyyouth.common.constants.RedisConstant;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
+import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.auth.UserSession;
+import com.yyyouth.model.pojo.user.UserProfile;
+import com.yyyouth.model.pojo.user.UserSetting;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.auth.UserSessionMapper;
+import com.yyyouth.service.mapper.user.UserProfileMapper;
+import com.yyyouth.service.mapper.user.UserSettingMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,12 +26,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
-
-import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -57,10 +57,10 @@ class AuthServiceImplTest {
     private UserSessionMapper userSessionMapper;
 
     @Mock
-    private StringRedisTemplate stringRedisTemplate;
+    private UserProfileMapper userProfileMapper;
 
     @Mock
-    private ValueOperations<String, String> valueOperations;
+    private UserSettingMapper userSettingMapper;
 
     @Mock
     private SaSession tokenSession;
@@ -80,7 +80,7 @@ class AuthServiceImplTest {
     }
 
     /**
-     * 登录成功时应返回 token 并写入会话表及 Redis
+     * 登录成功时应返回 token 并写入会话表
      */
     @Test
     void shouldLoginAndWriteSessionWhenCredentialValid() {
@@ -98,7 +98,6 @@ class AuthServiceImplTest {
 
         when(userAccountMapper.selectOne(any())).thenReturn(userAccount);
         when(userSessionMapper.selectOne(any())).thenReturn(null);
-        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
 
         try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
             stpUtilMock.when(() -> StpUtil.login(eq(USER_ID), any(SaLoginParameter.class))).thenAnswer(invocation -> null);
@@ -124,7 +123,6 @@ class AuthServiceImplTest {
             assertThat(insertedSession.getCreateTime()).isNotNull();
             assertThat(insertedSession.getUpdateTime()).isNotNull();
 
-            verify(valueOperations).set(eq(RedisConstant.AUTH_SESSION_TOKEN + TOKEN_VALUE), any(String.class), eq(Duration.ofSeconds(1800L)));
             verify(tokenSession).set("deviceType", "web");
         }
     }
@@ -153,13 +151,10 @@ class AuthServiceImplTest {
     }
 
     /**
-     * 续期时应刷新会话并更新 Redis
+     * 续期时应刷新会话
      */
     @Test
     void shouldRenewSessionAndUpdateRedis() {
-        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(tokenSession.get("deviceType")).thenReturn("web");
-
         try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
             stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
             stpUtilMock.when(StpUtil::getTokenValue).thenReturn(TOKEN_VALUE);
@@ -172,12 +167,11 @@ class AuthServiceImplTest {
             authService.renewSession();
 
             verify(userSessionMapper, times(1)).update(eq(null), any());
-            verify(valueOperations, times(1)).set(eq(RedisConstant.AUTH_SESSION_TOKEN + TOKEN_VALUE), any(String.class), eq(Duration.ofSeconds(1200L)));
         }
     }
 
     /**
-     * 退出时应更新会话状态并删除 Redis 缓存
+     * 退出时应更新会话状态
      */
     @Test
     void shouldLogoutAndDeleteRedisSession() {
@@ -190,7 +184,72 @@ class AuthServiceImplTest {
             authService.logout();
 
             verify(userSessionMapper, times(1)).update(eq(null), any());
-            verify(stringRedisTemplate, times(1)).delete(RedisConstant.AUTH_SESSION_TOKEN + TOKEN_VALUE);
+        }
+    }
+
+    /**
+     * 注册成功时应写入用户、资料与设置
+     */
+    @Test
+    void shouldRegisterAndInitProfileAndSetting() {
+        AuthRegisterDTO registerDTO = new AuthRegisterDTO();
+        registerDTO.setEmail("new-user@test.com");
+        registerDTO.setPassword("123456");
+        when(userAccountMapper.selectOne(any())).thenReturn(null);
+
+        authService.register(registerDTO);
+
+        ArgumentCaptor<UserAccount> accountCaptor = ArgumentCaptor.forClass(UserAccount.class);
+        verify(userAccountMapper).insert(accountCaptor.capture());
+        UserAccount insertedAccount = accountCaptor.getValue();
+        assertThat(insertedAccount.getEmail()).isEqualTo("new-user@test.com");
+        assertThat(insertedAccount.getPasswordHash()).isNotBlank();
+        assertThat(new BCryptPasswordEncoder().matches("123456", insertedAccount.getPasswordHash())).isTrue();
+        assertThat(insertedAccount.getDeleted()).isEqualTo(0);
+
+        verify(userProfileMapper, times(1)).insert(any(UserProfile.class));
+        verify(userSettingMapper, times(1)).insert(any(UserSetting.class));
+    }
+
+    /**
+     * 注册邮箱重复时应抛出业务异常
+     */
+    @Test
+    void shouldThrowBusinessExceptionWhenRegisterEmailExists() {
+        AuthRegisterDTO registerDTO = new AuthRegisterDTO();
+        registerDTO.setEmail("exist@test.com");
+        registerDTO.setPassword("123456");
+        UserAccount existAccount = new UserAccount();
+        existAccount.setId(USER_ID);
+        when(userAccountMapper.selectOne(any())).thenReturn(existAccount);
+
+        assertThatThrownBy(() -> authService.register(registerDTO))
+                .isInstanceOf(BusinessException.class)
+                .extracting("code")
+                .isEqualTo(AuthErrorCode.REGISTER_EMAIL_EXISTS.getCode());
+        verify(userAccountMapper, times(0)).insert(any(UserAccount.class));
+        verify(userProfileMapper, times(0)).insert(any(UserProfile.class));
+        verify(userSettingMapper, times(0)).insert(any(UserSetting.class));
+    }
+
+    /**
+     * 续期场景应使用默认续期时长
+     */
+    @Test
+    void shouldUseDefaultTimeoutWhenTokenTimeoutIsNonPositive() {
+        try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
+            stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
+            stpUtilMock.when(StpUtil::getTokenValue).thenReturn(TOKEN_VALUE);
+            stpUtilMock.when(StpUtil::getTokenTimeout).thenReturn(0L);
+            stpUtilMock.when(StpUtil::getLoginIdAsLong).thenReturn(USER_ID);
+            stpUtilMock.when(StpUtil::getTokenSession).thenReturn(tokenSession);
+            stpUtilMock.when(() -> StpUtil.renewTimeout(3600L)).thenAnswer(invocation -> null);
+            stpUtilMock.when(StpUtil::updateLastActiveToNow).thenAnswer(invocation -> null);
+
+            authService.renewSession();
+
+            stpUtilMock.verify(() -> StpUtil.renewTimeout(3600L), times(1));
+            verify(userSessionMapper, times(1)).update(eq(null), any());
         }
     }
 }

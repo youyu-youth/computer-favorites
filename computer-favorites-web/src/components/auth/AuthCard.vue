@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { login, register } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 
 type Mode = 'login' | 'register'
+type SliderVerifyResult = {
+  type: string
+  message: string
+  verify: boolean
+}
 
 const mode = ref<Mode>('login')
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const toast = useToast()
 
@@ -20,6 +26,8 @@ const form = reactive({
 
 const loading = ref(false)
 const errorText = ref<string | null>(null)
+const showSliderVerify = ref(false)
+const sliderVerified = ref(false)
 
 const title = computed(() => (mode.value === 'login' ? '欢迎回来' : '创建账号'))
 const subtitle = computed(() => (mode.value === 'login' ? '登录以管理你的收藏夹' : '开始收藏你的宝藏站点'))
@@ -37,22 +45,62 @@ const switchMode = (next: Mode) => {
   errorText.value = null
   form.password = ''
   form.confirmPassword = ''
+  showSliderVerify.value = false
+  sliderVerified.value = false
+}
+
+const onSliderSuccess = (result: SliderVerifyResult) => {
+  if (!result.verify) {
+    sliderVerified.value = false
+    return
+  }
+  sliderVerified.value = true
+  showSliderVerify.value = false
+  void submit()
+}
+
+const onSliderError = (result: SliderVerifyResult) => {
+  sliderVerified.value = false
+  errorText.value = result.message || '滑块验证失败，请重试'
+}
+
+const resolveRedirect = () => {
+  const redirect = route.query.redirect
+  if (typeof redirect !== 'string') {
+    return { name: 'home' as const }
+  }
+  if (!redirect.startsWith('/computer/')) {
+    return { name: 'home' as const }
+  }
+  return redirect
 }
 
 const submit = async () => {
   if (!canSubmit.value || loading.value) return
+  if (mode.value === 'login' && !sliderVerified.value) {
+    errorText.value = null
+    showSliderVerify.value = true
+    return
+  }
+  if (mode.value === 'login') {
+    sliderVerified.value = false
+  }
   loading.value = true
   errorText.value = null
   try {
     if (mode.value === 'login') {
       const res = await login({ username: form.account.trim(), password: form.password, deviceType: 'web' })
-      authStore.setToken(res.accessToken)
+      authStore.setToken(res.accessToken, res.tokenName || 'satoken')
+      const validSession = await authStore.loadCurrentUser()
+      if (!validSession) {
+        throw new Error('登录态校验失败，请重新登录')
+      }
       toast.add({
         title: '登录成功',
         description: '欢迎回来，开启你的探索之旅',
         type: 'success'
       })
-      await router.push({ name: 'home' })
+      await router.push(resolveRedirect())
       return
     }
 
@@ -109,7 +157,7 @@ const submit = async () => {
       </div>
     </div>
 
-    <form class="px-6 pb-6 pt-6" @submit.prevent="submit">
+    <form class="px-6 pb-6 pt-6" autocomplete="off" @submit.prevent="submit">
       <div v-if="errorText" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
         {{ errorText }}
       </div>
@@ -123,9 +171,9 @@ const submit = async () => {
             id="account"
             v-model="form.account"
             :type="mode === 'login' ? 'text' : 'email'"
-            :autocomplete="mode === 'login' ? 'username' : 'email'"
+            :autocomplete="mode === 'login' ? 'off' : 'email'"
             required
-            class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:focus:border-white/20"
+            class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
             :placeholder="mode === 'login' ? '请输入用户名或邮箱' : 'name@example.com'"
           />
         </div>
@@ -136,9 +184,9 @@ const submit = async () => {
             id="password"
             v-model="form.password"
             type="password"
-            autocomplete="current-password"
+            autocomplete="new-password"
             required
-            class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:focus:border-white/20"
+            class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
             placeholder="请输入密码"
           />
         </div>
@@ -154,7 +202,7 @@ const submit = async () => {
             type="password"
             autocomplete="new-password"
             :required="mode === 'register'"
-            class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:focus:border-white/20"
+            class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
             placeholder="再次输入密码"
           />
         </div>
@@ -175,6 +223,12 @@ const submit = async () => {
         </svg>
         <span>{{ mode === 'login' ? '登录' : '注册' }}</span>
       </button>
+      <div
+        v-if="mode === 'login'"
+        class="mt-3 text-center text-xs text-slate-500 dark:text-slate-400"
+      >
+        登录前需完成滑块验证
+      </div>
 
       <div class="relative mt-6">
         <div class="absolute inset-0 flex items-center" aria-hidden="true">
@@ -227,6 +281,36 @@ const submit = async () => {
         </div>
       </div>
     </form>
+    <div
+      v-if="showSliderVerify && mode === 'login'"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+    >
+      <div
+        class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-lg dark:border-white/10 dark:bg-zinc-900"
+      >
+        <div class="mb-3 flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-white">滑块验证</h3>
+          <button
+            type="button"
+            class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
+            @click="showSliderVerify = false"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="text-xs text-slate-500 dark:text-slate-400">请完成滑块验证后继续登录</div>
+        <div class="mt-4 overflow-x-auto">
+          <slider-verify
+            :width="320"
+            :height="180"
+            @onSuccess="onSliderSuccess"
+            @onError="onSliderError"
+          />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

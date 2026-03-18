@@ -2,29 +2,32 @@ package com.yyyouth.service.auth;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.stp.parameter.SaLoginParameter;
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yyyouth.common.constants.AuthErrorCode;
-import com.yyyouth.common.constants.RedisConstant;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
+import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.auth.UserSession;
+import com.yyyouth.model.pojo.user.UserProfile;
+import com.yyyouth.model.pojo.user.UserSetting;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
 import com.yyyouth.model.vo.auth.AuthUserVO;
 import com.yyyouth.service.auth.impl.AuthService;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.auth.UserSessionMapper;
+import com.yyyouth.service.mapper.user.UserProfileMapper;
+import com.yyyouth.service.mapper.user.UserSettingMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -46,13 +49,27 @@ public class AuthServiceImpl implements AuthService {
 
     private static final long DEFAULT_RENEW_TIMEOUT_SECONDS = 3600L;
 
+    private static final int UNVERIFIED = 0;
+
+    private static final int NOT_DELETED = 0;
+
+    private static final String DEFAULT_THEME = "dark";
+
+    private static final String DEFAULT_LANGUAGE = "zh-CN";
+
+    private static final String DEFAULT_HOMEPAGE_STYLE = "grid";
+
+    private static final int DEFAULT_PAGE_SIZE = 20;
+
+    private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
+
     private final UserAccountMapper userAccountMapper;
 
     private final UserSessionMapper userSessionMapper;
 
-    private final StringRedisTemplate stringRedisTemplate;
+    private final UserProfileMapper userProfileMapper;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final UserSettingMapper userSettingMapper;
 
     /**
      * 用户登录并建立会话
@@ -77,7 +94,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(AuthErrorCode.USER_DISABLED.getCode(), AuthErrorCode.USER_DISABLED.getMessage());
         }
         String encodedPassword = resolveEncodedPassword(userAccount);
-        if (!StringUtils.hasText(encodedPassword) || !passwordEncoder.matches(loginDTO.getPassword(), encodedPassword)) {
+        if (!StringUtils.hasText(encodedPassword) || !PASSWORD_ENCODER.matches(loginDTO.getPassword(), encodedPassword)) {
             throw new BusinessException(AuthErrorCode.INVALID_CREDENTIAL.getCode(), AuthErrorCode.INVALID_CREDENTIAL.getMessage());
         }
 
@@ -92,12 +109,9 @@ public class AuthServiceImpl implements AuthService {
         LocalDateTime expireTime = calculateExpireTime(timeoutSeconds, now);
 
         saveUserSession(userAccount, tokenValue, loginDTO.getDeviceType(), now, expireTime);
-        writeSessionToRedis(userAccount.getId(), tokenValue, loginDTO.getDeviceType(), timeoutSeconds, expireTime);
 
-        AuthUserVO authUserVO = new AuthUserVO();
+        AuthUserVO authUserVO = BeanUtil.copyProperties(userAccount, AuthUserVO.class);
         authUserVO.setUserId(userAccount.getId());
-        authUserVO.setUsername(userAccount.getUsername());
-        authUserVO.setNickname(userAccount.getNickname());
 
         AuthLoginVO authLoginVO = new AuthLoginVO();
         authLoginVO.setTokenValue(tokenValue);
@@ -105,6 +119,28 @@ public class AuthServiceImpl implements AuthService {
         authLoginVO.setExpireTime(expireTime);
         authLoginVO.setUserInfo(authUserVO);
         return authLoginVO;
+    }
+
+    /**
+     * 注册账号
+     *
+     * @param registerDTO 注册参数
+     */
+    @Override
+    public void register(AuthRegisterDTO registerDTO) {
+        UserAccount existAccount = userAccountMapper.selectOne(new LambdaQueryWrapper<UserAccount>()
+                .eq(UserAccount::getDeleted, NOT_DELETED)
+                .eq(UserAccount::getEmail, registerDTO.getEmail())
+                .last("limit 1"));
+        if (existAccount != null) {
+            throw new BusinessException(AuthErrorCode.REGISTER_EMAIL_EXISTS.getCode(), AuthErrorCode.REGISTER_EMAIL_EXISTS.getMessage());
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        UserAccount userAccount = buildRegisterUserAccount(registerDTO, now);
+        userAccountMapper.insert(userAccount);
+        initUserProfile(userAccount.getId(), now);
+        initUserSetting(userAccount.getId(), now);
     }
 
     /**
@@ -124,7 +160,6 @@ public class AuthServiceImpl implements AuthService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expireTime = calculateExpireTime(renewTimeout, now);  
         updateSessionOnRenew(userId, tokenValue, now, expireTime);
-        writeSessionToRedis(userId, tokenValue, getCurrentDeviceType(), renewTimeout, expireTime);
     }
 
     /**
@@ -145,8 +180,6 @@ public class AuthServiceImpl implements AuthService {
                 .set(UserSession::getUpdateBy, String.valueOf(userId))
                 .set(UserSession::getUpdateTime, now)
                 .set(UserSession::getOperationSource, "logout"));
-
-        stringRedisTemplate.delete(RedisConstant.AUTH_SESSION_TOKEN + tokenValue);
     }
 
     /**
@@ -232,32 +265,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 写入会话Redis缓存
-     *
-     * @param userId 用户ID
-     * @param tokenValue token值
-     * @param deviceType 设备类型
-     * @param timeoutSeconds 超时秒数
-     * @param expireTime 过期时间
-     */
-    private void writeSessionToRedis(Long userId, String tokenValue, String deviceType, long timeoutSeconds, LocalDateTime expireTime) {
-        AuthSessionVO sessionVO = new AuthSessionVO();
-        sessionVO.setUserId(userId);
-        sessionVO.setTokenValue(tokenValue);
-        sessionVO.setDeviceType(deviceType);
-        sessionVO.setTimeoutSeconds(timeoutSeconds);
-        sessionVO.setExpireTime(expireTime);
-
-        String key = RedisConstant.AUTH_SESSION_TOKEN + tokenValue;
-        String value = JSONUtil.toJsonStr(sessionVO);
-        if (timeoutSeconds > 0) {
-            stringRedisTemplate.opsForValue().set(key, value, Duration.ofSeconds(timeoutSeconds));
-            return;
-        }
-        stringRedisTemplate.opsForValue().set(key, value);
-    }
-
-    /**
      * 计算过期时间
      *
      * @param timeoutSeconds 超时秒数
@@ -295,5 +302,94 @@ public class AuthServiceImpl implements AuthService {
             return userAccount.getPasswordHash();
         }
         return userAccount.getPassword();
+    }
+
+    /**
+     * 构建注册账号实体
+     *
+     * @param registerDTO 注册参数
+     * @param now 当前时间
+     * @return 账号实体
+     */
+    private UserAccount buildRegisterUserAccount(AuthRegisterDTO registerDTO, LocalDateTime now) {
+        UserAccount userAccount = new UserAccount();
+        userAccount.setEmail(registerDTO.getEmail());
+        userAccount.setUsername(buildUsernameByEmail(registerDTO.getEmail()));
+        userAccount.setNickname(buildDefaultNickname(registerDTO.getEmail()));
+        userAccount.setPasswordHash(PASSWORD_ENCODER.encode(registerDTO.getPassword()));
+        userAccount.setPassword(userAccount.getPasswordHash());
+        userAccount.setStatus(ENABLED_STATUS);
+        userAccount.setEmailVerified(UNVERIFIED);
+        userAccount.setPhoneVerified(UNVERIFIED);
+        userAccount.setDeleted(NOT_DELETED);
+        userAccount.setCreateTime(now);
+        userAccount.setUpdateTime(now);
+        return userAccount;
+    }
+
+    /**
+     * 初始化用户资料
+     *
+     * @param userId 用户ID
+     * @param now 当前时间
+     */
+    private void initUserProfile(Long userId, LocalDateTime now) {
+        UserProfile userProfile = new UserProfile();
+        userProfile.setUserId(userId);
+        userProfile.setDeleted(NOT_DELETED);
+        userProfile.setCreateTime(now);
+        userProfile.setUpdateTime(now);
+        userProfileMapper.insert(userProfile);
+    }
+
+    /**
+     * 初始化用户设置
+     *
+     * @param userId 用户ID
+     * @param now 当前时间
+     */
+    private void initUserSetting(Long userId, LocalDateTime now) {
+        UserSetting userSetting = new UserSetting();
+        userSetting.setUserId(userId);
+        userSetting.setTheme(DEFAULT_THEME);
+        userSetting.setLanguage(DEFAULT_LANGUAGE);
+        userSetting.setEmailNotice(1);
+        userSetting.setCollectNotice(1);
+        userSetting.setCommentNotice(1);
+        userSetting.setHomepageStyle(DEFAULT_HOMEPAGE_STYLE);
+        userSetting.setPageSize(DEFAULT_PAGE_SIZE);
+        userSetting.setCreateTime(now);
+        userSetting.setUpdateTime(now);
+        userSettingMapper.insert(userSetting);
+    }
+
+    /**
+     * 根据邮箱生成默认用户名
+     *
+     * @param email 邮箱
+     * @return 默认用户名
+     */
+    private String buildUsernameByEmail(String email) {
+        String prefix = email;
+        int atIndex = email.indexOf("@");
+        if (atIndex > 0) {
+            prefix = email.substring(0, atIndex);
+        }
+        return "u_" + prefix + "_" + System.currentTimeMillis();
+    }
+
+    /**
+     * 根据邮箱生成默认昵称
+     *
+     * @param email 邮箱
+     * @return 默认昵称
+     */
+    private String buildDefaultNickname(String email) {
+        String prefix = email;
+        int atIndex = email.indexOf("@");
+        if (atIndex > 0) {
+            prefix = email.substring(0, atIndex);
+        }
+        return prefix;
     }
 }

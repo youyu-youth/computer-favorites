@@ -13,11 +13,6 @@ public class RedisConstant {
     public static final String WEB_USER_LOGIN_TOKEN = "web:user:login:token:";
 
     /**
-     * 认证会话Token缓存前缀
-     */
-    public static final String AUTH_SESSION_TOKEN = "auth:session:token:";
-
-    /**
      * 动态点赞分布式锁前缀
      * 格式: sssp:feed:like:lock:{feedId}
      */

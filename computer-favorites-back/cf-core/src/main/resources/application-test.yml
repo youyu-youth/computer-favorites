@@ -11,7 +11,7 @@ spring:
     redis:
       host: ${CF_REDIS_HOST:127.0.0.1}
       port: ${CF_REDIS_PORT:6379}
-      database: ${CF_REDIS_DB:1}
+      database: ${CF_REDIS_DB:6}
       timeout: 3000ms
 
 server:
@@ -24,5 +24,8 @@ logging:
 cf:
   auth:
     enable: true
+    whitelist:
+      - /api/auth/login
+      - /api/auth/register
   profile:
     marker: test

@@ -1,13 +1,113 @@
 <script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { logout as logoutApi } from '@/services/auth'
+import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
-import { RouterLink, useRouter } from 'vue-router'
+import { useToast } from '@/composables/useToast'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 const appStore = useAppStore()
+const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+const toast = useToast()
+const profileMenuRef = ref<HTMLElement | null>(null)
+const profileMenuOpen = ref(false)
+const logoutLoading = ref(false)
+
+const displayName = computed(() => authStore.userSnapshot.nickname || '我的账号')
+const avatarSrc = computed(() => authStore.userSnapshot.avatar || undefined)
+const initials = computed(() => {
+  const text = displayName.value.trim()
+  return text ? text.slice(0, 2).toUpperCase() : 'ME'
+})
+const isHomeRoute = computed(() => route.name === 'home')
 
 const goToLogin = () => {
-  router.push({ name: 'login' })
+  router.push({
+    name: 'login',
+    query: { redirect: route.fullPath },
+  })
 }
+
+const goToProfile = () => {
+  profileMenuOpen.value = false
+  router.push({ name: 'profile' })
+}
+
+const goToSettings = () => {
+  profileMenuOpen.value = false
+  router.push({ name: 'settings' })
+}
+
+const goToAccount = () => {
+  profileMenuOpen.value = false
+  router.push({ name: 'account' })
+}
+
+const toggleProfileMenu = () => {
+  profileMenuOpen.value = !profileMenuOpen.value
+}
+
+const logout = async () => {
+  if (logoutLoading.value) {
+    return
+  }
+  profileMenuOpen.value = false
+  logoutLoading.value = true
+  let requestFailed = false
+  try {
+    await logoutApi()
+  } catch (error) {
+    requestFailed = true
+    console.error(error)
+  }
+  authStore.clear()
+  logoutLoading.value = false
+  toast.add({
+    title: '退出成功',
+    description: requestFailed ? '本地登录状态已清理' : '已安全退出当前账号',
+    type: 'success',
+  })
+  await router.push({ name: 'login' })
+}
+
+const closeProfileMenuByOutside = (event: MouseEvent) => {
+  if (!profileMenuRef.value) {
+    return
+  }
+  const target = event.target as Node | null
+  if (target && !profileMenuRef.value.contains(target)) {
+    profileMenuOpen.value = false
+  }
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    profileMenuOpen.value = false
+  },
+)
+
+watch(
+  () => authStore.isAuthed,
+  (isAuthed) => {
+    if (!isAuthed) {
+      profileMenuOpen.value = false
+      return
+    }
+    void authStore.loadCurrentUser()
+  },
+  { immediate: true },
+)
+
+onMounted(() => {
+  window.addEventListener('click', closeProfileMenuByOutside)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('click', closeProfileMenuByOutside)
+})
 </script>
 
 <template>
@@ -17,7 +117,10 @@ const goToLogin = () => {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <!-- Left: Logo -->
-        <div class="flex items-center gap-3 cursor-pointer">
+        <RouterLink
+          :to="{ name: 'home' }"
+          class="flex items-center gap-3"
+        >
           <svg
             class="w-8 h-8 text-primary-500"
             fill="none"
@@ -35,14 +138,19 @@ const goToLogin = () => {
           <span class="font-bold text-xl tracking-tight text-gray-900 dark:text-white"
             >Computer Favorites</span
           >
-        </div>
+        </RouterLink>
 
         <!-- Center: Navigation Links (Desktop) -->
         <div class="hidden md:flex items-center space-x-6">
-          <a
-            href="#"
-            class="text-sm font-medium text-gray-600 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400 transition-colors"
-            >热门网站</a
+          <RouterLink
+            :to="{ name: 'home' }"
+            :class="[
+              'text-sm font-medium transition-colors',
+              isHomeRoute
+                ? 'text-primary-500 dark:text-primary-400'
+                : 'text-gray-600 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400',
+            ]"
+            >热门网站</RouterLink
           >
           <a
             href="#"
@@ -91,8 +199,8 @@ const goToLogin = () => {
               ></path>
             </svg>
           </button>
-          <!-- Login / Register -->
           <button
+            v-if="!authStore.isSessionValid"
             @click="goToLogin"
             class="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 rounded-md transition-colors shadow-sm"
           >
@@ -106,8 +214,80 @@ const goToLogin = () => {
             </svg>
             登录 / 注册
           </button>
+
+          <div
+            v-else
+            ref="profileMenuRef"
+            class="relative"
+          >
+            <button
+              type="button"
+              class="inline-flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 pr-3 text-sm text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+              @click.stop="toggleProfileMenu"
+            >
+              <UAvatar :src="avatarSrc" :alt="`用户-${displayName}`" size="sm">
+                <span class="text-xs font-semibold">{{ initials }}</span>
+              </UAvatar>
+              <span class="hidden sm:inline max-w-24 truncate">{{ displayName }}</span>
+              <UIcon name="i-lucide-chevron-down" class="size-4" />
+            </button>
+
+            <Transition name="fade">
+              <div
+                v-if="profileMenuOpen"
+                class="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+              >
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                  @click="goToProfile"
+                >
+                  <UIcon name="i-lucide-user" class="size-4" />
+                  个人主页
+                </button>
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                  @click="goToSettings"
+                >
+                  <UIcon name="i-lucide-settings" class="size-4" />
+                  设置
+                </button>
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                  @click="goToAccount"
+                >
+                  <UIcon name="i-lucide-id-card" class="size-4" />
+                  账户信息
+                </button>
+                <button
+                  type="button"
+                  :disabled="logoutLoading"
+                  class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+                  @click="logout"
+                >
+                  <UIcon name="i-lucide-log-out" class="size-4" />
+                  {{ logoutLoading ? '退出中...' : '退出登录' }}
+                </button>
+              </div>
+            </Transition>
+          </div>
         </div>
       </div>
     </div>
   </nav>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+</style>
