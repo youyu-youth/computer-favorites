@@ -8,9 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.util.Objects;
@@ -28,6 +30,9 @@ public class EmailUtils {
     @Value("${spring.mail.username}")
     private String from ;// 发件人
 
+    @Value("${spring.mail.password:}")
+    private String password;
+
     /**
      * 发送纯文本的邮件
      * @param to 收件人
@@ -37,6 +42,7 @@ public class EmailUtils {
      */
     @SneakyThrows(Exception.class)
     public boolean sendGeneralEmail(String subject, String content, String... to){
+        ensureMailCredentialConfigured();
         // 创建邮件消息
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
@@ -48,9 +54,20 @@ public class EmailUtils {
         message.setText(content);
 
         // 发送邮件
-        mailSender.send(message);
+        try {
+            mailSender.send(message);
+        } catch (MailAuthenticationException ex) {
+            log.error("邮箱认证失败，from={}，请检查spring.mail.username与spring.mail.password配置", from, ex);
+            throw ex;
+        }
 
         return true;
+    }
+
+    private void ensureMailCredentialConfigured() {
+        if (!StringUtils.hasText(from) || !StringUtils.hasText(password)) {
+            throw new IllegalStateException("邮件配置缺失，请设置 spring.mail.username 与 spring.mail.password（建议使用 CF_MAIL_USERNAME/CF_MAIL_PASSWORD）");
+        }
     }
     /**
      * 发送html的邮件

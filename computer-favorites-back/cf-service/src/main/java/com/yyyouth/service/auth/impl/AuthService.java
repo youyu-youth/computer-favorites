@@ -29,6 +29,21 @@ public interface AuthService {
     void register(AuthRegisterDTO registerDTO);
 
     /**
+     * 发送注册邮箱验证码
+     *
+     * @param email 注册邮箱
+     */
+    void sendRegisterEmailCode(String email);
+
+    /**
+     * 校验用户名是否可用
+     *
+     * @param username 用户名
+     * @return true可用 false不可用
+     */
+    boolean checkUsernameAvailable(String username);
+
+    /**
      * 会话续期
      */
     void renewSession();

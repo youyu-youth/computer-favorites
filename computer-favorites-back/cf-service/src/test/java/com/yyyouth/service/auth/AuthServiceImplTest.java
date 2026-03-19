@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yyyouth.common.constants.AuthErrorCode;
 import com.yyyouth.common.exception.BusinessException;
+import com.yyyouth.common.utils.EmailUtils;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.pojo.auth.UserAccount;
@@ -26,6 +27,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 
@@ -61,6 +64,15 @@ class AuthServiceImplTest {
 
     @Mock
     private UserSettingMapper userSettingMapper;
+
+    @Mock
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
+
+    @Mock
+    private EmailUtils emailUtils;
 
     @Mock
     private SaSession tokenSession;
@@ -193,9 +205,13 @@ class AuthServiceImplTest {
     @Test
     void shouldRegisterAndInitProfileAndSetting() {
         AuthRegisterDTO registerDTO = new AuthRegisterDTO();
+        registerDTO.setUsername("new_user");
         registerDTO.setEmail("new-user@test.com");
         registerDTO.setPassword("123456");
+        registerDTO.setEmailCode("123456");
         when(userAccountMapper.selectOne(any())).thenReturn(null);
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(any())).thenReturn("123456");
 
         authService.register(registerDTO);
 
@@ -203,9 +219,11 @@ class AuthServiceImplTest {
         verify(userAccountMapper).insert(accountCaptor.capture());
         UserAccount insertedAccount = accountCaptor.getValue();
         assertThat(insertedAccount.getEmail()).isEqualTo("new-user@test.com");
+        assertThat(insertedAccount.getUsername()).isEqualTo("new_user");
         assertThat(insertedAccount.getPasswordHash()).isNotBlank();
         assertThat(new BCryptPasswordEncoder().matches("123456", insertedAccount.getPasswordHash())).isTrue();
         assertThat(insertedAccount.getDeleted()).isEqualTo(0);
+        assertThat(insertedAccount.getEmailVerified()).isEqualTo(1);
 
         verify(userProfileMapper, times(1)).insert(any(UserProfile.class));
         verify(userSettingMapper, times(1)).insert(any(UserSetting.class));
@@ -217,8 +235,10 @@ class AuthServiceImplTest {
     @Test
     void shouldThrowBusinessExceptionWhenRegisterEmailExists() {
         AuthRegisterDTO registerDTO = new AuthRegisterDTO();
+        registerDTO.setUsername("exist_user");
         registerDTO.setEmail("exist@test.com");
         registerDTO.setPassword("123456");
+        registerDTO.setEmailCode("123456");
         UserAccount existAccount = new UserAccount();
         existAccount.setId(USER_ID);
         when(userAccountMapper.selectOne(any())).thenReturn(existAccount);

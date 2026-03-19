@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { login, register } from '@/services/auth'
+import { checkUsernameAvailable, login, register, sendRegisterCode } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 
@@ -22,20 +22,35 @@ const form = reactive({
   account: '',
   password: '',
   confirmPassword: '',
+  emailCode: '',
 })
 
 const loading = ref(false)
 const errorText = ref<string | null>(null)
 const showSliderVerify = ref(false)
 const sliderVerified = ref(false)
+const showUsernameDialog = ref(false)
+const registerUsername = ref('')
+const sendCodeLoading = ref(false)
+const sendCodeCountdown = ref(0)
+const usernameChecking = ref(false)
+let sendCodeTimer: number | null = null
+const isLoginMode = computed(() => mode.value === 'login')
+const isRegisterMode = computed(() => mode.value === 'register')
 
-const title = computed(() => (mode.value === 'login' ? '欢迎回来' : '创建账号'))
-const subtitle = computed(() => (mode.value === 'login' ? '登录以管理你的收藏夹' : '开始收藏你的宝藏站点'))
+const title = computed(() => (isLoginMode.value ? '欢迎回来' : '创建账号'))
+const subtitle = computed(() => (isLoginMode.value ? '登录以管理你的收藏夹' : '开始收藏你的宝藏站点'))
 
 const canSubmit = computed(() => {
+  if (isLoginMode.value) {
+    if (!form.account.trim()) return false
+    if (!form.password.trim()) return false
+    return true
+  }
   if (!form.account.trim()) return false
   if (!form.password.trim()) return false
-  if (mode.value === 'register' && form.password !== form.confirmPassword) return false
+  if (!form.emailCode.trim()) return false
+  if (form.password !== form.confirmPassword) return false
   return true
 })
 
@@ -43,10 +58,16 @@ const switchMode = (next: Mode) => {
   if (mode.value === next) return
   mode.value = next
   errorText.value = null
+  form.account = ''
   form.password = ''
   form.confirmPassword = ''
+  form.emailCode = ''
   showSliderVerify.value = false
   sliderVerified.value = false
+  showUsernameDialog.value = false
+  registerUsername.value = ''
+  sendCodeCountdown.value = 0
+  stopSendCodeTimer()
 }
 
 const onSliderSuccess = (result: SliderVerifyResult) => {
@@ -75,52 +96,184 @@ const resolveRedirect = () => {
   return redirect
 }
 
-const submit = async () => {
-  if (!canSubmit.value || loading.value) return
-  if (mode.value === 'login' && !sliderVerified.value) {
-    errorText.value = null
-    showSliderVerify.value = true
+const stopSendCodeTimer = () => {
+  if (sendCodeTimer === null) {
     return
   }
-  if (mode.value === 'login') {
-    sliderVerified.value = false
+  window.clearInterval(sendCodeTimer)
+  sendCodeTimer = null
+}
+
+const startSendCodeCountdown = () => {
+  stopSendCodeTimer()
+  sendCodeCountdown.value = 60
+  sendCodeTimer = window.setInterval(() => {
+    if (sendCodeCountdown.value <= 1) {
+      sendCodeCountdown.value = 0
+      stopSendCodeTimer()
+      return
+    }
+    sendCodeCountdown.value -= 1
+  }, 1000)
+}
+
+const buildDefaultUsername = (email: string) => {
+  const index = email.indexOf('@')
+  const prefix = index > 0 ? email.slice(0, index) : email
+  const normalized = prefix.replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 24)
+  if (normalized.length >= 4) {
+    return normalized
   }
+  return `user_${Date.now().toString().slice(-6)}`
+}
+
+const openUsernameDialog = () => {
+  if (!registerUsername.value.trim()) {
+    registerUsername.value = buildDefaultUsername(form.account.trim())
+  }
+  showUsernameDialog.value = true
+}
+
+const sendCode = async () => {
+  if (!isRegisterMode.value || sendCodeLoading.value || sendCodeCountdown.value > 0) {
+    return
+  }
+  const email = form.account.trim()
+  if (!email) {
+    errorText.value = '请先输入邮箱'
+    return
+  }
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailPattern.test(email)) {
+    errorText.value = '请输入有效邮箱地址'
+    return
+  }
+  sendCodeLoading.value = true
+  errorText.value = null
+  try {
+    await sendRegisterCode(email)
+    startSendCodeCountdown()
+    toast.add({
+      title: '验证码已发送',
+      description: '请前往邮箱查看并输入验证码',
+      type: 'success',
+    })
+  } catch (e) {
+    errorText.value = e instanceof Error ? e.message : '验证码发送失败，请稍后重试'
+  } finally {
+    sendCodeLoading.value = false
+  }
+}
+
+const completeRegister = async () => {
+  if (usernameChecking.value || loading.value) {
+    return
+  }
+  const username = registerUsername.value.trim().toLowerCase()
+  if (username.length < 4 || username.length > 24) {
+    errorText.value = '用户名长度需在4-24之间'
+    return
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    errorText.value = '用户名仅支持字母、数字和下划线'
+    return
+  }
+  usernameChecking.value = true
   loading.value = true
   errorText.value = null
   try {
-    if (mode.value === 'login') {
+    const available = await checkUsernameAvailable(username)
+    if (!available) {
+      throw new Error('该用户名已被使用，请更换')
+    }
+    await register({
+      username,
+      email: form.account.trim(),
+      password: form.password,
+      emailCode: form.emailCode.trim(),
+    })
+    const loginRes = await login({
+      username: form.account.trim(),
+      password: form.password,
+      deviceType: 'web',
+    })
+    authStore.setToken(loginRes.accessToken, loginRes.tokenName || 'satoken')
+    const validSession = await authStore.loadCurrentUser()
+    if (!validSession) {
+      throw new Error('注册成功，但登录态初始化失败，请重新登录')
+    }
+    showUsernameDialog.value = false
+    form.account = ''
+    form.password = ''
+    form.confirmPassword = ''
+    form.emailCode = ''
+    registerUsername.value = ''
+    sendCodeCountdown.value = 0
+    stopSendCodeTimer()
+    sessionStorage.setItem(
+      'registerSuccessMessage',
+      JSON.stringify({
+        title: '注册成功',
+        description: `欢迎加入，${username}`,
+      }),
+    )
+    await router.push({ name: 'home' })
+  } catch (e) {
+    errorText.value = e instanceof Error ? e.message : '注册失败，请稍后重试'
+  } finally {
+    loading.value = false
+    usernameChecking.value = false
+  }
+}
+
+const submit = async () => {
+  if (loading.value) return
+  if (isLoginMode.value) {
+    if (!canSubmit.value) return
+    if (!sliderVerified.value) {
+      errorText.value = null
+      showSliderVerify.value = true
+      return
+    }
+    sliderVerified.value = false
+    loading.value = true
+    errorText.value = null
+    try {
       const res = await login({ username: form.account.trim(), password: form.password, deviceType: 'web' })
       authStore.setToken(res.accessToken, res.tokenName || 'satoken')
       const validSession = await authStore.loadCurrentUser()
       if (!validSession) {
         throw new Error('登录态校验失败，请重新登录')
       }
-      toast.add({
-        title: '登录成功',
-        description: '欢迎回来，开启你的探索之旅',
-        type: 'success'
-      })
+      toast.add({ title: '登录成功', description: '欢迎回来，开启你的探索之旅', type: 'success' })
       await router.push(resolveRedirect())
-      return
+    } catch (e) {
+      errorText.value = e instanceof Error ? e.message : '请求失败，请稍后重试'
+    } finally {
+      loading.value = false
     }
-
-    await register({ email: form.account.trim(), password: form.password })
-    toast.add({
-      title: '注册成功',
-      description: '请使用新账号登录',
-      type: 'success'
-    })
-    switchMode('login')
-  } catch (e) {
-    if (e instanceof Error) {
-      errorText.value = e.message
-    } else {
-      errorText.value = '请求失败，请稍后重试'
-    }
-  } finally {
-    loading.value = false
+    return
   }
+  if (!canSubmit.value) {
+    if (form.password !== form.confirmPassword) {
+      errorText.value = '两次输入的密码不一致'
+    } else if (!form.emailCode.trim()) {
+      errorText.value = '请输入邮箱验证码'
+    } else if (!form.account.trim()) {
+      errorText.value = '请输入邮箱'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.account.trim())) {
+      errorText.value = '请输入有效的邮箱地址'
+    } else {
+      errorText.value = '请完善注册信息'
+    }
+    return
+  }
+  openUsernameDialog()
 }
+
+onBeforeUnmount(() => {
+  stopSendCodeTimer()
+})
 </script>
 
 <template>
@@ -129,7 +282,7 @@ const submit = async () => {
   >
     <div class="px-6 pt-6">
       <div class="flex items-center justify-between">
-        <div>
+        <div class="min-h-[3.5rem]">
           <div class="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{{ title }}</div>
           <div class="mt-2 text-sm text-slate-600 dark:text-slate-400">{{ subtitle }}</div>
         </div>
@@ -141,7 +294,7 @@ const submit = async () => {
         <button
           type="button"
           class="rounded-lg px-3 py-2 font-medium transition-colors"
-          :class="mode === 'login' ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+          :class="isLoginMode ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
           @click="switchMode('login')"
         >
           登录
@@ -149,7 +302,7 @@ const submit = async () => {
         <button
           type="button"
           class="rounded-lg px-3 py-2 font-medium transition-colors"
-          :class="mode === 'register' ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+          :class="isRegisterMode ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
           @click="switchMode('register')"
         >
           注册
@@ -165,16 +318,16 @@ const submit = async () => {
       <div class="space-y-4">
         <div>
           <label for="account" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-            {{ mode === 'login' ? '用户名 / 邮箱' : '邮箱' }}
+            {{ isLoginMode ? '用户名 / 邮箱' : '邮箱' }}
           </label>
           <input
             id="account"
             v-model="form.account"
-            :type="mode === 'login' ? 'text' : 'email'"
-            :autocomplete="mode === 'login' ? 'off' : 'email'"
+            :type="isLoginMode ? 'text' : 'email'"
+            :autocomplete="isLoginMode ? 'off' : 'email'"
             required
             class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
-            :placeholder="mode === 'login' ? '请输入用户名或邮箱' : 'name@example.com'"
+            :placeholder="isLoginMode ? '请输入用户名或邮箱' : 'name@example.com'"
           />
         </div>
 
@@ -191,21 +344,45 @@ const submit = async () => {
           />
         </div>
 
-        <div
-          class="overflow-hidden transition-all duration-200"
-          :class="mode === 'register' ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'"
-        >
-          <label for="confirm" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">确认密码</label>
-          <input
-            id="confirm"
-            v-model="form.confirmPassword"
-            type="password"
-            autocomplete="new-password"
-            :required="mode === 'register'"
-            class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
-            placeholder="再次输入密码"
-          />
-        </div>
+        <template v-if="isRegisterMode">
+          <div>
+            <label for="confirm" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">确认密码</label>
+            <input
+              id="confirm"
+              v-model="form.confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              required
+              class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
+              placeholder="再次输入密码"
+            />
+          </div>
+
+          <div>
+            <label for="emailCode" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">邮箱验证码</label>
+            <div class="flex items-center gap-2">
+              <input
+                id="emailCode"
+                v-model="form.emailCode"
+                type="text"
+                maxlength="6"
+                required
+                class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
+                placeholder="请输入6位验证码"
+              />
+              <button
+                type="button"
+                :disabled="sendCodeLoading || sendCodeCountdown > 0 || loading"
+                class="inline-flex h-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10"
+                @click="sendCode"
+              >
+                <span v-if="sendCodeLoading">发送中...</span>
+                <span v-else-if="sendCodeCountdown > 0">{{ sendCodeCountdown }}s</span>
+                <span v-else>发送验证码</span>
+              </button>
+            </div>
+          </div>
+        </template>
       </div>
 
       <button
@@ -221,11 +398,11 @@ const submit = async () => {
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           />
         </svg>
-        <span>{{ mode === 'login' ? '登录' : '注册' }}</span>
+        <span>{{ isLoginMode ? '登录' : '注册' }}</span>
       </button>
       <div
-        v-if="mode === 'login'"
-        class="mt-3 text-center text-xs text-slate-500 dark:text-slate-400"
+        class="mt-3 h-4 text-center text-xs text-slate-500 transition-opacity duration-200 dark:text-slate-400"
+        :class="isLoginMode ? 'opacity-100' : 'opacity-0'"
       >
         登录前需完成滑块验证
       </div>
@@ -282,7 +459,41 @@ const submit = async () => {
       </div>
     </form>
     <div
-      v-if="showSliderVerify && mode === 'login'"
+      v-if="showUsernameDialog && isRegisterMode"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+    >
+      <div class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-lg dark:border-white/10 dark:bg-zinc-900">
+        <div class="mb-3 text-base font-semibold text-slate-900 dark:text-white">设置你的用户名</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400">用户名需唯一，仅支持字母、数字和下划线</div>
+        <input
+          v-model="registerUsername"
+          type="text"
+          maxlength="24"
+          class="mt-4 h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:focus:border-white/20"
+          placeholder="请输入用户名"
+        />
+        <div class="mt-4 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            :disabled="loading || usernameChecking"
+            class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10"
+            @click="showUsernameDialog = false"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            :disabled="loading || usernameChecking"
+            class="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-700 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-700"
+            @click="completeRegister"
+          >
+            {{ usernameChecking ? '校验中...' : '确认注册' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      v-if="showSliderVerify && isLoginMode"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
     >
       <div

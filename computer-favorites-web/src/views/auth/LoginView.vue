@@ -8,13 +8,13 @@ const appStore = useAppStore()
 </script>
 
 <template>
-  <div class="min-h-dvh w-full bg-white dark:bg-black">
-    <div class="min-h-dvh w-full lg:grid lg:grid-cols-[minmax(0,1fr)_480px] xl:grid-cols-[minmax(0,1fr)_520px]">
-      <div class="hidden lg:block">
+  <div class="min-h-screen w-full bg-white dark:bg-black">
+    <div class="min-h-screen w-full lg:grid lg:grid-cols-[minmax(0,1fr)_480px] xl:grid-cols-[minmax(0,1fr)_520px]">
+      <div class="hidden lg:block lg:h-full">
         <PreviewSandbox />
       </div>
       <div
-        class="relative flex min-h-dvh items-start justify-center border-l border-slate-200/60 bg-slate-50 px-4 py-10 lg:pt-[114px] dark:border-white/10 dark:bg-black sm:px-8"
+        class="relative flex min-h-screen items-start justify-center border-l border-slate-200/60 bg-slate-50 px-4 py-10 lg:pt-[114px] dark:border-white/10 dark:bg-black sm:px-8"
       >
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
           <div class="absolute -right-24 top-10 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />

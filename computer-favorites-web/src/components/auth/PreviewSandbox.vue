@@ -68,7 +68,7 @@ const cardBgClass = (id: SiteKey) => {
 </script>
 
 <template>
-  <div class="relative min-h-dvh w-full overflow-hidden bg-slate-50 dark:bg-black">
+  <div class="relative h-full min-h-screen w-full bg-slate-50 dark:bg-black">
     <div class="pointer-events-none absolute inset-0">
       <div class="absolute -left-24 top-10 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl" />
       <div class="absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-amber-700/15 blur-3xl" />
@@ -82,7 +82,7 @@ const cardBgClass = (id: SiteKey) => {
       </svg>
     </div>
 
-    <div class="relative mx-auto flex min-h-dvh max-w-6xl items-center px-10 py-10">
+    <div class="relative mx-auto flex min-h-screen max-w-6xl items-start px-10 py-10 xl:items-center">
       <div class="w-full">
         <div class="mb-6">
           <div class="text-xs font-medium tracking-[0.2em] text-slate-500 dark:text-slate-500">

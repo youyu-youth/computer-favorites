@@ -30,5 +30,7 @@ cf:
     whitelist:
       - /api/auth/login
       - /api/auth/register
+      - /api/auth/register/code
+      - /api/auth/register/username/check
   profile:
     marker: base

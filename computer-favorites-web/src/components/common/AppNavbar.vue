@@ -16,7 +16,10 @@ const profileMenuOpen = ref(false)
 const logoutLoading = ref(false)
 
 const displayName = computed(() => authStore.userSnapshot.nickname || '我的账号')
-const avatarSrc = computed(() => authStore.userSnapshot.avatar || undefined)
+const defaultAvatar = computed(
+  () => `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(displayName.value)}`,
+)
+const avatarSrc = computed(() => authStore.userSnapshot.avatar || defaultAvatar.value)
 const initials = computed(() => {
   const text = displayName.value.trim()
   return text ? text.slice(0, 2).toUpperCase() : 'ME'

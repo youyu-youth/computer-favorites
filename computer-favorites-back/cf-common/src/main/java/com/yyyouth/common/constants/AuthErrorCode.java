@@ -31,7 +31,37 @@ public enum AuthErrorCode {
     /**
      * 注册邮箱已存在
      */
-    REGISTER_EMAIL_EXISTS(100205, "该邮箱已被注册");
+    REGISTER_EMAIL_EXISTS(100205, "该邮箱已被注册"),
+
+    /**
+     * 注册用户名已存在
+     */
+    REGISTER_USERNAME_EXISTS(100206, "该用户名已被使用"),
+
+    /**
+     * 注册验证码已过期
+     */
+    REGISTER_EMAIL_CODE_EXPIRED(100207, "验证码已过期，请重新获取"),
+
+    /**
+     * 注册验证码错误
+     */
+    REGISTER_EMAIL_CODE_INVALID(100208, "验证码不正确"),
+
+    /**
+     * 验证码发送过于频繁
+     */
+    REGISTER_EMAIL_CODE_SEND_TOO_FAST(100209, "验证码发送过于频繁，请稍后重试"),
+
+    /**
+     * 验证码发送次数超限
+     */
+    REGISTER_EMAIL_CODE_SEND_LIMIT(100210, "今日验证码发送次数已达上限"),
+
+    /**
+     * 验证码发送失败
+     */
+    REGISTER_EMAIL_CODE_SEND_FAILED(100211, "验证码发送失败，请稍后重试");
 
     private final int code;
 

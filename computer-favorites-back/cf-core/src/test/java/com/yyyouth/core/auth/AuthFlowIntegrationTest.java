@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yyyouth.common.constants.AuthErrorCode;
 import com.yyyouth.common.constants.HttpStatus;
+import com.yyyouth.common.utils.EmailUtils;
 import com.yyyouth.core.ComputerFavoritesApplication;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.auth.UserSession;
@@ -24,6 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -84,6 +87,15 @@ class AuthFlowIntegrationTest {
     @MockBean
     private UserSettingMapper userSettingMapper;
 
+    @MockBean
+    private StringRedisTemplate stringRedisTemplate;
+
+    @MockBean
+    private EmailUtils emailUtils;
+
+    @SuppressWarnings("unchecked")
+    private final ValueOperations<String, String> valueOperations = org.mockito.Mockito.mock(ValueOperations.class);
+
     /**
      * 初始化 MyBatis-Plus Lambda 缓存
      */
@@ -111,6 +123,8 @@ class AuthFlowIntegrationTest {
         userAccount.setPasswordHash(new BCryptPasswordEncoder().encode("123456"));
         when(userAccountMapper.selectOne(any())).thenReturn(userAccount);
         when(userSessionMapper.selectOne(any())).thenReturn(null);
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(any())).thenReturn("123456");
     }
 
     /**
@@ -169,8 +183,10 @@ class AuthFlowIntegrationTest {
         }).when(userAccountMapper).insert(any(UserAccount.class));
 
         Map<String, Object> registerReq = new HashMap<>();
+        registerReq.put("username", "new_user");
         registerReq.put("email", "new-user@test.com");
         registerReq.put("password", "123456");
+        registerReq.put("emailCode", "123456");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -196,8 +212,10 @@ class AuthFlowIntegrationTest {
         when(userAccountMapper.selectOne(any())).thenReturn(existAccount);
 
         Map<String, Object> registerReq = new HashMap<>();
+        registerReq.put("username", "exist_user");
         registerReq.put("email", "exist@test.com");
         registerReq.put("password", "123456");
+        registerReq.put("emailCode", "123456");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)

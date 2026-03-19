@@ -1,4 +1,4 @@
-import { deleteJson, postJson, putJson } from '@/utils/http'
+import { deleteJson, getJson, postJson, putJson } from '@/utils/http'
 
 export type LoginRequest = {
   username: string
@@ -7,8 +7,10 @@ export type LoginRequest = {
 }
 
 export type RegisterRequest = {
+  username: string
   email: string
   password: string
+  emailCode: string
 }
 
 export type AuthTokenResponse = {
@@ -53,6 +55,22 @@ export async function register(req: RegisterRequest): Promise<unknown> {
     throw new Error(res.msg || '注册失败')
   }
   return res.data
+}
+
+export async function sendRegisterCode(email: string): Promise<void> {
+  const res = await postJson<ApiResult<null>>('/api/auth/register/code', { email })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '验证码发送失败')
+  }
+}
+
+export async function checkUsernameAvailable(username: string): Promise<boolean> {
+  const query = encodeURIComponent(username)
+  const res = await getJson<ApiResult<boolean>>(`/api/auth/register/username/check?username=${query}`)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '用户名校验失败')
+  }
+  return Boolean(res.data)
 }
 
 export async function logout(): Promise<void> {

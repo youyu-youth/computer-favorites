@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useWebsiteStore } from '@/stores/website'
 import type { FilterLogic, Website } from '@/types/website'
 import HeroSection from '@/components/user/HeroSection.vue'
@@ -15,6 +15,9 @@ const websiteStore = useWebsiteStore()
 const searchQuery = ref('')
 const activeCategories = ref<string[]>([])
 const filterLogic = ref<FilterLogic>('OR')
+const showRegisterSuccessDialog = ref(false)
+const registerSuccessTitle = ref('注册成功')
+const registerSuccessDescription = ref('')
 
 const filteredWebsites = computed(() => {
   let result = websiteStore.websites
@@ -62,6 +65,27 @@ const handleUpload = () => {
 const handleBrowse = () => {
   alert('浏览热门功能即将上线')
 }
+
+const closeRegisterSuccessDialog = () => {
+  showRegisterSuccessDialog.value = false
+}
+
+onMounted(() => {
+  const messageRaw = sessionStorage.getItem('registerSuccessMessage')
+  if (!messageRaw) {
+    return
+  }
+  sessionStorage.removeItem('registerSuccessMessage')
+  try {
+    const message = JSON.parse(messageRaw) as { title?: string; description?: string }
+    registerSuccessTitle.value = message.title || '注册成功'
+    registerSuccessDescription.value = message.description || '欢迎加入'
+  } catch {
+    registerSuccessTitle.value = '注册成功'
+    registerSuccessDescription.value = '欢迎加入'
+  }
+  showRegisterSuccessDialog.value = true
+})
 </script>
 
 <template>
@@ -81,4 +105,20 @@ const handleBrowse = () => {
       @visit="handleVisit"
     />
   </main>
+  <div
+    v-if="showRegisterSuccessDialog"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4"
+  >
+    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-xl dark:border-white/10 dark:bg-zinc-900">
+      <div class="text-xl font-semibold text-slate-900 dark:text-white">{{ registerSuccessTitle }}</div>
+      <div class="mt-3 text-sm text-slate-600 dark:text-slate-400">{{ registerSuccessDescription }}</div>
+      <button
+        type="button"
+        class="mt-6 inline-flex h-10 items-center justify-center rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-700"
+        @click="closeRegisterSuccessDialog"
+      >
+        我知道了
+      </button>
+    </div>
+  </div>
 </template>

@@ -2,6 +2,25 @@ spring:
   config:
     activate:
       on-profile: local
+  mail:
+    host: ${CF_MAIL_HOST:smtp.163.com}
+    port: ${CF_MAIL_PORT:465}
+    username: yyyouthzg@163.com
+    password: JRYSHsc6UgFbfDW9
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: ${CF_MAIL_AUTH:true}
+          ssl:
+            enable: ${CF_MAIL_SSL_ENABLE:true}
+            trust: ${CF_MAIL_SSL_TRUST:smtp.163.com}
+          starttls:
+            enable: ${CF_MAIL_STARTTLS:false}
+          connectiontimeout: ${CF_MAIL_CONNECTION_TIMEOUT:5000}
+          timeout: ${CF_MAIL_TIMEOUT:5000}
+          writetimeout: ${CF_MAIL_WRITE_TIMEOUT:5000}
   datasource:
     url: ${CF_DB_URL:jdbc:mysql://127.0.0.1:3306/computer_favorites?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
     username: ${CF_DB_USERNAME:root}
@@ -27,5 +46,7 @@ cf:
     whitelist:
       - /api/auth/login
       - /api/auth/register
+      - /api/auth/register/code
+      - /api/auth/register/username/check
   profile:
     marker: local
