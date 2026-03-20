@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import type { ProfileData } from '@/types/profile'
 import penIcon from '@/assets/icons/svg/pen.svg'
+import catPlayingAnimation from '@/assets/animation/Cat playing animation.lottie?url'
 
 defineProps<{
   profile: ProfileData
@@ -18,6 +20,14 @@ defineProps<{
             <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <UIcon name="i-lucide-map-pin" class="size-4 text-primary-500 shrink-0" />
               <span class="truncate">{{ profile.location }}</span>
+            </div>
+            <div class="w-full max-w-[180px] sm:max-w-[220px]">
+              <DotLottieVue
+                :src="catPlayingAnimation"
+                autoplay
+                loop
+                class="h-auto w-full"
+              />
             </div>
           </div>
         </div>
