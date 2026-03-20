@@ -28,6 +28,9 @@ registerUnauthorizedHandler(async () => {
   if (currentRoute.name === 'login') {
     return
   }
+  if (!currentRoute.meta.requiresAuth) {
+    return
+  }
   await router.replace({
     name: 'login',
     query: { redirect: currentRoute.fullPath },

@@ -15,7 +15,7 @@ const getClassByValue = (value: number) => {
 </script>
 
 <template>
-  <UCard class="!ring-0 shadow-sm dark:shadow-md bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
+  <UCard class="!ring-0 shadow-sm dark:shadow-md bg-white dark:!bg-[#131418] rounded-xl overflow-hidden">
     <div class="space-y-4">
       <div class="flex items-center gap-2">
         <UIcon name="i-lucide-chart-no-axes-combined" class="size-5 text-primary-500" />

@@ -3,13 +3,16 @@ import { computed, onMounted, ref } from 'vue'
 import ProfileContributionSection from '@/components/user/profile/ProfileContributionSection.vue'
 import ProfileHeatmapSection from '@/components/user/profile/ProfileHeatmapSection.vue'
 import ProfileHeroSection from '@/components/user/profile/ProfileHeroSection.vue'
-import ProfileProjectGridSection from '@/components/user/profile/ProfileProjectGridSection.vue'
 import ProfileSidebarCard from '@/components/user/profile/ProfileSidebarCard.vue'
-import ProfileSiteGridSection from '@/components/user/profile/ProfileSiteGridSection.vue'
 import ProfileSkillsSection from '@/components/user/profile/ProfileSkillsSection.vue'
 import { getCurrentUserProfile, type LoginUserProfileResponse } from '@/services/profile'
 import { useToast } from '@/composables/useToast'
 import type { ProfileData, ProfileSiteItem, ProfileSocialLink } from '@/types/profile'
+
+import githubIcon from '@/assets/icons/svg/github.svg'
+import giteeIcon from '@/assets/icons/svg/gitee.svg'
+import blogIcon from '@/assets/icons/svg/blog.svg'
+import emailIcon from '@/assets/icons/svg/email.svg'
 
 defineOptions({
   name: 'ProfileView',
@@ -153,13 +156,14 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
     payload.user?.phoneVerified === 1 ? '手机号已验证' : '手机号未验证',
   ].filter((item): item is string => Boolean(item))
 
-  const socialLinkList = [
-    payload.profile?.githubUrl ? { label: 'GitHub', icon: 'i-lucide-github', url: payload.profile.githubUrl } : null,
-    payload.profile?.giteeUrl ? { label: 'Gitee', icon: 'i-lucide-code-2', url: payload.profile.giteeUrl } : null,
-    payload.profile?.blogUrl ? { label: '博客', icon: 'i-lucide-rss', url: payload.profile.blogUrl } : null,
+  const socialLinkCandidates: Array<ProfileSocialLink | null> = [
+    payload.profile?.githubUrl ? { label: 'GitHub', imageIcon: githubIcon, url: payload.profile.githubUrl } : null,
+    payload.profile?.giteeUrl ? { label: 'Gitee', imageIcon: giteeIcon, url: payload.profile.giteeUrl } : null,
+    payload.profile?.blogUrl ? { label: '博客', imageIcon: blogIcon, url: payload.profile.blogUrl } : null,
     website ? { label: '个人网站', icon: 'i-lucide-globe', url: website } : null,
-    email ? { label: '邮箱', icon: 'i-lucide-mail', url: `mailto:${email}` } : null,
-  ].filter((item): item is ProfileSocialLink => Boolean(item))
+    email ? { label: '邮箱', imageIcon: emailIcon, url: `mailto:${email}` } : null,
+  ]
+  const socialLinkList = socialLinkCandidates.filter((item): item is ProfileSocialLink => item !== null)
   const socialLinks = socialLinkList.filter(
     (item, index, list) => list.findIndex((target) => target.url === item.url) === index,
   )
@@ -258,12 +262,6 @@ onMounted(() => {
         <main class="flex-1 min-w-0 space-y-6">
           <ProfileHeroSection :profile="profileData" />
           <ProfileHeatmapSection :rows="heatmapRows" :cols="heatmapCols" :get-heat-value="getHeatValue" />
-          
-          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <ProfileSiteGridSection title="收藏网站" :items="profileData.favoriteSites" />
-            <ProfileProjectGridSection title="上传网站（文件夹）" :items="profileData.uploadedProjects" />
-          </div>
-
           <ProfileSkillsSection :skills="profileData.skills" />
           <ProfileContributionSection :stats="profileData.stats" :contributions="profileData.contributions" />
         </main>
@@ -271,11 +269,11 @@ onMounted(() => {
 
       <UCard
         v-else
-        class="!ring-0 rounded-xl bg-white dark:bg-gray-900 shadow-sm dark:shadow-md"
+        class="!ring-0 rounded-xl bg-white dark:!bg-[#131418] shadow-sm dark:shadow-md"
       >
         <div class="space-y-3">
           <p class="text-sm text-gray-600 dark:text-gray-300">{{ errorText || '暂无个人资料数据' }}</p>
-          <UButton color="neutral" variant="soft" @click="loadProfile">重新加载</UButton>
+          <UButton color="neutral" variant="soft" @click="loadProfile" class="!bg-gray-100 hover:!bg-gray-200 !text-gray-900 dark:!bg-white/10 dark:hover:!bg-white/20 dark:!text-white">重新加载</UButton>
         </div>
       </UCard>
     </UContainer>

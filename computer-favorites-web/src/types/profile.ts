@@ -10,7 +10,8 @@ export interface ProfileStat {
 
 export interface ProfileSocialLink {
   label: string
-  icon: string
+  icon?: string
+  imageIcon?: string
   url: string
 }
 

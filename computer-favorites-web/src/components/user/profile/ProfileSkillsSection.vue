@@ -18,13 +18,14 @@ const levelColorMap: Record<ProfileSkill['level'], 'success' | 'warning' | 'neut
       <UIcon name="i-lucide-cpu" class="size-5 text-primary-500" />
       <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">技术栈</h3>
     </div>
-    <UCard class="!ring-0 shadow-sm dark:shadow-md bg-white dark:bg-gray-900 rounded-xl">
+    <UCard class="!ring-0 shadow-sm dark:shadow-md bg-white dark:!bg-[#131418] rounded-xl">
       <div class="flex flex-wrap gap-2">
         <UBadge
           v-for="skill in skills"
           :key="skill.name"
           :color="levelColorMap[skill.level]"
           variant="soft"
+          class="!bg-gray-100 !text-gray-800 dark:!bg-white/10 dark:!text-gray-100"
         >
           {{ skill.name }} · {{ skill.level }}
         </UBadge>
