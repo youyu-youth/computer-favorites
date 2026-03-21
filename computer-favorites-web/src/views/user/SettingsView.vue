@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { reactive, ref, shallowRef, provide } from 'vue'
 // @ts-ignore
-import SettingsSidebar from '../../components/user/settings/SettingsSidebar.vue'
+import SettingsSidebar from '@/components/user/settings/SettingsSidebar.vue'
 // @ts-ignore
-import BasicProfileSection from '../../components/user/settings/sections/BasicProfileSection.vue'
+import BasicProfileSection from '@/components/user/settings/sections/BasicProfileSection.vue'
 // @ts-ignore
-import AccountSettingsSection from '../../components/user/settings/sections/AccountSettingsSection.vue'
+import AccountSettingsSection from '@/components/user/settings/sections/AccountSettingsSection.vue'
 // @ts-ignore
-import PreferenceSettingsSection from '../../components/user/settings/sections/PreferenceSettingsSection.vue'
+import PreferenceSettingsSection from '@/components/user/settings/sections/PreferenceSettingsSection.vue'
 // @ts-ignore
-import DataManagementSection from '../../components/user/settings/sections/DataManagementSection.vue'
+import DataManagementSection from '@/components/user/settings/sections/DataManagementSection.vue'
 // @ts-ignore
-import MessageSettingsSection from '../../components/user/settings/sections/MessageSettingsSection.vue'
-import { mockUserBasicInfo, mockUserDetailProfile, mockUserPreferenceSetting } from '../../components/user/settings/mock'
-import { settingsStateKey } from '../../components/user/settings/context'
+import MessageSettingsSection from '@/components/user/settings/sections/MessageSettingsSection.vue'
+import { mockUserBasicInfo, mockUserDetailProfile, mockUserPreferenceSetting } from '@/components/user/settings/mock'
+import { settingsStateKey } from '@/components/user/settings/context'
+import { useToast } from '@/composables/useToast'
 
 defineOptions({
   name: 'SettingsView',
@@ -32,11 +33,17 @@ const settingsState = reactive({
   profile: { ...mockUserDetailProfile },
   setting: { ...mockUserPreferenceSetting },
 })
+const toast = useToast()
 
 provide(settingsStateKey, settingsState)
 
-const activeTabId = ref(tabs[0].id)
-const activeComponent = shallowRef(tabs[0].component)
+const firstTab = tabs[0]
+if (!firstTab) {
+  throw new Error('Settings tabs are not configured')
+}
+
+const activeTabId = ref(firstTab.id)
+const activeComponent = shallowRef(firstTab.component)
 
 const handleTabChange = (id: string) => {
   activeTabId.value = id
@@ -44,6 +51,14 @@ const handleTabChange = (id: string) => {
   if (tab) {
     activeComponent.value = tab.component
   }
+}
+
+const handleSaveAllChanges = () => {
+  toast.add({
+    title: '保存成功',
+    description: '已统一保存当前五个设置模块的更改',
+    type: 'success',
+  })
 }
 </script>
 
@@ -53,10 +68,10 @@ const handleTabChange = (id: string) => {
       <div class="flex flex-col gap-8 md:flex-row">
         <!-- Sidebar -->
         <div class="w-full shrink-0 md:w-64">
-          <SettingsSidebar 
-            :tabs="tabs" 
-            :active-id="activeTabId" 
-            @change="handleTabChange" 
+          <SettingsSidebar
+            :tabs="tabs"
+            :active-id="activeTabId"
+            @change="handleTabChange"
           />
         </div>
 
@@ -65,6 +80,11 @@ const handleTabChange = (id: string) => {
           <transition name="fade" mode="out-in">
             <component :is="activeComponent" />
           </transition>
+          <div class="flex justify-end pt-6">
+            <UButton variant="solid" class="cursor-pointer !bg-[#f59e0b] !text-white hover:!bg-[#d97706] active:!bg-[#d97706] focus-visible:!outline-[#f59e0b]" @click="handleSaveAllChanges">
+              保存全部更改
+            </UButton>
+          </div>
         </main>
       </div>
     </UContainer>

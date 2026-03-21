@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Website } from '@/types/website'
-import WebsiteCard from './WebsiteCard.vue'
+import WebsiteCard from '@/components/user/WebsiteCard.vue'
 
 defineProps<{
   websites: Website[]

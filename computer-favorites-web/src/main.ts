@@ -5,9 +5,9 @@ import { useAuthStore } from '@/stores/auth'
 import sliderVerify from 'vue3-slider-verify'
 import { registerUnauthorizedHandler } from '@/utils/http'
 
-import App from './App.vue'
-import router from './router'
-import './assets/styles/tailwind.css'
+import App from '@/App.vue'
+import router from '@/router'
+import '@/assets/styles/tailwind.css'
 import 'vue3-slider-verify/lib/style.css'
 
 const app = createApp(App)

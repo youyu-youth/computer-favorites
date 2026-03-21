@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject } from 'vue'
-import { settingsStateKey } from '../context'
+import { settingsStateKey } from '@/components/user/settings/context'
 
 const settingsState = inject(settingsStateKey)
 if (!settingsState) {
@@ -28,7 +28,7 @@ defineOptions({
       <div class="space-y-6">
         <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-4 dark:border-white/5 dark:bg-white/5">
           <div class="flex items-center space-x-4">
-            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-300">
               <UIcon name="i-lucide-mail" class="h-5 w-5" />
             </div>
             <div>
@@ -38,14 +38,14 @@ defineOptions({
               </p>
             </div>
           </div>
-          <UButton size="sm" variant="soft" color="gray" class="dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
             {{ basicInfo.emailVerified === 1 ? '修改' : '绑定' }}
           </UButton>
         </div>
 
         <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-4 dark:border-white/5 dark:bg-white/5">
           <div class="flex items-center space-x-4">
-            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-300">
               <UIcon name="i-lucide-smartphone" class="h-5 w-5" />
             </div>
             <div>
@@ -55,7 +55,7 @@ defineOptions({
               </p>
             </div>
           </div>
-          <UButton size="sm" variant="soft" color="gray" class="dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
             {{ basicInfo.phoneVerified === 1 ? '修改' : '绑定' }}
           </UButton>
         </div>
@@ -72,7 +72,7 @@ defineOptions({
             <p class="text-sm font-medium text-slate-900 dark:text-white">登录密码</p>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">上次修改时间：2026-02-15</p>
           </div>
-          <UButton size="sm" variant="soft" color="gray" class="dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
             修改密码
           </UButton>
         </div>
@@ -84,7 +84,7 @@ defineOptions({
             <p class="text-sm font-medium text-slate-900 dark:text-white">第三方平台绑定</p>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">绑定 GitHub/Gitee 可实现快捷登录</p>
           </div>
-          <UButton size="sm" variant="soft" color="gray" class="dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
             管理绑定
           </UButton>
         </div>

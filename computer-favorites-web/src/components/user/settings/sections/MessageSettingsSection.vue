@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject } from 'vue'
-import { settingsStateKey } from '../context'
+import { settingsStateKey } from '@/components/user/settings/context'
 
 const settingsState = inject(settingsStateKey)
 if (!settingsState) {
@@ -24,7 +24,7 @@ defineOptions({
     <!-- 通知管理 -->
     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-0 dark:bg-black dark:shadow-none">
       <h4 class="mb-4 text-base font-medium text-slate-900 dark:text-white">提醒配置</h4>
-      
+
       <div class="space-y-6">
         <div class="flex items-center justify-between">
           <div class="space-y-1">
@@ -33,7 +33,7 @@ defineOptions({
               接收系统重要更新与安全提醒
             </p>
           </div>
-          <UToggle v-model="setting.emailNotice" :true-value="1" :false-value="0" color="emerald" class="dark:bg-white/10" />
+          <UToggle v-model="setting.emailNotice" :true-value="1" :false-value="0" color="primary" class="dark:bg-white/10" />
         </div>
 
         <UDivider class="dark:border-white/10" />
@@ -45,7 +45,7 @@ defineOptions({
               当您的网站被他人收藏时通知我
             </p>
           </div>
-          <UToggle v-model="setting.collectNotice" :true-value="1" :false-value="0" color="emerald" class="dark:bg-white/10" />
+          <UToggle v-model="setting.collectNotice" :true-value="1" :false-value="0" color="primary" class="dark:bg-white/10" />
         </div>
 
         <UDivider class="dark:border-white/10" />
@@ -57,12 +57,9 @@ defineOptions({
               当有新评论或新回复时通知我
             </p>
           </div>
-          <UToggle v-model="setting.commentNotice" :true-value="1" :false-value="0" color="emerald" class="dark:bg-white/10" />
+          <UToggle v-model="setting.commentNotice" :true-value="1" :false-value="0" color="primary" class="dark:bg-white/10" />
         </div>
 
-        <div class="flex justify-end pt-4">
-          <UButton color="black" variant="solid" class="dark:bg-white dark:text-black dark:hover:bg-gray-200">保存设置</UButton>
-        </div>
       </div>
     </div>
   </div>

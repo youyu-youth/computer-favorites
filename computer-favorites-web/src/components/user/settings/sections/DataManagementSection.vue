@@ -28,7 +28,7 @@ const handleClearCache = () => {
             <h4 class="text-base font-medium text-slate-900 dark:text-white">导出个人数据</h4>
             <p class="text-sm text-slate-500 dark:text-slate-400">以 JSON 格式下载您的所有收藏、投稿和个人资料。</p>
           </div>
-          <UButton @click="handleExport" variant="soft" color="gray" class="dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+          <UButton @click="handleExport" variant="soft" color="gray" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
             申请导出
           </UButton>
         </div>
@@ -40,7 +40,7 @@ const handleClearCache = () => {
             <h4 class="text-base font-medium text-slate-900 dark:text-white">清理本地缓存</h4>
             <p class="text-sm text-slate-500 dark:text-slate-400">释放系统存储空间（约 12MB）。</p>
           </div>
-          <UButton @click="handleClearCache" variant="soft" color="gray" class="dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+          <UButton @click="handleClearCache" variant="soft" color="gray" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
             立即清理
           </UButton>
         </div>
@@ -60,7 +60,7 @@ const handleClearCache = () => {
               永久删除账号及所有相关数据，<span class="font-semibold text-red-600 dark:text-red-500">此操作不可恢复</span>。
             </p>
           </div>
-          <UButton color="red" variant="soft">
+          <UButton color="red" variant="soft" class="cursor-pointer">
             注销账号
           </UButton>
         </div>
