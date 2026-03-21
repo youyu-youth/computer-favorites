@@ -65,6 +65,11 @@ const handleSaveAllChanges = () => {
 <template>
   <div class="min-h-[calc(100vh-8rem)] bg-slate-50 transition-colors duration-300 dark:bg-black">
     <UContainer class="max-w-6xl py-6 md:py-10">
+      <div class="flex justify-end pb-4">
+        <UButton variant="solid" class="cursor-pointer !bg-[#f59e0b] !text-white hover:!bg-[#d97706] active:!bg-[#d97706] focus-visible:!outline-[#f59e0b]" @click="handleSaveAllChanges">
+          保存全部更改
+        </UButton>
+      </div>
       <div class="flex flex-col gap-8 md:flex-row">
         <!-- Sidebar -->
         <div class="w-full shrink-0 md:w-64">
@@ -80,11 +85,6 @@ const handleSaveAllChanges = () => {
           <transition name="fade" mode="out-in">
             <component :is="activeComponent" />
           </transition>
-          <div class="flex justify-end pt-6">
-            <UButton variant="solid" class="cursor-pointer !bg-[#f59e0b] !text-white hover:!bg-[#d97706] active:!bg-[#d97706] focus-visible:!outline-[#f59e0b]" @click="handleSaveAllChanges">
-              保存全部更改
-            </UButton>
-          </div>
         </main>
       </div>
     </UContainer>
