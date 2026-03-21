@@ -6,6 +6,7 @@ import SettingsView from '@/views/user/SettingsView.vue'
 import AccountView from '@/views/user/AccountView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -57,6 +58,8 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  const appStore = useAppStore()
+  appStore.startRouteTransition()
   const authStore = useAuthStore()
   const redirectQuery = typeof to.query.redirect === 'string' ? to.query.redirect : '/computer/home'
 
@@ -91,6 +94,14 @@ router.beforeEach(async (to) => {
     name: 'login',
     query: { redirect: to.fullPath },
   }
+})
+
+router.afterEach(() => {
+  useAppStore().finishRouteTransition()
+})
+
+router.onError(() => {
+  useAppStore().finishRouteTransition()
 })
 
 export default router

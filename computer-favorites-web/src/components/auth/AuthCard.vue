@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { checkUsernameAvailable, login, register, sendRegisterCode } from '@/services/auth'
+import { checkUsernameAvailable, login, loginByEmailCode, register, sendLoginCode, sendRegisterCode } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 
 type Mode = 'login' | 'register'
+type LoginMethod = 'password' | 'emailCode'
 type SliderVerifyResult = {
   type: string
   message: string
@@ -13,6 +14,7 @@ type SliderVerifyResult = {
 }
 
 const mode = ref<Mode>('login')
+const loginMethod = ref<LoginMethod>('emailCode')
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
@@ -23,6 +25,7 @@ const form = reactive({
   password: '',
   confirmPassword: '',
   emailCode: '',
+  loginEmailCode: '',
 })
 
 const loading = ref(false)
@@ -37,14 +40,26 @@ const usernameChecking = ref(false)
 let sendCodeTimer: number | null = null
 const isLoginMode = computed(() => mode.value === 'login')
 const isRegisterMode = computed(() => mode.value === 'register')
+const isPasswordLoginMethod = computed(() => isLoginMode.value && loginMethod.value === 'password')
+const isEmailCodeLoginMethod = computed(() => isLoginMode.value && loginMethod.value === 'emailCode')
 
 const title = computed(() => (isLoginMode.value ? '欢迎回来' : '创建账号'))
 const subtitle = computed(() => (isLoginMode.value ? '登录以管理你的收藏夹' : '开始收藏你的宝藏站点'))
+const loginHintText = computed(() => {
+  if (!isLoginMode.value) {
+    return ''
+  }
+  return isEmailCodeLoginMethod.value ? '进行密码登录' : '进行邮箱验证登录'
+})
 
 const canSubmit = computed(() => {
   if (isLoginMode.value) {
     if (!form.account.trim()) return false
-    if (!form.password.trim()) return false
+    if (loginMethod.value === 'password' && !form.password.trim()) return false
+    if (loginMethod.value === 'emailCode') {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.account.trim())) return false
+      if (!form.loginEmailCode.trim()) return false
+    }
     return true
   }
   if (!form.account.trim()) return false
@@ -57,17 +72,33 @@ const canSubmit = computed(() => {
 const switchMode = (next: Mode) => {
   if (mode.value === next) return
   mode.value = next
+  loginMethod.value = 'emailCode'
   errorText.value = null
   form.account = ''
   form.password = ''
   form.confirmPassword = ''
   form.emailCode = ''
+  form.loginEmailCode = ''
   showSliderVerify.value = false
   sliderVerified.value = false
   showUsernameDialog.value = false
   registerUsername.value = ''
   sendCodeCountdown.value = 0
   stopSendCodeTimer()
+}
+
+const switchLoginMethodFromHint = () => {
+  if (!isLoginMode.value || loading.value) {
+    return
+  }
+  loginMethod.value = isEmailCodeLoginMethod.value ? 'password' : 'emailCode'
+  errorText.value = null
+  form.password = ''
+  form.loginEmailCode = ''
+  sendCodeCountdown.value = 0
+  stopSendCodeTimer()
+  showSliderVerify.value = false
+  sliderVerified.value = false
 }
 
 const onSliderSuccess = (result: SliderVerifyResult) => {
@@ -134,8 +165,13 @@ const openUsernameDialog = () => {
   showUsernameDialog.value = true
 }
 
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
 const sendCode = async () => {
-  if (!isRegisterMode.value || sendCodeLoading.value || sendCodeCountdown.value > 0) {
+  if (sendCodeLoading.value || sendCodeCountdown.value > 0) {
+    return
+  }
+  if (!isRegisterMode.value && !isEmailCodeLoginMethod.value) {
     return
   }
   const email = form.account.trim()
@@ -143,19 +179,22 @@ const sendCode = async () => {
     errorText.value = '请先输入邮箱'
     return
   }
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailPattern.test(email)) {
+  if (!isValidEmail(email)) {
     errorText.value = '请输入有效邮箱地址'
     return
   }
   sendCodeLoading.value = true
   errorText.value = null
   try {
-    await sendRegisterCode(email)
+    if (isRegisterMode.value) {
+      await sendRegisterCode(email)
+    } else {
+      await sendLoginCode(email)
+    }
     startSendCodeCountdown()
     toast.add({
       title: '验证码已发送',
-      description: '请前往邮箱查看并输入验证码',
+      description: isRegisterMode.value ? '请前往邮箱查看注册验证码' : '请前往邮箱查看登录验证码',
       type: 'success',
     })
   } catch (e) {
@@ -229,7 +268,20 @@ const completeRegister = async () => {
 const submit = async () => {
   if (loading.value) return
   if (isLoginMode.value) {
-    if (!canSubmit.value) return
+    if (!canSubmit.value) {
+      if (!form.account.trim()) {
+        errorText.value = isEmailCodeLoginMethod.value ? '请输入邮箱' : '请输入用户名或邮箱'
+      } else if (isEmailCodeLoginMethod.value && !isValidEmail(form.account.trim())) {
+        errorText.value = '请输入有效的邮箱地址'
+      } else if (isPasswordLoginMethod.value && !form.password.trim()) {
+        errorText.value = '请输入密码'
+      } else if (isEmailCodeLoginMethod.value && !form.loginEmailCode.trim()) {
+        errorText.value = '请输入邮箱验证码'
+      } else {
+        errorText.value = '请完善登录信息'
+      }
+      return
+    }
     if (!sliderVerified.value) {
       errorText.value = null
       showSliderVerify.value = true
@@ -239,7 +291,13 @@ const submit = async () => {
     loading.value = true
     errorText.value = null
     try {
-      const res = await login({ username: form.account.trim(), password: form.password, deviceType: 'web' })
+      const res = isPasswordLoginMethod.value
+        ? await login({ username: form.account.trim(), password: form.password, deviceType: 'web' })
+        : await loginByEmailCode({
+            email: form.account.trim(),
+            emailCode: form.loginEmailCode.trim(),
+            deviceType: 'web',
+          })
       authStore.setToken(res.accessToken, res.tokenName || 'satoken')
       const validSession = await authStore.loadCurrentUser()
       if (!validSession) {
@@ -261,7 +319,7 @@ const submit = async () => {
       errorText.value = '请输入邮箱验证码'
     } else if (!form.account.trim()) {
       errorText.value = '请输入邮箱'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.account.trim())) {
+    } else if (!isValidEmail(form.account.trim())) {
       errorText.value = '请输入有效的邮箱地址'
     } else {
       errorText.value = '请完善注册信息'
@@ -318,27 +376,27 @@ onBeforeUnmount(() => {
       <div class="space-y-4">
         <div>
           <label for="account" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-            {{ isLoginMode ? '用户名 / 邮箱' : '邮箱' }}
+            {{ isRegisterMode || isEmailCodeLoginMethod ? '邮箱' : '用户名 / 邮箱' }}
           </label>
           <input
             id="account"
             v-model="form.account"
-            :type="isLoginMode ? 'text' : 'email'"
-            :autocomplete="isLoginMode ? 'off' : 'email'"
+            :type="isRegisterMode || isEmailCodeLoginMethod ? 'email' : 'text'"
+            :autocomplete="isRegisterMode || isEmailCodeLoginMethod ? 'email' : 'off'"
             required
             class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
-            :placeholder="isLoginMode ? '请输入用户名或邮箱' : 'name@example.com'"
+            :placeholder="isRegisterMode || isEmailCodeLoginMethod ? 'name@example.com' : '请输入用户名或邮箱'"
           />
         </div>
 
-        <div>
+        <div v-if="isRegisterMode || isPasswordLoginMethod">
           <label for="password" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">密码</label>
           <input
             id="password"
             v-model="form.password"
             type="password"
             autocomplete="new-password"
-            required
+            :required="isRegisterMode || isPasswordLoginMethod"
             class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
             placeholder="请输入密码"
           />
@@ -383,6 +441,33 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </template>
+
+        <template v-else-if="isEmailCodeLoginMethod">
+          <div>
+            <label for="loginEmailCode" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">邮箱验证码</label>
+            <div class="flex items-center gap-2">
+              <input
+                id="loginEmailCode"
+                v-model="form.loginEmailCode"
+                type="text"
+                maxlength="6"
+                required
+                class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
+                placeholder="请输入6位验证码"
+              />
+              <button
+                type="button"
+                :disabled="sendCodeLoading || sendCodeCountdown > 0 || loading"
+                class="inline-flex h-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10"
+                @click="sendCode"
+              >
+                <span v-if="sendCodeLoading">发送中...</span>
+                <span v-else-if="sendCodeCountdown > 0">{{ sendCodeCountdown }}s</span>
+                <span v-else>发送验证码</span>
+              </button>
+            </div>
+          </div>
+        </template>
       </div>
 
       <button
@@ -401,10 +486,13 @@ onBeforeUnmount(() => {
         <span>{{ isLoginMode ? '登录' : '注册' }}</span>
       </button>
       <div
-        class="mt-3 h-4 text-center text-xs text-slate-500 transition-opacity duration-200 dark:text-slate-400"
+        class="mt-3 h-4 cursor-pointer text-center text-xs text-slate-500 transition-opacity duration-200 dark:text-slate-400"
         :class="isLoginMode ? 'opacity-100' : 'opacity-0'"
+        role="button"
+        tabindex="0"
+        @click="switchLoginMethodFromHint"
       >
-        登录前需完成滑块验证
+        {{ loginHintText }}
       </div>
 
       <div class="relative mt-6">

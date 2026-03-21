@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import AppToast from '@/components/common/AppToast.vue'
+import AppRouteTransition from '@/components/common/AppRouteTransition.vue'
 </script>
 
 <template>
   <UApp>
     <AppToast />
+    <AppRouteTransition />
     <RouterView v-slot="{ Component, route }">
       <Transition name="page-fade" mode="out-in">
         <component :is="Component" :key="route.fullPath" />

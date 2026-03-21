@@ -3,11 +3,13 @@ package com.yyyouth.web.controller.auth;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.yyyouth.common.web.HttpResult;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
+import com.yyyouth.model.dto.auth.AuthLoginEmailCodeDTO;
+import com.yyyouth.model.dto.auth.AuthLoginEmailCodeSendDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterEmailCodeDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
-import com.yyyouth.service.auth.impl.AuthService;
+import com.yyyouth.service.auth.AuthService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
@@ -51,6 +53,50 @@ public class AuthController {
     public HttpResult login(@RequestBody @Valid AuthLoginDTO loginDTO) {
         AuthLoginVO authLoginVO = authService.login(loginDTO);
         return HttpResult.success("登录成功", authLoginVO);
+    }
+
+    /**
+     * 邮箱验证码登录接口
+     *
+     * @param loginEmailCodeDTO 登录参数
+     * @return 登录结果
+     */
+    @ApiOperation(value = "邮箱验证码登录接口")
+    @PostMapping("/login/code")
+    public HttpResult loginByEmailCode(@RequestBody @Valid AuthLoginEmailCodeDTO loginEmailCodeDTO) {
+        AuthLoginVO authLoginVO = authService.loginByEmailCode(loginEmailCodeDTO);
+        return HttpResult.success("登录成功", authLoginVO);
+    }
+
+    /**
+     * 发送登录验证码
+     *
+     * @param emailCodeSendDTO 邮箱参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "发送登录验证码")
+    @PostMapping({"/login/code/send", "/login/code/send/"})
+    public HttpResult sendLoginCode(@RequestBody @Valid AuthLoginEmailCodeSendDTO emailCodeSendDTO) {
+        authService.sendLoginEmailCode(emailCodeSendDTO.getEmail());
+        return HttpResult.success("验证码发送成功");
+    }
+
+    /**
+     * 发送登录验证码（兼容查询参数）
+     *
+     * @param email 邮箱
+     * @return 执行结果
+     */
+    @ApiOperation(value = "发送登录验证码（查询参数）")
+    @GetMapping("/login/code/send")
+    public HttpResult sendLoginCodeByQuery(
+            @RequestParam("email")
+            @NotBlank(message = "邮箱不能为空")
+            @Pattern(regexp = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$", message = "邮箱格式不正确")
+            @Size(max = 128, message = "邮箱长度不能超过128")
+            String email) {
+        authService.sendLoginEmailCode(email);
+        return HttpResult.success("验证码发送成功");
     }
 
     /**

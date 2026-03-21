@@ -8,7 +8,7 @@ import com.yyyouth.model.vo.user.LoginUserProfileVO;
 import com.yyyouth.model.vo.user.UserBasicInfoVO;
 import com.yyyouth.model.vo.user.UserDetailProfileVO;
 import com.yyyouth.model.vo.user.UserPreferenceSettingVO;
-import com.yyyouth.service.user.impl.UserProfileService;
+import com.yyyouth.service.user.UserProfileService;
 import com.yyyouth.web.config.GlobalExceptionHandler;
 import com.yyyouth.web.controller.user.UserProfileController;
 import org.junit.jupiter.api.BeforeEach;

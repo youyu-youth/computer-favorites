@@ -1,6 +1,7 @@
-package com.yyyouth.service.auth.impl;
+package com.yyyouth.service.auth;
 
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
+import com.yyyouth.model.dto.auth.AuthLoginEmailCodeDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
@@ -22,6 +23,14 @@ public interface AuthService {
     AuthLoginVO login(AuthLoginDTO loginDTO);
 
     /**
+     * 邮箱验证码登录
+     *
+     * @param loginEmailCodeDTO 登录参数
+     * @return 登录结果
+     */
+    AuthLoginVO loginByEmailCode(AuthLoginEmailCodeDTO loginEmailCodeDTO);
+
+    /**
      * 用户注册
      *
      * @param registerDTO 注册参数
@@ -34,6 +43,13 @@ public interface AuthService {
      * @param email 注册邮箱
      */
     void sendRegisterEmailCode(String email);
+
+    /**
+     * 发送登录邮箱验证码
+     *
+     * @param email 登录邮箱
+     */
+    void sendLoginEmailCode(String email);
 
     /**
      * 校验用户名是否可用

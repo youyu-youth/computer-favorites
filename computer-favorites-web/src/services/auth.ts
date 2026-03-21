@@ -6,6 +6,12 @@ export type LoginRequest = {
   deviceType: string
 }
 
+export type LoginByEmailCodeRequest = {
+  email: string
+  emailCode: string
+  deviceType: string
+}
+
 export type RegisterRequest = {
   username: string
   email: string
@@ -31,10 +37,9 @@ type LoginRawData = {
   expireTime?: string
 }
 
-export async function login(req: LoginRequest): Promise<AuthTokenResponse> {
-  const res = await postJson<ApiResult<LoginRawData>>('/api/auth/login', req)
+const parseAuthTokenResponse = (res: ApiResult<LoginRawData>, fallbackMessage: string): AuthTokenResponse => {
   if (res.code !== 200) {
-    throw new Error(res.msg || '登录失败')
+    throw new Error(res.msg || fallbackMessage)
   }
 
   const accessToken = res.data?.tokenValue
@@ -49,6 +54,16 @@ export async function login(req: LoginRequest): Promise<AuthTokenResponse> {
   }
 }
 
+export async function login(req: LoginRequest): Promise<AuthTokenResponse> {
+  const res = await postJson<ApiResult<LoginRawData>>('/api/auth/login', req)
+  return parseAuthTokenResponse(res, '登录失败')
+}
+
+export async function loginByEmailCode(req: LoginByEmailCodeRequest): Promise<AuthTokenResponse> {
+  const res = await postJson<ApiResult<LoginRawData>>('/api/auth/login/code', req)
+  return parseAuthTokenResponse(res, '验证码登录失败')
+}
+
 export async function register(req: RegisterRequest): Promise<unknown> {
   const res = await postJson<ApiResult<null>>('/api/auth/register', req)
   if (res.code !== 200) {
@@ -59,6 +74,13 @@ export async function register(req: RegisterRequest): Promise<unknown> {
 
 export async function sendRegisterCode(email: string): Promise<void> {
   const res = await postJson<ApiResult<null>>('/api/auth/register/code', { email })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '验证码发送失败')
+  }
+}
+
+export async function sendLoginCode(email: string): Promise<void> {
+  const res = await postJson<ApiResult<null>>('/api/auth/login/code/send', { email })
   if (res.code !== 200) {
     throw new Error(res.msg || '验证码发送失败')
   }

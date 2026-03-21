@@ -61,7 +61,32 @@ public enum AuthErrorCode {
     /**
      * 验证码发送失败
      */
-    REGISTER_EMAIL_CODE_SEND_FAILED(100211, "验证码发送失败，请稍后重试");
+    REGISTER_EMAIL_CODE_SEND_FAILED(100211, "验证码发送失败，请稍后重试"),
+
+    /**
+     * 登录验证码已过期
+     */
+    LOGIN_EMAIL_CODE_EXPIRED(100212, "登录验证码已过期，请重新获取"),
+
+    /**
+     * 登录验证码错误
+     */
+    LOGIN_EMAIL_CODE_INVALID(100213, "登录验证码不正确"),
+
+    /**
+     * 登录验证码发送过于频繁
+     */
+    LOGIN_EMAIL_CODE_SEND_TOO_FAST(100214, "登录验证码发送过于频繁，请稍后重试"),
+
+    /**
+     * 登录验证码发送次数超限
+     */
+    LOGIN_EMAIL_CODE_SEND_LIMIT(100215, "今日登录验证码发送次数已达上限"),
+
+    /**
+     * 登录验证码发送失败
+     */
+    LOGIN_EMAIL_CODE_SEND_FAILED(100216, "登录验证码发送失败，请稍后重试");
 
     private final int code;
 

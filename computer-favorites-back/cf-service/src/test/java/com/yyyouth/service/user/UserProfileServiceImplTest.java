@@ -11,6 +11,7 @@ import com.yyyouth.model.vo.user.LoginUserProfileVO;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.user.UserProfileMapper;
 import com.yyyouth.service.mapper.user.UserSettingMapper;
+import com.yyyouth.service.user.impl.UserProfileServiceImpl;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

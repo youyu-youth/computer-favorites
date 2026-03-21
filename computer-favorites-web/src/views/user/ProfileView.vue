@@ -22,18 +22,6 @@ const toast = useToast()
 const loading = ref(true)
 const errorText = ref('')
 const profileData = ref<ProfileData | null>(null)
-const heatmapRows = 7
-const heatmapCols = 52
-const heatSeed = ref(17)
-
-const getHeatValue = (row: number, col: number) => {
-  const seed = (row * 97 + col * 53 + row * col * 11 + heatSeed.value) % 100
-  if (seed > 92) return 4
-  if (seed > 78) return 3
-  if (seed > 58) return 2
-  if (seed > 35) return 1
-  return 0
-}
 
 const normalizeStringArray = (value: unknown): string[] => {
   if (Array.isArray(value)) {
@@ -227,7 +215,6 @@ const loadProfile = async () => {
   try {
     const data = await getCurrentUserProfile()
     profileData.value = mapToProfileData(data)
-    heatSeed.value = Number(data.user?.id || 17) % 97
   } catch (error) {
     const message = error instanceof Error ? error.message : '获取个人资料失败'
     errorText.value = message
@@ -261,7 +248,7 @@ onMounted(() => {
 
         <main class="flex-1 min-w-0 space-y-6">
           <ProfileHeroSection :profile="profileData" />
-          <ProfileHeatmapSection :rows="heatmapRows" :cols="heatmapCols" :get-heat-value="getHeatValue" />
+          <ProfileHeatmapSection />
           <ProfileSkillsSection :skills="profileData.skills" />
           <ProfileContributionSection :stats="profileData.stats" :contributions="profileData.contributions" />
         </main>

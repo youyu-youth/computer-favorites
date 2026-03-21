@@ -1,4 +1,4 @@
-package com.yyyouth.service.user;
+package com.yyyouth.service.user.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
@@ -16,7 +16,7 @@ import com.yyyouth.model.vo.user.UserPreferenceSettingVO;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.user.UserProfileMapper;
 import com.yyyouth.service.mapper.user.UserSettingMapper;
-import com.yyyouth.service.user.impl.UserProfileService;
+import com.yyyouth.service.user.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;

@@ -1,21 +1,87 @@
 <script setup lang="ts">
+import { reactive, ref, shallowRef, provide } from 'vue'
+// @ts-ignore
+import SettingsSidebar from '../../components/user/settings/SettingsSidebar.vue'
+// @ts-ignore
+import BasicProfileSection from '../../components/user/settings/sections/BasicProfileSection.vue'
+// @ts-ignore
+import AccountSettingsSection from '../../components/user/settings/sections/AccountSettingsSection.vue'
+// @ts-ignore
+import PreferenceSettingsSection from '../../components/user/settings/sections/PreferenceSettingsSection.vue'
+// @ts-ignore
+import DataManagementSection from '../../components/user/settings/sections/DataManagementSection.vue'
+// @ts-ignore
+import MessageSettingsSection from '../../components/user/settings/sections/MessageSettingsSection.vue'
+import { mockUserBasicInfo, mockUserDetailProfile, mockUserPreferenceSetting } from '../../components/user/settings/mock'
+import { settingsStateKey } from '../../components/user/settings/context'
+
 defineOptions({
   name: 'SettingsView',
 })
+
+const tabs = [
+  { id: 'basic', label: '基础资料', icon: 'i-lucide-user', component: BasicProfileSection },
+  { id: 'account', label: '账号设置', icon: 'i-lucide-shield', component: AccountSettingsSection },
+  { id: 'preference', label: '偏好设置', icon: 'i-lucide-sliders', component: PreferenceSettingsSection },
+  { id: 'message', label: '消息设置', icon: 'i-lucide-bell', component: MessageSettingsSection },
+  { id: 'data', label: '数据管理', icon: 'i-lucide-database', component: DataManagementSection },
+]
+
+const settingsState = reactive({
+  basicInfo: { ...mockUserBasicInfo },
+  profile: { ...mockUserDetailProfile },
+  setting: { ...mockUserPreferenceSetting },
+})
+
+provide(settingsStateKey, settingsState)
+
+const activeTabId = ref(tabs[0].id)
+const activeComponent = shallowRef(tabs[0].component)
+
+const handleTabChange = (id: string) => {
+  activeTabId.value = id
+  const tab = tabs.find((t) => t.id === id)
+  if (tab) {
+    activeComponent.value = tab.component
+  }
+}
 </script>
 
 <template>
-  <section class="min-h-[calc(100vh-8rem)] bg-slate-50/70 px-4 py-6 dark:bg-slate-950/40 sm:px-6 md:py-8">
-    <UContainer>
-      <UCard class="rounded-2xl border border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-        <div class="space-y-3">
-          <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100 sm:text-2xl">设置</h1>
-          <p class="text-sm text-slate-600 dark:text-slate-300">
-            设置页面正在建设中，后续会在这里提供主题、通知、隐私等配置能力。
-          </p>
-          <p class="text-xs text-slate-500 dark:text-slate-400">访问路径：/computer/settings</p>
+  <div class="min-h-[calc(100vh-8rem)] bg-slate-50 transition-colors duration-300 dark:bg-black">
+    <UContainer class="max-w-6xl py-6 md:py-10">
+      <div class="flex flex-col gap-8 md:flex-row">
+        <!-- Sidebar -->
+        <div class="w-full shrink-0 md:w-64">
+          <SettingsSidebar 
+            :tabs="tabs" 
+            :active-id="activeTabId" 
+            @change="handleTabChange" 
+          />
         </div>
-      </UCard>
+
+        <!-- Content Area -->
+        <main class="min-w-0 flex-1">
+          <transition name="fade" mode="out-in">
+            <component :is="activeComponent" />
+          </transition>
+        </main>
+      </div>
     </UContainer>
-  </section>
+  </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+</style>

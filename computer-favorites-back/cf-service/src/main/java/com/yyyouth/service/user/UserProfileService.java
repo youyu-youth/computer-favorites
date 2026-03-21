@@ -1,4 +1,4 @@
-package com.yyyouth.service.user.impl;
+package com.yyyouth.service.user;
 
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
 

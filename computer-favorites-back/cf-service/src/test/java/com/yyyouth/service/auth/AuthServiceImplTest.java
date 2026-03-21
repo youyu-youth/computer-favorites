@@ -9,12 +9,14 @@ import com.yyyouth.common.constants.AuthErrorCode;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.common.utils.EmailUtils;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
+import com.yyyouth.model.dto.auth.AuthLoginEmailCodeDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.auth.UserSession;
 import com.yyyouth.model.pojo.user.UserProfile;
 import com.yyyouth.model.pojo.user.UserSetting;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
+import com.yyyouth.service.auth.impl.AuthServiceImpl;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.auth.UserSessionMapper;
 import com.yyyouth.service.mapper.user.UserProfileMapper;
@@ -160,6 +162,60 @@ class AuthServiceImplTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("code")
                 .isEqualTo(AuthErrorCode.INVALID_CREDENTIAL.getCode());
+    }
+
+    /**
+     * 邮箱验证码登录成功时应返回 token 并清理验证码
+     */
+    @Test
+    void shouldLoginByEmailCodeAndClearCodeWhenCodeValid() {
+        AuthLoginEmailCodeDTO loginEmailCodeDTO = new AuthLoginEmailCodeDTO();
+        loginEmailCodeDTO.setEmail("tester@test.com");
+        loginEmailCodeDTO.setEmailCode("123456");
+        loginEmailCodeDTO.setDeviceType("web");
+
+        UserAccount userAccount = new UserAccount();
+        userAccount.setId(USER_ID);
+        userAccount.setEmail("tester@test.com");
+        userAccount.setUsername("tester");
+        userAccount.setStatus(1);
+        when(userAccountMapper.selectOne(any())).thenReturn(userAccount);
+        when(userSessionMapper.selectOne(any())).thenReturn(null);
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(any())).thenReturn("123456");
+
+        try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
+            stpUtilMock.when(() -> StpUtil.login(eq(USER_ID), any(SaLoginParameter.class))).thenAnswer(invocation -> null);
+            stpUtilMock.when(StpUtil::getTokenSession).thenReturn(tokenSession);
+            stpUtilMock.when(StpUtil::getTokenValue).thenReturn(TOKEN_VALUE);
+            stpUtilMock.when(StpUtil::getTokenTimeout).thenReturn(1800L);
+            stpUtilMock.when(StpUtil::getTokenName).thenReturn("satoken");
+
+            AuthLoginVO loginVO = authService.loginByEmailCode(loginEmailCodeDTO);
+
+            assertThat(loginVO.getTokenValue()).isEqualTo(TOKEN_VALUE);
+            verify(stringRedisTemplate).delete("email:code:login:tester@test.com");
+        }
+    }
+
+    /**
+     * 发送登录验证码成功时应写入Redis验证码
+     */
+    @Test
+    void shouldSendLoginEmailCodeAndWriteRedisWhenEmailValid() {
+        UserAccount userAccount = new UserAccount();
+        userAccount.setId(USER_ID);
+        userAccount.setEmail("tester@test.com");
+        userAccount.setStatus(1);
+        when(userAccountMapper.selectOne(any())).thenReturn(userAccount);
+        when(stringRedisTemplate.hasKey(any())).thenReturn(false);
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(any())).thenReturn(null);
+        when(emailUtils.sendGeneralEmail(any(), any(), eq("tester@test.com"))).thenReturn(true);
+
+        authService.sendLoginEmailCode("tester@test.com");
+
+        verify(valueOperations).set(eq("email:code:login:tester@test.com"), any(), eq(5L), eq(java.util.concurrent.TimeUnit.MINUTES));
     }
 
     /**

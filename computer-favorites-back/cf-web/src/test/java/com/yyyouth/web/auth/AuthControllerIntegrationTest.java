@@ -6,10 +6,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yyyouth.common.constants.AuthErrorCode;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
+import com.yyyouth.model.dto.auth.AuthLoginEmailCodeDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
 import com.yyyouth.model.vo.auth.AuthUserVO;
-import com.yyyouth.service.auth.impl.AuthService;
+import com.yyyouth.service.auth.AuthService;
 import com.yyyouth.web.config.GlobalExceptionHandler;
 import com.yyyouth.web.controller.auth.AuthController;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,6 +96,55 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
                 .andExpect(jsonPath("$.data.tokenValue").value("token-web-001"))
                 .andExpect(jsonPath("$.data.userInfo.userId").value(1001L));
+    }
+
+    /**
+     * 邮箱验证码登录接口应返回 token 与用户基础信息
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldReturnLoginDataWhenLoginByEmailCodeSuccess() throws Exception {
+        AuthUserVO authUserVO = new AuthUserVO();
+        authUserVO.setUserId(1001L);
+        authUserVO.setUsername("tester");
+        authUserVO.setNickname("测试用户");
+
+        AuthLoginVO authLoginVO = new AuthLoginVO();
+        authLoginVO.setTokenName("satoken");
+        authLoginVO.setTokenValue("token-web-002");
+        authLoginVO.setExpireTime(LocalDateTime.of(2026, 3, 16, 12, 0));
+        authLoginVO.setUserInfo(authUserVO);
+        when(authService.loginByEmailCode(any(AuthLoginEmailCodeDTO.class))).thenReturn(authLoginVO);
+
+        AuthLoginEmailCodeDTO loginEmailCodeDTO = new AuthLoginEmailCodeDTO();
+        loginEmailCodeDTO.setEmail("tester@test.com");
+        loginEmailCodeDTO.setEmailCode("123456");
+        loginEmailCodeDTO.setDeviceType("web");
+
+        mockMvc.perform(post("/api/auth/login/code")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginEmailCodeDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.data.tokenValue").value("token-web-002"))
+                .andExpect(jsonPath("$.data.userInfo.userId").value(1001L));
+    }
+
+    /**
+     * 发送登录验证码接口应返回统一成功响应
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldReturnSuccessWhenSendLoginCode() throws Exception {
+        mockMvc.perform(post("/api/auth/login/code/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"tester@test.com\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.msg").value("验证码发送成功"));
+        verify(authService).sendLoginEmailCode("tester@test.com");
     }
 
     /**

@@ -3,7 +3,7 @@ package com.yyyouth.web.controller.user;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.yyyouth.common.web.HttpResult;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
-import com.yyyouth.service.user.impl.UserProfileService;
+import com.yyyouth.service.user.UserProfileService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
