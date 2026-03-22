@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yyyouth.model.pojo.auth.UserAccount;
+import com.yyyouth.model.pojo.user.TechStack;
 import com.yyyouth.model.pojo.user.UserProfile;
 import com.yyyouth.model.pojo.user.UserSetting;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
+import com.yyyouth.service.mapper.user.TechStackMapper;
 import com.yyyouth.service.mapper.user.UserProfileMapper;
 import com.yyyouth.service.mapper.user.UserSettingMapper;
 import com.yyyouth.service.user.impl.UserProfileServiceImpl;
@@ -22,6 +24,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -47,6 +50,9 @@ class UserProfileServiceImplTest {
     @Mock
     private UserSettingMapper userSettingMapper;
 
+    @Mock
+    private TechStackMapper techStackMapper;
+
     @InjectMocks
     private UserProfileServiceImpl userProfileService;
 
@@ -58,6 +64,7 @@ class UserProfileServiceImplTest {
         MybatisConfiguration configuration = new MybatisConfiguration();
         MapperBuilderAssistant builderAssistant = new MapperBuilderAssistant(configuration, "");
         TableInfoHelper.initTableInfo(builderAssistant, UserAccount.class);
+        TableInfoHelper.initTableInfo(builderAssistant, TechStack.class);
         TableInfoHelper.initTableInfo(builderAssistant, UserProfile.class);
         TableInfoHelper.initTableInfo(builderAssistant, UserSetting.class);
     }
@@ -84,7 +91,7 @@ class UserProfileServiceImplTest {
         userProfile.setBlogUrl("https://blog.tester.com");
         userProfile.setSignature("专注后端与架构");
         userProfile.setHobbyTags("阅读,跑步");
-        userProfile.setTechStack("Java,Spring Boot,MySQL");
+        userProfile.setTechStack("1,2,3");
         userProfile.setFavoriteWebsites("https://spring.io,https://mybatis.plus");
         userProfile.setUploadedWebsites("https://demo.tester.com");
         userProfile.setContribution("256");
@@ -102,9 +109,20 @@ class UserProfileServiceImplTest {
         userSetting.setHomepageStyle("cards");
         userSetting.setPageSize(24);
 
+        TechStack javaStack = new TechStack();
+        javaStack.setId(1L);
+        javaStack.setName("Java");
+        TechStack springBootStack = new TechStack();
+        springBootStack.setId(2L);
+        springBootStack.setName("Spring Boot");
+        TechStack mysqlStack = new TechStack();
+        mysqlStack.setId(3L);
+        mysqlStack.setName("MySQL");
+
         when(userAccountMapper.selectOne(any())).thenReturn(userAccount);
         when(userProfileMapper.selectOne(any())).thenReturn(userProfile);
         when(userSettingMapper.selectOne(any())).thenReturn(userSetting);
+        when(techStackMapper.selectList(any())).thenReturn(List.of(javaStack, springBootStack, mysqlStack));
 
         try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
             stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
