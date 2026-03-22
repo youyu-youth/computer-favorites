@@ -29,3 +29,13 @@ cf:
       - /api/auth/register
   profile:
     marker: test
+
+minio:
+  # MinIO 服务地址
+  endpointUrl: http://127.0.0.1:9000
+  # MinIO 访问账号
+  accessKey: admin
+  # MinIO 访问密钥（按项目现有命名使用 secreKey）
+  secreKey: admin123
+  # MinIO 默认桶名称
+  bucketName: computer-favorites

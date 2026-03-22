@@ -128,6 +128,18 @@ export async function postJson<T>(url: string, data: unknown, init?: RequestInit
   })
 }
 
+export async function postFormData<T>(url: string, data: FormData, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers)
+  headers.delete('Content-Type')
+
+  return requestJson<T>(url, {
+    method: 'POST',
+    ...init,
+    headers,
+    body: data,
+  })
+}
+
 export async function putJson<T>(url: string, data?: unknown, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
   const hasJsonBody = data !== undefined

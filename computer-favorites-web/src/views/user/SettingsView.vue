@@ -14,9 +14,10 @@ import DataManagementSection from '@/components/user/settings/sections/DataManag
 import MessageSettingsSection from '@/components/user/settings/sections/MessageSettingsSection.vue'
 import { mockUserBasicInfo, mockUserDetailProfile, mockUserPreferenceSetting } from '@/components/user/settings/mock'
 import { settingsStateKey } from '@/components/user/settings/context'
-import { getCurrentUserProfile } from '@/services/profile'
+import { getCurrentUserProfile, updateCurrentUserProfile } from '@/services/profile'
 import { useToast } from '@/composables/useToast'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 
 defineOptions({
   name: 'SettingsView',
@@ -36,7 +37,9 @@ const settingsState = reactive({
   setting: { ...mockUserPreferenceSetting },
 })
 const appStore = useAppStore()
+const authStore = useAuthStore()
 const toast = useToast()
+const savingProfile = ref(false)
 
 provide(settingsStateKey, settingsState)
 
@@ -56,12 +59,56 @@ const handleTabChange = (id: string) => {
   }
 }
 
-const handleSaveAllChanges = () => {
-  toast.add({
-    title: '保存成功',
-    description: '已统一保存当前五个设置模块的更改',
-    type: 'success',
-  })
+const handleSaveAllChanges = async () => {
+  if (savingProfile.value) {
+    return
+  }
+
+  savingProfile.value = true
+  try {
+    await updateCurrentUserProfile({
+      nickname: settingsState.basicInfo.nickname,
+      gender: settingsState.profile.gender,
+      country: settingsState.profile.country,
+      city: settingsState.profile.city,
+      githubUrl: settingsState.profile.githubUrl,
+      giteeUrl: settingsState.profile.giteeUrl,
+      otherRepoLinks: settingsState.profile.otherRepoLinks,
+      blogUrl: settingsState.profile.blogUrl,
+      signature: settingsState.profile.signature,
+      hobbyTags: settingsState.profile.hobbyTags,
+      techStack: settingsState.profile.techStack,
+    })
+
+    authStore.setUserSnapshot({
+      nickname: settingsState.basicInfo.nickname,
+      avatar: settingsState.basicInfo.avatar,
+    })
+
+    try {
+      await syncSettingsStateFromApi()
+      toast.add({
+        title: '保存成功',
+        description: '个人资料已更新',
+        type: 'success',
+      })
+    } catch {
+      toast.add({
+        title: '保存成功',
+        description: '个人资料已保存，但刷新最新资料失败',
+        type: 'warning',
+      })
+    }
+  } catch (error) {
+    const description = error instanceof Error ? error.message : '保存失败，请稍后重试'
+    toast.add({
+      title: '保存失败',
+      description,
+      type: 'error',
+    })
+  } finally {
+    savingProfile.value = false
+  }
 }
 
 const normalizeString = (value: string | undefined, fallback: string): string => {
@@ -151,7 +198,7 @@ onMounted(async () => {
   <div class="min-h-[calc(100vh-8rem)] bg-slate-50 transition-colors duration-300 dark:bg-black">
     <UContainer class="max-w-6xl py-6 md:py-10">
       <div class="flex justify-end pb-4">
-        <UButton variant="solid" class="cursor-pointer !bg-[#f59e0b] !text-white hover:!bg-[#d97706] active:!bg-[#d97706] focus-visible:!outline-[#f59e0b]" @click="handleSaveAllChanges">
+        <UButton :loading="savingProfile" :disabled="savingProfile" variant="solid" class="cursor-pointer !bg-[#f59e0b] !text-white hover:!bg-[#d97706] active:!bg-[#d97706] focus-visible:!outline-[#f59e0b] disabled:cursor-not-allowed disabled:opacity-70" @click="handleSaveAllChanges">
           保存全部更改
         </UButton>
       </div>

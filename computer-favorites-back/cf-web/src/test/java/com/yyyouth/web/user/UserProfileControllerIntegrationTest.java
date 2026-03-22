@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yyyouth.common.constants.AuthErrorCode;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
+import com.yyyouth.model.vo.user.UserAvatarUploadVO;
 import com.yyyouth.model.vo.user.UserBasicInfoVO;
 import com.yyyouth.model.vo.user.UserDetailProfileVO;
 import com.yyyouth.model.vo.user.UserPreferenceSettingVO;
@@ -20,9 +21,15 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import org.springframework.mock.web.MockMultipartFile;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -126,6 +133,43 @@ class UserProfileControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.setting.homepageStyle").value("cards"))
                 .andExpect(jsonPath("$.data.setting.pageSize").value(24));
         verify(userProfileService).queryLoginUserProfile();
+    }
+
+    /**
+     * 上传头像应返回成功
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldUploadAvatarSuccessfully() throws Exception {
+        UserAvatarUploadVO uploadVO = new UserAvatarUploadVO();
+        uploadVO.setAvatarUrl("http://127.0.0.1:9000/computer-favorites/user-avatar/20260322/new.png");
+        uploadVO.setObjectKey("user-avatar/20260322/new.png");
+        when(userProfileService.uploadLoginUserAvatar(any())).thenReturn(uploadVO);
+
+        MockMultipartFile file = new MockMultipartFile("file", "avatar.png", "image/png", "avatar".getBytes());
+
+        mockMvc.perform(multipart("/api/user/profile/avatar").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.data.avatarUrl").value("http://127.0.0.1:9000/computer-favorites/user-avatar/20260322/new.png"))
+                .andExpect(jsonPath("$.data.objectKey").value("user-avatar/20260322/new.png"));
+    }
+
+    /**
+     * 删除头像应返回成功
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldDeleteAvatarSuccessfully() throws Exception {
+        doNothing().when(userProfileService).deleteLoginUserAvatar();
+
+        mockMvc.perform(delete("/api/user/profile/avatar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS));
+
+        verify(userProfileService).deleteLoginUserAvatar();
     }
 
     /**

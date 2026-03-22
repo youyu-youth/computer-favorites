@@ -85,8 +85,6 @@ const normalizeSiteItems = (value: unknown, defaultIcon: string): ProfileSiteIte
     .filter((item): item is ProfileSiteItem => Boolean(item))
 }
 
-const createNoticeLabel = (value?: number) => (value === 1 ? '开启' : '关闭')
-
 const completionPercent = (payload: LoginUserProfileResponse) => {
   const fields = [
     payload.user?.nickname,
@@ -127,18 +125,7 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
   const techStack = normalizeStringArray(payload.profile?.techStack)
   const favoriteSites = normalizeSiteItems(payload.profile?.favoriteWebsites, 'i-lucide-link-2')
   const uploadedProjects = normalizeSiteItems(payload.profile?.uploadedWebsites, 'i-lucide-folder')
-  const profileTags = [
-    ...hobbyTags,
-    payload.setting?.homepageStyle ? `主页样式：${payload.setting.homepageStyle}` : null,
-    payload.setting?.pageSize ? `分页大小：${payload.setting.pageSize}` : null,
-    payload.setting?.language ? `语言：${payload.setting.language}` : null,
-    payload.setting?.theme ? `主题：${payload.setting.theme}` : null,
-    `邮件提醒：${createNoticeLabel(payload.setting?.emailNotice)}`,
-    `收藏提醒：${createNoticeLabel(payload.setting?.collectNotice)}`,
-    `评论提醒：${createNoticeLabel(payload.setting?.commentNotice)}`,
-    payload.user?.emailVerified === 1 ? '邮箱已验证' : '邮箱未验证',
-    payload.user?.phoneVerified === 1 ? '手机号已验证' : '手机号未验证',
-  ].filter((item): item is string => Boolean(item))
+  const profileTags = hobbyTags
 
   const socialLinkCandidates: Array<ProfileSocialLink | null> = [
     payload.profile?.githubUrl

@@ -9,6 +9,8 @@ import com.yyyouth.model.pojo.user.TechStack;
 import com.yyyouth.model.pojo.user.UserProfile;
 import com.yyyouth.model.pojo.user.UserSetting;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
+import com.yyyouth.model.vo.user.UserAvatarUploadVO;
+import com.yyyouth.service.file.MinioFileService;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.user.TechStackMapper;
 import com.yyyouth.service.mapper.user.UserProfileMapper;
@@ -22,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -52,6 +55,9 @@ class UserProfileServiceImplTest {
 
     @Mock
     private TechStackMapper techStackMapper;
+
+    @Mock
+    private MinioFileService minioFileService;
 
     @InjectMocks
     private UserProfileServiceImpl userProfileService;
@@ -161,5 +167,59 @@ class UserProfileServiceImplTest {
 
         verify(userSettingMapper).selectOne(argThat((Wrapper<UserSetting> wrapper) ->
                 !wrapper.getSqlSegment().toLowerCase().contains("deleted")));
+    }
+
+    /**
+     * 上传头像时应更新用户头像并删除旧头像对象
+     */
+    @Test
+    void shouldUploadAvatarAndDeleteOldAvatar() {
+        UserAccount userAccount = new UserAccount();
+        userAccount.setId(1001L);
+        userAccount.setDeleted(0);
+        userAccount.setAvatar("http://127.0.0.1:9000/computer-favorites/user-avatar/20260322/old.png");
+
+        UserAvatarUploadVO uploadVO = new UserAvatarUploadVO();
+        uploadVO.setAvatarUrl("http://127.0.0.1:9000/computer-favorites/user-avatar/20260322/new.png");
+        uploadVO.setObjectKey("user-avatar/20260322/new.png");
+
+        MultipartFile file = org.mockito.Mockito.mock(MultipartFile.class);
+        when(userAccountMapper.selectOne(any())).thenReturn(userAccount);
+        when(minioFileService.uploadAvatar(file, "user-avatar")).thenReturn(uploadVO);
+
+        try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
+            stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
+            stpUtilMock.when(StpUtil::getLoginIdAsLong).thenReturn(1001L);
+
+            UserAvatarUploadVO result = userProfileService.uploadLoginUserAvatar(file);
+            assertThat(result.getAvatarUrl()).isEqualTo(uploadVO.getAvatarUrl());
+        }
+
+        verify(userAccountMapper).updateById(argThat(account ->
+                "http://127.0.0.1:9000/computer-favorites/user-avatar/20260322/new.png".equals(account.getAvatar())));
+        verify(minioFileService).deleteByUrl("http://127.0.0.1:9000/computer-favorites/user-avatar/20260322/old.png");
+    }
+
+    /**
+     * 删除头像时应清空用户头像字段
+     */
+    @Test
+    void shouldDeleteAvatarAndClearUserAvatarField() {
+        UserAccount userAccount = new UserAccount();
+        userAccount.setId(1001L);
+        userAccount.setDeleted(0);
+        userAccount.setAvatar("http://127.0.0.1:9000/computer-favorites/user-avatar/20260322/old.png");
+
+        when(userAccountMapper.selectOne(any())).thenReturn(userAccount);
+
+        try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
+            stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
+            stpUtilMock.when(StpUtil::getLoginIdAsLong).thenReturn(1001L);
+
+            userProfileService.deleteLoginUserAvatar();
+        }
+
+        verify(minioFileService).deleteByUrl("http://127.0.0.1:9000/computer-favorites/user-avatar/20260322/old.png");
+        verify(userAccountMapper).updateById(argThat(account -> "".equals(account.getAvatar())));
     }
 }

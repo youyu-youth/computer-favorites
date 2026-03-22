@@ -9,6 +9,8 @@ import com.yyyouth.common.web.HttpResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 /**
  * @author yyyouth zg
@@ -64,6 +66,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotPermissionException.class)
     public HttpResult handleNotPermissionException(NotPermissionException ex) {
         return HttpResult.error(AuthErrorCode.FORBIDDEN.getCode(), AuthErrorCode.FORBIDDEN.getMessage());
+    }
+
+    /**
+     * 处理上传异常
+     *
+     * @param ex 上传异常
+     * @return 响应结果
+     */
+    @ExceptionHandler({MaxUploadSizeExceededException.class, MultipartException.class})
+    public HttpResult handleUploadException(Exception ex) {
+        return HttpResult.error(HttpStatus.BAD_REQUEST, "上传文件失败，请检查文件格式和大小");
     }
 
     /**

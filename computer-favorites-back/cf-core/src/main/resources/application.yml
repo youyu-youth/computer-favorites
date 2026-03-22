@@ -34,3 +34,13 @@ cf:
       - /api/auth/register/username/check
   profile:
     marker: base
+
+minio:
+  # MinIO 服务地址
+  endpointUrl: ${CF_MINIO_ENDPOINT:http://127.0.0.1:9000}
+  # MinIO 访问账号
+  accessKey: ${CF_MINIO_ACCESS_KEY:admin}
+  # MinIO 访问密钥（按项目现有命名使用 secreKey）
+  secreKey: ${CF_MINIO_SECRE_KEY:admin123}
+  # MinIO 默认桶名称
+  bucketName: ${CF_MINIO_BUCKET:computer-favorites}

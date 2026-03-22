@@ -14,12 +14,23 @@ defineProps<{
     <div class="lg:sticky lg:top-24 space-y-4">
       <UCard class="!ring-0 shadow-none bg-white dark:!bg-black rounded-xl">
         <div class="flex items-start gap-4">
-          <UAvatar
-            :src="profile.avatarUrl"
-            :alt="profile.name"
-            class="!w-28 !h-28 !rounded-none ring-2 ring-primary/30"
-            :ui="{ rounded: 'rounded-none' }"
-          />
+          <div class="w-28 shrink-0">
+            <UAvatar
+              :src="profile.avatarUrl"
+              :alt="profile.name"
+              class="!w-28 !h-28 !rounded-none ring-2 ring-primary/30"
+              :ui="{ rounded: 'rounded-none' }"
+            />
+            <UButton
+              to="/computer/settings"
+              color="primary"
+              variant="soft"
+              size="sm"
+              class="mt-3 w-full cursor-pointer !bg-[#dbeafe]/70 hover:!bg-[#dbeafe] !text-[#1d4ed8] dark:!bg-[#1e3a8a]/25 dark:hover:!bg-[#1e3a8a]/35 dark:!text-[#93c5fd] !ring-0"
+            >
+              编辑个人资料
+            </UButton>
+          </div>
           <div class="min-w-0 space-y-2 pt-1">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white truncate">
               {{ profile.name }}

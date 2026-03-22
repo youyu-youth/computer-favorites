@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue'
+import type { SettingsStoreState } from '@/components/user/settings/mock'
 import { settingsStateKey } from '@/components/user/settings/context'
 import HobbyAddDialog from '@/components/user/settings/components/HobbyAddDialog.vue'
 import addressIcon from '@/assets/icons/svg/address2.svg'
@@ -9,33 +10,33 @@ import penIcon from '@/assets/icons/svg/pen.svg'
 import githubIcon from '@/assets/icons/svg/github.svg'
 import giteeIcon from '@/assets/icons/svg/gitee.svg'
 import blogIcon from '@/assets/icons/svg/blog.svg'
+import { useToast } from '@/composables/useToast'
+import { useAuthStore } from '@/stores/auth'
+import { deleteCurrentUserAvatar, uploadCurrentUserAvatar } from '@/services/profile'
 
-const settingsState = inject(settingsStateKey)
+const settingsState = inject<SettingsStoreState | null>(settingsStateKey, null)
 if (!settingsState) {
   throw new Error('Settings state is not provided')
 }
 
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png']
+
 const basicInfo = settingsState.basicInfo
 const profile = settingsState.profile
-const addressValue = computed({
-  get: () => [profile.country, profile.city].filter(Boolean).join(' / '),
-  set: (value: string) => {
-    const parts = value
-      .split(/[\/，,]/)
-      .map((item) => item.trim())
-      .filter(Boolean)
-    profile.country = parts[0] ?? ''
-    profile.city = parts.slice(1).join(' ')
-  },
-})
+const toast = useToast()
+const authStore = useAuthStore()
 const hobbyTagList = computed({
-  get: () => profile.hobbyTags.split(/[，,]/).map((item) => item.trim()).filter(Boolean),
+  get: () => profile.hobbyTags.split(/[，,]/).map((item: string) => item.trim()).filter(Boolean),
   set: (value: string[]) => {
-    profile.hobbyTags = value.map((item) => item.trim()).filter(Boolean).join(',')
+    profile.hobbyTags = value.map((item: string) => item.trim()).filter(Boolean).join(',')
   },
 })
 const addHobbyModalOpen = ref(false)
 const newHobbyName = ref('')
+const avatarInputRef = ref<HTMLInputElement | null>(null)
+const uploadingAvatar = ref(false)
+const deletingAvatar = ref(false)
 
 const openAddHobbyDialog = () => {
   newHobbyName.value = ''
@@ -54,11 +55,105 @@ const submitNewHobby = () => {
     return
   }
   const normalized = value.toLowerCase()
-  const exists = hobbyTagList.value.some((item) => item.trim().toLowerCase() === normalized)
+  const exists = hobbyTagList.value.some((item: string) => item.trim().toLowerCase() === normalized)
   if (!exists) {
     hobbyTagList.value = [...hobbyTagList.value, value]
   }
   closeAddHobbyModal()
+}
+
+const chooseAvatarFile = () => {
+  if (uploadingAvatar.value) {
+    return
+  }
+  avatarInputRef.value?.click()
+}
+
+const resetAvatarInput = () => {
+  if (avatarInputRef.value) {
+    avatarInputRef.value.value = ''
+  }
+}
+
+const validateAvatarFile = (file: File): string | null => {
+  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+    return '仅支持 JPG、PNG 格式头像'
+  }
+  if (file.size > MAX_AVATAR_SIZE) {
+    return '头像大小不能超过2MB'
+  }
+  return null
+}
+
+const onAvatarFileChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) {
+    return
+  }
+
+  const validateMessage = validateAvatarFile(file)
+  if (validateMessage) {
+    toast.add({
+      title: '上传失败',
+      description: validateMessage,
+      type: 'error',
+    })
+    resetAvatarInput()
+    return
+  }
+
+  uploadingAvatar.value = true
+  try {
+    const result = await uploadCurrentUserAvatar(file)
+    basicInfo.avatar = result.avatarUrl
+    authStore.setUserSnapshot({
+      nickname: basicInfo.nickname,
+      avatar: result.avatarUrl,
+    })
+    toast.add({
+      title: '上传成功',
+      description: '头像已更新',
+      type: 'success',
+    })
+  } catch (error) {
+    toast.add({
+      title: '上传失败',
+      description: error instanceof Error ? error.message : '头像上传失败，请稍后重试',
+      type: 'error',
+    })
+  } finally {
+    uploadingAvatar.value = false
+    resetAvatarInput()
+  }
+}
+
+const deleteAvatar = async () => {
+  if (deletingAvatar.value) {
+    return
+  }
+  deletingAvatar.value = true
+  try {
+    await deleteCurrentUserAvatar()
+    basicInfo.avatar = ''
+    authStore.setUserSnapshot({
+      nickname: basicInfo.nickname,
+      avatar: '',
+    })
+    toast.add({
+      title: '删除成功',
+      description: '头像已删除',
+      type: 'success',
+    })
+  } catch (error) {
+    toast.add({
+      title: '删除失败',
+      description: error instanceof Error ? error.message : '头像删除失败，请稍后重试',
+      type: 'error',
+    })
+  } finally {
+    deletingAvatar.value = false
+  }
 }
 
 defineOptions({
@@ -82,7 +177,37 @@ defineOptions({
           <div class="flex-1 flex items-center space-x-6">
             <UAvatar :src="basicInfo.avatar" :alt="basicInfo.nickname" class="h-[120px] w-[120px] ring-2 ring-white dark:ring-0" />
             <div class="space-y-2">
-              <UButton color="white" variant="solid" size="sm" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:ring-0">更改头像</UButton>
+              <input
+                ref="avatarInputRef"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png"
+                class="hidden"
+                @change="onAvatarFileChange"
+              />
+              <div class="flex items-center gap-2">
+                <UButton
+                  color="white"
+                  variant="solid"
+                  size="sm"
+                  :loading="uploadingAvatar"
+                  :disabled="uploadingAvatar"
+                  class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:ring-0"
+                  @click="chooseAvatarFile"
+                >
+                  更换头像
+                </UButton>
+                <UButton
+                  color="error"
+                  variant="soft"
+                  size="sm"
+                  :loading="deletingAvatar"
+                  :disabled="deletingAvatar"
+                  class="cursor-pointer"
+                  @click="deleteAvatar"
+                >
+                  删除头像
+                </UButton>
+              </div>
               <p class="text-xs text-slate-500 dark:text-slate-500">支持 JPG、PNG 格式，最大 2MB</p>
             </div>
           </div>
@@ -107,13 +232,27 @@ defineOptions({
 
         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
           <div class="flex-1">
-            <UFormGroup name="address">
+            <UFormGroup name="country">
               <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
-                  <img :src="addressIcon" alt="地址图标" class="h-5 w-5 object-contain" />
-                  地址
+                  <img :src="addressIcon" alt="国家图标" class="h-5 w-5 object-contain" />
+                  国家
                 </span>
-                <UInput v-model="addressValue" placeholder="例如：中国 / 深圳" class="pl-28 w-full ring-0 [&_[data-slot=base]]:!bg-white [&_[data-slot=base]]:text-slate-900 [&_[data-slot=base]]:placeholder:text-slate-500 dark:[&_[data-slot=base]]:!bg-[#000000] dark:[&_[data-slot=base]]:text-white dark:[&_[data-slot=base]]:placeholder:text-slate-400" />
+                <UInput v-model="profile.country" placeholder="国家名称" class="pl-28 w-full ring-0 [&_[data-slot=base]]:!bg-white [&_[data-slot=base]]:text-slate-900 [&_[data-slot=base]]:placeholder:text-slate-500 dark:[&_[data-slot=base]]:!bg-[#000000] dark:[&_[data-slot=base]]:text-white dark:[&_[data-slot=base]]:placeholder:text-slate-400" />
+              </div>
+            </UFormGroup>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+          <div class="flex-1">
+            <UFormGroup name="city">
+              <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+                  <img :src="addressIcon" alt="城市图标" class="h-5 w-5 object-contain" />
+                  城市
+                </span>
+                <UInput v-model="profile.city" placeholder="城市名称" class="pl-28 w-full ring-0 [&_[data-slot=base]]:!bg-white [&_[data-slot=base]]:text-slate-900 [&_[data-slot=base]]:placeholder:text-slate-500 dark:[&_[data-slot=base]]:!bg-[#000000] dark:[&_[data-slot=base]]:text-white dark:[&_[data-slot=base]]:placeholder:text-slate-400" />
               </div>
             </UFormGroup>
           </div>
