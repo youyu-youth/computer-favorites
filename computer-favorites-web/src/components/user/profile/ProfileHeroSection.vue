@@ -33,7 +33,16 @@ const selectedRange = ref<RangeKey>('30d')
 const selectedCategory = ref<string | null>(null)
 
 const categoryPool = ['前端框架', '后端服务', '数据库', 'AI工具', '开发效率', '设计资源']
-const typePool = ['教程文章', '工具站点', '开源项目', '官方文档', '社区论坛', '模板素材', '视频课程', '实战案例']
+const typePool = [
+  '教程文章',
+  '工具站点',
+  '开源项目',
+  '官方文档',
+  '社区论坛',
+  '模板素材',
+  '视频课程',
+  '实战案例',
+]
 const today = new Date()
 
 const mockItems: DashboardItem[] = Array.from({ length: 180 }, (_, index) => {
@@ -266,7 +275,9 @@ onBeforeUnmount(() => {
   <UCard class="!ring-0 shadow-sm dark:shadow-md bg-white dark:!bg-[#131418] rounded-xl">
     <div class="space-y-5">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">上传内容数据看板</h3>
+        <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
+          上传内容数据看板
+        </h3>
         <div class="flex items-center gap-2">
           <UButton
             v-for="item in rangeOptions"
@@ -274,9 +285,11 @@ onBeforeUnmount(() => {
             color="neutral"
             variant="soft"
             size="xs"
-            :class="selectedRange === item.value
-              ? '!bg-[#bc7b0e] !text-white hover:!bg-[#a96f0c] dark:!bg-[#bc7b0e] dark:hover:!bg-[#a96f0c]'
-              : '!bg-gray-100 !text-gray-700 hover:!bg-gray-200 dark:!bg-white/10 dark:!text-gray-200 dark:hover:!bg-white/20'"
+            :class="
+              selectedRange === item.value
+                ? '!bg-[#bc7b0e] !text-white hover:!bg-[#a96f0c] dark:!bg-[#bc7b0e] dark:hover:!bg-[#a96f0c]'
+                : '!bg-gray-100 !text-gray-700 hover:!bg-gray-200 dark:!bg-white/10 dark:!text-gray-200 dark:hover:!bg-white/20'
+            "
             @click="selectedRange = item.value"
           >
             {{ item.label }}
@@ -292,7 +305,9 @@ onBeforeUnmount(() => {
         >
           <div class="space-y-1">
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
-            <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ numberFormatter.format(item.value) }}</p>
+            <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+              {{ numberFormatter.format(item.value) }}
+            </p>
           </div>
         </UCard>
       </div>
@@ -301,7 +316,9 @@ onBeforeUnmount(() => {
         <UCard class="!ring-0 bg-gray-50 dark:!bg-white/5 rounded-lg">
           <div class="space-y-3">
             <div class="flex items-center justify-between gap-2">
-              <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">各分类访问量占比</h4>
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                各分类访问量占比
+              </h4>
               <UButton
                 v-if="selectedCategory"
                 color="neutral"
@@ -318,12 +335,13 @@ onBeforeUnmount(() => {
 
         <UCard class="!ring-0 bg-gray-50 dark:!bg-white/5 rounded-lg">
           <div class="space-y-3">
-            <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">内容类型占比（前6 + 其他）</h4>
+            <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              内容类型占比（前6 + 其他）
+            </h4>
             <div ref="barRef" class="h-60 w-full min-w-[320px]" />
           </div>
         </UCard>
       </div>
-
     </div>
   </UCard>
 </template>

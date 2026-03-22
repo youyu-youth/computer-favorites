@@ -14,20 +14,22 @@ defineProps<{
     <div class="lg:sticky lg:top-24 space-y-4">
       <UCard class="!ring-0 shadow-none bg-white dark:!bg-black rounded-xl">
         <div class="flex items-start gap-4">
-          <UAvatar :src="profile.avatarUrl" :alt="profile.name" class="!w-28 !h-28 !rounded-none ring-2 ring-primary/30" :ui="{ rounded: 'rounded-none' }" />
+          <UAvatar
+            :src="profile.avatarUrl"
+            :alt="profile.name"
+            class="!w-28 !h-28 !rounded-none ring-2 ring-primary/30"
+            :ui="{ rounded: 'rounded-none' }"
+          />
           <div class="min-w-0 space-y-2 pt-1">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white truncate">{{ profile.name }}</h2>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white truncate">
+              {{ profile.name }}
+            </h2>
             <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <UIcon name="i-lucide-map-pin" class="size-4 text-primary-500 shrink-0" />
               <span class="truncate">{{ profile.location }}</span>
             </div>
             <div class="w-full max-w-[180px] sm:max-w-[220px]">
-              <DotLottieVue
-                :src="catPlayingAnimation"
-                autoplay
-                loop
-                class="h-auto w-full"
-              />
+              <DotLottieVue :src="catPlayingAnimation" autoplay loop class="h-auto w-full" />
             </div>
           </div>
         </div>
@@ -54,7 +56,12 @@ defineProps<{
             <img
               v-if="link.imageIcon"
               :src="link.imageIcon"
-              :class="['size-4', ['博客', 'Gitee', '邮箱'].includes(link.label) ? '' : 'dark:grayscale dark:brightness-0 dark:invert']"
+              :class="[
+                'size-4',
+                ['博客', 'Gitee', '邮箱'].includes(link.label)
+                  ? ''
+                  : 'dark:grayscale dark:brightness-0 dark:invert',
+              ]"
               :alt="link.label"
             />
             <UIcon v-else-if="link.icon" :name="link.icon" class="size-4" />
@@ -90,10 +97,14 @@ defineProps<{
           >
             <div class="space-y-2">
               <div class="flex items-center justify-between">
-                <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ item.name }}</h4>
+                <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {{ item.name }}
+                </h4>
                 <UIcon :name="item.icon" class="size-5 text-primary-500" />
               </div>
-              <p class="text-xs leading-6 text-gray-600 dark:text-gray-400 break-all">{{ item.description }}</p>
+              <p class="text-xs leading-6 text-gray-600 dark:text-gray-400 break-all">
+                {{ item.description }}
+              </p>
             </div>
           </UCard>
           <p
@@ -118,10 +129,14 @@ defineProps<{
           >
             <div class="space-y-2">
               <div class="flex items-center justify-between">
-                <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ item.name }}</h4>
+                <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {{ item.name }}
+                </h4>
                 <UIcon :name="item.icon" class="size-5 text-primary-500" />
               </div>
-              <p class="text-xs leading-6 text-gray-600 dark:text-gray-400 break-all">{{ item.description }}</p>
+              <p class="text-xs leading-6 text-gray-600 dark:text-gray-400 break-all">
+                {{ item.description }}
+              </p>
             </div>
           </UCard>
           <p

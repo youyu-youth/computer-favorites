@@ -20,7 +20,9 @@ export const useAuthStore = defineStore('auth', () => {
   const sessionValid = ref(false)
   const lastRenewAt = ref(0)
   const isAuthed = computed(() => Boolean(token.value))
-  const isSessionValid = computed(() => Boolean(token.value) && sessionChecked.value && sessionValid.value)
+  const isSessionValid = computed(
+    () => Boolean(token.value) && sessionChecked.value && sessionValid.value,
+  )
   const userSnapshot = computed<AuthUserSnapshot>(() => ({
     nickname: nickname.value,
     avatar: avatar.value,

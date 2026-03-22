@@ -2,10 +2,16 @@
 @import 'tailwindcss';
 @import '@nuxt/ui';
 
+html {
+  overflow-y: scroll;
+}
+
 body {
   background-color: #f9fafb;
   color: #111827;
-  transition: color 0.3s, background-color 0.3s;
+  transition:
+    color 0.3s,
+    background-color 0.3s;
 }
 
 .dark body {

@@ -25,9 +25,7 @@ const profileData = ref<ProfileData | null>(null)
 
 const normalizeStringArray = (value: unknown): string[] => {
   if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item).trim())
-      .filter((item) => item.length > 0)
+    return value.map((item) => String(item).trim()).filter((item) => item.length > 0)
   }
 
   if (typeof value !== 'string') {
@@ -43,9 +41,7 @@ const normalizeStringArray = (value: unknown): string[] => {
     try {
       const parsed = JSON.parse(input)
       if (Array.isArray(parsed)) {
-        return parsed
-          .map((item) => String(item).trim())
-          .filter((item) => item.length > 0)
+        return parsed.map((item) => String(item).trim()).filter((item) => item.length > 0)
       }
     } catch {
       return []
@@ -145,36 +141,50 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
   ].filter((item): item is string => Boolean(item))
 
   const socialLinkCandidates: Array<ProfileSocialLink | null> = [
-    payload.profile?.githubUrl ? { label: 'GitHub', imageIcon: githubIcon, url: payload.profile.githubUrl } : null,
-    payload.profile?.giteeUrl ? { label: 'Gitee', imageIcon: giteeIcon, url: payload.profile.giteeUrl } : null,
-    payload.profile?.blogUrl ? { label: '博客', imageIcon: blogIcon, url: payload.profile.blogUrl } : null,
+    payload.profile?.githubUrl
+      ? { label: 'GitHub', imageIcon: githubIcon, url: payload.profile.githubUrl }
+      : null,
+    payload.profile?.giteeUrl
+      ? { label: 'Gitee', imageIcon: giteeIcon, url: payload.profile.giteeUrl }
+      : null,
+    payload.profile?.blogUrl
+      ? { label: '博客', imageIcon: blogIcon, url: payload.profile.blogUrl }
+      : null,
     website ? { label: '个人网站', icon: 'i-lucide-globe', url: website } : null,
     email ? { label: '邮箱', imageIcon: emailIcon, url: `mailto:${email}` } : null,
   ]
-  const socialLinkList = socialLinkCandidates.filter((item): item is ProfileSocialLink => item !== null)
+  const socialLinkList = socialLinkCandidates.filter(
+    (item): item is ProfileSocialLink => item !== null,
+  )
   const socialLinks = socialLinkList.filter(
     (item, index, list) => list.findIndex((target) => target.url === item.url) === index,
   )
 
   const timeline = [
-    payload.profile?.createTime ? { title: '资料创建时间', date: payload.profile.createTime } : null,
-    payload.profile?.updateTime ? { title: '资料更新时间', date: payload.profile.updateTime } : null,
+    payload.profile?.createTime
+      ? { title: '资料创建时间', date: payload.profile.createTime }
+      : null,
+    payload.profile?.updateTime
+      ? { title: '资料更新时间', date: payload.profile.updateTime }
+      : null,
     rawLocation ? { title: '所在地区已更新', date: rawLocation } : null,
     payload.user?.email ? { title: '邮箱已绑定', date: payload.user.email } : null,
     payload.user?.phone ? { title: '手机号已绑定', date: payload.user.phone } : null,
   ].filter((item): item is NonNullable<typeof item> => Boolean(item))
 
-  const contactCount = [payload.user?.email, payload.user?.phone, payload.profile?.githubUrl, payload.profile?.giteeUrl, website].filter(Boolean).length
+  const contactCount = [
+    payload.user?.email,
+    payload.user?.phone,
+    payload.profile?.githubUrl,
+    payload.profile?.giteeUrl,
+    website,
+  ].filter(Boolean).length
   const contributionText = payload.profile?.contribution?.trim() || ''
   const contributionValueMatch = contributionText.match(/\d+/)
   const contributionValue = contributionValueMatch ? Number(contributionValueMatch[0]) : 0
   const contributions = [
-    payload.profile?.signature
-      ? { title: '个性签名', summary: payload.profile.signature }
-      : null,
-    contributionText
-      ? { title: '贡献说明', summary: contributionText }
-      : null,
+    payload.profile?.signature ? { title: '个性签名', summary: payload.profile.signature } : null,
+    contributionText ? { title: '贡献说明', summary: contributionText } : null,
   ].filter((item): item is NonNullable<typeof item> => Boolean(item))
 
   return {
@@ -189,16 +199,18 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
     tags: profileTags,
     timeline,
     socialLinks,
-    favoriteSites: favoriteSites.length > 0
-      ? favoriteSites
-      : website
-        ? [{ name: '个人网站', description: website, icon: 'i-lucide-link-2' }]
-        : [],
+    favoriteSites:
+      favoriteSites.length > 0
+        ? favoriteSites
+        : website
+          ? [{ name: '个人网站', description: website, icon: 'i-lucide-link-2' }]
+          : [],
     uploadedProjects,
     skills: techStack.map((item) => ({ name: item, level: '熟练' as const })),
-    contributions: contributions.length > 0
-      ? contributions
-      : [{ title: '贡献记录', summary: '暂无贡献记录，继续保持创作吧。' }],
+    contributions:
+      contributions.length > 0
+        ? contributions
+        : [{ title: '贡献记录', summary: '暂无贡献记录，继续保持创作吧。' }],
     stats: [
       { label: '资料完整度', value: `${completionPercent(payload)}%` },
       { label: '联系方式', value: `${contactCount}` },
@@ -250,17 +262,25 @@ onMounted(() => {
           <ProfileHeroSection :profile="profileData" />
           <ProfileHeatmapSection />
           <ProfileSkillsSection :skills="profileData.skills" />
-          <ProfileContributionSection :stats="profileData.stats" :contributions="profileData.contributions" />
+          <ProfileContributionSection
+            :stats="profileData.stats"
+            :contributions="profileData.contributions"
+          />
         </main>
       </div>
 
-      <UCard
-        v-else
-        class="!ring-0 rounded-xl bg-white dark:!bg-[#131418] shadow-sm dark:shadow-md"
-      >
+      <UCard v-else class="!ring-0 rounded-xl bg-white dark:!bg-[#131418] shadow-sm dark:shadow-md">
         <div class="space-y-3">
-          <p class="text-sm text-gray-600 dark:text-gray-300">{{ errorText || '暂无个人资料数据' }}</p>
-          <UButton color="neutral" variant="soft" @click="loadProfile" class="!bg-gray-100 hover:!bg-gray-200 !text-gray-900 dark:!bg-white/10 dark:hover:!bg-white/20 dark:!text-white">重新加载</UButton>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            {{ errorText || '暂无个人资料数据' }}
+          </p>
+          <UButton
+            color="neutral"
+            variant="soft"
+            @click="loadProfile"
+            class="!bg-gray-100 hover:!bg-gray-200 !text-gray-900 dark:!bg-white/10 dark:hover:!bg-white/20 dark:!text-white"
+            >重新加载</UButton
+          >
         </div>
       </UCard>
     </UContainer>

@@ -25,8 +25,7 @@ const filteredWebsites = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(
-      (site) =>
-        site.title.toLowerCase().includes(query) || site.desc.toLowerCase().includes(query),
+      (site) => site.title.toLowerCase().includes(query) || site.desc.toLowerCase().includes(query),
     )
   }
 
@@ -109,9 +108,15 @@ onMounted(() => {
     v-if="showRegisterSuccessDialog"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4"
   >
-    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-xl dark:border-white/10 dark:bg-zinc-900">
-      <div class="text-xl font-semibold text-slate-900 dark:text-white">{{ registerSuccessTitle }}</div>
-      <div class="mt-3 text-sm text-slate-600 dark:text-slate-400">{{ registerSuccessDescription }}</div>
+    <div
+      class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-xl dark:border-white/10 dark:bg-zinc-900"
+    >
+      <div class="text-xl font-semibold text-slate-900 dark:text-white">
+        {{ registerSuccessTitle }}
+      </div>
+      <div class="mt-3 text-sm text-slate-600 dark:text-slate-400">
+        {{ registerSuccessDescription }}
+      </div>
       <button
         type="button"
         class="mt-6 inline-flex h-10 items-center justify-center rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-700"

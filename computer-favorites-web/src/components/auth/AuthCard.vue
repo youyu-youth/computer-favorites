@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { checkUsernameAvailable, login, loginByEmailCode, register, sendLoginCode, sendRegisterCode } from '@/services/auth'
+import {
+  checkUsernameAvailable,
+  login,
+  loginByEmailCode,
+  register,
+  sendLoginCode,
+  sendRegisterCode,
+} from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 
@@ -41,10 +48,14 @@ let sendCodeTimer: number | null = null
 const isLoginMode = computed(() => mode.value === 'login')
 const isRegisterMode = computed(() => mode.value === 'register')
 const isPasswordLoginMethod = computed(() => isLoginMode.value && loginMethod.value === 'password')
-const isEmailCodeLoginMethod = computed(() => isLoginMode.value && loginMethod.value === 'emailCode')
+const isEmailCodeLoginMethod = computed(
+  () => isLoginMode.value && loginMethod.value === 'emailCode',
+)
 
 const title = computed(() => (isLoginMode.value ? '欢迎回来' : '创建账号'))
-const subtitle = computed(() => (isLoginMode.value ? '登录以管理你的收藏夹' : '开始收藏你的宝藏站点'))
+const subtitle = computed(() =>
+  isLoginMode.value ? '登录以管理你的收藏夹' : '开始收藏你的宝藏站点',
+)
 const loginHintText = computed(() => {
   if (!isLoginMode.value) {
     return ''
@@ -341,7 +352,9 @@ onBeforeUnmount(() => {
     <div class="px-6 pt-6">
       <div class="flex items-center justify-between">
         <div class="min-h-[3.5rem]">
-          <div class="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{{ title }}</div>
+          <div class="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            {{ title }}
+          </div>
           <div class="mt-2 text-sm text-slate-600 dark:text-slate-400">{{ subtitle }}</div>
         </div>
       </div>
@@ -352,7 +365,11 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="rounded-lg px-3 py-2 font-medium transition-colors"
-          :class="isLoginMode ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+          :class="
+            isLoginMode
+              ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+          "
           @click="switchMode('login')"
         >
           登录
@@ -360,7 +377,11 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="rounded-lg px-3 py-2 font-medium transition-colors"
-          :class="isRegisterMode ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+          :class="
+            isRegisterMode
+              ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-700'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+          "
           @click="switchMode('register')"
         >
           注册
@@ -369,13 +390,19 @@ onBeforeUnmount(() => {
     </div>
 
     <form class="px-6 pb-6 pt-6" autocomplete="off" @submit.prevent="submit">
-      <div v-if="errorText" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
+      <div
+        v-if="errorText"
+        class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200"
+      >
         {{ errorText }}
       </div>
 
       <div class="space-y-4">
         <div>
-          <label for="account" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label
+            for="account"
+            class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+          >
             {{ isRegisterMode || isEmailCodeLoginMethod ? '邮箱' : '用户名 / 邮箱' }}
           </label>
           <input
@@ -385,12 +412,18 @@ onBeforeUnmount(() => {
             :autocomplete="isRegisterMode || isEmailCodeLoginMethod ? 'email' : 'off'"
             required
             class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-slate-300 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white/20"
-            :placeholder="isRegisterMode || isEmailCodeLoginMethod ? 'name@example.com' : '请输入用户名或邮箱'"
+            :placeholder="
+              isRegisterMode || isEmailCodeLoginMethod ? 'name@example.com' : '请输入用户名或邮箱'
+            "
           />
         </div>
 
         <div v-if="isRegisterMode || isPasswordLoginMethod">
-          <label for="password" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">密码</label>
+          <label
+            for="password"
+            class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >密码</label
+          >
           <input
             id="password"
             v-model="form.password"
@@ -404,7 +437,11 @@ onBeforeUnmount(() => {
 
         <template v-if="isRegisterMode">
           <div>
-            <label for="confirm" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">确认密码</label>
+            <label
+              for="confirm"
+              class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              >确认密码</label
+            >
             <input
               id="confirm"
               v-model="form.confirmPassword"
@@ -417,7 +454,11 @@ onBeforeUnmount(() => {
           </div>
 
           <div>
-            <label for="emailCode" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">邮箱验证码</label>
+            <label
+              for="emailCode"
+              class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              >邮箱验证码</label
+            >
             <div class="flex items-center gap-2">
               <input
                 id="emailCode"
@@ -444,7 +485,11 @@ onBeforeUnmount(() => {
 
         <template v-else-if="isEmailCodeLoginMethod">
           <div>
-            <label for="loginEmailCode" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">邮箱验证码</label>
+            <label
+              for="loginEmailCode"
+              class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              >邮箱验证码</label
+            >
             <div class="flex items-center gap-2">
               <input
                 id="loginEmailCode"
@@ -476,7 +521,14 @@ onBeforeUnmount(() => {
         class="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-700"
       >
         <svg v-if="loading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
           <path
             class="opacity-75"
             fill="currentColor"
@@ -500,7 +552,9 @@ onBeforeUnmount(() => {
           <div class="w-full border-t border-slate-200 dark:border-white/10"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-          <span class="bg-white px-2 text-slate-500 dark:bg-zinc-900 dark:text-slate-400">或者</span>
+          <span class="bg-white px-2 text-slate-500 dark:bg-zinc-900 dark:text-slate-400"
+            >或者</span
+          >
         </div>
       </div>
 
@@ -538,7 +592,11 @@ onBeforeUnmount(() => {
           <span>已为</span>
           <span class="font-semibold text-slate-900 dark:text-white">12,000+</span>
           <span>开发者提供收藏服务</span>
-          <svg class="h-3.5 w-3.5 text-amber-600 dark:text-amber-300" viewBox="0 0 20 20" fill="currentColor">
+          <svg
+            class="h-3.5 w-3.5 text-amber-600 dark:text-amber-300"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
             <path
               d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
             />
@@ -550,9 +608,15 @@ onBeforeUnmount(() => {
       v-if="showUsernameDialog && isRegisterMode"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
     >
-      <div class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-lg dark:border-white/10 dark:bg-zinc-900">
-        <div class="mb-3 text-base font-semibold text-slate-900 dark:text-white">设置你的用户名</div>
-        <div class="text-xs text-slate-500 dark:text-slate-400">用户名需唯一，仅支持字母、数字和下划线</div>
+      <div
+        class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-lg dark:border-white/10 dark:bg-zinc-900"
+      >
+        <div class="mb-3 text-base font-semibold text-slate-900 dark:text-white">
+          设置你的用户名
+        </div>
+        <div class="text-xs text-slate-500 dark:text-slate-400">
+          用户名需唯一，仅支持字母、数字和下划线
+        </div>
         <input
           v-model="registerUsername"
           type="text"
@@ -595,7 +659,12 @@ onBeforeUnmount(() => {
             @click="showSliderVerify = false"
           >
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>

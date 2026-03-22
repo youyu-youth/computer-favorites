@@ -67,7 +67,7 @@ defineOptions({
           </div>
         </div>
 
-        <UDivider class="dark:border-white/10" />
+        <USeparator class="dark:border-white/10" />
 
         <!-- 其他偏好 -->
         <div class="space-y-6">

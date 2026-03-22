@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { computed, inject } from 'vue'
 import { settingsStateKey } from '@/components/user/settings/context'
 
 const settingsState = inject(settingsStateKey)
@@ -8,6 +8,24 @@ if (!settingsState) {
 }
 
 const setting = settingsState.setting
+const emailNoticeEnabled = computed({
+  get: () => setting.emailNotice === 1,
+  set: (value: boolean) => {
+    setting.emailNotice = value ? 1 : 0
+  }
+})
+const collectNoticeEnabled = computed({
+  get: () => setting.collectNotice === 1,
+  set: (value: boolean) => {
+    setting.collectNotice = value ? 1 : 0
+  }
+})
+const commentNoticeEnabled = computed({
+  get: () => setting.commentNotice === 1,
+  set: (value: boolean) => {
+    setting.commentNotice = value ? 1 : 0
+  }
+})
 
 defineOptions({
   name: 'MessageSettingsSection'
@@ -33,10 +51,10 @@ defineOptions({
               接收系统重要更新与安全提醒
             </p>
           </div>
-          <UToggle v-model="setting.emailNotice" :true-value="1" :false-value="0" color="primary" class="dark:bg-white/10" />
+          <USwitch v-model="emailNoticeEnabled" color="primary" class="dark:bg-white/10" />
         </div>
 
-        <UDivider class="dark:border-white/10" />
+        <USeparator class="dark:border-white/10" />
 
         <div class="flex items-center justify-between">
           <div class="space-y-1">
@@ -45,10 +63,10 @@ defineOptions({
               当您的网站被他人收藏时通知我
             </p>
           </div>
-          <UToggle v-model="setting.collectNotice" :true-value="1" :false-value="0" color="primary" class="dark:bg-white/10" />
+          <USwitch v-model="collectNoticeEnabled" color="primary" class="dark:bg-white/10" />
         </div>
 
-        <UDivider class="dark:border-white/10" />
+        <USeparator class="dark:border-white/10" />
 
         <div class="flex items-center justify-between">
           <div class="space-y-1">
@@ -57,7 +75,7 @@ defineOptions({
               当有新评论或新回复时通知我
             </p>
           </div>
-          <UToggle v-model="setting.commentNotice" :true-value="1" :false-value="0" color="primary" class="dark:bg-white/10" />
+          <USwitch v-model="commentNoticeEnabled" color="primary" class="dark:bg-white/10" />
         </div>
 
       </div>

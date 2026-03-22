@@ -6,6 +6,7 @@ export const useAppStore = defineStore('app', () => {
   const isRouteTransitioning = ref(false)
   const routeTransitionStartedAt = ref(0)
   let routeTransitionTimer: number | null = null
+  let routeTransitionSafeTimer: number | null = null
 
   const applyTheme = () => {
     if (isDark.value) {
@@ -38,13 +39,25 @@ export const useAppStore = defineStore('app', () => {
       window.clearTimeout(routeTransitionTimer)
       routeTransitionTimer = null
     }
+    if (routeTransitionSafeTimer !== null) {
+      window.clearTimeout(routeTransitionSafeTimer)
+      routeTransitionSafeTimer = null
+    }
     routeTransitionStartedAt.value = Date.now()
     isRouteTransitioning.value = true
+    routeTransitionSafeTimer = window.setTimeout(() => {
+      isRouteTransitioning.value = false
+      routeTransitionSafeTimer = null
+    }, 2500)
   }
 
   const finishRouteTransition = () => {
     if (!isRouteTransitioning.value) {
       return
+    }
+    if (routeTransitionSafeTimer !== null) {
+      window.clearTimeout(routeTransitionSafeTimer)
+      routeTransitionSafeTimer = null
     }
     const elapsed = Date.now() - routeTransitionStartedAt.value
     const delay = Math.max(0, 480 - elapsed)

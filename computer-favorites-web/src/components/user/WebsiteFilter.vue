@@ -31,7 +31,9 @@ const isActive = (catName: string) => {
 </script>
 
 <template>
-  <div class="mb-10 p-5 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl shadow-sm">
+  <div
+    class="mb-10 p-5 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl shadow-sm"
+  >
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
       <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
         Filters

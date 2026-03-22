@@ -6,7 +6,20 @@ const rows = 7
 const maxValue = 10
 const yearOptions = [2026, 2025, 2024]
 const selectedYear = ref(yearOptions[0] || new Date().getFullYear())
-const monthLabels = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb']
+const monthLabels = [
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+  'Jan',
+  'Feb',
+]
 const monthOffsets = [0, 2, 4, 6, 8, 10, 13, 15, 17, 19, 21, 23]
 const weekdayLabels = ['Mon', 'Wed', 'Fri']
 
@@ -14,12 +27,15 @@ const yearSeed = computed(() => selectedYear.value % 97)
 
 const contributionGrid = computed(() =>
   Array.from({ length: rows }, (_, row) =>
-    Array.from({ length: columns }, (_, col) => ((row * 13 + col * 17 + row * col * 3 + yearSeed.value) % (maxValue + 1))),
+    Array.from(
+      { length: columns },
+      (_, col) => (row * 13 + col * 17 + row * col * 3 + yearSeed.value) % (maxValue + 1),
+    ),
   ),
 )
 
-const contributionCount = computed(() =>
-  contributionGrid.value.flat().filter((value) => value > 0).length,
+const contributionCount = computed(
+  () => contributionGrid.value.flat().filter((value) => value > 0).length,
 )
 
 const getCellClass = (value: number) => {
@@ -41,7 +57,9 @@ const getMonthOffsetStyle = (idx: number) => {
 </script>
 
 <template>
-  <UCard class="!ring-0 shadow-sm dark:shadow-md bg-white dark:!bg-[#131418] rounded-xl overflow-hidden">
+  <UCard
+    class="!ring-0 shadow-sm dark:shadow-md bg-white dark:!bg-[#131418] rounded-xl overflow-hidden"
+  >
     <div class="space-y-4">
       <div class="flex items-center justify-between gap-2">
         <p class="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">
@@ -69,11 +87,7 @@ const getMonthOffsetStyle = (idx: number) => {
               </div>
               <div class="flex gap-2">
                 <div class="w-10 space-y-2 text-xs text-gray-500 dark:text-gray-400">
-                  <div
-                    v-for="label in weekdayLabels"
-                    :key="label"
-                    class="h-5 flex items-center"
-                  >
+                  <div v-for="label in weekdayLabels" :key="label" class="h-5 flex items-center">
                     {{ label }}
                   </div>
                 </div>
@@ -114,9 +128,11 @@ const getMonthOffsetStyle = (idx: number) => {
               :key="year"
               type="button"
               class="h-9 px-3 rounded-md text-sm transition-colors"
-              :class="selectedYear === year
-                ? 'bg-primary-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20'"
+              :class="
+                selectedYear === year
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20'
+              "
               @click="selectedYear = year"
             >
               {{ year }}

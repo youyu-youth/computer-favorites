@@ -37,7 +37,10 @@ type LoginRawData = {
   expireTime?: string
 }
 
-const parseAuthTokenResponse = (res: ApiResult<LoginRawData>, fallbackMessage: string): AuthTokenResponse => {
+const parseAuthTokenResponse = (
+  res: ApiResult<LoginRawData>,
+  fallbackMessage: string,
+): AuthTokenResponse => {
   if (res.code !== 200) {
     throw new Error(res.msg || fallbackMessage)
   }
@@ -88,7 +91,9 @@ export async function sendLoginCode(email: string): Promise<void> {
 
 export async function checkUsernameAvailable(username: string): Promise<boolean> {
   const query = encodeURIComponent(username)
-  const res = await getJson<ApiResult<boolean>>(`/api/auth/register/username/check?username=${query}`)
+  const res = await getJson<ApiResult<boolean>>(
+    `/api/auth/register/username/check?username=${query}`,
+  )
   if (res.code !== 200) {
     throw new Error(res.msg || '用户名校验失败')
   }

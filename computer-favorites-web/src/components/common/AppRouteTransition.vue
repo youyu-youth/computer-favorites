@@ -20,15 +20,10 @@ const overlayClass = computed(() => {
     <div
       v-if="isRouteTransitioning"
       :class="overlayClass"
-      class="fixed inset-0 z-[80] flex items-center justify-center backdrop-blur-sm"
+      class="pointer-events-none fixed inset-0 z-40 flex items-center justify-center backdrop-blur-sm"
     >
       <div class="flex flex-col items-center gap-2">
-        <DotLottieVue
-          :src="loadingRocketAnimation"
-          autoplay
-          loop
-          class="h-40 w-40"
-        />
+        <DotLottieVue :src="loadingRocketAnimation" autoplay loop class="h-40 w-40" />
         <p class="text-xs font-medium text-slate-600 dark:text-slate-300">页面切换中...</p>
       </div>
     </div>

@@ -14,7 +14,11 @@ defineProps<{
       <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ title }}</h3>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <UCard v-for="item in items" :key="item.name" class="h-full !ring-0 shadow-sm dark:shadow-md bg-white dark:!bg-[#131418] rounded-xl">
+      <UCard
+        v-for="item in items"
+        :key="item.name"
+        class="h-full !ring-0 shadow-sm dark:shadow-md bg-white dark:!bg-[#131418] rounded-xl"
+      >
         <div class="space-y-2">
           <div class="flex items-center justify-between">
             <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ item.name }}</h4>

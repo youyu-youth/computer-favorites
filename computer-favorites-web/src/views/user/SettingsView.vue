@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, shallowRef, provide } from 'vue'
+import { reactive, ref, shallowRef, provide, onMounted } from 'vue'
 // @ts-ignore
 import SettingsSidebar from '@/components/user/settings/SettingsSidebar.vue'
 // @ts-ignore
@@ -14,7 +14,9 @@ import DataManagementSection from '@/components/user/settings/sections/DataManag
 import MessageSettingsSection from '@/components/user/settings/sections/MessageSettingsSection.vue'
 import { mockUserBasicInfo, mockUserDetailProfile, mockUserPreferenceSetting } from '@/components/user/settings/mock'
 import { settingsStateKey } from '@/components/user/settings/context'
+import { getCurrentUserProfile } from '@/services/profile'
 import { useToast } from '@/composables/useToast'
+import { useAppStore } from '@/stores/app'
 
 defineOptions({
   name: 'SettingsView',
@@ -33,6 +35,7 @@ const settingsState = reactive({
   profile: { ...mockUserDetailProfile },
   setting: { ...mockUserPreferenceSetting },
 })
+const appStore = useAppStore()
 const toast = useToast()
 
 provide(settingsStateKey, settingsState)
@@ -60,6 +63,88 @@ const handleSaveAllChanges = () => {
     type: 'success',
   })
 }
+
+const normalizeString = (value: string | undefined, fallback: string): string => {
+  return typeof value === 'string' ? value : fallback
+}
+
+const normalizeNumber = (value: number | undefined, fallback: number): number => {
+  return typeof value === 'number' ? value : fallback
+}
+
+const normalizeTheme = (value: string | undefined): string => {
+  return value === 'light' || value === 'dark' || value === 'system' ? value : mockUserPreferenceSetting.theme
+}
+
+const normalizeLanguage = (value: string | undefined): string => {
+  return value === 'zh-CN' || value === 'en-US' ? value : mockUserPreferenceSetting.language
+}
+
+const normalizeHomepageStyle = (value: string | undefined): string => {
+  return value === 'card' || value === 'list' ? value : mockUserPreferenceSetting.homepageStyle
+}
+
+const normalizePageSize = (value: number | undefined): number => {
+  return value === 10 || value === 20 || value === 50 ? value : mockUserPreferenceSetting.pageSize
+}
+
+const syncSettingsStateFromApi = async () => {
+  const data = await getCurrentUserProfile()
+  const user = data.user
+  const profile = data.profile
+  const setting = data.setting
+
+  Object.assign(settingsState.basicInfo, {
+    id: normalizeNumber(user?.id, mockUserBasicInfo.id),
+    username: normalizeString(user?.username, mockUserBasicInfo.username),
+    email: normalizeString(user?.email, mockUserBasicInfo.email),
+    phone: normalizeString(user?.phone, mockUserBasicInfo.phone),
+    avatar: normalizeString(user?.avatar, mockUserBasicInfo.avatar),
+    nickname: normalizeString(user?.nickname, mockUserBasicInfo.nickname),
+    emailVerified: normalizeNumber(user?.emailVerified, mockUserBasicInfo.emailVerified),
+    phoneVerified: normalizeNumber(user?.phoneVerified, mockUserBasicInfo.phoneVerified),
+  })
+
+  Object.assign(settingsState.profile, {
+    gender: normalizeNumber(profile?.gender, mockUserDetailProfile.gender),
+    country: normalizeString(profile?.country, mockUserDetailProfile.country),
+    city: normalizeString(profile?.city, mockUserDetailProfile.city),
+    githubUrl: normalizeString(profile?.githubUrl, mockUserDetailProfile.githubUrl),
+    giteeUrl: normalizeString(profile?.giteeUrl, mockUserDetailProfile.giteeUrl),
+    otherRepoLinks: normalizeString(profile?.otherRepoLinks, mockUserDetailProfile.otherRepoLinks),
+    blogUrl: normalizeString(profile?.blogUrl, mockUserDetailProfile.blogUrl),
+    signature: normalizeString(profile?.signature, mockUserDetailProfile.signature),
+    hobbyTags: normalizeString(profile?.hobbyTags, mockUserDetailProfile.hobbyTags),
+    techStack: normalizeString(profile?.techStack, mockUserDetailProfile.techStack),
+    favoriteWebsites: normalizeString(profile?.favoriteWebsites, mockUserDetailProfile.favoriteWebsites),
+    uploadedWebsites: normalizeString(profile?.uploadedWebsites, mockUserDetailProfile.uploadedWebsites),
+    contribution: normalizeString(profile?.contribution, mockUserDetailProfile.contribution),
+  })
+
+  Object.assign(settingsState.setting, {
+    theme: normalizeTheme(setting?.theme),
+    language: normalizeLanguage(setting?.language),
+    emailNotice: normalizeNumber(setting?.emailNotice, mockUserPreferenceSetting.emailNotice),
+    collectNotice: normalizeNumber(setting?.collectNotice, mockUserPreferenceSetting.collectNotice),
+    commentNotice: normalizeNumber(setting?.commentNotice, mockUserPreferenceSetting.commentNotice),
+    homepageStyle: normalizeHomepageStyle(setting?.homepageStyle),
+    pageSize: normalizePageSize(setting?.pageSize),
+  })
+}
+
+onMounted(async () => {
+  try {
+    await syncSettingsStateFromApi()
+  } catch {
+    toast.add({
+      title: '资料加载失败',
+      description: '获取最新资料失败，已显示本地默认信息',
+      type: 'warning',
+    })
+  } finally {
+    appStore.finishRouteTransition()
+  }
+})
 </script>
 
 <template>

@@ -12,10 +12,10 @@ export class HttpError extends Error {
 
 const AUTH_UNAUTHORIZED_CODE = 100202
 
-type ApiErrorBody = {
-  code?: number
-  msg?: string
-}
+// type ApiErrorBody = {
+//   code?: number
+//   msg?: string
+// }
 
 type UnauthorizedHandler = (error: HttpError) => Promise<void> | void
 

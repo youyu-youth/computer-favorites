@@ -9,7 +9,9 @@ const appStore = useAppStore()
 
 <template>
   <div class="min-h-screen w-full bg-white dark:bg-black">
-    <div class="min-h-screen w-full lg:grid lg:grid-cols-[minmax(0,1fr)_480px] xl:grid-cols-[minmax(0,1fr)_520px]">
+    <div
+      class="min-h-screen w-full lg:grid lg:grid-cols-[minmax(0,1fr)_480px] xl:grid-cols-[minmax(0,1fr)_520px]"
+    >
       <div class="hidden lg:block lg:h-full">
         <PreviewSandbox />
       </div>
@@ -17,15 +19,24 @@ const appStore = useAppStore()
         class="relative flex min-h-screen items-start justify-center border-l border-slate-200/60 bg-slate-50 px-4 py-10 lg:pt-[114px] dark:border-white/10 dark:bg-black sm:px-8"
       >
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
-          <div class="absolute -right-24 top-10 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
-          <div class="absolute -left-24 bottom-10 h-72 w-72 rounded-full bg-amber-700/10 blur-3xl" />
+          <div
+            class="absolute -right-24 top-10 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl"
+          />
+          <div
+            class="absolute -left-24 bottom-10 h-72 w-72 rounded-full bg-amber-700/10 blur-3xl"
+          />
           <svg class="absolute inset-0 h-full w-full opacity-40 dark:opacity-25" aria-hidden="true">
             <defs>
               <pattern id="grid-24-right" width="24" height="24" patternUnits="userSpaceOnUse">
                 <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" stroke-width="1" />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#grid-24-right)" class="text-slate-200 dark:text-white/10" />
+            <rect
+              width="100%"
+              height="100%"
+              fill="url(#grid-24-right)"
+              class="text-slate-200 dark:text-white/10"
+            />
           </svg>
         </div>
 
@@ -63,7 +74,9 @@ const appStore = useAppStore()
 
         <div class="relative z-10 w-full max-w-md">
           <AuthCard />
-          <div class="mt-8 overflow-hidden rounded-xl border border-slate-200/70 dark:border-white/10">
+          <div
+            class="mt-8 overflow-hidden rounded-xl border border-slate-200/70 dark:border-white/10"
+          >
             <AppFooter />
           </div>
         </div>

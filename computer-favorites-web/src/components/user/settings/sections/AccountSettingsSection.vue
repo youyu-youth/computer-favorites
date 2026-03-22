@@ -24,7 +24,7 @@ defineOptions({
     <!-- 邮箱与手机号 -->
     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-0 dark:bg-black dark:shadow-none">
       <h4 class="mb-4 text-base font-medium text-slate-900 dark:text-white">联系方式绑定</h4>
-      
+
       <div class="space-y-6">
         <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-4 dark:border-white/5 dark:bg-white/5">
           <div class="flex items-center space-x-4">
@@ -65,7 +65,7 @@ defineOptions({
     <!-- 账号安全 -->
     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-0 dark:bg-black dark:shadow-none">
       <h4 class="mb-4 text-base font-medium text-slate-900 dark:text-white">账号安全</h4>
-      
+
       <div class="space-y-6">
         <div class="flex items-center justify-between">
           <div>
@@ -76,8 +76,8 @@ defineOptions({
             修改密码
           </UButton>
         </div>
-        
-        <UDivider class="dark:border-white/10" />
+
+        <USeparator class="dark:border-white/10" />
 
         <div class="flex items-center justify-between">
           <div>
