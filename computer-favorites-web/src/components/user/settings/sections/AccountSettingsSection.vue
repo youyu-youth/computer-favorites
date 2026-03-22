@@ -1,13 +1,27 @@
 <script setup lang="ts">
 import { inject } from 'vue'
+import { useRouter } from 'vue-router'
 import { settingsStateKey } from '@/components/user/settings/context'
 
-const settingsState = inject(settingsStateKey)
+const settingsState = inject<{
+  basicInfo: {
+    username?: string
+    email?: string
+    phone?: string
+    emailVerified?: number
+    phoneVerified?: number
+  }
+}>(settingsStateKey)
 if (!settingsState) {
   throw new Error('Settings state is not provided')
 }
 
+const router = useRouter()
 const basicInfo = settingsState.basicInfo
+
+const goPasswordChangePage = () => {
+  void router.push({ name: 'passwordChange' })
+}
 
 defineOptions({
   name: 'AccountSettingsSection'
@@ -38,7 +52,7 @@ defineOptions({
               </p>
             </div>
           </div>
-          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer bg-slate-100/70 text-slate-700 hover:bg-slate-200/70 dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
             {{ basicInfo.emailVerified === 1 ? '修改' : '绑定' }}
           </UButton>
         </div>
@@ -55,7 +69,7 @@ defineOptions({
               </p>
             </div>
           </div>
-          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer bg-slate-100/70 text-slate-700 hover:bg-slate-200/70 dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
             {{ basicInfo.phoneVerified === 1 ? '修改' : '绑定' }}
           </UButton>
         </div>
@@ -72,19 +86,27 @@ defineOptions({
             <p class="text-sm font-medium text-slate-900 dark:text-white">登录密码</p>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">上次修改时间：2026-02-15</p>
           </div>
-          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer bg-slate-100/70 text-slate-700 hover:bg-slate-200/70 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" @click="goPasswordChangePage">
             修改密码
           </UButton>
         </div>
 
-        <USeparator class="dark:border-white/10" />
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-slate-900 dark:text-white">用户名</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">当前用户名：{{ basicInfo.username || '未设置' }}</p>
+          </div>
+          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer bg-slate-100/70 text-slate-700 hover:bg-slate-200/70 dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+            修改用户名
+          </UButton>
+        </div>
 
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-slate-900 dark:text-white">第三方平台绑定</p>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">绑定 GitHub/Gitee 可实现快捷登录</p>
           </div>
-          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+          <UButton size="sm" variant="soft" color="gray" class="cursor-pointer bg-slate-100/70 text-slate-700 hover:bg-slate-200/70 dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
             管理绑定
           </UButton>
         </div>
@@ -92,3 +114,4 @@ defineOptions({
     </div>
   </div>
 </template>
+      

@@ -92,4 +92,51 @@ test.describe('认证链路', () => {
     expect(storageSnapshot.tokenName).toBeNull()
     expect(storageSnapshot.userNickname).toBeNull()
   })
+
+  test('已登录可访问密码修改页并展示核心字段', async ({ context, page }) => {
+    await context.addInitScript(() => {
+      localStorage.setItem('accessToken', 'token-e2e-password-change')
+      localStorage.setItem('tokenName', 'satoken')
+    })
+
+    await page.route('**/api/user/profile/current', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '查询成功',
+          data: {
+            user: {
+              id: 1001,
+              username: 'tester',
+              nickname: '测试用户',
+              email: 'tester@test.com',
+              avatar: '',
+            },
+          },
+        }),
+      })
+    })
+
+    await page.route('**/api/auth/session/renew', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '续期成功',
+        }),
+      })
+    })
+
+    await page.goto('/computer/password-change')
+    await expect(page).toHaveURL('/computer/password-change')
+    await expect(page.getByText('修改密码')).toBeVisible()
+    await expect(page.getByLabel('当前密码')).toBeVisible()
+    await expect(page.getByLabel('新密码')).toBeVisible()
+    await expect(page.getByLabel('确认新密码')).toBeVisible()
+    await expect(page.getByLabel('绑定邮箱')).toBeVisible()
+    await expect(page.getByLabel('邮箱验证码')).toBeVisible()
+  })
 })

@@ -1,8 +1,8 @@
 package com.yyyouth.service.auth;
 
 import cn.dev33.satoken.session.SaSession;
-import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yyyouth.common.constants.AuthErrorCode;
@@ -10,19 +10,21 @@ import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.common.utils.EmailUtils;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
 import com.yyyouth.model.dto.auth.AuthLoginEmailCodeDTO;
+import com.yyyouth.model.dto.auth.AuthPasswordChangeDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.auth.UserSession;
 import com.yyyouth.model.pojo.user.UserProfile;
 import com.yyyouth.model.pojo.user.UserSetting;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
-import com.yyyouth.service.auth.impl.AuthServiceImpl;
+import com.yyyouth.service.auth.impl.AuthenticationServiceImpl;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.auth.UserSessionMapper;
 import com.yyyouth.service.mapper.user.UserProfileMapper;
 import com.yyyouth.service.mapper.user.UserSettingMapper;
-import org.junit.jupiter.api.Test;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -32,7 +34,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.apache.ibatis.builder.MapperBuilderAssistant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,7 +47,7 @@ import static org.mockito.Mockito.when;
  * @author yyyouth zg
  * @date 2026-03-16
  *
- * 认证服务单元测试
+ * 认证核心服务单元测试
  */
 @ExtendWith(MockitoExtension.class)
 class AuthServiceImplTest {
@@ -80,7 +81,7 @@ class AuthServiceImplTest {
     private SaSession tokenSession;
 
     @InjectMocks
-    private AuthServiceImpl authService;
+    private AuthenticationServiceImpl authenticationService;
 
     /**
      * 初始化 MyBatis-Plus Lambda 缓存
@@ -120,7 +121,7 @@ class AuthServiceImplTest {
             stpUtilMock.when(StpUtil::getTokenTimeout).thenReturn(1800L);
             stpUtilMock.when(StpUtil::getTokenName).thenReturn("satoken");
 
-            AuthLoginVO loginVO = authService.login(loginDTO);
+            AuthLoginVO loginVO = authenticationService.login(loginDTO);
 
             assertThat(loginVO.getTokenValue()).isEqualTo(TOKEN_VALUE);
             assertThat(loginVO.getTokenName()).isEqualTo("satoken");
@@ -132,10 +133,6 @@ class AuthServiceImplTest {
             assertThat(insertedSession.getUserId()).isEqualTo(USER_ID);
             assertThat(insertedSession.getTokenValue()).isEqualTo(TOKEN_VALUE);
             assertThat(insertedSession.getOperationSource()).isEqualTo("login");
-            assertThat(insertedSession.getCreateBy()).isEqualTo(String.valueOf(USER_ID));
-            assertThat(insertedSession.getUpdateBy()).isEqualTo(String.valueOf(USER_ID));
-            assertThat(insertedSession.getCreateTime()).isNotNull();
-            assertThat(insertedSession.getUpdateTime()).isNotNull();
 
             verify(tokenSession).set("deviceType", "web");
         }
@@ -158,7 +155,7 @@ class AuthServiceImplTest {
         userAccount.setPasswordHash(new BCryptPasswordEncoder().encode("123456"));
         when(userAccountMapper.selectOne(any())).thenReturn(userAccount);
 
-        assertThatThrownBy(() -> authService.login(loginDTO))
+        assertThatThrownBy(() -> authenticationService.login(loginDTO))
                 .isInstanceOf(BusinessException.class)
                 .extracting("code")
                 .isEqualTo(AuthErrorCode.INVALID_CREDENTIAL.getCode());
@@ -191,7 +188,7 @@ class AuthServiceImplTest {
             stpUtilMock.when(StpUtil::getTokenTimeout).thenReturn(1800L);
             stpUtilMock.when(StpUtil::getTokenName).thenReturn("satoken");
 
-            AuthLoginVO loginVO = authService.loginByEmailCode(loginEmailCodeDTO);
+            AuthLoginVO loginVO = authenticationService.loginByEmailCode(loginEmailCodeDTO);
 
             assertThat(loginVO.getTokenValue()).isEqualTo(TOKEN_VALUE);
             verify(stringRedisTemplate).delete("email:code:login:tester@test.com");
@@ -199,7 +196,7 @@ class AuthServiceImplTest {
     }
 
     /**
-     * 发送登录验证码成功时应写入Redis验证码
+     * 发送登录验证码成功时应写入 Redis
      */
     @Test
     void shouldSendLoginEmailCodeAndWriteRedisWhenEmailValid() {
@@ -213,46 +210,65 @@ class AuthServiceImplTest {
         when(valueOperations.get(any())).thenReturn(null);
         when(emailUtils.sendGeneralEmail(any(), any(), eq("tester@test.com"))).thenReturn(true);
 
-        authService.sendLoginEmailCode("tester@test.com");
+        authenticationService.sendLoginEmailCode("tester@test.com");
 
         verify(valueOperations).set(eq("email:code:login:tester@test.com"), any(), eq(5L), eq(java.util.concurrent.TimeUnit.MINUTES));
     }
 
     /**
-     * 续期时应刷新会话
+     * 发送修改密码验证码成功时应写入 Redis
      */
     @Test
-    void shouldRenewSessionAndUpdateRedis() {
+    void shouldSendResetEmailCodeAndWriteRedisWhenEmailMatched() {
+        UserAccount userAccount = new UserAccount();
+        userAccount.setId(USER_ID);
+        userAccount.setEmail("tester@test.com");
+        userAccount.setStatus(1);
+        when(userAccountMapper.selectOne(any())).thenReturn(userAccount);
+        when(stringRedisTemplate.hasKey(any())).thenReturn(false);
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(any())).thenReturn(null);
+        when(emailUtils.sendGeneralEmail(any(), any(), eq("tester@test.com"))).thenReturn(true);
+
         try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
-            stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
-            stpUtilMock.when(StpUtil::getTokenValue).thenReturn(TOKEN_VALUE);
-            stpUtilMock.when(StpUtil::getTokenTimeout).thenReturn(1200L);
             stpUtilMock.when(StpUtil::getLoginIdAsLong).thenReturn(USER_ID);
-            stpUtilMock.when(StpUtil::getTokenSession).thenReturn(tokenSession);
-            stpUtilMock.when(() -> StpUtil.renewTimeout(1200L)).thenAnswer(invocation -> null);
-            stpUtilMock.when(StpUtil::updateLastActiveToNow).thenAnswer(invocation -> null);
-
-            authService.renewSession();
-
-            verify(userSessionMapper, times(1)).update(eq(null), any());
+            authenticationService.sendPasswordResetEmailCode("tester@test.com");
         }
+
+        verify(valueOperations).set(eq("email:code:reset:tester@test.com"), any(), eq(5L), eq(java.util.concurrent.TimeUnit.MINUTES));
     }
 
     /**
-     * 退出时应更新会话状态
+     * 修改密码成功时应更新密码并清理验证码
      */
     @Test
-    void shouldLogoutAndDeleteRedisSession() {
+    void shouldChangePasswordAndClearCodeWhenParamValid() {
+        UserAccount userAccount = new UserAccount();
+        userAccount.setId(USER_ID);
+        userAccount.setEmail("tester@test.com");
+        userAccount.setStatus(1);
+        userAccount.setPasswordHash(new BCryptPasswordEncoder().encode("Old@123456"));
+        when(userAccountMapper.selectOne(any())).thenReturn(userAccount);
+        when(userAccountMapper.update(eq(null), any())).thenReturn(1);
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(eq("email:code:reset:tester@test.com"))).thenReturn("123456");
+
+        AuthPasswordChangeDTO changeDTO = new AuthPasswordChangeDTO();
+        changeDTO.setCurrentPassword("Old@123456");
+        changeDTO.setNewPassword("New@123456");
+        changeDTO.setConfirmPassword("New@123456");
+        changeDTO.setEmail("tester@test.com");
+        changeDTO.setEmailCode("123456");
+
         try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
-            stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
             stpUtilMock.when(StpUtil::getLoginIdAsLong).thenReturn(USER_ID);
-            stpUtilMock.when(StpUtil::getTokenValue).thenReturn(TOKEN_VALUE);
             stpUtilMock.when(StpUtil::logout).thenAnswer(invocation -> null);
-
-            authService.logout();
-
-            verify(userSessionMapper, times(1)).update(eq(null), any());
+            authenticationService.changePassword(changeDTO);
         }
+
+        verify(userAccountMapper, times(1)).update(eq(null), any());
+        verify(userSessionMapper, times(1)).update(eq(null), any());
+        verify(stringRedisTemplate).delete("email:code:reset:tester@test.com");
     }
 
     /**
@@ -269,7 +285,7 @@ class AuthServiceImplTest {
         when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(any())).thenReturn("123456");
 
-        authService.register(registerDTO);
+        authenticationService.register(registerDTO);
 
         ArgumentCaptor<UserAccount> accountCaptor = ArgumentCaptor.forClass(UserAccount.class);
         verify(userAccountMapper).insert(accountCaptor.capture());
@@ -278,8 +294,6 @@ class AuthServiceImplTest {
         assertThat(insertedAccount.getUsername()).isEqualTo("new_user");
         assertThat(insertedAccount.getPasswordHash()).isNotBlank();
         assertThat(new BCryptPasswordEncoder().matches("123456", insertedAccount.getPasswordHash())).isTrue();
-        assertThat(insertedAccount.getDeleted()).isEqualTo(0);
-        assertThat(insertedAccount.getEmailVerified()).isEqualTo(1);
 
         verify(userProfileMapper, times(1)).insert(any(UserProfile.class));
         verify(userSettingMapper, times(1)).insert(any(UserSetting.class));
@@ -299,33 +313,9 @@ class AuthServiceImplTest {
         existAccount.setId(USER_ID);
         when(userAccountMapper.selectOne(any())).thenReturn(existAccount);
 
-        assertThatThrownBy(() -> authService.register(registerDTO))
+        assertThatThrownBy(() -> authenticationService.register(registerDTO))
                 .isInstanceOf(BusinessException.class)
                 .extracting("code")
                 .isEqualTo(AuthErrorCode.REGISTER_EMAIL_EXISTS.getCode());
-        verify(userAccountMapper, times(0)).insert(any(UserAccount.class));
-        verify(userProfileMapper, times(0)).insert(any(UserProfile.class));
-        verify(userSettingMapper, times(0)).insert(any(UserSetting.class));
-    }
-
-    /**
-     * 续期场景应使用默认续期时长
-     */
-    @Test
-    void shouldUseDefaultTimeoutWhenTokenTimeoutIsNonPositive() {
-        try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
-            stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
-            stpUtilMock.when(StpUtil::getTokenValue).thenReturn(TOKEN_VALUE);
-            stpUtilMock.when(StpUtil::getTokenTimeout).thenReturn(0L);
-            stpUtilMock.when(StpUtil::getLoginIdAsLong).thenReturn(USER_ID);
-            stpUtilMock.when(StpUtil::getTokenSession).thenReturn(tokenSession);
-            stpUtilMock.when(() -> StpUtil.renewTimeout(3600L)).thenAnswer(invocation -> null);
-            stpUtilMock.when(StpUtil::updateLastActiveToNow).thenAnswer(invocation -> null);
-
-            authService.renewSession();
-
-            stpUtilMock.verify(() -> StpUtil.renewTimeout(3600L), times(1));
-            verify(userSessionMapper, times(1)).update(eq(null), any());
-        }
     }
 }

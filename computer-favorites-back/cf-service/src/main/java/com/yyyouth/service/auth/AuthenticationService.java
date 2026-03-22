@@ -2,17 +2,17 @@ package com.yyyouth.service.auth;
 
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
 import com.yyyouth.model.dto.auth.AuthLoginEmailCodeDTO;
+import com.yyyouth.model.dto.auth.AuthPasswordChangeDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
-import com.yyyouth.model.vo.auth.AuthSessionVO;
 
 /**
  * @author yyyouth zg
- * @date 2026-03-16
+ * @date 2026-03-22
  *
- * 认证服务接口
+ * 认证核心服务接口
  */
-public interface AuthService {
+public interface AuthenticationService {
 
     /**
      * 用户登录
@@ -60,19 +60,16 @@ public interface AuthService {
     boolean checkUsernameAvailable(String username);
 
     /**
-     * 会话续期
-     */
-    void renewSession();
-
-    /**
-     * 退出登录
-     */
-    void logout();
-
-    /**
-     * 查询当前会话
+     * 发送修改密码验证码
      *
-     * @return 会话信息
+     * @param email 账号邮箱
      */
-    AuthSessionVO currentSession();
+    void sendPasswordResetEmailCode(String email);
+
+    /**
+     * 修改密码
+     *
+     * @param changeDTO 修改密码参数
+     */
+    void changePassword(AuthPasswordChangeDTO changeDTO);
 }

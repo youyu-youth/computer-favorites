@@ -7,10 +7,12 @@ import com.yyyouth.common.constants.AuthErrorCode;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
 import com.yyyouth.model.dto.auth.AuthLoginEmailCodeDTO;
+import com.yyyouth.model.dto.auth.AuthPasswordChangeDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
 import com.yyyouth.model.vo.auth.AuthUserVO;
-import com.yyyouth.service.auth.AuthService;
+import com.yyyouth.service.auth.AuthSessionService;
+import com.yyyouth.service.auth.AuthenticationService;
 import com.yyyouth.web.config.GlobalExceptionHandler;
 import com.yyyouth.web.controller.auth.AuthController;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +51,10 @@ class AuthControllerIntegrationTest {
     private MockMvc mockMvc;
 
     @Mock
-    private AuthService authService;
+    private AuthenticationService authenticationService;
+
+    @Mock
+    private AuthSessionService authSessionService;
 
     @InjectMocks
     private AuthController authController;
@@ -67,8 +72,6 @@ class AuthControllerIntegrationTest {
 
     /**
      * 登录接口应返回 token 与用户基础信息
-     *
-     * @throws Exception 执行异常
      */
     @Test
     void shouldReturnLoginDataWhenLoginSuccess() throws Exception {
@@ -82,7 +85,7 @@ class AuthControllerIntegrationTest {
         authLoginVO.setTokenValue("token-web-001");
         authLoginVO.setExpireTime(LocalDateTime.of(2026, 3, 16, 12, 0));
         authLoginVO.setUserInfo(authUserVO);
-        when(authService.login(any(AuthLoginDTO.class))).thenReturn(authLoginVO);
+        when(authenticationService.login(any(AuthLoginDTO.class))).thenReturn(authLoginVO);
 
         AuthLoginDTO loginDTO = new AuthLoginDTO();
         loginDTO.setUsername("tester");
@@ -100,8 +103,6 @@ class AuthControllerIntegrationTest {
 
     /**
      * 邮箱验证码登录接口应返回 token 与用户基础信息
-     *
-     * @throws Exception 执行异常
      */
     @Test
     void shouldReturnLoginDataWhenLoginByEmailCodeSuccess() throws Exception {
@@ -115,7 +116,7 @@ class AuthControllerIntegrationTest {
         authLoginVO.setTokenValue("token-web-002");
         authLoginVO.setExpireTime(LocalDateTime.of(2026, 3, 16, 12, 0));
         authLoginVO.setUserInfo(authUserVO);
-        when(authService.loginByEmailCode(any(AuthLoginEmailCodeDTO.class))).thenReturn(authLoginVO);
+        when(authenticationService.loginByEmailCode(any(AuthLoginEmailCodeDTO.class))).thenReturn(authLoginVO);
 
         AuthLoginEmailCodeDTO loginEmailCodeDTO = new AuthLoginEmailCodeDTO();
         loginEmailCodeDTO.setEmail("tester@test.com");
@@ -133,8 +134,6 @@ class AuthControllerIntegrationTest {
 
     /**
      * 发送登录验证码接口应返回统一成功响应
-     *
-     * @throws Exception 执行异常
      */
     @Test
     void shouldReturnSuccessWhenSendLoginCode() throws Exception {
@@ -144,17 +143,50 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
                 .andExpect(jsonPath("$.msg").value("验证码发送成功"));
-        verify(authService).sendLoginEmailCode("tester@test.com");
+        verify(authenticationService).sendLoginEmailCode("tester@test.com");
+    }
+
+    /**
+     * 发送修改密码验证码接口应返回统一成功响应
+     */
+    @Test
+    void shouldReturnSuccessWhenSendPasswordCode() throws Exception {
+        mockMvc.perform(post("/api/auth/password/code/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"tester@test.com\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.msg").value("验证码发送成功"));
+        verify(authenticationService).sendPasswordResetEmailCode("tester@test.com");
+    }
+
+    /**
+     * 修改密码接口应返回统一成功响应
+     */
+    @Test
+    void shouldReturnSuccessWhenChangePassword() throws Exception {
+        AuthPasswordChangeDTO changeDTO = new AuthPasswordChangeDTO();
+        changeDTO.setCurrentPassword("Old@123456");
+        changeDTO.setNewPassword("New@123456");
+        changeDTO.setConfirmPassword("New@123456");
+        changeDTO.setEmail("tester@test.com");
+        changeDTO.setEmailCode("123456");
+
+        mockMvc.perform(put("/api/auth/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(changeDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.msg").value("密码修改成功"));
+        verify(authenticationService).changePassword(any(AuthPasswordChangeDTO.class));
     }
 
     /**
      * 未登录访问受保护接口应返回统一未授权响应
-     *
-     * @throws Exception 执行异常
      */
     @Test
     void shouldReturnUnauthorizedWhenRequestCurrentSessionWithoutToken() throws Exception {
-        when(authService.currentSession()).thenThrow(new NotLoginException(NotLoginException.NOT_TOKEN, "login", "无token"));
+        when(authSessionService.currentSession()).thenThrow(new NotLoginException(NotLoginException.NOT_TOKEN, "login", "无token"));
 
         mockMvc.perform(get("/api/auth/session/current"))
                 .andExpect(status().isOk())
@@ -164,8 +196,6 @@ class AuthControllerIntegrationTest {
 
     /**
      * 已授权访问受保护接口应返回会话信息
-     *
-     * @throws Exception 执行异常
      */
     @Test
     void shouldReturnCurrentSessionWhenAuthorized() throws Exception {
@@ -175,19 +205,17 @@ class AuthControllerIntegrationTest {
         sessionVO.setDeviceType("web");
         sessionVO.setTimeoutSeconds(1800L);
         sessionVO.setExpireTime(LocalDateTime.of(2026, 3, 16, 12, 0));
-        when(authService.currentSession()).thenReturn(sessionVO);
+        when(authSessionService.currentSession()).thenReturn(sessionVO);
 
         mockMvc.perform(get("/api/auth/session/current"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
                 .andExpect(jsonPath("$.data.tokenValue").value("token-web-001"));
-        verify(authService).currentSession();
+        verify(authSessionService).currentSession();
     }
 
     /**
      * 续期接口应返回统一成功响应
-     *
-     * @throws Exception 执行异常
      */
     @Test
     void shouldReturnSuccessWhenRenewSession() throws Exception {
@@ -195,13 +223,11 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
                 .andExpect(jsonPath("$.msg").value("续期成功"));
-        verify(authService).renewSession();
+        verify(authSessionService).renewSession();
     }
 
     /**
      * 退出后再次访问会话接口应返回未授权
-     *
-     * @throws Exception 执行异常
      */
     @Test
     void shouldReturnUnauthorizedWhenAccessAfterLogout() throws Exception {
@@ -209,9 +235,9 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
                 .andExpect(jsonPath("$.msg").value("退出成功"));
-        verify(authService).logout();
+        verify(authSessionService).logout();
 
-        when(authService.currentSession()).thenThrow(new NotLoginException(NotLoginException.NOT_TOKEN, "login", "无token"));
+        when(authSessionService.currentSession()).thenThrow(new NotLoginException(NotLoginException.NOT_TOKEN, "login", "无token"));
         mockMvc.perform(get("/api/auth/session/current"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(AuthErrorCode.UNAUTHORIZED.getCode()));
@@ -219,8 +245,6 @@ class AuthControllerIntegrationTest {
 
     /**
      * 登录参数非法时应返回校验错误
-     *
-     * @throws Exception 执行异常
      */
     @Test
     void shouldReturnBadRequestWhenLoginParamInvalid() throws Exception {

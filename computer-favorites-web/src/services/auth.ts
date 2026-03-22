@@ -19,6 +19,18 @@ export type RegisterRequest = {
   emailCode: string
 }
 
+export type PasswordCodeSendRequest = {
+  email: string
+}
+
+export type ChangePasswordRequest = {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+  email: string
+  emailCode: string
+}
+
 export type AuthTokenResponse = {
   accessToken: string
   tokenName?: string
@@ -98,6 +110,20 @@ export async function checkUsernameAvailable(username: string): Promise<boolean>
     throw new Error(res.msg || '用户名校验失败')
   }
   return Boolean(res.data)
+}
+
+export async function sendPasswordChangeCode(req: PasswordCodeSendRequest): Promise<void> {
+  const res = await postJson<ApiResult<null>>('/api/auth/password/code/send', req)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '验证码发送失败')
+  }
+}
+
+export async function changePassword(req: ChangePasswordRequest): Promise<void> {
+  const res = await putJson<ApiResult<null>>('/api/auth/password', req)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '密码修改失败')
+  }
 }
 
 export async function logout(): Promise<void> {

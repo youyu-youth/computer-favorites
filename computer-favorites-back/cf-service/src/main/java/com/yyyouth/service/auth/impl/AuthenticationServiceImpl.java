@@ -13,24 +13,24 @@ import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.common.utils.EmailUtils;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
 import com.yyyouth.model.dto.auth.AuthLoginEmailCodeDTO;
+import com.yyyouth.model.dto.auth.AuthPasswordChangeDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.auth.UserSession;
 import com.yyyouth.model.pojo.user.UserProfile;
 import com.yyyouth.model.pojo.user.UserSetting;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
-import com.yyyouth.model.vo.auth.AuthSessionVO;
 import com.yyyouth.model.vo.auth.AuthUserVO;
-import com.yyyouth.service.auth.AuthService;
+import com.yyyouth.service.auth.AuthenticationService;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.auth.UserSessionMapper;
 import com.yyyouth.service.mapper.user.UserProfileMapper;
 import com.yyyouth.service.mapper.user.UserSettingMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -42,22 +42,20 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author yyyouth zg
- * @date 2026-03-16
+ * @date 2026-03-22
  *
- * 认证服务实现
+ * 认证核心服务实现
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthServiceImpl implements AuthService {
+public class AuthenticationServiceImpl implements AuthenticationService {
 
     private static final int ENABLED_STATUS = 1;
 
     private static final int SESSION_VALID = 1;
 
     private static final int SESSION_INVALID = 0;
-
-    private static final long DEFAULT_RENEW_TIMEOUT_SECONDS = 3600L;
 
     private static final int UNVERIFIED = 0;
 
@@ -72,6 +70,8 @@ public class AuthServiceImpl implements AuthService {
     private static final String DEFAULT_HOMEPAGE_STYLE = "grid";
 
     private static final int DEFAULT_PAGE_SIZE = 20;
+
+    private static final String PASSWORD_STRENGTH_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d]).+$";
 
     private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
 
@@ -98,7 +98,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("登录：loginDTO: {}", JSONUtil.toJsonStr(loginDTO));
         String loginIdentity = loginDTO.getUsername();
         UserAccount userAccount = userAccountMapper.selectOne(new LambdaQueryWrapper<UserAccount>()
-                .eq(UserAccount::getDeleted, 0)
+                .eq(UserAccount::getDeleted, NOT_DELETED)
                 .and(wrapper -> wrapper.eq(UserAccount::getUsername, loginIdentity)
                         .or()
                         .eq(UserAccount::getEmail, loginIdentity))
@@ -265,64 +265,97 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 续期当前会话
-     */
-    @Override
-    public void renewSession() {
-        StpUtil.checkLogin();
-        String tokenValue = StpUtil.getTokenValue();
-        long currentTimeout = StpUtil.getTokenTimeout();
-        long renewTimeout = currentTimeout > 0 ? currentTimeout : DEFAULT_RENEW_TIMEOUT_SECONDS;
-
-        StpUtil.renewTimeout(renewTimeout);
-        StpUtil.updateLastActiveToNow();
-
-        Long userId = StpUtil.getLoginIdAsLong();
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expireTime = calculateExpireTime(renewTimeout, now);  
-        updateSessionOnRenew(userId, tokenValue, now, expireTime);
-    }
-
-    /**
-     * 退出当前会话
-     */
-    @Override
-    public void logout() {
-        StpUtil.checkLogin();
-        Long userId = StpUtil.getLoginIdAsLong();
-        String tokenValue = StpUtil.getTokenValue();
-        LocalDateTime now = LocalDateTime.now();
-
-        StpUtil.logout();
-
-        userSessionMapper.update(null, new LambdaUpdateWrapper<UserSession>()
-                .eq(UserSession::getTokenValue, tokenValue)
-                .set(UserSession::getStatus, SESSION_INVALID)
-                .set(UserSession::getUpdateBy, String.valueOf(userId))
-                .set(UserSession::getUpdateTime, now)
-                .set(UserSession::getOperationSource, "logout"));
-    }
-
-    /**
-     * 查询当前会话
+     * 发送修改密码验证码
      *
-     * @return 会话信息
+     * @param email 账号绑定邮箱
      */
     @Override
-    public AuthSessionVO currentSession() {
-        StpUtil.checkLogin();
-        Long userId = StpUtil.getLoginIdAsLong();
-        String tokenValue = StpUtil.getTokenValue();
-        long timeoutSeconds = StpUtil.getTokenTimeout();
-        LocalDateTime expireTime = calculateExpireTime(timeoutSeconds, LocalDateTime.now());
+    public void sendPasswordResetEmailCode(String email) {
+        Long loginUserId = StpUtil.getLoginIdAsLong();
+        UserAccount loginUser = requireLoginUser(loginUserId);
+        String normalizedEmail = normalizeEmail(email);
+        if (!normalizedEmail.equals(normalizeEmail(loginUser.getEmail()))) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_EMAIL_MISMATCH.getCode(), AuthErrorCode.CHANGE_PASSWORD_EMAIL_MISMATCH.getMessage());
+        }
 
-        AuthSessionVO sessionVO = new AuthSessionVO();
-        sessionVO.setUserId(userId);
-        sessionVO.setTokenValue(tokenValue);
-        sessionVO.setDeviceType(getCurrentDeviceType());
-        sessionVO.setTimeoutSeconds(timeoutSeconds);
-        sessionVO.setExpireTime(expireTime);
-        return sessionVO;
+        enforceResetCodeSendPolicy(normalizedEmail);
+        String code = RandomUtil.randomNumbers(6);
+        boolean sendSuccess;
+        try {
+            sendSuccess = emailUtils.sendGeneralEmail(
+                    CaptchaConstants.CAPTCHA_TITLE,
+                    "您的修改密码验证码为：" + code + "，" + CaptchaConstants.CODE_EXPIRE_MINUTES + "分钟内有效。",
+                    normalizedEmail
+            );
+        } catch (Exception ex) {
+            log.error("发送修改密码验证码失败，userId={}, email={}", loginUserId, normalizedEmail, ex);
+            throw new BusinessException(AuthErrorCode.RESET_EMAIL_CODE_SEND_FAILED.getCode(), AuthErrorCode.RESET_EMAIL_CODE_SEND_FAILED.getMessage());
+        }
+        if (!sendSuccess) {
+            throw new BusinessException(AuthErrorCode.RESET_EMAIL_CODE_SEND_FAILED.getCode(), AuthErrorCode.RESET_EMAIL_CODE_SEND_FAILED.getMessage());
+        }
+
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        valueOperations.set(
+                buildResetCodeKey(normalizedEmail),
+                code,
+                CaptchaConstants.CODE_EXPIRE_MINUTES,
+                TimeUnit.MINUTES
+        );
+    }
+
+    /**
+     * 修改密码
+     *
+     * @param changeDTO 修改密码参数
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void changePassword(AuthPasswordChangeDTO changeDTO) {
+        Long loginUserId = StpUtil.getLoginIdAsLong();
+        UserAccount loginUser = requireLoginUser(loginUserId);
+        String normalizedEmail = normalizeEmail(changeDTO.getEmail());
+        if (!normalizedEmail.equals(normalizeEmail(loginUser.getEmail()))) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_EMAIL_MISMATCH.getCode(), AuthErrorCode.CHANGE_PASSWORD_EMAIL_MISMATCH.getMessage());
+        }
+
+        String encodedPassword = resolveEncodedPassword(loginUser);
+        if (!StringUtils.hasText(encodedPassword) || !PASSWORD_ENCODER.matches(changeDTO.getCurrentPassword(), encodedPassword)) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_CURRENT_INVALID.getCode(), AuthErrorCode.CHANGE_PASSWORD_CURRENT_INVALID.getMessage());
+        }
+        if (!changeDTO.getNewPassword().equals(changeDTO.getConfirmPassword())) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_CONFIRM_MISMATCH.getCode(), AuthErrorCode.CHANGE_PASSWORD_CONFIRM_MISMATCH.getMessage());
+        }
+        if (!changeDTO.getNewPassword().matches(PASSWORD_STRENGTH_PATTERN)) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_STRENGTH_INVALID.getCode(), AuthErrorCode.CHANGE_PASSWORD_STRENGTH_INVALID.getMessage());
+        }
+        if (PASSWORD_ENCODER.matches(changeDTO.getNewPassword(), encodedPassword)) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_SAME_AS_OLD.getCode(), AuthErrorCode.CHANGE_PASSWORD_SAME_AS_OLD.getMessage());
+        }
+
+        validateResetEmailCode(normalizedEmail, changeDTO.getEmailCode());
+
+        LocalDateTime now = LocalDateTime.now();
+        String newPasswordHash = PASSWORD_ENCODER.encode(changeDTO.getNewPassword());
+        int updatedRows = userAccountMapper.update(null, new LambdaUpdateWrapper<UserAccount>()
+                .eq(UserAccount::getId, loginUserId)
+                .eq(UserAccount::getDeleted, NOT_DELETED)
+                .set(UserAccount::getPasswordHash, newPasswordHash)
+                .set(UserAccount::getPassword, newPasswordHash)
+                .set(UserAccount::getUpdateTime, now));
+        if (updatedRows != 1) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_UPDATE_FAILED.getCode(), AuthErrorCode.CHANGE_PASSWORD_UPDATE_FAILED.getMessage());
+        }
+
+        stringRedisTemplate.delete(buildResetCodeKey(normalizedEmail));
+        userSessionMapper.update(null, new LambdaUpdateWrapper<UserSession>()
+                .eq(UserSession::getUserId, loginUserId)
+                .eq(UserSession::getStatus, SESSION_VALID)
+                .set(UserSession::getStatus, SESSION_INVALID)
+                .set(UserSession::getUpdateBy, String.valueOf(loginUserId))
+                .set(UserSession::getUpdateTime, now)
+                .set(UserSession::getOperationSource, "change_password"));
+        StpUtil.logout();
     }
 
     /**
@@ -359,13 +392,6 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 写入用户会话表
-     *
-     * @param userAccount 用户账号
-     * @param tokenValue Token值
-     * @param deviceType 设备类型
-     * @param now 当前时间
-     * @param expireTime 过期时间
-     * @param operationSource 操作来源
      */
     private void saveUserSession(UserAccount userAccount, String tokenValue, String deviceType, LocalDateTime now,
                                  LocalDateTime expireTime, String operationSource) {
@@ -401,30 +427,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 续期时更新会话数据
-     *
-     * @param userId 用户ID
-     * @param tokenValue token值
-     * @param now 当前时间
-     * @param expireTime 过期时间
-     */
-    private void updateSessionOnRenew(Long userId, String tokenValue, LocalDateTime now, LocalDateTime expireTime) {
-        userSessionMapper.update(null, new LambdaUpdateWrapper<UserSession>()
-                .eq(UserSession::getTokenValue, tokenValue)
-                .set(UserSession::getStatus, SESSION_VALID)
-                .set(UserSession::getRenewTime, now)
-                .set(UserSession::getExpireTime, expireTime)
-                .set(UserSession::getUpdateBy, String.valueOf(userId))
-                .set(UserSession::getUpdateTime, now)
-                .set(UserSession::getOperationSource, "renew"));
-    }
-
-    /**
      * 计算过期时间
-     *
-     * @param timeoutSeconds 超时秒数
-     * @param baseTime 基准时间
-     * @return 过期时间
      */
     private LocalDateTime calculateExpireTime(long timeoutSeconds, LocalDateTime baseTime) {
         if (timeoutSeconds <= 0) {
@@ -434,23 +437,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 获取当前会话设备类型
-     *
-     * @return 设备类型
-     */
-    private String getCurrentDeviceType() {
-        Object deviceType = StpUtil.getTokenSession().get("deviceType");
-        if (deviceType == null) {
-            return "unknown";
-        }
-        return String.valueOf(deviceType);
-    }
-
-    /**
      * 解析数据库中的加密密码
-     *
-     * @param userAccount 用户账号
-     * @return 加密密码
      */
     private String resolveEncodedPassword(UserAccount userAccount) {
         if (StringUtils.hasText(userAccount.getPasswordHash())) {
@@ -461,10 +448,6 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 构建注册账号实体
-     *
-     * @param registerDTO 注册参数
-     * @param now 当前时间
-     * @return 账号实体
      */
     private UserAccount buildRegisterUserAccount(AuthRegisterDTO registerDTO, String normalizedEmail, String normalizedUsername, LocalDateTime now) {
         UserAccount userAccount = new UserAccount();
@@ -484,9 +467,6 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 初始化用户资料
-     *
-     * @param userId 用户ID
-     * @param now 当前时间
      */
     private void initUserProfile(Long userId, LocalDateTime now) {
         UserProfile userProfile = new UserProfile();
@@ -499,9 +479,6 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 初始化用户设置
-     *
-     * @param userId 用户ID
-     * @param now 当前时间
      */
     private void initUserSetting(Long userId, LocalDateTime now) {
         UserSetting userSetting = new UserSetting();
@@ -520,10 +497,6 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 根据邮箱生成默认昵称
-     *
-     * @param username 用户名
-     * @param email 邮箱
-     * @return 默认昵称
      */
     private String buildDefaultNickname(String username, String email) {
         if (StringUtils.hasText(username)) {
@@ -539,9 +512,6 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 校验注册验证码
-     *
-     * @param email 邮箱
-     * @param code 验证码
      */
     private void validateRegisterEmailCode(String email, String code) {
         String cacheCode = stringRedisTemplate.opsForValue().get(buildRegisterCodeKey(email));
@@ -555,9 +525,6 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 校验登录验证码
-     *
-     * @param email 邮箱
-     * @param code 验证码
      */
     private void validateLoginEmailCode(String email, String code) {
         String cacheCode = stringRedisTemplate.opsForValue().get(buildLoginCodeKey(email));
@@ -570,9 +537,20 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 校验验证码发送策略
-     *
-     * @param email 邮箱
+     * 校验修改密码验证码
+     */
+    private void validateResetEmailCode(String email, String code) {
+        String cacheCode = stringRedisTemplate.opsForValue().get(buildResetCodeKey(email));
+        if (!StringUtils.hasText(cacheCode)) {
+            throw new BusinessException(AuthErrorCode.RESET_EMAIL_CODE_EXPIRED.getCode(), AuthErrorCode.RESET_EMAIL_CODE_EXPIRED.getMessage());
+        }
+        if (!cacheCode.equals(code)) {
+            throw new BusinessException(AuthErrorCode.RESET_EMAIL_CODE_INVALID.getCode(), AuthErrorCode.RESET_EMAIL_CODE_INVALID.getMessage());
+        }
+    }
+
+    /**
+     * 校验注册验证码发送策略
      */
     private void enforceRegisterCodeSendPolicy(String email) {
         String intervalKey = buildRegisterCodeIntervalKey(email);
@@ -590,18 +568,11 @@ public class AuthServiceImpl implements AuthService {
         ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
         valueOperations.increment(countKey);
         stringRedisTemplate.expire(countKey, 1, TimeUnit.DAYS);
-        valueOperations.set(
-                intervalKey,
-                "1",
-                CaptchaConstants.SEND_INTERVAL_SECONDS,
-                TimeUnit.SECONDS
-        );
+        valueOperations.set(intervalKey, "1", CaptchaConstants.SEND_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     /**
      * 校验登录验证码发送策略
-     *
-     * @param email 邮箱
      */
     private void enforceLoginCodeSendPolicy(String email) {
         String intervalKey = buildLoginCodeIntervalKey(email);
@@ -619,29 +590,54 @@ public class AuthServiceImpl implements AuthService {
         ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
         valueOperations.increment(countKey);
         stringRedisTemplate.expire(countKey, 1, TimeUnit.DAYS);
-        valueOperations.set(
-                intervalKey,
-                "1",
-                CaptchaConstants.SEND_INTERVAL_SECONDS,
-                TimeUnit.SECONDS
-        );
+        valueOperations.set(intervalKey, "1", CaptchaConstants.SEND_INTERVAL_SECONDS, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 校验修改密码验证码发送策略
+     */
+    private void enforceResetCodeSendPolicy(String email) {
+        String intervalKey = buildResetCodeIntervalKey(email);
+        Boolean exists = stringRedisTemplate.hasKey(intervalKey);
+        if (Boolean.TRUE.equals(exists)) {
+            throw new BusinessException(AuthErrorCode.RESET_EMAIL_CODE_SEND_TOO_FAST.getCode(), AuthErrorCode.RESET_EMAIL_CODE_SEND_TOO_FAST.getMessage());
+        }
+
+        String countKey = buildResetCodeCountKey(email);
+        Integer sendCount = toInteger(stringRedisTemplate.opsForValue().get(countKey));
+        if (sendCount != null && sendCount >= CaptchaConstants.MAX_SEND_COUNT_PER_DAY) {
+            throw new BusinessException(AuthErrorCode.RESET_EMAIL_CODE_SEND_LIMIT.getCode(), AuthErrorCode.RESET_EMAIL_CODE_SEND_LIMIT.getMessage());
+        }
+
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        valueOperations.increment(countKey);
+        stringRedisTemplate.expire(countKey, 1, TimeUnit.DAYS);
+        valueOperations.set(intervalKey, "1", CaptchaConstants.SEND_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     /**
      * 规范化邮箱
-     *
-     * @param email 邮箱
-     * @return 规范化邮箱
      */
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
     }
 
     /**
+     * 查询并校验当前登录用户
+     */
+    private UserAccount requireLoginUser(Long userId) {
+        UserAccount loginUser = userAccountMapper.selectOne(new LambdaQueryWrapper<UserAccount>()
+                .eq(UserAccount::getId, userId)
+                .eq(UserAccount::getDeleted, NOT_DELETED)
+                .last("limit 1"));
+        if (loginUser == null || !Integer.valueOf(ENABLED_STATUS).equals(loginUser.getStatus())) {
+            throw new BusinessException(AuthErrorCode.USER_DISABLED.getCode(), AuthErrorCode.USER_DISABLED.getMessage());
+        }
+        return loginUser;
+    }
+
+    /**
      * 规范化用户名
-     *
-     * @param username 用户名
-     * @return 规范化用户名
      */
     private String normalizeUsername(String username) {
         return username.trim().toLowerCase(Locale.ROOT);
@@ -649,9 +645,6 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 构建注册验证码键
-     *
-     * @param email 邮箱
-     * @return Redis键
      */
     private String buildRegisterCodeKey(String email) {
         return CaptchaConstants.REGISTER_CODE_KEY_PREFIX + email;
@@ -659,19 +652,20 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 构建登录验证码键
-     *
-     * @param email 邮箱
-     * @return Redis键
      */
     private String buildLoginCodeKey(String email) {
         return CaptchaConstants.LOGIN_CODE_KEY_PREFIX + email;
     }
 
     /**
+     * 构建修改密码验证码键
+     */
+    private String buildResetCodeKey(String email) {
+        return CaptchaConstants.RESET_CODE_KEY_PREFIX + email;
+    }
+
+    /**
      * 构建注册验证码发送间隔键
-     *
-     * @param email 邮箱
-     * @return Redis键
      */
     private String buildRegisterCodeIntervalKey(String email) {
         return buildRegisterCodeKey(email) + ":interval";
@@ -679,19 +673,20 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 构建登录验证码发送间隔键
-     *
-     * @param email 邮箱
-     * @return Redis键
      */
     private String buildLoginCodeIntervalKey(String email) {
         return buildLoginCodeKey(email) + ":interval";
     }
 
     /**
+     * 构建修改密码验证码发送间隔键
+     */
+    private String buildResetCodeIntervalKey(String email) {
+        return buildResetCodeKey(email) + ":interval";
+    }
+
+    /**
      * 构建注册验证码发送计数键
-     *
-     * @param email 邮箱
-     * @return Redis键
      */
     private String buildRegisterCodeCountKey(String email) {
         return buildRegisterCodeKey(email) + ":count:" + LocalDate.now();
@@ -699,19 +694,20 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 构建登录验证码发送计数键
-     *
-     * @param email 邮箱
-     * @return Redis键
      */
     private String buildLoginCodeCountKey(String email) {
         return buildLoginCodeKey(email) + ":count:" + LocalDate.now();
     }
 
     /**
+     * 构建修改密码验证码发送计数键
+     */
+    private String buildResetCodeCountKey(String email) {
+        return buildResetCodeKey(email) + ":count:" + LocalDate.now();
+    }
+
+    /**
      * 字符串转整数
-     *
-     * @param value 字符串值
-     * @return 整数值
      */
     private Integer toInteger(String value) {
         if (!StringUtils.hasText(value)) {

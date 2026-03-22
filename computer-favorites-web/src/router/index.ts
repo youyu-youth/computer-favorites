@@ -4,6 +4,7 @@ import HomeView from '@/views/user/HomeView.vue'
 import ProfileView from '@/views/user/ProfileView.vue'
 import SettingsView from '@/views/user/SettingsView.vue'
 import AccountView from '@/views/user/AccountView.vue'
+import PasswordChangeView from '@/views/user/PasswordChangeView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
@@ -50,6 +51,12 @@ const router = createRouter({
           path: 'account',
           name: 'account',
           component: AccountView,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'password-change',
+          name: 'passwordChange',
+          component: PasswordChangeView,
           meta: { requiresAuth: true },
         },
       ],

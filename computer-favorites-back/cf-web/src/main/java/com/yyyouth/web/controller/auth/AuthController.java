@@ -1,15 +1,19 @@
 package com.yyyouth.web.controller.auth;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.yyyouth.common.web.HttpResult;
 import com.yyyouth.model.dto.auth.AuthLoginDTO;
 import com.yyyouth.model.dto.auth.AuthLoginEmailCodeDTO;
 import com.yyyouth.model.dto.auth.AuthLoginEmailCodeSendDTO;
+import com.yyyouth.model.dto.auth.AuthPasswordChangeDTO;
+import com.yyyouth.model.dto.auth.AuthPasswordCodeSendDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterEmailCodeDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
-import com.yyyouth.service.auth.AuthService;
+import com.yyyouth.service.auth.AuthSessionService;
+import com.yyyouth.service.auth.AuthenticationService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
@@ -40,7 +44,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthService authService;
+    private final AuthenticationService authenticationService;
+
+    private final AuthSessionService authSessionService;
 
     /**
      * 登录接口
@@ -51,7 +57,7 @@ public class AuthController {
     @ApiOperation(value = "登录接口")
     @PostMapping("/login")
     public HttpResult login(@RequestBody @Valid AuthLoginDTO loginDTO) {
-        AuthLoginVO authLoginVO = authService.login(loginDTO);
+        AuthLoginVO authLoginVO = authenticationService.login(loginDTO);
         return HttpResult.success("登录成功", authLoginVO);
     }
 
@@ -64,7 +70,7 @@ public class AuthController {
     @ApiOperation(value = "邮箱验证码登录接口")
     @PostMapping("/login/code")
     public HttpResult loginByEmailCode(@RequestBody @Valid AuthLoginEmailCodeDTO loginEmailCodeDTO) {
-        AuthLoginVO authLoginVO = authService.loginByEmailCode(loginEmailCodeDTO);
+        AuthLoginVO authLoginVO = authenticationService.loginByEmailCode(loginEmailCodeDTO);
         return HttpResult.success("登录成功", authLoginVO);
     }
 
@@ -77,7 +83,7 @@ public class AuthController {
     @ApiOperation(value = "发送登录验证码")
     @PostMapping({"/login/code/send", "/login/code/send/"})
     public HttpResult sendLoginCode(@RequestBody @Valid AuthLoginEmailCodeSendDTO emailCodeSendDTO) {
-        authService.sendLoginEmailCode(emailCodeSendDTO.getEmail());
+        authenticationService.sendLoginEmailCode(emailCodeSendDTO.getEmail());
         return HttpResult.success("验证码发送成功");
     }
 
@@ -95,7 +101,7 @@ public class AuthController {
             @Pattern(regexp = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$", message = "邮箱格式不正确")
             @Size(max = 128, message = "邮箱长度不能超过128")
             String email) {
-        authService.sendLoginEmailCode(email);
+        authenticationService.sendLoginEmailCode(email);
         return HttpResult.success("验证码发送成功");
     }
 
@@ -108,7 +114,7 @@ public class AuthController {
     @ApiOperation(value = "注册接口")
     @PostMapping("/register")
     public HttpResult register(@RequestBody @Valid AuthRegisterDTO registerDTO) {
-        authService.register(registerDTO);
+        authenticationService.register(registerDTO);
         return HttpResult.success("注册成功");
     }
 
@@ -121,7 +127,7 @@ public class AuthController {
     @ApiOperation(value = "发送注册验证码")
     @PostMapping("/register/code")
     public HttpResult sendRegisterCode(@RequestBody @Valid AuthRegisterEmailCodeDTO emailCodeDTO) {
-        authService.sendRegisterEmailCode(emailCodeDTO.getEmail());
+        authenticationService.sendRegisterEmailCode(emailCodeDTO.getEmail());
         return HttpResult.success("验证码发送成功");
     }
 
@@ -139,8 +145,36 @@ public class AuthController {
             @Size(min = 4, max = 24, message = "用户名长度需在4-24之间")
             @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "用户名仅支持字母、数字和下划线")
             String username) {
-        boolean available = authService.checkUsernameAvailable(username);
+        boolean available = authenticationService.checkUsernameAvailable(username);
         return HttpResult.success("查询成功", available);
+    }
+
+    /**
+     * 发送修改密码验证码
+     *
+     * @param codeSendDTO 邮箱参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "发送修改密码验证码")
+    @PostMapping({"/password/code/send", "/password/code/send/"})
+    @SaCheckLogin
+    public HttpResult sendPasswordCode(@RequestBody @Valid AuthPasswordCodeSendDTO codeSendDTO) {
+        authenticationService.sendPasswordResetEmailCode(codeSendDTO.getEmail());
+        return HttpResult.success("验证码发送成功");
+    }
+
+    /**
+     * 修改密码
+     *
+     * @param changeDTO 修改密码参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "修改密码")
+    @PutMapping({"/password", "/password/"})
+    @SaCheckLogin
+    public HttpResult changePassword(@RequestBody @Valid AuthPasswordChangeDTO changeDTO) {
+        authenticationService.changePassword(changeDTO);
+        return HttpResult.success("密码修改成功");
     }
 
     /**
@@ -152,7 +186,7 @@ public class AuthController {
     @PutMapping("/session/renew")
     @SaCheckPermission("auth:session:renew")
     public HttpResult renewSession() {
-        authService.renewSession();
+        authSessionService.renewSession();
         return HttpResult.success("续期成功");
     }
 
@@ -165,7 +199,7 @@ public class AuthController {
     @DeleteMapping("/session")
     @SaCheckPermission("auth:session:delete")
     public HttpResult logout() {
-        authService.logout();
+        authSessionService.logout();
         return HttpResult.success("退出成功");
     }
 
@@ -178,7 +212,7 @@ public class AuthController {
     @GetMapping("/session/current")
     @SaCheckPermission("auth:session:detail")
     public HttpResult currentSession() {
-        AuthSessionVO sessionVO = authService.currentSession();
+        AuthSessionVO sessionVO = authSessionService.currentSession();
         return HttpResult.success("查询成功", sessionVO);
     }
 }

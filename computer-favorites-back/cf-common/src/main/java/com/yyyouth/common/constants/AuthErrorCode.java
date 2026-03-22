@@ -86,7 +86,62 @@ public enum AuthErrorCode {
     /**
      * 登录验证码发送失败
      */
-    LOGIN_EMAIL_CODE_SEND_FAILED(100216, "登录验证码发送失败，请稍后重试");
+    LOGIN_EMAIL_CODE_SEND_FAILED(100216, "登录验证码发送失败，请稍后重试"),
+
+    /**
+     * 修改密码验证码已过期
+     */
+    RESET_EMAIL_CODE_EXPIRED(100217, "验证码已过期，请重新获取"),
+
+    /**
+     * 修改密码验证码错误
+     */
+    RESET_EMAIL_CODE_INVALID(100218, "验证码不正确"),
+
+    /**
+     * 修改密码验证码发送过于频繁
+     */
+    RESET_EMAIL_CODE_SEND_TOO_FAST(100219, "验证码发送过于频繁，请稍后重试"),
+
+    /**
+     * 修改密码验证码发送次数超限
+     */
+    RESET_EMAIL_CODE_SEND_LIMIT(100220, "今日验证码发送次数已达上限"),
+
+    /**
+     * 修改密码验证码发送失败
+     */
+    RESET_EMAIL_CODE_SEND_FAILED(100221, "验证码发送失败，请稍后重试"),
+
+    /**
+     * 当前密码错误
+     */
+    CHANGE_PASSWORD_CURRENT_INVALID(100222, "当前密码不正确"),
+
+    /**
+     * 新密码与确认密码不一致
+     */
+    CHANGE_PASSWORD_CONFIRM_MISMATCH(100223, "两次输入的新密码不一致"),
+
+    /**
+     * 新密码强度不足
+     */
+    CHANGE_PASSWORD_STRENGTH_INVALID(100224, "新密码强度不足，请包含字母、数字和特殊字符"),
+
+    /**
+     * 绑定邮箱不匹配
+     */
+    CHANGE_PASSWORD_EMAIL_MISMATCH(100225, "邮箱与当前账号不匹配"),
+
+    /**
+     * 新密码不能与当前密码相同
+     */
+    CHANGE_PASSWORD_SAME_AS_OLD(100226, "新密码不能与当前密码相同"),
+
+    /**
+     * 修改密码失败
+     */
+    CHANGE_PASSWORD_UPDATE_FAILED(100227, "修改密码失败，请稍后重试");
 
     private final int code;
 
