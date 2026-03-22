@@ -23,6 +23,8 @@ export interface UserDetailProfile {
   favoriteWebsites: string
   uploadedWebsites: string
   contribution: string
+  createTime?: string
+  updateTime?: string
 }
 
 export interface UserPreferenceSetting {

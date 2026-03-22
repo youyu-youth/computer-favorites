@@ -6,14 +6,22 @@ interface Tab {
   component: any
 }
 
-defineProps<{
+const props = defineProps<{
   tabs: Tab[]
   activeId: string
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'change', id: string): void
 }>()
+
+// 同标签重复点击直接短路，减少无效渲染
+const handleTabClick = (id: string) => {
+  if (id === props.activeId) {
+    return
+  }
+  emit('change', id)
+}
 </script>
 
 <template>
@@ -32,7 +40,7 @@ defineEmits<{
         v-for="tab in tabs"
         :key="tab.id"
         type="button"
-        @click="$emit('change', tab.id)"
+        @click="handleTabClick(tab.id)"
         class="flex cursor-pointer items-center space-x-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-colors"
         :class="[
           activeId === tab.id
@@ -51,7 +59,7 @@ defineEmits<{
         v-for="tab in tabs"
         :key="tab.id"
         type="button"
-        @click="$emit('change', tab.id)"
+        @click="handleTabClick(tab.id)"
         class="flex w-full cursor-pointer items-center space-x-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all"
         :class="[
           activeId === tab.id

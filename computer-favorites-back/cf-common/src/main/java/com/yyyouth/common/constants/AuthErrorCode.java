@@ -141,7 +141,32 @@ public enum AuthErrorCode {
     /**
      * 修改密码失败
      */
-    CHANGE_PASSWORD_UPDATE_FAILED(100227, "修改密码失败，请稍后重试");
+    CHANGE_PASSWORD_UPDATE_FAILED(100227, "修改密码失败，请稍后重试"),
+
+    /**
+     * 新用户名已被使用
+     */
+    USERNAME_ALREADY_EXISTS(100228, "该用户名已被使用"),
+
+    /**
+     * 新用户名与当前用户名相同
+     */
+    USERNAME_SAME_AS_OLD(100229, "新用户名不能与当前用户名相同"),
+
+    /**
+     * 用户名包含敏感词
+     */
+    USERNAME_CONTAINS_SENSITIVE_WORD(100230, "用户名包含敏感词，请重新输入"),
+
+    /**
+     * 用户名每月只能修改一次
+     */
+    USERNAME_UPDATE_MONTHLY_LIMIT(100231, "用户名每月仅允许修改一次"),
+
+    /**
+     * 用户名更新失败
+     */
+    USERNAME_UPDATE_FAILED(100232, "用户名修改失败，请稍后重试");
 
     private final int code;
 

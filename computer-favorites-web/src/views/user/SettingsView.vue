@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, shallowRef, provide, onMounted } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, shallowRef } from 'vue'
 // @ts-ignore
 import SettingsSidebar from '@/components/user/settings/SettingsSidebar.vue'
 // @ts-ignore
@@ -50,13 +50,110 @@ if (!firstTab) {
 
 const activeTabId = ref(firstTab.id)
 const activeComponent = shallowRef(firstTab.component)
+const contentWrapperRef = ref<HTMLElement | null>(null)
+const lockedContentHeight = ref<number | null>(null)
+const stableContentMinHeight = ref(0)
+const viewportMinHeight = ref('calc(100dvh - 4rem)')
+let releaseHeightFrame = 0
+let transitionSerial = 0
+
+// 记录稳定的基线高度，保证较短分区也能贴合页脚区域
+const syncStableContentMinHeight = (height?: number) => {
+  const measuredHeight = typeof height === 'number' ? height : (contentWrapperRef.value?.offsetHeight ?? 0)
+  if (measuredHeight > stableContentMinHeight.value) {
+    stableContentMinHeight.value = Math.round(measuredHeight)
+  }
+}
+
+// 通过视口高度兜底，确保设置页在短内容场景下也能与页脚贴合
+const syncViewportMinHeight = () => {
+  if (typeof window === 'undefined') {
+    return
+  }
+  const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+  const footerElement = document.querySelector('footer, .u-footer') as HTMLElement | null
+  const footerHeight = footerElement?.offsetHeight ?? 0
+  const navbarHeight = 64
+  const computedHeight = Math.max(Math.round(viewportHeight - navbarHeight - footerHeight), 0)
+  viewportMinHeight.value = `${computedHeight}px`
+}
+
+// 切换期间通过最小高度锁定内容容器，避免页脚因内容高度瞬变而跳动
+const contentWrapperStyle = computed(() => {
+  const lockHeight = lockedContentHeight.value ?? 0
+  const baseHeight = stableContentMinHeight.value
+  const targetHeight = Math.max(lockHeight, baseHeight)
+  if (targetHeight <= 0) {
+    return undefined
+  }
+  return {
+    minHeight: `${targetHeight}px`,
+  }
+})
+
+// 统一封装高度锁定，保证高度值安全
+const lockContentHeight = (height: number) => {
+  lockedContentHeight.value = Math.max(0, Math.round(height))
+}
+
+// 在下一帧释放高度锁，避免与当前过渡帧竞争导致抖动
+const releaseContentHeight = (serial: number) => {
+  if (releaseHeightFrame) {
+    cancelAnimationFrame(releaseHeightFrame)
+  }
+  releaseHeightFrame = requestAnimationFrame(() => {
+    // 仅允许最后一次切换释放高度锁，防止快速切换时提前解锁
+    if (serial === transitionSerial) {
+      lockedContentHeight.value = null
+    }
+    releaseHeightFrame = 0
+  })
+}
+
+// 离场前锁定当前容器高度，保持布局稳定
+const handleBeforeLeave = (el: Element) => {
+  const wrapperHeight = contentWrapperRef.value?.offsetHeight ?? 0
+  const currentHeight = (el as HTMLElement).offsetHeight
+  lockContentHeight(Math.max(wrapperHeight, currentHeight))
+}
+
+// 入场时若新内容更高，立即扩展锁定高度，避免下方内容被压缩
+const handleEnter = (el: Element) => {
+  const enteringHeight = (el as HTMLElement).offsetHeight
+  const currentLockHeight = lockedContentHeight.value ?? 0
+  if (enteringHeight > currentLockHeight) {
+    lockContentHeight(enteringHeight)
+  }
+}
+
+// 入场结束后释放锁定高度，回归自然文档流
+const handleAfterEnter = (el: Element) => {
+  const serialSnapshot = transitionSerial
+  const enteredHeight = (el as HTMLElement).offsetHeight
+  lockContentHeight(enteredHeight)
+  syncStableContentMinHeight(enteredHeight)
+  releaseContentHeight(serialSnapshot)
+}
 
 const handleTabChange = (id: string) => {
-  activeTabId.value = id
-  const tab = tabs.find((t) => t.id === id)
-  if (tab) {
-    activeComponent.value = tab.component
+  if (id === activeTabId.value) {
+    return
   }
+
+  const tab = tabs.find((t) => t.id === id)
+  if (!tab) {
+    return
+  }
+
+  transitionSerial += 1
+
+  const currentHeight = contentWrapperRef.value?.offsetHeight ?? 0
+  if (currentHeight > 0) {
+    lockContentHeight(currentHeight)
+  }
+
+  activeTabId.value = id
+  activeComponent.value = tab.component
 }
 
 const handleSaveAllChanges = async () => {
@@ -166,6 +263,8 @@ const syncSettingsStateFromApi = async () => {
     favoriteWebsites: normalizeString(profile?.favoriteWebsites, mockUserDetailProfile.favoriteWebsites),
     uploadedWebsites: normalizeString(profile?.uploadedWebsites, mockUserDetailProfile.uploadedWebsites),
     contribution: normalizeString(profile?.contribution, mockUserDetailProfile.contribution),
+    createTime: normalizeString(profile?.createTime, ''),
+    updateTime: normalizeString(profile?.updateTime, ''),
   })
 
   Object.assign(settingsState.setting, {
@@ -179,7 +278,21 @@ const syncSettingsStateFromApi = async () => {
   })
 }
 
+onBeforeUnmount(() => {
+  if (releaseHeightFrame) {
+    cancelAnimationFrame(releaseHeightFrame)
+    releaseHeightFrame = 0
+  }
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', syncViewportMinHeight)
+  }
+})
+
 onMounted(async () => {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', syncViewportMinHeight)
+  }
+
   try {
     await syncSettingsStateFromApi()
   } catch {
@@ -189,14 +302,17 @@ onMounted(async () => {
       type: 'warning',
     })
   } finally {
+    await nextTick()
+    syncStableContentMinHeight()
+    syncViewportMinHeight()
     appStore.finishRouteTransition()
   }
 })
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-8rem)] bg-slate-50 transition-colors duration-300 dark:bg-black">
-    <UContainer class="max-w-6xl py-6 md:py-10">
+  <div :style="{ minHeight: viewportMinHeight }" class="flex h-full w-full flex-col bg-slate-50 transition-colors duration-300 dark:bg-black">
+    <UContainer class="flex min-h-full w-full max-w-6xl flex-1 flex-col pt-6 pb-0 md:pt-10 md:pb-0">
       <div class="flex justify-end pb-4">
         <UButton :loading="savingProfile" :disabled="savingProfile" variant="solid" class="cursor-pointer !bg-[#f59e0b] !text-white hover:!bg-[#d97706] active:!bg-[#d97706] focus-visible:!outline-[#f59e0b] disabled:cursor-not-allowed disabled:opacity-70" @click="handleSaveAllChanges">
           保存全部更改
@@ -214,9 +330,19 @@ onMounted(async () => {
 
         <!-- Content Area -->
         <main class="min-w-0 flex-1">
-          <transition name="fade" mode="out-in">
-            <component :is="activeComponent" />
-          </transition>
+          <div ref="contentWrapperRef" class="settings-content-shell" :style="contentWrapperStyle">
+            <Transition
+              name="settings-switch"
+              mode="out-in"
+              @before-leave="handleBeforeLeave"
+              @enter="handleEnter"
+              @after-enter="handleAfterEnter"
+            >
+              <section :key="activeTabId" class="settings-content-panel">
+                <component :is="activeComponent" />
+              </section>
+            </Transition>
+          </div>
         </main>
       </div>
     </UContainer>
@@ -224,16 +350,44 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+.settings-content-shell {
+  position: relative;
+  contain: layout paint;
 }
-.fade-enter-from {
+
+.settings-content-panel {
+  width: 100%;
+}
+
+.settings-switch-enter-active,
+.settings-switch-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  will-change: opacity, transform;
+}
+
+.settings-switch-enter-from,
+.settings-switch-leave-to {
   opacity: 0;
   transform: translateY(4px);
 }
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
+
+.settings-switch-leave-active {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-switch-enter-active,
+  .settings-switch-leave-active {
+    transition: none;
+  }
+
+  .settings-switch-enter-from,
+  .settings-switch-leave-to {
+    opacity: 1;
+    transform: none;
+  }
 }
 </style>

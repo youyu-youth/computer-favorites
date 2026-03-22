@@ -3,7 +3,8 @@
 @import '@nuxt/ui';
 
 html {
-  overflow-y: scroll;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -17,6 +18,147 @@ body {
 .dark body {
   background-color: #121212;
   color: #f3f4f6;
+}
+
+/* 用户名弹窗遮罩层：提供稳定遮罩并关闭透明穿透 */
+.username-edit-modal-overlay {
+  background-color: rgba(15, 23, 42, 0.56) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 用户名弹窗内容层：明暗主题均使用不透明背景，并融合站点主题色 */
+.username-edit-modal-content {
+  width: min(92vw, 560px) !important;
+  max-width: 560px !important;
+  border-radius: 14px !important;
+  border: 1px solid #e5e7eb !important;
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2) !important;
+}
+
+.dark .username-edit-modal-content {
+  border-color: #334155 !important;
+  background-color: #111827 !important;
+  color: #f3f4f6 !important;
+  box-shadow: 0 24px 48px rgba(2, 6, 23, 0.55) !important;
+}
+
+.username-edit-modal-header {
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #fffbeb;
+}
+
+.dark .username-edit-modal-header {
+  border-bottom-color: #334155;
+  background-color: #1f2937;
+}
+
+.username-edit-modal-title {
+  color: #111827;
+  font-weight: 700;
+}
+
+.dark .username-edit-modal-title {
+  color: #f9fafb;
+}
+
+.username-edit-modal-description {
+  color: #4b5563;
+}
+
+.dark .username-edit-modal-description {
+  color: #9ca3af;
+}
+
+.username-edit-modal-close {
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.username-edit-modal-close:hover {
+  background-color: #f3f4f6;
+}
+
+.dark .username-edit-modal-close:hover {
+  background-color: #374151;
+}
+
+/* 控制内容区滚动，避免小屏遮挡按钮 */
+.username-edit-modal-body {
+  max-height: min(58vh, 420px);
+  overflow-y: auto;
+}
+
+/* 底部按钮在窄屏保持可操作性 */
+.username-edit-modal-footer {
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .username-edit-modal-footer {
+  border-top-color: #334155;
+}
+
+/* 弹窗打开时锁定页面滚动，防止背景内容位移 */
+html.username-modal-scroll-lock,
+body.username-modal-scroll-lock {
+  overflow: hidden !important;
+}
+
+body.username-modal-scroll-lock {
+  position: fixed;
+  width: 100%;
+  top: calc(var(--username-modal-scroll-y, 0px) * -1);
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+/* 平板适配 */
+@media (max-width: 1024px) {
+  .username-edit-modal-content {
+    width: min(94vw, 520px) !important;
+  }
+}
+
+/* 手机适配 */
+@media (max-width: 768px) {
+  .username-edit-modal-content {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    border-radius: 12px !important;
+  }
+
+  .username-edit-modal-body {
+    max-height: 52vh;
+  }
+
+  .username-edit-modal-footer {
+    padding-top: 12px;
+  }
+
+  .username-edit-modal-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .username-edit-modal-actions > * {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* 小屏手机适配 */
+@media (max-width: 480px) {
+  .username-edit-modal-content {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    border-radius: 10px !important;
+  }
+
+  .username-edit-modal-body {
+    max-height: 48vh;
+  }
 }
 
 /* Custom scrollbar */

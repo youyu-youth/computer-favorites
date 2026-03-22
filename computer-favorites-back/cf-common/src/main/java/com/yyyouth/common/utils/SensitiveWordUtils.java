@@ -75,6 +75,17 @@ public class SensitiveWordUtils {
     }
 
     /**
+     * 用户可见内容敏感词检测
+     *
+     * @param text 待检测文本
+     * @return true-包含敏感词，false-不包含
+     */
+    public static boolean containsForUserContent(String text) {
+        return contains(text);
+    }
+
+
+    /**
      * 获取文本中的第一个敏感词
      * 
      * @param text 待检测文本

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -170,6 +172,47 @@ class UserProfileControllerIntegrationTest {
                 .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS));
 
         verify(userProfileService).deleteLoginUserAvatar();
+    }
+
+    /**
+     * 修改用户名成功应返回成功
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldUpdateUsernameSuccessfully() throws Exception {
+        String requestBody = "{\"username\":\"new_username_2026\"}";
+
+        mockMvc.perform(put("/api/user/profile/username")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.msg").value("用户名修改成功"));
+
+        verify(userProfileService).updateLoginUsername(any());
+    }
+
+    /**
+     * 修改用户名失败应返回业务错误
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldReturnBusinessErrorWhenUpdateUsernameFailed() throws Exception {
+        org.mockito.Mockito.doThrow(new BusinessException(
+                        AuthErrorCode.USERNAME_UPDATE_MONTHLY_LIMIT.getCode(),
+                        AuthErrorCode.USERNAME_UPDATE_MONTHLY_LIMIT.getMessage()))
+                .when(userProfileService)
+                .updateLoginUsername(any());
+
+        String requestBody = "{\"username\":\"new_username_2026\"}";
+        mockMvc.perform(put("/api/user/profile/username")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(AuthErrorCode.USERNAME_UPDATE_MONTHLY_LIMIT.getCode()))
+                .andExpect(jsonPath("$.msg").value(AuthErrorCode.USERNAME_UPDATE_MONTHLY_LIMIT.getMessage()));
     }
 
     /**

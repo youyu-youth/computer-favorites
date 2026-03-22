@@ -1,6 +1,7 @@
 package com.yyyouth.service.user;
 
 import com.yyyouth.model.dto.user.UserProfileUpdateDTO;
+import com.yyyouth.model.dto.user.UserUsernameUpdateDTO;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
 import com.yyyouth.model.vo.user.UserAvatarUploadVO;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +27,13 @@ public interface UserProfileService {
      * @param updateDTO 更新参数
      */
     void updateLoginUserProfile(UserProfileUpdateDTO updateDTO);
+
+    /**
+     * 修改登录用户用户名
+     *
+     * @param updateDTO 用户名修改参数
+     */
+    void updateLoginUsername(UserUsernameUpdateDTO updateDTO);
 
     /**
      * 上传登录用户头像

@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
@@ -221,5 +222,57 @@ class UserProfileServiceImplTest {
 
         verify(minioFileService).deleteByUrl("http://127.0.0.1:9000/computer-favorites/user-avatar/20260322/old.png");
         verify(userAccountMapper).updateById(argThat(account -> "".equals(account.getAvatar())));
+    }
+
+    /**
+     * 修改用户名成功时应更新用户名与修改时间
+     */
+    @Test
+    void shouldUpdateUsernameSuccessfully() {
+        UserAccount currentUser = new UserAccount();
+        currentUser.setId(1001L);
+        currentUser.setDeleted(0);
+        currentUser.setUsername("old_name");
+        currentUser.setUsernameUpdateTime(java.time.LocalDateTime.of(2026, 2, 15, 10, 0));
+
+        UserUsernameUpdateDTO updateDTO = new UserUsernameUpdateDTO();
+        updateDTO.setUsername("new_name_2026");
+
+        when(userAccountMapper.selectOne(any())).thenReturn(currentUser).thenReturn(null);
+        when(userAccountMapper.update(any(), any())).thenReturn(1);
+
+        try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
+            stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
+            stpUtilMock.when(StpUtil::getLoginIdAsLong).thenReturn(1001L);
+            userProfileService.updateLoginUsername(updateDTO);
+        }
+
+        verify(userAccountMapper).update(any(), any());
+    }
+
+    /**
+     * 同一自然月重复修改用户名时应拒绝
+     */
+    @Test
+    void shouldRejectUsernameUpdateWhenSameMonth() {
+        UserAccount currentUser = new UserAccount();
+        currentUser.setId(1001L);
+        currentUser.setDeleted(0);
+        currentUser.setUsername("old_name");
+        currentUser.setUsernameUpdateTime(java.time.LocalDateTime.now().minusDays(1));
+
+        UserUsernameUpdateDTO updateDTO = new UserUsernameUpdateDTO();
+        updateDTO.setUsername("new_name_2026");
+
+        when(userAccountMapper.selectOne(any())).thenReturn(currentUser);
+
+        try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
+            stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
+            stpUtilMock.when(StpUtil::getLoginIdAsLong).thenReturn(1001L);
+
+            assertThatThrownBy(() -> userProfileService.updateLoginUsername(updateDTO))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessage(AuthErrorCode.USERNAME_UPDATE_MONTHLY_LIMIT.getMessage());
+        }
     }
 }

@@ -66,6 +66,10 @@ export interface UpdateUserProfileRequest {
   techStack?: string
 }
 
+export interface UpdateUsernameRequest {
+  username: string
+}
+
 export interface UserAvatarUploadResponse {
   avatarUrl: string
   objectKey: string
@@ -102,6 +106,13 @@ export async function updateCurrentUserProfile(payload: UpdateUserProfileRequest
     if (retryRes.code !== 200) {
       throw new Error(retryRes.msg || '保存个人资料失败')
     }
+  }
+}
+
+export async function updateCurrentUsername(payload: UpdateUsernameRequest): Promise<void> {
+  const res = await putJson<ApiResult<null>>('/api/user/profile/username', payload)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '用户名修改失败')
   }
 }
 

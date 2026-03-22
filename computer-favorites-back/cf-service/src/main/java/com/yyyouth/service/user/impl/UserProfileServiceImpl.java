@@ -3,10 +3,13 @@ package com.yyyouth.service.user.impl;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yyyouth.common.constants.AuthErrorCode;
 import com.yyyouth.common.exception.BusinessException;
+import com.yyyouth.common.utils.SensitiveWordUtils;
 import com.yyyouth.model.dto.user.LoginUserProfileQueryDTO;
 import com.yyyouth.model.dto.user.UserProfileUpdateDTO;
+import com.yyyouth.model.dto.user.UserUsernameUpdateDTO;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.user.TechStack;
 import com.yyyouth.model.pojo.user.UserProfile;
@@ -24,6 +27,7 @@ import com.yyyouth.service.mapper.user.UserSettingMapper;
 import com.yyyouth.service.user.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -31,6 +35,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -52,6 +58,8 @@ import java.util.stream.Collectors;
 public class UserProfileServiceImpl implements UserProfileService {
 
     private static final String AVATAR_BUSINESS_PATH = "user-avatar";
+
+    private static final int USERNAME_MAX_LENGTH = 120;
 
     private final UserAccountMapper userAccountMapper;
 
@@ -174,6 +182,57 @@ public class UserProfileServiceImpl implements UserProfileService {
             return;
         }
         userProfileMapper.updateById(userProfile);
+    }
+
+    /**
+     * 修改登录用户用户名
+     *
+     * @param updateDTO 用户名修改参数
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateLoginUsername(UserUsernameUpdateDTO updateDTO) {
+        StpUtil.checkLogin();
+        UserAccount currentUser = getCurrentActiveUserWithUsernameUpdateTime();
+        String normalizedUsername = normalizeText(updateDTO.getUsername());
+        if (!StringUtils.hasText(normalizedUsername) || normalizedUsername.length() > USERNAME_MAX_LENGTH) {
+            throw new BusinessException(AuthErrorCode.USERNAME_UPDATE_FAILED.getCode(), "用户名长度需在1-120之间");
+        }
+        if (normalizedUsername.equals(currentUser.getUsername())) {
+            throw new BusinessException(AuthErrorCode.USERNAME_SAME_AS_OLD.getCode(), AuthErrorCode.USERNAME_SAME_AS_OLD.getMessage());
+        }
+        if (SensitiveWordUtils.containsForUserContent(normalizedUsername)) {
+            throw new BusinessException(AuthErrorCode.USERNAME_CONTAINS_SENSITIVE_WORD.getCode(), AuthErrorCode.USERNAME_CONTAINS_SENSITIVE_WORD.getMessage());
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (isSameMonth(currentUser.getUsernameUpdateTime(), now)) {
+            throw new BusinessException(AuthErrorCode.USERNAME_UPDATE_MONTHLY_LIMIT.getCode(), AuthErrorCode.USERNAME_UPDATE_MONTHLY_LIMIT.getMessage());
+        }
+
+        UserAccount duplicateUser = userAccountMapper.selectOne(new LambdaQueryWrapper<UserAccount>()
+                .eq(UserAccount::getDeleted, 0)
+                .eq(UserAccount::getUsername, normalizedUsername)
+                .ne(UserAccount::getId, currentUser.getId())
+                .last("limit 1"));
+        if (duplicateUser != null) {
+            throw new BusinessException(AuthErrorCode.USERNAME_ALREADY_EXISTS.getCode(), AuthErrorCode.USERNAME_ALREADY_EXISTS.getMessage());
+        }
+
+        try {
+            int updatedRows = userAccountMapper.update(null, new LambdaUpdateWrapper<UserAccount>()
+                    .eq(UserAccount::getId, currentUser.getId())
+                    .eq(UserAccount::getDeleted, 0)
+                    .set(UserAccount::getUsername, normalizedUsername)
+                    .set(UserAccount::getUsernameUpdateTime, now)
+                    .set(UserAccount::getUpdateTime, now));
+            if (updatedRows != 1) {
+                throw new BusinessException(AuthErrorCode.USERNAME_UPDATE_FAILED.getCode(), AuthErrorCode.USERNAME_UPDATE_FAILED.getMessage());
+            }
+            log.info("用户名修改成功，userId={}", currentUser.getId());
+        } catch (DuplicateKeyException ex) {
+            throw new BusinessException(AuthErrorCode.USERNAME_ALREADY_EXISTS.getCode(), AuthErrorCode.USERNAME_ALREADY_EXISTS.getMessage());
+        }
     }
 
     /**
@@ -307,6 +366,41 @@ public class UserProfileServiceImpl implements UserProfileService {
             throw new BusinessException(AuthErrorCode.USER_DISABLED.getCode(), AuthErrorCode.USER_DISABLED.getMessage());
         }
         return userAccount;
+    }
+
+    /**
+     * 获取当前登录可用用户（包含用户名修改时间字段）
+     *
+     * @return 用户账号
+     */
+    private UserAccount getCurrentActiveUserWithUsernameUpdateTime() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        UserAccount userAccount = userAccountMapper.selectOne(new LambdaQueryWrapper<UserAccount>()
+                .select(UserAccount::getId,
+                        UserAccount::getUsername,
+                        UserAccount::getDeleted,
+                        UserAccount::getUsernameUpdateTime)
+                .eq(UserAccount::getId, userId)
+                .eq(UserAccount::getDeleted, 0)
+                .last("limit 1"));
+        if (userAccount == null) {
+            throw new BusinessException(AuthErrorCode.USER_DISABLED.getCode(), AuthErrorCode.USER_DISABLED.getMessage());
+        }
+        return userAccount;
+    }
+
+    /**
+     * 判断两个时间是否在同一自然月
+     *
+     * @param first 第一个时间
+     * @param second 第二个时间
+     * @return true-同月，false-不同月
+     */
+    private boolean isSameMonth(LocalDateTime first, LocalDateTime second) {
+        if (first == null || second == null) {
+            return false;
+        }
+        return YearMonth.from(first).equals(YearMonth.from(second));
     }
 
     /**

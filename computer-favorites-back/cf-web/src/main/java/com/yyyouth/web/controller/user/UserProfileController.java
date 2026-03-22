@@ -3,6 +3,7 @@ package com.yyyouth.web.controller.user;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.yyyouth.common.web.HttpResult;
 import com.yyyouth.model.dto.user.UserProfileUpdateDTO;
+import com.yyyouth.model.dto.user.UserUsernameUpdateDTO;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
 import com.yyyouth.model.vo.user.UserAvatarUploadVO;
 import com.yyyouth.service.user.UserProfileService;
@@ -10,6 +11,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
  *
  * 用户资料接口控制器
  */
+@Slf4j
 @Api(tags = "用户资料接口")
 @RestController
 @RequiredArgsConstructor
@@ -59,6 +62,21 @@ public class UserProfileController {
     public HttpResult updateLoginUserProfile(@RequestBody @Valid UserProfileUpdateDTO updateDTO) {
         userProfileService.updateLoginUserProfile(updateDTO);
         return HttpResult.success("保存成功");
+    }
+
+    /**
+     * 修改登录用户用户名
+     *
+     * @param updateDTO 用户名修改参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "修改登录用户用户名")
+    @PutMapping("/username")
+    @SaCheckLogin
+    public HttpResult updateLoginUsername(@RequestBody @Valid UserUsernameUpdateDTO updateDTO) {
+        log.info("收到用户名修改请求");
+        userProfileService.updateLoginUsername(updateDTO);
+        return HttpResult.success("用户名修改成功");
     }
 
     /**

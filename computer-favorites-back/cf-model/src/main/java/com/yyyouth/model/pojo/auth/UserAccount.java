@@ -96,6 +96,12 @@ public class UserAccount {
     private LocalDateTime updateTime;
 
     /**
+     * 用户名最后修改时间
+     */
+    @TableField(value = "username_update_time", select = false)
+    private LocalDateTime usernameUpdateTime;
+
+    /**
      * 逻辑删除标记 0未删除 1已删除
      */
     private Integer deleted;
