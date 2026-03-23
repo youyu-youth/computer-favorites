@@ -1,37 +1,109 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+
+export type ThemeMode = 'light' | 'dark' | 'system'
+
+const THEME_MODE_STORAGE_KEY = 'theme-mode'
 
 export const useAppStore = defineStore('app', () => {
-  const isDark = ref(true)
+  const themeMode = ref<ThemeMode>('dark')
   const isRouteTransitioning = ref(false)
   const routeTransitionStartedAt = ref(0)
   let routeTransitionTimer: number | null = null
   let routeTransitionSafeTimer: number | null = null
+  let systemThemeMedia: MediaQueryList | null = null
+  const systemPrefersDark = ref(true)
 
-  const applyTheme = () => {
-    if (isDark.value) {
-      document.documentElement.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
+  // 解析当前主题模式对应的明暗值
+  const resolveIsDark = (mode: ThemeMode): boolean => {
+    if (mode === 'dark') {
+      return true
     }
+    if (mode === 'light') {
+      return false
+    }
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return true
+    }
+    return systemPrefersDark.value
+  }
+
+  const isDark = computed(() => resolveIsDark(themeMode.value))
+
+  // 将主题同步到根节点 class，并兼容旧的 localStorage theme 字段
+  const applyTheme = () => {
+    if (typeof document === 'undefined') {
+      return
+    }
+    const dark = resolveIsDark(themeMode.value)
+    document.documentElement.classList.toggle('dark', dark)
+    localStorage.setItem('theme', dark ? 'dark' : 'light')
+  }
+
+  // 跟随系统时监听系统主题变化并实时应用
+  const handleSystemThemeChange = () => {
+    if (!systemThemeMedia) {
+      return
+    }
+    systemPrefersDark.value = systemThemeMedia.matches
+    if (themeMode.value !== 'system') {
+      return
+    }
+    applyTheme()
+  }
+
+  const unbindSystemThemeListener = () => {
+    if (!systemThemeMedia) {
+      return
+    }
+    systemThemeMedia.removeEventListener('change', handleSystemThemeChange)
+    systemThemeMedia = null
+  }
+
+  const bindSystemThemeListener = () => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return
+    }
+    unbindSystemThemeListener()
+    systemThemeMedia = window.matchMedia('(prefers-color-scheme: dark)')
+    systemPrefersDark.value = systemThemeMedia.matches
+    systemThemeMedia.addEventListener('change', handleSystemThemeChange)
+  }
+
+  const setThemeMode = (mode: ThemeMode) => {
+    themeMode.value = mode
+    localStorage.setItem(THEME_MODE_STORAGE_KEY, mode)
+    if (mode === 'system') {
+      bindSystemThemeListener()
+    } else {
+      unbindSystemThemeListener()
+    }
+    applyTheme()
   }
 
   const initTheme = () => {
+    const savedThemeMode = localStorage.getItem(THEME_MODE_STORAGE_KEY)
+    if (savedThemeMode === 'light' || savedThemeMode === 'dark' || savedThemeMode === 'system') {
+      setThemeMode(savedThemeMode)
+      return
+    }
+
     const savedTheme = localStorage.getItem('theme')
-    isDark.value = savedTheme === null ? true : savedTheme === 'dark'
-    applyTheme()
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setThemeMode(savedTheme)
+      return
+    }
+
+    setThemeMode('dark')
   }
 
+  // 顶部导航快捷切换保持 light/dark 两态，系统模式下优先切到与当前相反模式
   const toggleTheme = () => {
-    isDark.value = !isDark.value
-    applyTheme()
+    setThemeMode(isDark.value ? 'light' : 'dark')
   }
 
   const setDark = (value: boolean) => {
-    isDark.value = value
-    applyTheme()
+    setThemeMode(value ? 'dark' : 'light')
   }
 
   const startRouteTransition = () => {
@@ -68,11 +140,13 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
+    themeMode,
     isDark,
     isRouteTransitioning,
     initTheme,
     toggleTheme,
     setDark,
+    setThemeMode,
     startRouteTransition,
     finishRouteTransition,
   }

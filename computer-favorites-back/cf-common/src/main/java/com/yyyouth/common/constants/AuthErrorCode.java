@@ -166,7 +166,57 @@ public enum AuthErrorCode {
     /**
      * 用户名更新失败
      */
-    USERNAME_UPDATE_FAILED(100232, "用户名修改失败，请稍后重试");
+    USERNAME_UPDATE_FAILED(100232, "用户名修改失败，请稍后重试"),
+
+    /**
+     * 修改邮箱验证码已过期
+     */
+    EMAIL_UPDATE_CODE_EXPIRED(100233, "验证码已过期，请重新获取"),
+
+    /**
+     * 修改邮箱验证码错误
+     */
+    EMAIL_UPDATE_CODE_INVALID(100234, "验证码不正确"),
+
+    /**
+     * 修改邮箱验证码发送过于频繁
+     */
+    EMAIL_UPDATE_CODE_SEND_TOO_FAST(100235, "验证码发送过于频繁，请稍后重试"),
+
+    /**
+     * 修改邮箱验证码发送次数超限
+     */
+    EMAIL_UPDATE_CODE_SEND_LIMIT(100236, "今日验证码发送次数已达上限"),
+
+    /**
+     * 修改邮箱验证码发送失败
+     */
+    EMAIL_UPDATE_CODE_SEND_FAILED(100237, "验证码发送失败，请稍后重试"),
+
+    /**
+     * 新邮箱已被使用
+     */
+    EMAIL_ALREADY_EXISTS(100238, "该邮箱已被注册"),
+
+    /**
+     * 新邮箱与当前邮箱相同
+     */
+    EMAIL_SAME_AS_OLD(100239, "新邮箱不能与当前邮箱相同"),
+
+    /**
+     * 邮箱修改失败
+     */
+    EMAIL_UPDATE_FAILED(100240, "邮箱修改失败，请稍后重试"),
+
+    /**
+     * 偏好设置参数非法
+     */
+    USER_SETTING_INVALID_PARAM(100241, "偏好设置参数非法"),
+
+    /**
+     * 偏好设置保存失败
+     */
+    USER_SETTING_UPDATE_FAILED(100242, "偏好设置保存失败，请稍后重试");
 
     private final int code;
 

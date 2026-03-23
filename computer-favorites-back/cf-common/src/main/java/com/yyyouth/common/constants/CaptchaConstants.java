@@ -15,6 +15,9 @@ public class CaptchaConstants {
     // 重置密码验证码Redis键前缀
     public static final String RESET_CODE_KEY_PREFIX = "email:code:reset:";
 
+    // 修改邮箱验证码Redis键前缀
+    public static final String EMAIL_UPDATE_CODE_KEY_PREFIX = "email:code:update:";
+
     // 验证码有效期（分钟）
     public static final int CODE_EXPIRE_MINUTES = 5;
     

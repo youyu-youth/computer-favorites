@@ -28,7 +28,7 @@ export interface UserDetailProfile {
 }
 
 export interface UserPreferenceSetting {
-  theme: string // light/dark
+  theme: string // light/dark/system
   language: string // zh-CN
   emailNotice: number // 0关闭 1开启
   collectNotice: number

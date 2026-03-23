@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { inject } from 'vue'
 import { settingsStateKey } from '@/components/user/settings/context'
+import { useAppStore, type ThemeMode } from '@/stores/app'
 
 const settingsState = inject(settingsStateKey)
 if (!settingsState) {
   throw new Error('Settings state is not provided')
 }
 
+const appStore = useAppStore()
 const setting = settingsState.setting
 
-const updateTheme = (val: 'light' | 'dark' | 'system') => {
+// 点击主题卡片后立即切换全局主题，保持设置值与页面表现一致
+const updateTheme = (val: ThemeMode) => {
   setting.theme = val
+  appStore.setThemeMode(val)
 }
 
 defineOptions({

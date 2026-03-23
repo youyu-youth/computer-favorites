@@ -2,10 +2,11 @@
 import { computed, inject, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useRouter } from 'vue-router'
+import EmailEditDialog from '@/components/user/settings/components/EmailEditDialog.vue'
 import UsernameEditDialog from '@/components/user/settings/components/UsernameEditDialog.vue'
 import { settingsStateKey } from '@/components/user/settings/context'
 import type { SettingsStoreState } from '@/components/user/settings/mock'
-import { updateCurrentUsername } from '@/services/profile'
+import { updateCurrentEmail, updateCurrentUsername, verifyEmailUpdateCode } from '@/services/profile'
 
 const settingsState = inject<SettingsStoreState>(settingsStateKey)
 if (!settingsState) {
@@ -17,7 +18,9 @@ const toast = useToast()
 const basicInfo = settingsState.basicInfo
 const profile = settingsState.profile
 const usernameDialogOpen = ref(false)
+const emailDialogOpen = ref(false)
 const updatingUsername = ref(false)
+const updatingEmail = ref(false)
 
 // 使用数据库返回的更新时间回显密码最近修改时间
 const passwordLastUpdateText = computed(() => {
@@ -47,6 +50,10 @@ const openUsernameDialog = () => {
   usernameDialogOpen.value = true
 }
 
+const openEmailDialog = () => {
+  emailDialogOpen.value = true
+}
+
 const handleUsernameSubmit = async (username: string) => {
   if (updatingUsername.value) {
     return
@@ -70,6 +77,35 @@ const handleUsernameSubmit = async (username: string) => {
     })
   } finally {
     updatingUsername.value = false
+  }
+}
+
+// 执行验证码校验与邮箱更新，成功后立即回写设置页状态
+const handleEmailSubmit = async (payload: { email: string, emailCode: string }) => {
+  if (updatingEmail.value) {
+    return
+  }
+  updatingEmail.value = true
+  try {
+    await verifyEmailUpdateCode(payload)
+    await updateCurrentEmail(payload)
+    basicInfo.email = payload.email
+    basicInfo.emailVerified = 1
+    emailDialogOpen.value = false
+    toast.add({
+      title: '修改成功',
+      description: '邮箱已更新',
+      type: 'success',
+    })
+  } catch (error) {
+    const description = error instanceof Error ? error.message : '邮箱修改失败，请稍后重试'
+    toast.add({
+      title: '修改失败',
+      description,
+      type: 'error',
+    })
+  } finally {
+    updatingEmail.value = false
   }
 }
 
@@ -112,6 +148,7 @@ defineOptions({
             variant="soft"
             color="gray"
             class="cursor-pointer bg-slate-100/70 text-slate-700 hover:bg-slate-200/70 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+            @click="openEmailDialog"
           >
             {{ basicInfo.emailVerified === 1 ? '修改' : '绑定' }}
           </UButton>
@@ -203,6 +240,14 @@ defineOptions({
         </div>
       </div>
     </div>
+
+    <EmailEditDialog
+      :open="emailDialogOpen"
+      :loading="updatingEmail"
+      :current-email="basicInfo.email"
+      @update:open="emailDialogOpen = $event"
+      @submit="handleEmailSubmit"
+    />
 
     <UsernameEditDialog
       :open="usernameDialogOpen"

@@ -2,6 +2,9 @@ package com.yyyouth.web.controller.user;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.yyyouth.common.web.HttpResult;
+import com.yyyouth.model.dto.user.UserEmailCodeSendDTO;
+import com.yyyouth.model.dto.user.UserEmailUpdateDTO;
+import com.yyyouth.model.dto.user.UserPreferenceSettingUpdateDTO;
 import com.yyyouth.model.dto.user.UserProfileUpdateDTO;
 import com.yyyouth.model.dto.user.UserUsernameUpdateDTO;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
@@ -77,6 +80,66 @@ public class UserProfileController {
         log.info("收到用户名修改请求");
         userProfileService.updateLoginUsername(updateDTO);
         return HttpResult.success("用户名修改成功");
+    }
+
+    /**
+     * 更新登录用户偏好设置
+     *
+     * @param updateDTO 偏好设置参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "更新登录用户偏好设置")
+    @PutMapping("/setting")
+    @SaCheckLogin
+    public HttpResult updateLoginUserSetting(@RequestBody @Valid UserPreferenceSettingUpdateDTO updateDTO) {
+        log.info("收到偏好设置更新请求");
+        userProfileService.updateLoginUserSetting(updateDTO);
+        return HttpResult.success("偏好设置保存成功");
+    }
+
+    /**
+     * 发送邮箱修改验证码
+     *
+     * @param sendDTO 发送参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "发送邮箱修改验证码")
+    @PostMapping("/email/code/send")
+    @SaCheckLogin
+    public HttpResult sendEmailUpdateCode(@RequestBody @Valid UserEmailCodeSendDTO sendDTO) {
+        log.info("收到邮箱修改验证码发送请求");
+        userProfileService.sendEmailUpdateCode(sendDTO);
+        return HttpResult.success("验证码发送成功");
+    }
+
+    /**
+     * 校验邮箱修改验证码
+     *
+     * @param updateDTO 校验参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "校验邮箱修改验证码")
+    @PostMapping("/email/code/verify")
+    @SaCheckLogin
+    public HttpResult verifyEmailUpdateCode(@RequestBody @Valid UserEmailUpdateDTO updateDTO) {
+        log.info("收到邮箱修改验证码校验请求");
+        userProfileService.verifyEmailUpdateCode(updateDTO);
+        return HttpResult.success("验证码校验通过");
+    }
+
+    /**
+     * 修改登录用户邮箱
+     *
+     * @param updateDTO 邮箱修改参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "修改登录用户邮箱")
+    @PutMapping("/email")
+    @SaCheckLogin
+    public HttpResult updateLoginEmail(@RequestBody @Valid UserEmailUpdateDTO updateDTO) {
+        log.info("收到邮箱修改请求");
+        userProfileService.updateLoginEmail(updateDTO);
+        return HttpResult.success("邮箱修改成功");
     }
 
     /**

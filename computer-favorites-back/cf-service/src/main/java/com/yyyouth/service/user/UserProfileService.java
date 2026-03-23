@@ -1,5 +1,8 @@
 package com.yyyouth.service.user;
 
+import com.yyyouth.model.dto.user.UserEmailCodeSendDTO;
+import com.yyyouth.model.dto.user.UserEmailUpdateDTO;
+import com.yyyouth.model.dto.user.UserPreferenceSettingUpdateDTO;
 import com.yyyouth.model.dto.user.UserProfileUpdateDTO;
 import com.yyyouth.model.dto.user.UserUsernameUpdateDTO;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
@@ -34,6 +37,34 @@ public interface UserProfileService {
      * @param updateDTO 用户名修改参数
      */
     void updateLoginUsername(UserUsernameUpdateDTO updateDTO);
+
+    /**
+     * 更新登录用户偏好设置
+     *
+     * @param updateDTO 偏好设置参数
+     */
+    void updateLoginUserSetting(UserPreferenceSettingUpdateDTO updateDTO);
+
+    /**
+     * 发送邮箱修改验证码
+     *
+     * @param sendDTO 发送参数
+     */
+    void sendEmailUpdateCode(UserEmailCodeSendDTO sendDTO);
+
+    /**
+     * 校验邮箱修改验证码
+     *
+     * @param updateDTO 校验参数
+     */
+    void verifyEmailUpdateCode(UserEmailUpdateDTO updateDTO);
+
+    /**
+     * 修改登录用户邮箱
+     *
+     * @param updateDTO 邮箱修改参数
+     */
+    void updateLoginEmail(UserEmailUpdateDTO updateDTO);
 
     /**
      * 上传登录用户头像

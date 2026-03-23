@@ -14,9 +14,9 @@ import DataManagementSection from '@/components/user/settings/sections/DataManag
 import MessageSettingsSection from '@/components/user/settings/sections/MessageSettingsSection.vue'
 import { mockUserBasicInfo, mockUserDetailProfile, mockUserPreferenceSetting } from '@/components/user/settings/mock'
 import { settingsStateKey } from '@/components/user/settings/context'
-import { getCurrentUserProfile, updateCurrentUserProfile } from '@/services/profile'
+import { getCurrentUserProfile, updateCurrentUserProfile, updateCurrentUserSetting } from '@/services/profile'
 import { useToast } from '@/composables/useToast'
-import { useAppStore } from '@/stores/app'
+import { useAppStore, type ThemeMode } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 
 defineOptions({
@@ -177,6 +177,16 @@ const handleSaveAllChanges = async () => {
       techStack: settingsState.profile.techStack,
     })
 
+    await updateCurrentUserSetting({
+      theme: normalizeTheme(settingsState.setting.theme) as ThemeMode,
+      language: normalizeLanguage(settingsState.setting.language),
+      emailNotice: settingsState.setting.emailNotice,
+      collectNotice: settingsState.setting.collectNotice,
+      commentNotice: settingsState.setting.commentNotice,
+      homepageStyle: normalizeHomepageStyle(settingsState.setting.homepageStyle),
+      pageSize: normalizePageSize(settingsState.setting.pageSize),
+    })
+
     authStore.setUserSnapshot({
       nickname: settingsState.basicInfo.nickname,
       avatar: settingsState.basicInfo.avatar,
@@ -186,13 +196,13 @@ const handleSaveAllChanges = async () => {
       await syncSettingsStateFromApi()
       toast.add({
         title: '保存成功',
-        description: '个人资料已更新',
+        description: '个人资料和偏好设置已更新',
         type: 'success',
       })
     } catch {
       toast.add({
         title: '保存成功',
-        description: '个人资料已保存，但刷新最新资料失败',
+        description: '资料已保存，但刷新最新状态失败',
         type: 'warning',
       })
     }
@@ -216,20 +226,32 @@ const normalizeNumber = (value: number | undefined, fallback: number): number =>
   return typeof value === 'number' ? value : fallback
 }
 
-const normalizeTheme = (value: string | undefined): string => {
-  return value === 'light' || value === 'dark' || value === 'system' ? value : mockUserPreferenceSetting.theme
+const normalizeTheme = (value: string | undefined): ThemeMode => {
+  if (value === 'light' || value === 'dark' || value === 'system') {
+    return value
+  }
+  return mockUserPreferenceSetting.theme as ThemeMode
 }
 
-const normalizeLanguage = (value: string | undefined): string => {
-  return value === 'zh-CN' || value === 'en-US' ? value : mockUserPreferenceSetting.language
+const normalizeLanguage = (value: string | undefined): 'zh-CN' | 'en-US' => {
+  if (value === 'zh-CN' || value === 'en-US') {
+    return value
+  }
+  return mockUserPreferenceSetting.language as 'zh-CN' | 'en-US'
 }
 
-const normalizeHomepageStyle = (value: string | undefined): string => {
-  return value === 'card' || value === 'list' ? value : mockUserPreferenceSetting.homepageStyle
+const normalizeHomepageStyle = (value: string | undefined): 'card' | 'list' => {
+  if (value === 'card' || value === 'list') {
+    return value
+  }
+  return mockUserPreferenceSetting.homepageStyle as 'card' | 'list'
 }
 
-const normalizePageSize = (value: number | undefined): number => {
-  return value === 10 || value === 20 || value === 50 ? value : mockUserPreferenceSetting.pageSize
+const normalizePageSize = (value: number | undefined): 10 | 20 | 50 => {
+  if (value === 10 || value === 20 || value === 50) {
+    return value
+  }
+  return mockUserPreferenceSetting.pageSize as 10 | 20 | 50
 }
 
 const syncSettingsStateFromApi = async () => {
@@ -267,8 +289,9 @@ const syncSettingsStateFromApi = async () => {
     updateTime: normalizeString(profile?.updateTime, ''),
   })
 
+  const normalizedTheme = normalizeTheme(setting?.theme)
   Object.assign(settingsState.setting, {
-    theme: normalizeTheme(setting?.theme),
+    theme: normalizedTheme,
     language: normalizeLanguage(setting?.language),
     emailNotice: normalizeNumber(setting?.emailNotice, mockUserPreferenceSetting.emailNotice),
     collectNotice: normalizeNumber(setting?.collectNotice, mockUserPreferenceSetting.collectNotice),
@@ -276,6 +299,7 @@ const syncSettingsStateFromApi = async () => {
     homepageStyle: normalizeHomepageStyle(setting?.homepageStyle),
     pageSize: normalizePageSize(setting?.pageSize),
   })
+  appStore.setThemeMode(normalizedTheme as ThemeMode)
 }
 
 onBeforeUnmount(() => {

@@ -4,6 +4,7 @@ import cn.dev33.satoken.exception.NotLoginException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yyyouth.common.constants.AuthErrorCode;
 import com.yyyouth.common.constants.HttpStatus;
+import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
 import com.yyyouth.model.vo.user.UserAvatarUploadVO;
 import com.yyyouth.model.vo.user.UserBasicInfoVO;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -175,6 +177,25 @@ class UserProfileControllerIntegrationTest {
     }
 
     /**
+     * 更新偏好设置成功应返回成功
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldUpdateUserSettingSuccessfully() throws Exception {
+        String requestBody = "{\"theme\":\"system\",\"language\":\"zh-CN\",\"emailNotice\":1,\"collectNotice\":1,\"commentNotice\":0,\"homepageStyle\":\"card\",\"pageSize\":20}";
+
+        mockMvc.perform(put("/api/user/profile/setting")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.msg").value("偏好设置保存成功"));
+
+        verify(userProfileService).updateLoginUserSetting(any());
+    }
+
+    /**
      * 修改用户名成功应返回成功
      *
      * @throws Exception 执行异常
@@ -191,6 +212,63 @@ class UserProfileControllerIntegrationTest {
                 .andExpect(jsonPath("$.msg").value("用户名修改成功"));
 
         verify(userProfileService).updateLoginUsername(any());
+    }
+
+    /**
+     * 发送邮箱修改验证码应返回成功
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldSendEmailUpdateCodeSuccessfully() throws Exception {
+        String requestBody = "{\"email\":\"new_email@test.com\"}";
+
+        mockMvc.perform(post("/api/user/profile/email/code/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.msg").value("验证码发送成功"));
+
+        verify(userProfileService).sendEmailUpdateCode(any());
+    }
+
+    /**
+     * 校验邮箱修改验证码应返回成功
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldVerifyEmailUpdateCodeSuccessfully() throws Exception {
+        String requestBody = "{\"email\":\"new_email@test.com\",\"emailCode\":\"123456\"}";
+
+        mockMvc.perform(post("/api/user/profile/email/code/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.msg").value("验证码校验通过"));
+
+        verify(userProfileService).verifyEmailUpdateCode(any());
+    }
+
+    /**
+     * 修改邮箱成功应返回成功
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldUpdateEmailSuccessfully() throws Exception {
+        String requestBody = "{\"email\":\"new_email@test.com\",\"emailCode\":\"123456\"}";
+
+        mockMvc.perform(put("/api/user/profile/email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.msg").value("邮箱修改成功"));
+
+        verify(userProfileService).updateLoginEmail(any());
     }
 
     /**

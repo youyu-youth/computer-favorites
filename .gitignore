@@ -58,6 +58,9 @@ context7.json
 .codebuddy/
 
 
+.augment
+.augment/
+
 ### 前端规范
 # Logs
 logs

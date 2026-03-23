@@ -67,7 +67,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private static final String DEFAULT_LANGUAGE = "zh-CN";
 
-    private static final String DEFAULT_HOMEPAGE_STYLE = "grid";
+    private static final String DEFAULT_HOMEPAGE_STYLE = "card";
+
 
     private static final int DEFAULT_PAGE_SIZE = 20;
 

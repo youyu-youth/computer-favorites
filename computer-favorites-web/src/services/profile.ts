@@ -1,4 +1,4 @@
-import { deleteJson, getJson, postFormData, putJson } from '@/utils/http'
+import { deleteJson, getJson, postFormData, postJson, putJson } from '@/utils/http'
 
 type ApiResult<T> = {
   code: number
@@ -66,8 +66,27 @@ export interface UpdateUserProfileRequest {
   techStack?: string
 }
 
+export interface UpdateUserSettingRequest {
+  theme?: 'light' | 'dark' | 'system'
+  language?: 'zh-CN' | 'en-US'
+  emailNotice?: number
+  collectNotice?: number
+  commentNotice?: number
+  homepageStyle?: 'card' | 'list'
+  pageSize?: 10 | 20 | 50
+}
+
 export interface UpdateUsernameRequest {
   username: string
+}
+
+export interface SendEmailUpdateCodeRequest {
+  email: string
+}
+
+export interface UpdateEmailRequest {
+  email: string
+  emailCode: string
 }
 
 export interface UserAvatarUploadResponse {
@@ -109,10 +128,38 @@ export async function updateCurrentUserProfile(payload: UpdateUserProfileRequest
   }
 }
 
+export async function updateCurrentUserSetting(payload: UpdateUserSettingRequest): Promise<void> {
+  const res = await putJson<ApiResult<null>>('/api/user/profile/setting', payload)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '保存偏好设置失败')
+  }
+}
+
 export async function updateCurrentUsername(payload: UpdateUsernameRequest): Promise<void> {
   const res = await putJson<ApiResult<null>>('/api/user/profile/username', payload)
   if (res.code !== 200) {
     throw new Error(res.msg || '用户名修改失败')
+  }
+}
+
+export async function sendEmailUpdateCode(payload: SendEmailUpdateCodeRequest): Promise<void> {
+  const res = await postJson<ApiResult<null>>('/api/user/profile/email/code/send', payload)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '验证码发送失败')
+  }
+}
+
+export async function verifyEmailUpdateCode(payload: UpdateEmailRequest): Promise<void> {
+  const res = await postJson<ApiResult<null>>('/api/user/profile/email/code/verify', payload)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '验证码校验失败')
+  }
+}
+
+export async function updateCurrentEmail(payload: UpdateEmailRequest): Promise<void> {
+  const res = await putJson<ApiResult<null>>('/api/user/profile/email', payload)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '邮箱修改失败')
   }
 }
 

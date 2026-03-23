@@ -161,6 +161,141 @@ body.username-modal-scroll-lock {
   }
 }
 
+/* 邮箱弹窗遮罩层与内容层样式，保持与用户名弹窗一致的视觉层级 */
+.email-edit-modal-overlay {
+  background-color: rgba(15, 23, 42, 0.56) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.email-edit-modal-content {
+  width: min(92vw, 560px) !important;
+  max-width: 560px !important;
+  border-radius: 14px !important;
+  border: 1px solid #e5e7eb !important;
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2) !important;
+}
+
+.dark .email-edit-modal-content {
+  border-color: #334155 !important;
+  background-color: #111827 !important;
+  color: #f3f4f6 !important;
+  box-shadow: 0 24px 48px rgba(2, 6, 23, 0.55) !important;
+}
+
+.email-edit-modal-header {
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #fffbeb;
+}
+
+.dark .email-edit-modal-header {
+  border-bottom-color: #334155;
+  background-color: #1f2937;
+}
+
+.email-edit-modal-title {
+  color: #111827;
+  font-weight: 700;
+}
+
+.dark .email-edit-modal-title {
+  color: #f9fafb;
+}
+
+.email-edit-modal-description {
+  color: #4b5563;
+}
+
+.dark .email-edit-modal-description {
+  color: #9ca3af;
+}
+
+.email-edit-modal-close {
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.email-edit-modal-close:hover {
+  background-color: #f3f4f6;
+}
+
+.dark .email-edit-modal-close:hover {
+  background-color: #374151;
+}
+
+.email-edit-modal-body {
+  max-height: min(58vh, 420px);
+  overflow-y: auto;
+}
+
+.email-edit-modal-footer {
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .email-edit-modal-footer {
+  border-top-color: #334155;
+}
+
+/* 邮箱弹窗打开时锁定页面滚动，避免页面抖动 */
+html.email-modal-scroll-lock,
+body.email-modal-scroll-lock {
+  overflow: hidden !important;
+}
+
+body.email-modal-scroll-lock {
+  position: fixed;
+  width: 100%;
+  top: calc(var(--email-modal-scroll-y, 0px) * -1);
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+@media (max-width: 1024px) {
+  .email-edit-modal-content {
+    width: min(94vw, 520px) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .email-edit-modal-content {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    border-radius: 12px !important;
+  }
+
+  .email-edit-modal-body {
+    max-height: 52vh;
+  }
+
+  .email-edit-modal-footer {
+    padding-top: 12px;
+  }
+
+  .email-edit-modal-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .email-edit-modal-actions > * {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .email-edit-modal-content {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    border-radius: 10px !important;
+  }
+
+  .email-edit-modal-body {
+    max-height: 48vh;
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
