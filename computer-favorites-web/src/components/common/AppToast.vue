@@ -88,7 +88,7 @@
         <button
           @click="remove(toast.id)"
           class="flex-shrink-0 ml-3 rounded-md p-1 -mr-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100/50 dark:hover:text-gray-300 dark:hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 transition-colors"
-          aria-label="关闭提示"
+          :aria-label="$t('common.close')"
         >
           <svg
             class="h-4 w-4"

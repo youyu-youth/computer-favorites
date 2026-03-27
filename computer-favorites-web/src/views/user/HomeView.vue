@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useWebsiteStore } from '@/stores/website'
+import { useI18n } from 'vue-i18n'
 import type { FilterLogic, Website } from '@/types/website'
 import HeroSection from '@/components/user/HeroSection.vue'
 import WebsiteFilter from '@/components/user/WebsiteFilter.vue'
@@ -11,12 +12,13 @@ defineOptions({
 })
 
 const websiteStore = useWebsiteStore()
+const { t } = useI18n()
 
 const searchQuery = ref('')
 const activeCategories = ref<string[]>([])
 const filterLogic = ref<FilterLogic>('OR')
 const showRegisterSuccessDialog = ref(false)
-const registerSuccessTitle = ref('注册成功')
+const registerSuccessTitle = ref('')
 const registerSuccessDescription = ref('')
 
 const filteredWebsites = computed(() => {
@@ -43,7 +45,7 @@ const filteredWebsites = computed(() => {
 const handleCopyLink = (site: Website) => {
   if (site.url) {
     navigator.clipboard.writeText(site.url)
-    alert('链接已复制到剪贴板')
+    alert(t('common.copy.success'))
   } else {
     alert('该网站暂无链接')
   }
@@ -77,11 +79,11 @@ onMounted(() => {
   sessionStorage.removeItem('registerSuccessMessage')
   try {
     const message = JSON.parse(messageRaw) as { title?: string; description?: string }
-    registerSuccessTitle.value = message.title || '注册成功'
-    registerSuccessDescription.value = message.description || '欢迎加入'
+    registerSuccessTitle.value = message.title || t('auth.login.registerSuccess')
+    registerSuccessDescription.value = message.description || t('auth.login.subtitle')
   } catch {
-    registerSuccessTitle.value = '注册成功'
-    registerSuccessDescription.value = '欢迎加入'
+    registerSuccessTitle.value = t('auth.login.registerSuccess')
+    registerSuccessDescription.value = t('auth.login.subtitle')
   }
   showRegisterSuccessDialog.value = true
 })
@@ -122,7 +124,7 @@ onMounted(() => {
         class="mt-6 inline-flex h-10 items-center justify-center rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-700"
         @click="closeRegisterSuccessDialog"
       >
-        我知道了
+        {{ t('common.confirm') }}
       </button>
     </div>
   </div>

@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import {
+  i18n,
+  setI18nLanguage,
+  initI18nLanguage,
+  type SupportedLanguage,
+} from '@/i18n'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -7,6 +13,7 @@ const THEME_MODE_STORAGE_KEY = 'theme-mode'
 
 export const useAppStore = defineStore('app', () => {
   const themeMode = ref<ThemeMode>('dark')
+  const language = ref<SupportedLanguage>('zh-CN')
   const isRouteTransitioning = ref(false)
   const routeTransitionStartedAt = ref(0)
   let routeTransitionTimer: number | null = null
@@ -106,6 +113,35 @@ export const useAppStore = defineStore('app', () => {
     setThemeMode(value ? 'dark' : 'light')
   }
 
+  /**
+   * 设置语言
+   *
+   * @param lang - 目标语言
+   */
+  const setLanguage = (lang: SupportedLanguage) => {
+    language.value = lang
+    setI18nLanguage(lang)
+  }
+
+  /**
+   * 初始化语言设置
+   */
+  const initLanguage = () => {
+    const lang = initI18nLanguage()
+    language.value = lang
+  }
+
+  /**
+   * 从后端用户设置同步语言
+   *
+   * @param lang - 后端返回的语言设置
+   */
+  const syncLanguageFromBackend = (lang: string | undefined) => {
+    if (lang === 'zh-CN' || lang === 'en-US') {
+      setLanguage(lang)
+    }
+  }
+
   const startRouteTransition = () => {
     if (routeTransitionTimer !== null) {
       window.clearTimeout(routeTransitionTimer)
@@ -141,12 +177,16 @@ export const useAppStore = defineStore('app', () => {
 
   return {
     themeMode,
+    language,
     isDark,
     isRouteTransitioning,
     initTheme,
+    initLanguage,
     toggleTheme,
     setDark,
     setThemeMode,
+    setLanguage,
+    syncLanguageFromBackend,
     startRouteTransition,
     finishRouteTransition,
   }

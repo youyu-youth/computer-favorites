@@ -4,6 +4,7 @@ import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import sliderVerify from 'vue3-slider-verify'
 import { registerUnauthorizedHandler } from '@/utils/http'
+import { i18n } from '@/i18n'
 
 import App from '@/App.vue'
 import router from '@/router'
@@ -16,8 +17,13 @@ const authStore = useAuthStore(pinia)
 
 app.use(pinia)
 app.use(router)
+app.use(i18n)
 app.use(sliderVerify)
-useAppStore(pinia).initTheme()
+
+// 初始化主题和语言
+const appStore = useAppStore(pinia)
+appStore.initTheme()
+appStore.initLanguage()
 
 registerUnauthorizedHandler(async () => {
   if (!authStore.isAuthed) {

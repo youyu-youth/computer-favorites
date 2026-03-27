@@ -15,6 +15,19 @@ body {
     background-color 0.3s;
 }
 
+/* 语言字体与排版适配 */
+html.lang-zh body {
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+
+html.lang-en body {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: 0.01em;
+  line-height: 1.55;
+}
+
 .dark body {
   background-color: #121212;
   color: #f3f4f6;

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 defineOptions({
   name: 'AccountView',
 })
@@ -14,10 +18,10 @@ defineOptions({
       >
         <div class="space-y-3">
           <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100 sm:text-2xl">
-            账户信息
+            {{ t('settings.account.title') }}
           </h1>
           <p class="text-sm text-slate-600 dark:text-slate-300">
-            账户信息页面正在建设中，后续会在这里展示登录设备、安全记录与账户资料详情。
+            {{ t('settings.account.subtitle') }}
           </p>
           <p class="text-xs text-slate-500 dark:text-slate-400">访问路径：/computer/account</p>
         </div>

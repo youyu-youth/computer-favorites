@@ -5,7 +5,9 @@ import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const router = useRouter()
@@ -16,7 +18,7 @@ const profileMenuOpen = ref(false)
 const logoutLoading = ref(false)
 const mobileMenuOpen = ref(false)
 
-const displayName = computed(() => authStore.userSnapshot.nickname || '我的账号')
+const displayName = computed(() => authStore.userSnapshot.nickname || t('user.profile.title'))
 const defaultAvatar = computed(
   () => `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(displayName.value)}`,
 )
@@ -65,8 +67,8 @@ const toggleProfileMenu = () => {
 const handlePendingFeature = () => {
   mobileMenuOpen.value = false
   toast.add({
-    title: '功能建设中',
-    description: '该功能即将上线，敬请期待',
+    title: t('common.info'),
+    description: t('common.warning'),
     type: 'info',
   })
 }
@@ -87,8 +89,8 @@ const logout = async () => {
   authStore.clear()
   logoutLoading.value = false
   toast.add({
-    title: '退出成功',
-    description: requestFailed ? '本地登录状态已清理' : '已安全退出当前账号',
+    title: t('auth.logout.success'),
+    description: requestFailed ? t('auth.session.expired') : t('auth.logout.success'),
     type: 'success',
   })
   await router.push({ name: 'login' })
@@ -162,37 +164,37 @@ onBeforeUnmount(() => {
     </template>
 
     <div class="hidden items-center space-x-6 md:flex">
-      <RouterLink
-        :to="{ name: 'home' }"
-        :class="[
-          'text-sm font-medium transition-colors',
-          isHomeRoute
-            ? 'text-primary-500 dark:text-primary-400'
-            : 'text-gray-600 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400',
-        ]"
-      >
-        热门网站
-      </RouterLink>
-      <button
-        type="button"
-        class="text-sm font-medium text-gray-600 transition-colors hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400"
-        @click="handlePendingFeature"
-      >
-        网站分类
-      </button>
-      <RouterLink
-        :to="{ name: 'profile' }"
-        class="text-sm font-medium text-gray-600 transition-colors hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400"
-      >
-        个人主页
-      </RouterLink>
-      <button
-        type="button"
-        class="text-sm font-medium text-gray-600 transition-colors hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400"
-        @click="handlePendingFeature"
-      >
-        上传网站
-      </button>
+        <RouterLink
+          :to="{ name: 'home' }"
+          :class="[
+            'text-sm font-medium transition-colors',
+            isHomeRoute
+              ? 'text-primary-500 dark:text-primary-400'
+              : 'text-gray-600 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400',
+          ]"
+        >
+          {{ t('user.home.hero.browseButton') }}
+        </RouterLink>
+        <button
+          type="button"
+          class="text-sm font-medium text-gray-600 transition-colors hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400"
+          @click="handlePendingFeature"
+        >
+          {{ t('user.home.filter.categories') }}
+        </button>
+        <RouterLink
+          :to="{ name: 'profile' }"
+          class="text-sm font-medium text-gray-600 transition-colors hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400"
+        >
+          {{ t('user.profile.title') }}
+        </RouterLink>
+        <button
+          type="button"
+          class="text-sm font-medium text-gray-600 transition-colors hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400"
+          @click="handlePendingFeature"
+        >
+          {{ t('user.home.hero.uploadButton') }}
+        </button>
     </div>
 
     <template #right>
@@ -200,6 +202,7 @@ onBeforeUnmount(() => {
         <button
           @click="appStore.toggleTheme"
           class="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800"
+          :aria-label="t('common.theme.toggle')"
         >
           <svg
             v-if="!appStore.isDark"
@@ -237,7 +240,7 @@ onBeforeUnmount(() => {
               d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
             ></path>
           </svg>
-          登录 / 注册
+          {{ t('auth.login.loginButton') }} / {{ t('auth.login.registerButton') }}
         </button>
 
         <div v-else ref="profileMenuRef" class="relative">
@@ -246,7 +249,7 @@ onBeforeUnmount(() => {
             class="inline-flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 pr-3 text-sm text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
             @click.stop="toggleProfileMenu"
           >
-            <UAvatar :src="avatarSrc" :alt="`用户-${displayName}`" size="sm">
+            <UAvatar :src="avatarSrc" :alt="t('user.profile.basicInfo')" size="sm">
               <span class="text-xs font-semibold">{{ initials }}</span>
             </UAvatar>
             <span class="hidden max-w-24 truncate sm:inline">{{ displayName }}</span>
@@ -263,7 +266,7 @@ onBeforeUnmount(() => {
                 @click="goToProfile"
               >
                 <UIcon name="i-lucide-user" class="size-4" />
-                个人主页
+                {{ t('user.profile.title') }}
               </button>
               <button
                 type="button"
@@ -271,7 +274,7 @@ onBeforeUnmount(() => {
                 @click="goToSettings"
               >
                 <UIcon name="i-lucide-settings" class="size-4" />
-                设置
+                {{ t('settings.title') }}
               </button>
               <button
                 type="button"
@@ -279,7 +282,7 @@ onBeforeUnmount(() => {
                 @click="goToAccount"
               >
                 <UIcon name="i-lucide-id-card" class="size-4" />
-                账户信息
+                {{ t('settings.sidebar.account') }}
               </button>
               <button
                 type="button"
@@ -288,7 +291,7 @@ onBeforeUnmount(() => {
                 @click="logout"
               >
                 <UIcon name="i-lucide-log-out" class="size-4" />
-                {{ logoutLoading ? '退出中...' : '退出登录' }}
+                {{ logoutLoading ? t('common.loading') : t('auth.logout.button') }}
               </button>
             </div>
           </Transition>
@@ -305,16 +308,16 @@ onBeforeUnmount(() => {
           :class="isHomeRoute ? 'text-primary-500 dark:text-primary-400' : ''"
           @click="goToHome"
         >
-          热门网站
+          {{ t('user.home.hero.browseButton') }}
         </UButton>
         <UButton color="neutral" variant="ghost" class="w-full justify-start" @click="handlePendingFeature">
-          网站分类
+          {{ t('user.home.filter.categories') }}
         </UButton>
         <UButton color="neutral" variant="ghost" class="w-full justify-start" @click="goToProfile">
-          个人主页
+          {{ t('user.profile.title') }}
         </UButton>
         <UButton color="neutral" variant="ghost" class="w-full justify-start" @click="handlePendingFeature">
-          上传网站
+          {{ t('user.home.hero.uploadButton') }}
         </UButton>
         <UButton
           v-if="!authStore.isSessionValid"
@@ -323,7 +326,7 @@ onBeforeUnmount(() => {
           class="mt-2 w-full justify-center"
           @click="goToLogin"
         >
-          登录 / 注册
+          {{ t('auth.login.loginButton') }} / {{ t('auth.login.registerButton') }}
         </UButton>
       </div>
     </template>

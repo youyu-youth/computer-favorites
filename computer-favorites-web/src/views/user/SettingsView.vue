@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, shallowRef } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, shallowRef, watch } from 'vue'
 // @ts-ignore
 import SettingsSidebar from '@/components/user/settings/SettingsSidebar.vue'
 // @ts-ignore
@@ -18,18 +18,29 @@ import { getCurrentUserProfile, updateCurrentUserProfile, updateCurrentUserSetti
 import { useToast } from '@/composables/useToast'
 import { useAppStore, type ThemeMode } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 defineOptions({
   name: 'SettingsView',
 })
 
-const tabs = [
-  { id: 'basic', label: '基础资料', icon: 'i-lucide-user', component: BasicProfileSection },
-  { id: 'account', label: '账号设置', icon: 'i-lucide-shield', component: AccountSettingsSection },
-  { id: 'preference', label: '偏好设置', icon: 'i-lucide-sliders', component: PreferenceSettingsSection },
-  { id: 'message', label: '消息设置', icon: 'i-lucide-bell', component: MessageSettingsSection },
-  { id: 'data', label: '数据管理', icon: 'i-lucide-database', component: DataManagementSection },
+const { t } = useI18n()
+
+const baseTabs = [
+  { id: 'basic', icon: 'i-lucide-user', component: BasicProfileSection },
+  { id: 'account', icon: 'i-lucide-shield', component: AccountSettingsSection },
+  { id: 'preference', icon: 'i-lucide-sliders', component: PreferenceSettingsSection },
+  { id: 'message', icon: 'i-lucide-bell', component: MessageSettingsSection },
+  { id: 'data', icon: 'i-lucide-database', component: DataManagementSection },
 ]
+
+const tabs = computed(() => [
+  { ...baseTabs[0], label: t('settings.sidebar.profile') },
+  { ...baseTabs[1], label: t('settings.sidebar.account') },
+  { ...baseTabs[2], label: t('settings.sidebar.preference') },
+  { ...baseTabs[3], label: t('settings.sidebar.message') },
+  { ...baseTabs[4], label: t('settings.sidebar.data') },
+])
 
 const settingsState = reactive({
   basicInfo: { ...mockUserBasicInfo },
@@ -43,7 +54,16 @@ const savingProfile = ref(false)
 
 provide(settingsStateKey, settingsState)
 
-const firstTab = tabs[0]
+// 语言设置变更时立即同步到全局 i18n
+watch(
+  () => settingsState.setting.language,
+  (lang) => {
+    appStore.syncLanguageFromBackend(lang)
+  },
+  { immediate: true },
+)
+
+const firstTab = baseTabs[0]
 if (!firstTab) {
   throw new Error('Settings tabs are not configured')
 }
@@ -140,7 +160,7 @@ const handleTabChange = (id: string) => {
     return
   }
 
-  const tab = tabs.find((t) => t.id === id)
+  const tab = baseTabs.find((t) => t.id === id)
   if (!tab) {
     return
   }
@@ -201,8 +221,8 @@ const handleSaveAllChanges = async () => {
       })
     } catch {
       toast.add({
-        title: '保存成功',
-        description: '资料已保存，但刷新最新状态失败',
+        title: t('settings.profile.saved'),
+        description: t('common.warning'),
         type: 'warning',
       })
     }
@@ -300,6 +320,7 @@ const syncSettingsStateFromApi = async () => {
     pageSize: normalizePageSize(setting?.pageSize),
   })
   appStore.setThemeMode(normalizedTheme as ThemeMode)
+  appStore.syncLanguageFromBackend(normalizeLanguage(setting?.language))
 }
 
 onBeforeUnmount(() => {
@@ -321,8 +342,8 @@ onMounted(async () => {
     await syncSettingsStateFromApi()
   } catch {
     toast.add({
-      title: '资料加载失败',
-      description: '获取最新资料失败，已显示本地默认信息',
+      title: t('common.warning'),
+      description: t('settings.profile.saveFailed'),
       type: 'warning',
     })
   } finally {
@@ -339,7 +360,7 @@ onMounted(async () => {
     <UContainer class="flex min-h-full w-full max-w-6xl flex-1 flex-col pt-6 pb-0 md:pt-10 md:pb-0">
       <div class="flex justify-end pb-4">
         <UButton :loading="savingProfile" :disabled="savingProfile" variant="solid" class="cursor-pointer !bg-[#f59e0b] !text-white hover:!bg-[#d97706] active:!bg-[#d97706] focus-visible:!outline-[#f59e0b] disabled:cursor-not-allowed disabled:opacity-70" @click="handleSaveAllChanges">
-          保存全部更改
+          {{ savingProfile ? t('settings.profile.saving') : t('settings.profile.save') }}
         </UButton>
       </div>
       <div class="flex flex-col gap-8 md:flex-row">

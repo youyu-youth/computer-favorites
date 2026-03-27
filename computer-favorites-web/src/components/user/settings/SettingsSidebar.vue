@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 interface Tab {
   id: string
   label: string
   icon: string
   component: any
 }
+
+const { t } = useI18n()
 
 const props = defineProps<{
   tabs: Tab[]
@@ -29,7 +33,7 @@ const handleTabClick = (id: string) => {
     <h2
       class="hidden text-2xl font-semibold text-slate-900 dark:text-white md:mb-6 md:block md:px-2 lg:px-0"
     >
-      设置
+      {{ t('settings.title') }}
     </h2>
 
     <!-- Mobile: Horizontal scrolling tabs -->
