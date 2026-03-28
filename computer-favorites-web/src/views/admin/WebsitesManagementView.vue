@@ -1,5 +1,4 @@
-<script setup lang="ts">
-import { ref, computed } from 'vue'
+﻿<script setup lang="ts">
 import WebsitesSidebar from '@/components/admin/websites/WebsitesSidebar.vue'
 import WebsitesBreadcrumbs from '@/components/admin/websites/WebsitesBreadcrumbs.vue'
 import WebsitesStatsToolbar from '@/components/admin/websites/WebsitesStatsToolbar.vue'
@@ -13,7 +12,6 @@ const {
     categories,
     tools,
     connectors,
-    servers,
     searchQuery,
     viewMode,
     currentPage,
@@ -76,3 +74,4 @@ const {
     </div>
   </main>
 </template>
+

@@ -1,5 +1,4 @@
-<script setup lang="ts">
-
+﻿<script setup lang="ts">
 const props = defineProps<{
     viewMode: string
 }>()
@@ -17,16 +16,16 @@ const switchView = (mode: string) => {
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
       <span>20,362 servers. Last updated 2026-03-28 13:56</span>
-      <span class="w-2 h-2 rounded-full bg-brandGreen"></span>
+      <span class="w-2 h-2 rounded-full bg-brand-green"></span>
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-      <button class="bg-white dark:bg-darkCard border border-gray-300 dark:border-darkBorder text-gray-700 dark:text-gray-300 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-darkBorder transition-colors">
+      <button class="bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-700 dark:text-gray-300 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-dark-border transition-colors">
         Deep Search
       </button>
 
       <div class="relative">
-        <select class="appearance-none bg-white dark:bg-darkCard border border-gray-300 dark:border-darkBorder text-gray-700 dark:text-gray-300 pl-4 pr-8 py-1.5 rounded-md text-sm font-medium focus:outline-none focus:ring-1 focus:ring-brandOrange cursor-pointer">
+        <select class="appearance-none bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-700 dark:text-gray-300 pl-4 pr-8 py-1.5 rounded-md text-sm font-medium focus:outline-none focus:ring-1 focus:ring-brand-orange cursor-pointer">
           <option>Search Relevance</option>
           <option>Most Popular</option>
           <option>Newest</option>
@@ -35,11 +34,11 @@ const switchView = (mode: string) => {
       </div>
 
       <!-- 视图切换按钮 -->
-      <div class="flex items-center bg-white dark:bg-darkCard border border-gray-300 dark:border-darkBorder rounded-md overflow-hidden">
-        <button @click="switchView('grid')" :class="{'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white': props.viewMode === 'grid', 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-darkBorder': props.viewMode !== 'grid'}" class="p-2 transition-colors cursor-pointer" title="网格视图">
+      <div class="flex items-center bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-md overflow-hidden">
+        <button @click="switchView('grid')" :class="{'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white': props.viewMode === 'grid', 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-border': props.viewMode !== 'grid'}" class="p-2 transition-colors cursor-pointer" title="网格视图">
           <i class="fas fa-th-large"></i>
         </button>
-        <button @click="switchView('list')" :class="{'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white': props.viewMode === 'list', 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-darkBorder': props.viewMode !== 'list'}" class="p-2 transition-colors cursor-pointer" title="列表视图">
+        <button @click="switchView('list')" :class="{'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white': props.viewMode === 'list', 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-border': props.viewMode !== 'list'}" class="p-2 transition-colors cursor-pointer" title="列表视图">
           <i class="fas fa-list"></i>
         </button>
       </div>
@@ -50,3 +49,5 @@ const switchView = (mode: string) => {
     </div>
   </div>
 </template>
+
+
