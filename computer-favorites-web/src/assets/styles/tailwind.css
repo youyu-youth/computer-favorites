@@ -1,6 +1,7 @@
 @config '../../../tailwind.config.js';
 @import 'tailwindcss';
 @import '@nuxt/ui';
+@import './theme-tokens.css';
 
 html {
   overflow-y: auto;
@@ -8,12 +9,20 @@ html {
 }
 
 body {
-  background-color: #f9fafb;
-  color: #111827;
+  background-color: rgb(var(--cf-color-surface-page-rgb) / 1);
+  color: rgb(var(--cf-color-text-primary-rgb) / 1);
   transition:
-    color 0.3s,
-    background-color 0.3s;
+    color var(--cf-motion-page) var(--cf-ease-standard),
+    background-color var(--cf-motion-page) var(--cf-ease-standard);
+  min-height: 100vh;
 }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+html.dark ::-webkit-scrollbar-thumb { background: #374151; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
 
 /* 语言字体与排版适配 */
 html.lang-zh body {
@@ -28,11 +37,6 @@ html.lang-en body {
   line-height: 1.55;
 }
 
-.dark body {
-  background-color: #121212;
-  color: #f3f4f6;
-}
-
 /* 用户名弹窗遮罩层：提供稳定遮罩并关闭透明穿透 */
 .username-edit-modal-overlay {
   background-color: rgba(15, 23, 42, 0.56) !important;
@@ -45,27 +49,27 @@ html.lang-en body {
   width: min(92vw, 560px) !important;
   max-width: 560px !important;
   border-radius: 14px !important;
-  border: 1px solid #e5e7eb !important;
-  background-color: #ffffff !important;
-  color: #111827 !important;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2) !important;
+  border: 1px solid rgb(var(--cf-color-border-default-rgb) / 1) !important;
+  background-color: rgb(var(--cf-color-surface-card-rgb) / 1) !important;
+  color: rgb(var(--cf-color-text-primary-rgb) / 1) !important;
+  box-shadow: var(--cf-shadow-modal-light) !important;
 }
 
 .dark .username-edit-modal-content {
-  border-color: #334155 !important;
-  background-color: #111827 !important;
-  color: #f3f4f6 !important;
-  box-shadow: 0 24px 48px rgba(2, 6, 23, 0.55) !important;
+  border-color: rgb(var(--cf-color-border-muted-rgb) / 1) !important;
+  background-color: rgb(var(--cf-color-surface-card-rgb) / 1) !important;
+  color: rgb(var(--cf-color-text-primary-rgb) / 1) !important;
+  box-shadow: var(--cf-shadow-modal-dark) !important;
 }
 
 .username-edit-modal-header {
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #fffbeb;
+  border-bottom: 1px solid rgb(var(--cf-color-border-default-rgb) / 1);
+  background-color: rgb(var(--cf-color-modal-header-rgb) / 1);
 }
 
 .dark .username-edit-modal-header {
-  border-bottom-color: #334155;
-  background-color: #1f2937;
+  border-bottom-color: rgb(var(--cf-color-border-muted-rgb) / 1);
+  background-color: rgb(var(--cf-color-modal-header-rgb) / 1);
 }
 
 .username-edit-modal-title {
@@ -78,11 +82,11 @@ html.lang-en body {
 }
 
 .username-edit-modal-description {
-  color: #4b5563;
+  color: rgb(var(--cf-color-text-secondary-rgb) / 1);
 }
 
 .dark .username-edit-modal-description {
-  color: #9ca3af;
+  color: rgb(var(--cf-color-text-secondary-rgb) / 1);
 }
 
 .username-edit-modal-close {
@@ -106,11 +110,11 @@ html.lang-en body {
 
 /* 底部按钮在窄屏保持可操作性 */
 .username-edit-modal-footer {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid rgb(var(--cf-color-border-default-rgb) / 1);
 }
 
 .dark .username-edit-modal-footer {
-  border-top-color: #334155;
+  border-top-color: rgb(var(--cf-color-border-muted-rgb) / 1);
 }
 
 /* 弹窗打开时锁定页面滚动，防止背景内容位移 */
@@ -185,27 +189,27 @@ body.username-modal-scroll-lock {
   width: min(92vw, 560px) !important;
   max-width: 560px !important;
   border-radius: 14px !important;
-  border: 1px solid #e5e7eb !important;
-  background-color: #ffffff !important;
-  color: #111827 !important;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2) !important;
+  border: 1px solid rgb(var(--cf-color-border-default-rgb) / 1) !important;
+  background-color: rgb(var(--cf-color-surface-card-rgb) / 1) !important;
+  color: rgb(var(--cf-color-text-primary-rgb) / 1) !important;
+  box-shadow: var(--cf-shadow-modal-light) !important;
 }
 
 .dark .email-edit-modal-content {
-  border-color: #334155 !important;
-  background-color: #111827 !important;
-  color: #f3f4f6 !important;
-  box-shadow: 0 24px 48px rgba(2, 6, 23, 0.55) !important;
+  border-color: rgb(var(--cf-color-border-muted-rgb) / 1) !important;
+  background-color: rgb(var(--cf-color-surface-card-rgb) / 1) !important;
+  color: rgb(var(--cf-color-text-primary-rgb) / 1) !important;
+  box-shadow: var(--cf-shadow-modal-dark) !important;
 }
 
 .email-edit-modal-header {
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #fffbeb;
+  border-bottom: 1px solid rgb(var(--cf-color-border-default-rgb) / 1);
+  background-color: rgb(var(--cf-color-modal-header-rgb) / 1);
 }
 
 .dark .email-edit-modal-header {
-  border-bottom-color: #334155;
-  background-color: #1f2937;
+  border-bottom-color: rgb(var(--cf-color-border-muted-rgb) / 1);
+  background-color: rgb(var(--cf-color-modal-header-rgb) / 1);
 }
 
 .email-edit-modal-title {
@@ -218,11 +222,11 @@ body.username-modal-scroll-lock {
 }
 
 .email-edit-modal-description {
-  color: #4b5563;
+  color: rgb(var(--cf-color-text-secondary-rgb) / 1);
 }
 
 .dark .email-edit-modal-description {
-  color: #9ca3af;
+  color: rgb(var(--cf-color-text-secondary-rgb) / 1);
 }
 
 .email-edit-modal-close {
@@ -244,11 +248,11 @@ body.username-modal-scroll-lock {
 }
 
 .email-edit-modal-footer {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid rgb(var(--cf-color-border-default-rgb) / 1);
 }
 
 .dark .email-edit-modal-footer {
-  border-top-color: #334155;
+  border-top-color: rgb(var(--cf-color-border-muted-rgb) / 1);
 }
 
 /* 邮箱弹窗打开时锁定页面滚动，避免页面抖动 */

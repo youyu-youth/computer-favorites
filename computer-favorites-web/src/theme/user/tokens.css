@@ -1,0 +1,54 @@
+:root,
+:root[data-cf-theme='user'] {
+  --cf-color-primary-50-rgb: 255 251 235;
+  --cf-color-primary-100-rgb: 254 243 199;
+  --cf-color-primary-400-rgb: 251 191 36;
+  --cf-color-primary-500-rgb: 245 158 11;
+  --cf-color-primary-600-rgb: 217 119 6;
+
+  --cf-color-dark-bg-rgb: 18 18 18;
+  --cf-color-dark-card-rgb: 28 28 30;
+  --cf-color-dark-border-rgb: 45 45 45;
+
+  --cf-color-success-rgb: 16 185 129;
+  --cf-color-error-rgb: 244 63 94;
+  --cf-color-warning-rgb: 245 158 11;
+  --cf-color-info-rgb: 59 130 246;
+
+  --cf-color-surface-page-rgb: 249 250 251;
+  --cf-color-surface-card-rgb: 255 255 255;
+  --cf-color-text-primary-rgb: 17 24 39;
+  --cf-color-text-secondary-rgb: 75 85 99;
+  --cf-color-border-default-rgb: 229 231 235;
+  --cf-color-border-muted-rgb: 226 232 240;
+  --cf-color-border-overlay-rgb: 255 255 255;
+
+  --cf-color-modal-header-rgb: 255 251 235;
+
+  --cf-shadow-elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --cf-shadow-elevation-2: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --cf-shadow-elevation-3: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --cf-shadow-toast-light: 0 8px 30px rgb(0 0 0 / 0.08);
+  --cf-shadow-toast-dark: 0 8px 30px rgb(0 0 0 / 0.4);
+  --cf-shadow-modal-light: 0 20px 45px rgb(15 23 42 / 0.2);
+  --cf-shadow-modal-dark: 0 24px 48px rgb(2 6 23 / 0.55);
+
+  --cf-motion-fast: 160ms;
+  --cf-motion-standard: 240ms;
+  --cf-motion-page: 300ms;
+  --cf-motion-emphasis: 400ms;
+  --cf-motion-route-safe-guard: 2500ms;
+  --cf-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:root.dark,
+:root.dark[data-cf-theme='user'] {
+  --cf-color-surface-page-rgb: 18 18 18;
+  --cf-color-surface-card-rgb: 28 28 30;
+  --cf-color-text-primary-rgb: 243 244 246;
+  --cf-color-text-secondary-rgb: 156 163 175;
+  --cf-color-border-default-rgb: 45 45 45;
+  --cf-color-border-muted-rgb: 51 65 85;
+  --cf-color-border-overlay-rgb: 255 255 255;
+  --cf-color-modal-header-rgb: 31 41 55;
+}

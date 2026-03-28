@@ -33,7 +33,7 @@ const overlayClass = computed(() => {
 <style scoped>
 .route-overlay-fade-enter-active,
 .route-overlay-fade-leave-active {
-  transition: opacity 0.24s ease;
+  transition: opacity var(--cf-motion-standard) var(--cf-ease-standard);
 }
 
 .route-overlay-fade-enter-from,

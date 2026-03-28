@@ -19,8 +19,8 @@ import AppRouteTransition from '@/components/common/AppRouteTransition.vue'
 .page-fade-enter-active,
 .page-fade-leave-active {
   transition:
-    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity var(--cf-motion-page) var(--cf-ease-standard),
+    transform var(--cf-motion-page) var(--cf-ease-standard);
 }
 
 .page-fade-enter-from {

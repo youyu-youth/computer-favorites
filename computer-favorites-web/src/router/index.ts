@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import AdminLayout from '@/layouts/AdminLayout.vue'
+import WebsitesManagementView from '@/views/admin/WebsitesManagementView.vue'
 import UserLayout from '@/layouts/UserLayout.vue'
 import HomeView from '@/views/user/HomeView.vue'
 import ProfileView from '@/views/user/ProfileView.vue'
@@ -8,10 +10,26 @@ import PasswordChangeView from '@/views/user/PasswordChangeView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+import { applyThemeScope, resolveThemeScopeByPath } from '@/theme/scope'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/computer/admin',
+      component: AdminLayout,
+      children: [
+        {
+          path: '',
+          redirect: '/computer/admin/websites',
+        },
+        {
+          path: 'websites',
+          name: 'adminWebsites',
+          component: WebsitesManagementView,
+        }
+      ]
+    },
     {
       path: '/',
       redirect: '/computer/home',
@@ -65,6 +83,7 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  applyThemeScope(resolveThemeScopeByPath(to.path))
   const appStore = useAppStore()
   appStore.startRouteTransition()
   const authStore = useAuthStore()

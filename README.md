@@ -1,4 +1,4 @@
-# computer-faorites
+# computer-favorites
 
 ## 概述
 在互联网时代，计算机相关学习资源分散在各个网站，学习者往往需要花费大量时间搜索和筛选优质资源。

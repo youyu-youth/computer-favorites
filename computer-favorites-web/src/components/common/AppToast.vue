@@ -8,7 +8,7 @@
       <div
         v-for="toast in toasts"
         :key="toast.id"
-        class="pointer-events-auto flex w-full items-start gap-3 rounded-xl border border-gray-100 bg-white/95 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:border-gray-800/80 dark:bg-gray-900/95 dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)] overflow-hidden transition-all duration-300"
+        class="pointer-events-auto flex w-full items-start gap-3 rounded-xl border border-gray-100 bg-white/95 backdrop-blur-md p-4 shadow-[var(--cf-shadow-toast-light)] dark:border-gray-800/80 dark:bg-gray-900/95 dark:shadow-[var(--cf-shadow-toast-dark)] overflow-hidden transition-all duration-300"
         role="alert"
       >
         <!-- Icon 区域 -->
@@ -117,7 +117,7 @@ const { toasts, remove } = useToast()
 .toast-move,
 .toast-enter-active,
 .toast-leave-active {
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all var(--cf-motion-emphasis) var(--cf-ease-standard);
 }
 
 /* 移动端默认从顶部滑入 */

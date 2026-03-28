@@ -57,6 +57,9 @@ context7.json
 .codebuddy
 .codebuddy/
 
+.github
+.github/
+
 
 .augment
 .augment/
