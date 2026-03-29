@@ -5,7 +5,7 @@
  * @date 2025-03-23
  */
 
-import type { SettingsMessages } from '../types'
+import type { SettingsMessages } from '../../types'
 
 export const settings: SettingsMessages = {
   title: '设置',

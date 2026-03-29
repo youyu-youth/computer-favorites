@@ -5,7 +5,6 @@ interface Tab {
   id: string
   label: string
   icon: string
-  component: any
 }
 
 const { t } = useI18n()

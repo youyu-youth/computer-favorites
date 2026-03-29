@@ -5,7 +5,7 @@
  * @date 2025-03-23
  */
 
-import type { UserMessages } from '../types'
+import type { UserMessages } from '../../types'
 
 export const user: UserMessages = {
   profile: {

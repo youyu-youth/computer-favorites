@@ -35,11 +35,11 @@ const baseTabs = [
 ]
 
 const tabs = computed(() => [
-  { ...baseTabs[0], label: t('settings.sidebar.profile') },
-  { ...baseTabs[1], label: t('settings.sidebar.account') },
-  { ...baseTabs[2], label: t('settings.sidebar.preference') },
-  { ...baseTabs[3], label: t('settings.sidebar.message') },
-  { ...baseTabs[4], label: t('settings.sidebar.data') },
+  { ...baseTabs[0]!, label: t('settings.sidebar.profile') },
+  { ...baseTabs[1]!, label: t('settings.sidebar.account') },
+  { ...baseTabs[2]!, label: t('settings.sidebar.preference') },
+  { ...baseTabs[3]!, label: t('settings.sidebar.message') },
+  { ...baseTabs[4]!, label: t('settings.sidebar.data') },
 ])
 
 const settingsState = reactive({

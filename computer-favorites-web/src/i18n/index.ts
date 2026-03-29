@@ -10,6 +10,10 @@ import type { MessageSchema, SupportedLanguage } from './types'
 import { zhCN } from './locales/zh-CN'
 import { enUS } from './locales/en-US'
 
+interface I18nLocaleRef {
+  value: SupportedLanguage
+}
+
 /**
  * 支持的语言列表
  */
@@ -58,11 +62,8 @@ export const i18n = createI18n<[MessageSchema], SupportedLanguage>({
  * @param lang - 目标语言
  */
 export function setI18nLanguage(lang: SupportedLanguage): void {
-  if (i18n.mode === 'legacy') {
-    i18n.global.locale = lang
-  } else {
-    i18n.global.locale.value = lang
-  }
+  const localeRef = i18n.global.locale as unknown as I18nLocaleRef
+  localeRef.value = lang
 
   // 更新 HTML 语言与字体模式
   document.documentElement.setAttribute('lang', lang)
@@ -80,10 +81,8 @@ export function setI18nLanguage(lang: SupportedLanguage): void {
  * @returns 当前语言
  */
 export function getCurrentLanguage(): SupportedLanguage {
-  if (i18n.mode === 'legacy') {
-    return i18n.global.locale as SupportedLanguage
-  }
-  return i18n.global.locale.value as SupportedLanguage
+  const localeRef = i18n.global.locale as unknown as I18nLocaleRef
+  return localeRef.value
 }
 
 /**

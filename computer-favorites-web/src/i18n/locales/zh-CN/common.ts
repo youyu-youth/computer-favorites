@@ -5,7 +5,7 @@
  * @date 2025-03-23
  */
 
-import type { CommonMessages } from '../types'
+import type { CommonMessages } from '../../types'
 
 export const common: CommonMessages = {
   loading: '加载中...',

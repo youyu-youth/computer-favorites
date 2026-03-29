@@ -4,15 +4,13 @@ import AppRouteTransition from '@/components/common/AppRouteTransition.vue'
 </script>
 
 <template>
-  <UApp>
-    <AppToast />
-    <AppRouteTransition />
-    <RouterView v-slot="{ Component, route }">
-      <Transition name="page-fade" mode="out-in">
-        <component :is="Component" :key="route.fullPath" />
-      </Transition>
-    </RouterView>
-  </UApp>
+  <AppToast />
+  <AppRouteTransition />
+  <RouterView v-slot="{ Component, route }">
+    <Transition name="page-fade" mode="out-in">
+      <component :is="Component" :key="route.fullPath" />
+    </Transition>
+  </RouterView>
 </template>
 
 <style>

@@ -5,7 +5,7 @@
  * @date 2025-03-23
  */
 
-import type { AuthMessages } from '../types'
+import type { AuthMessages } from '../../types'
 
 export const auth: AuthMessages = {
   login: {
