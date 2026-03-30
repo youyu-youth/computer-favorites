@@ -1,29 +1,47 @@
 :root,
 :root[data-cf-theme='user'] {
-  --cf-color-primary-50-rgb: 255 251 235;
-  --cf-color-primary-100-rgb: 254 243 199;
-  --cf-color-primary-400-rgb: 251 191 36;
-  --cf-color-primary-500-rgb: 245 158 11;
-  --cf-color-primary-600-rgb: 217 119 6;
+  --cf-color-primary-50-rgb: 255 247 237;
+  --cf-color-primary-100-rgb: 255 237 213;
+  --cf-color-primary-400-rgb: 251 146 60;
+  --cf-color-primary-500-rgb: 217 119 6;
+  --cf-color-primary-600-rgb: 180 83 9;
 
-  --cf-color-dark-bg-rgb: 18 18 18;
-  --cf-color-dark-card-rgb: 28 28 30;
-  --cf-color-dark-border-rgb: 45 45 45;
+  --cf-color-secondary-50-rgb: 244 251 231;
+  --cf-color-secondary-100-rgb: 230 245 196;
+  --cf-color-secondary-400-rgb: 159 218 52;
+  --cf-color-secondary-500-rgb: 139 202 16;
+  --cf-color-secondary-600-rgb: 114 167 13;
+
+  --cf-color-tertiary-50-rgb: 235 243 239;
+  --cf-color-tertiary-100-rgb: 214 231 222;
+  --cf-color-tertiary-400-rgb: 77 138 116;
+  --cf-color-tertiary-500-rgb: 51 115 93;
+  --cf-color-tertiary-600-rgb: 42 95 77;
+
+  --cf-color-neutral-50-rgb: 250 248 246;
+  --cf-color-neutral-100-rgb: 242 236 232;
+  --cf-color-neutral-400-rgb: 215 204 195;
+  --cf-color-neutral-500-rgb: 233 225 219;
+  --cf-color-neutral-600-rgb: 184 171 161;
+
+  --cf-color-dark-bg-rgb: 0 0 0;
+  --cf-color-dark-card-rgb: 17 17 17;
+  --cf-color-dark-border-rgb: 38 38 38;
 
   --cf-color-success-rgb: 16 185 129;
   --cf-color-error-rgb: 244 63 94;
-  --cf-color-warning-rgb: 245 158 11;
+  --cf-color-warning-rgb: 217 119 6;
   --cf-color-info-rgb: 59 130 246;
 
-  --cf-color-surface-page-rgb: 249 250 251;
+  --cf-color-surface-page-rgb: 255 255 255;
   --cf-color-surface-card-rgb: 255 255 255;
   --cf-color-text-primary-rgb: 17 24 39;
-  --cf-color-text-secondary-rgb: 75 85 99;
-  --cf-color-border-default-rgb: 229 231 235;
-  --cf-color-border-muted-rgb: 226 232 240;
+  --cf-color-text-secondary-rgb: 96 88 80;
+  --cf-color-border-default-rgb: 233 225 219;
+  --cf-color-border-muted-rgb: 242 236 232;
   --cf-color-border-overlay-rgb: 255 255 255;
 
-  --cf-color-modal-header-rgb: 255 251 235;
+  --cf-color-modal-header-rgb: 250 248 246;
 
   --cf-shadow-elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --cf-shadow-elevation-2: 0 4px 6px -1px rgb(0 0 0 / 0.1);
@@ -43,12 +61,12 @@
 
 :root.dark,
 :root.dark[data-cf-theme='user'] {
-  --cf-color-surface-page-rgb: 18 18 18;
-  --cf-color-surface-card-rgb: 28 28 30;
-  --cf-color-text-primary-rgb: 243 244 246;
-  --cf-color-text-secondary-rgb: 156 163 175;
-  --cf-color-border-default-rgb: 45 45 45;
-  --cf-color-border-muted-rgb: 51 65 85;
+  --cf-color-surface-page-rgb: 0 0 0;
+  --cf-color-surface-card-rgb: 17 17 17;
+  --cf-color-text-primary-rgb: 245 245 245;
+  --cf-color-text-secondary-rgb: 171 171 171;
+  --cf-color-border-default-rgb: 38 38 38;
+  --cf-color-border-muted-rgb: 64 64 64;
   --cf-color-border-overlay-rgb: 255 255 255;
-  --cf-color-modal-header-rgb: 31 41 55;
+  --cf-color-modal-header-rgb: 17 17 17;
 }

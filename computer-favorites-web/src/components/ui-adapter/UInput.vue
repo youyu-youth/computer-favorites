@@ -35,16 +35,23 @@ const model = computed<string>({
 
 const wrapperClass = computed(() => [attrs.class])
 const inputClass = computed(() => [
-  'w-full border-0 bg-transparent px-0 py-0 text-sm leading-6 text-slate-900 shadow-none outline-none focus:ring-0 dark:text-white',
-  attrs.class,
+  'w-full border-0 bg-transparent px-0 py-0 text-sm leading-6 text-[rgb(var(--cf-color-text-primary-rgb)/1)] shadow-none outline-none focus:ring-0',
 ])
+
+const handleKeyup = (event: Event) => {
+  emit('keyup', event as KeyboardEvent)
+}
+
+const handleKeydown = (event: Event) => {
+  emit('keydown', event as KeyboardEvent)
+}
 </script>
 
 <template>
   <div :class="wrapperClass">
     <div
       data-slot="base"
-      class="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-[#000000]"
+      class="rounded-lg border border-[rgb(var(--cf-color-border-default-rgb)/1)] bg-[rgb(var(--cf-color-surface-card-rgb)/1)] px-3 py-2 transition-colors duration-200 focus-within:border-[rgb(var(--cf-color-primary-500-rgb)/1)] dark:border-[rgb(var(--cf-color-border-muted-rgb)/1)]"
     >
       <InputText
         v-model="model"
@@ -55,8 +62,8 @@ const inputClass = computed(() => [
         :disabled="disabled"
         :autocomplete="autocomplete"
         :class="inputClass"
-        @keyup="(event) => emit('keyup', event as KeyboardEvent)"
-        @keydown="(event) => emit('keydown', event as KeyboardEvent)"
+        @keyup="handleKeyup"
+        @keydown="handleKeydown"
       />
     </div>
   </div>

@@ -5,6 +5,24 @@
   --cf-color-primary-500-rgb: 59 130 246;
   --cf-color-primary-600-rgb: 37 99 235;
 
+  --cf-color-secondary-50-rgb: 236 253 245;
+  --cf-color-secondary-100-rgb: 209 250 229;
+  --cf-color-secondary-400-rgb: 52 211 153;
+  --cf-color-secondary-500-rgb: 16 185 129;
+  --cf-color-secondary-600-rgb: 5 150 105;
+
+  --cf-color-tertiary-50-rgb: 240 249 255;
+  --cf-color-tertiary-100-rgb: 224 242 254;
+  --cf-color-tertiary-400-rgb: 56 189 248;
+  --cf-color-tertiary-500-rgb: 14 165 233;
+  --cf-color-tertiary-600-rgb: 2 132 199;
+
+  --cf-color-neutral-50-rgb: 248 250 252;
+  --cf-color-neutral-100-rgb: 241 245 249;
+  --cf-color-neutral-400-rgb: 148 163 184;
+  --cf-color-neutral-500-rgb: 226 232 240;
+  --cf-color-neutral-600-rgb: 203 213 225;
+
   --cf-color-dark-bg-rgb: 14 19 23;
   --cf-color-dark-card-rgb: 22 29 34;
   --cf-color-dark-border-rgb: 39 49 56;
@@ -31,6 +49,13 @@
   --cf-shadow-toast-dark: 0 10px 28px rgb(2 6 23 / 0.45);
   --cf-shadow-modal-light: 0 24px 48px rgb(15 23 42 / 0.22);
   --cf-shadow-modal-dark: 0 28px 56px rgb(2 6 23 / 0.6);
+
+  --cf-motion-fast: 160ms;
+  --cf-motion-standard: 240ms;
+  --cf-motion-page: 300ms;
+  --cf-motion-emphasis: 400ms;
+  --cf-motion-route-safe-guard: 2500ms;
+  --cf-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :root.dark[data-cf-theme='admin'] {

@@ -17,6 +17,9 @@ export default {
           'Arial',
           'sans-serif',
         ],
+        headline: ['Manrope', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+        label: ['Inter', 'sans-serif'],
       },
       colors: {
         brand: {
@@ -33,6 +36,45 @@ export default {
           400: 'rgb(var(--cf-color-primary-400-rgb) / <alpha-value>)',
           500: 'rgb(var(--cf-color-primary-500-rgb) / <alpha-value>)',
           600: 'rgb(var(--cf-color-primary-600-rgb) / <alpha-value>)',
+        },
+        secondary: {
+          50: 'rgb(var(--cf-color-secondary-50-rgb) / <alpha-value>)',
+          100: 'rgb(var(--cf-color-secondary-100-rgb) / <alpha-value>)',
+          400: 'rgb(var(--cf-color-secondary-400-rgb) / <alpha-value>)',
+          500: 'rgb(var(--cf-color-secondary-500-rgb) / <alpha-value>)',
+          600: 'rgb(var(--cf-color-secondary-600-rgb) / <alpha-value>)',
+        },
+        tertiary: {
+          50: 'rgb(var(--cf-color-tertiary-50-rgb) / <alpha-value>)',
+          100: 'rgb(var(--cf-color-tertiary-100-rgb) / <alpha-value>)',
+          400: 'rgb(var(--cf-color-tertiary-400-rgb) / <alpha-value>)',
+          500: 'rgb(var(--cf-color-tertiary-500-rgb) / <alpha-value>)',
+          600: 'rgb(var(--cf-color-tertiary-600-rgb) / <alpha-value>)',
+        },
+        neutral: {
+          50: 'rgb(var(--cf-color-neutral-50-rgb) / <alpha-value>)',
+          100: 'rgb(var(--cf-color-neutral-100-rgb) / <alpha-value>)',
+          400: 'rgb(var(--cf-color-neutral-400-rgb) / <alpha-value>)',
+          500: 'rgb(var(--cf-color-neutral-500-rgb) / <alpha-value>)',
+          600: 'rgb(var(--cf-color-neutral-600-rgb) / <alpha-value>)',
+        },
+        semantic: {
+          success: 'rgb(var(--cf-color-success-rgb) / <alpha-value>)',
+          error: 'rgb(var(--cf-color-error-rgb) / <alpha-value>)',
+          warning: 'rgb(var(--cf-color-warning-rgb) / <alpha-value>)',
+          info: 'rgb(var(--cf-color-info-rgb) / <alpha-value>)',
+        },
+        surface: {
+          page: 'rgb(var(--cf-color-surface-page-rgb) / <alpha-value>)',
+          card: 'rgb(var(--cf-color-surface-card-rgb) / <alpha-value>)',
+        },
+        text: {
+          primary: 'rgb(var(--cf-color-text-primary-rgb) / <alpha-value>)',
+          secondary: 'rgb(var(--cf-color-text-secondary-rgb) / <alpha-value>)',
+        },
+        border: {
+          default: 'rgb(var(--cf-color-border-default-rgb) / <alpha-value>)',
+          muted: 'rgb(var(--cf-color-border-muted-rgb) / <alpha-value>)',
         },
         dark: {
           bg: 'rgb(var(--cf-color-dark-bg-rgb) / <alpha-value>)',

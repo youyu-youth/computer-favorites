@@ -26,12 +26,123 @@ const props = withDefaults(defineProps<{
 
 const attrs = useAttrs()
 
+const THEME_TONE_MAP: Record<ButtonColor, Record<ButtonVariant, string>> = {
+  primary: {
+    solid:
+      'bg-[rgb(var(--cf-color-primary-500-rgb)/1)] text-white border border-transparent hover:bg-[rgb(var(--cf-color-primary-600-rgb)/1)] active:bg-[rgb(var(--cf-color-primary-600-rgb)/1)]',
+    soft:
+      'bg-[rgb(var(--cf-color-primary-50-rgb)/1)] text-[rgb(var(--cf-color-primary-600-rgb)/1)] border border-transparent hover:bg-[rgb(var(--cf-color-primary-100-rgb)/1)] dark:bg-[rgb(var(--cf-color-primary-500-rgb)/0.2)] dark:text-[rgb(var(--cf-color-primary-100-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-primary-500-rgb)/0.3)]',
+    ghost:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-primary-600-rgb)/1)] hover:bg-[rgb(var(--cf-color-primary-50-rgb)/1)] dark:text-[rgb(var(--cf-color-primary-100-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-primary-500-rgb)/0.2)]',
+    outline:
+      'border border-[rgb(var(--cf-color-primary-500-rgb)/1)] text-[rgb(var(--cf-color-primary-600-rgb)/1)] bg-transparent hover:bg-[rgb(var(--cf-color-primary-50-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-primary-500-rgb)/0.2)]',
+    link:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-primary-600-rgb)/1)] underline-offset-2 hover:underline dark:text-[rgb(var(--cf-color-primary-100-rgb)/1)]',
+  },
+  neutral: {
+    solid:
+      'bg-[rgb(var(--cf-color-neutral-600-rgb)/1)] text-white border border-transparent hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/1)] active:bg-[rgb(var(--cf-color-neutral-500-rgb)/1)] dark:bg-[rgb(var(--cf-color-neutral-500-rgb)/1)] dark:text-[rgb(var(--cf-color-text-primary-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-400-rgb)/1)]',
+    soft:
+      'bg-[rgb(var(--cf-color-neutral-100-rgb)/1)] text-[rgb(var(--cf-color-text-primary-rgb)/1)] border border-transparent hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.38)] dark:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.16)] dark:text-[rgb(var(--cf-color-text-primary-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.26)]',
+    ghost:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-text-primary-rgb)/1)] hover:bg-[rgb(var(--cf-color-neutral-100-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.2)]',
+    outline:
+      'border border-[rgb(var(--cf-color-border-default-rgb)/1)] text-[rgb(var(--cf-color-text-primary-rgb)/1)] bg-transparent hover:bg-[rgb(var(--cf-color-neutral-50-rgb)/1)] dark:border-[rgb(var(--cf-color-border-muted-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.2)]',
+    link:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-text-primary-rgb)/1)] underline-offset-2 hover:underline',
+  },
+  gray: {
+    solid:
+      'bg-[rgb(var(--cf-color-neutral-600-rgb)/1)] text-white border border-transparent hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/1)] active:bg-[rgb(var(--cf-color-neutral-500-rgb)/1)] dark:bg-[rgb(var(--cf-color-neutral-500-rgb)/1)] dark:text-[rgb(var(--cf-color-text-primary-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-400-rgb)/1)]',
+    soft:
+      'bg-[rgb(var(--cf-color-neutral-100-rgb)/1)] text-[rgb(var(--cf-color-text-primary-rgb)/1)] border border-transparent hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.38)] dark:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.16)] dark:text-[rgb(var(--cf-color-text-primary-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.26)]',
+    ghost:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-text-primary-rgb)/1)] hover:bg-[rgb(var(--cf-color-neutral-100-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.2)]',
+    outline:
+      'border border-[rgb(var(--cf-color-border-default-rgb)/1)] text-[rgb(var(--cf-color-text-primary-rgb)/1)] bg-transparent hover:bg-[rgb(var(--cf-color-neutral-50-rgb)/1)] dark:border-[rgb(var(--cf-color-border-muted-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.2)]',
+    link:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-text-primary-rgb)/1)] underline-offset-2 hover:underline',
+  },
+  white: {
+    solid:
+      'bg-white text-[rgb(var(--cf-color-text-primary-rgb)/1)] border border-[rgb(var(--cf-color-border-default-rgb)/1)] hover:bg-[rgb(var(--cf-color-neutral-50-rgb)/1)] active:bg-[rgb(var(--cf-color-neutral-100-rgb)/1)] dark:bg-[rgb(var(--cf-color-neutral-100-rgb)/1)] dark:text-[rgb(var(--cf-color-text-primary-rgb)/1)]',
+    soft:
+      'bg-[rgb(var(--cf-color-neutral-100-rgb)/1)] text-[rgb(var(--cf-color-text-primary-rgb)/1)] border border-transparent hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.38)] dark:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.16)] dark:text-[rgb(var(--cf-color-text-primary-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.26)]',
+    ghost:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-text-primary-rgb)/1)] hover:bg-[rgb(var(--cf-color-neutral-100-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.2)]',
+    outline:
+      'border border-[rgb(var(--cf-color-border-default-rgb)/1)] text-[rgb(var(--cf-color-text-primary-rgb)/1)] bg-transparent hover:bg-[rgb(var(--cf-color-neutral-50-rgb)/1)] dark:border-[rgb(var(--cf-color-border-muted-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-neutral-500-rgb)/0.2)]',
+    link:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-text-primary-rgb)/1)] underline-offset-2 hover:underline',
+  },
+  error: {
+    solid:
+      'bg-[rgb(var(--cf-color-error-rgb)/1)] text-white border border-transparent hover:brightness-95 active:brightness-90',
+    soft:
+      'bg-[rgb(var(--cf-color-error-rgb)/0.14)] text-[rgb(var(--cf-color-error-rgb)/1)] border border-transparent hover:bg-[rgb(var(--cf-color-error-rgb)/0.22)]',
+    ghost:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-error-rgb)/1)] hover:bg-[rgb(var(--cf-color-error-rgb)/0.12)]',
+    outline:
+      'border border-[rgb(var(--cf-color-error-rgb)/1)] text-[rgb(var(--cf-color-error-rgb)/1)] bg-transparent hover:bg-[rgb(var(--cf-color-error-rgb)/0.12)]',
+    link:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-error-rgb)/1)] underline-offset-2 hover:underline',
+  },
+  red: {
+    solid:
+      'bg-[rgb(var(--cf-color-error-rgb)/1)] text-white border border-transparent hover:brightness-95 active:brightness-90',
+    soft:
+      'bg-[rgb(var(--cf-color-error-rgb)/0.14)] text-[rgb(var(--cf-color-error-rgb)/1)] border border-transparent hover:bg-[rgb(var(--cf-color-error-rgb)/0.22)]',
+    ghost:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-error-rgb)/1)] hover:bg-[rgb(var(--cf-color-error-rgb)/0.12)]',
+    outline:
+      'border border-[rgb(var(--cf-color-error-rgb)/1)] text-[rgb(var(--cf-color-error-rgb)/1)] bg-transparent hover:bg-[rgb(var(--cf-color-error-rgb)/0.12)]',
+    link:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-error-rgb)/1)] underline-offset-2 hover:underline',
+  },
+  success: {
+    solid:
+      'bg-[rgb(var(--cf-color-success-rgb)/1)] text-white border border-transparent hover:brightness-95 active:brightness-90',
+    soft:
+      'bg-[rgb(var(--cf-color-success-rgb)/0.14)] text-[rgb(var(--cf-color-success-rgb)/1)] border border-transparent hover:bg-[rgb(var(--cf-color-success-rgb)/0.22)]',
+    ghost:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-success-rgb)/1)] hover:bg-[rgb(var(--cf-color-success-rgb)/0.12)]',
+    outline:
+      'border border-[rgb(var(--cf-color-success-rgb)/1)] text-[rgb(var(--cf-color-success-rgb)/1)] bg-transparent hover:bg-[rgb(var(--cf-color-success-rgb)/0.12)]',
+    link:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-success-rgb)/1)] underline-offset-2 hover:underline',
+  },
+  warning: {
+    solid:
+      'bg-[rgb(var(--cf-color-warning-rgb)/1)] text-white border border-transparent hover:brightness-95 active:brightness-90',
+    soft:
+      'bg-[rgb(var(--cf-color-warning-rgb)/0.14)] text-[rgb(var(--cf-color-warning-rgb)/1)] border border-transparent hover:bg-[rgb(var(--cf-color-warning-rgb)/0.22)]',
+    ghost:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-warning-rgb)/1)] hover:bg-[rgb(var(--cf-color-warning-rgb)/0.12)]',
+    outline:
+      'border border-[rgb(var(--cf-color-warning-rgb)/1)] text-[rgb(var(--cf-color-warning-rgb)/1)] bg-transparent hover:bg-[rgb(var(--cf-color-warning-rgb)/0.12)]',
+    link:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-warning-rgb)/1)] underline-offset-2 hover:underline',
+  },
+  info: {
+    solid:
+      'bg-[rgb(var(--cf-color-info-rgb)/1)] text-white border border-transparent hover:brightness-95 active:brightness-90',
+    soft:
+      'bg-[rgb(var(--cf-color-info-rgb)/0.14)] text-[rgb(var(--cf-color-info-rgb)/1)] border border-transparent hover:bg-[rgb(var(--cf-color-info-rgb)/0.22)]',
+    ghost:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-info-rgb)/1)] hover:bg-[rgb(var(--cf-color-info-rgb)/0.12)]',
+    outline:
+      'border border-[rgb(var(--cf-color-info-rgb)/1)] text-[rgb(var(--cf-color-info-rgb)/1)] bg-transparent hover:bg-[rgb(var(--cf-color-info-rgb)/0.12)]',
+    link:
+      'bg-transparent border border-transparent text-[rgb(var(--cf-color-info-rgb)/1)] underline-offset-2 hover:underline',
+  },
+}
+
 const sizeClass = computed(() => {
   switch (props.size) {
     case 'xs':
-      return 'h-7 px-2.5 text-xs'
+      return 'h-8 px-2.5 text-xs'
     case 'sm':
-      return 'h-8 px-3 text-xs'
+      return 'h-9 px-3 text-xs'
     case 'lg':
       return 'h-11 px-5 text-base'
     case 'xl':
@@ -42,48 +153,11 @@ const sizeClass = computed(() => {
 })
 
 const toneClass = computed(() => {
-  const color = props.color
-  const variant = props.variant
-
-  if (variant === 'link') {
-    return 'bg-transparent border-transparent underline-offset-2 hover:underline'
-  }
-
-  if (variant === 'ghost') {
-    return 'bg-transparent border-transparent hover:bg-black/5 dark:hover:bg-white/10'
-  }
-
-  if (color === 'error' || color === 'red') {
-    if (variant === 'outline') {
-      return 'border border-red-500 text-red-600 bg-transparent hover:bg-red-50 dark:hover:bg-red-500/10'
-    }
-    if (variant === 'soft') {
-      return 'bg-red-50 text-red-700 border border-transparent hover:bg-red-100 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20'
-    }
-    return 'bg-red-600 text-white border border-transparent hover:bg-red-700 active:bg-red-800'
-  }
-
-  if (color === 'neutral' || color === 'gray' || color === 'white') {
-    if (variant === 'outline') {
-      return 'border border-slate-300 text-slate-700 bg-transparent hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10'
-    }
-    if (variant === 'soft') {
-      return 'bg-slate-100 text-slate-800 border border-transparent hover:bg-slate-200 dark:bg-white/10 dark:text-slate-100 dark:hover:bg-white/20'
-    }
-    return 'bg-slate-800 text-white border border-transparent hover:bg-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-white'
-  }
-
-  if (variant === 'outline') {
-    return 'border border-[rgb(var(--cf-color-primary-500-rgb)/1)] text-[rgb(var(--cf-color-primary-600-rgb)/1)] bg-transparent hover:bg-[rgb(var(--cf-color-primary-50-rgb)/1)] dark:hover:bg-white/10'
-  }
-  if (variant === 'soft') {
-    return 'bg-[rgb(var(--cf-color-primary-50-rgb)/1)] text-[rgb(var(--cf-color-primary-600-rgb)/1)] border border-transparent hover:bg-[rgb(var(--cf-color-primary-100-rgb)/1)] dark:bg-[rgb(var(--cf-color-primary-500-rgb)/0.2)] dark:text-[rgb(var(--cf-color-primary-100-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-primary-500-rgb)/0.3)]'
-  }
-  return 'bg-[rgb(var(--cf-color-primary-500-rgb)/1)] text-white border border-transparent hover:bg-[rgb(var(--cf-color-primary-600-rgb)/1)] active:bg-[rgb(var(--cf-color-primary-600-rgb)/1)]'
+  return THEME_TONE_MAP[props.color][props.variant]
 })
 
 const mergedClass = computed(() => [
-  'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer',
+  'inline-flex min-h-[var(--cf-ui-touch-target)] items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--cf-color-primary-500-rgb)/0.35)] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--cf-color-surface-page-rgb)/1)] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer md:min-h-0',
   sizeClass.value,
   toneClass.value,
   attrs.class,

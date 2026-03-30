@@ -12,6 +12,7 @@ import UHeader from '@/components/ui-adapter/UHeader.vue'
 import UIcon from '@/components/ui-adapter/UIcon.vue'
 import UInput from '@/components/ui-adapter/UInput.vue'
 import UInputTags from '@/components/ui-adapter/UInputTags.vue'
+import UMenu from '@/components/ui-adapter/UMenu.vue'
 import UModal from '@/components/ui-adapter/UModal.vue'
 import USeparator from '@/components/ui-adapter/USeparator.vue'
 import USkeleton from '@/components/ui-adapter/USkeleton.vue'
@@ -31,6 +32,7 @@ export const registerUiAdapter = (app: App): void => {
   app.component('UIcon', UIcon)
   app.component('UInput', UInput)
   app.component('UInputTags', UInputTags)
+  app.component('UMenu', UMenu)
   app.component('UModal', UModal)
   app.component('USeparator', USeparator)
   app.component('USkeleton', USkeleton)

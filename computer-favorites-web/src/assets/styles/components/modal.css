@@ -1,0 +1,151 @@
+/* 用户侧弹窗样式：用户名与邮箱弹窗共用，统一层级与主题变量 */
+.username-edit-modal-overlay,
+.email-edit-modal-overlay {
+  background-color: rgba(15, 23, 42, 0.56) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.username-edit-modal-content,
+.email-edit-modal-content {
+  width: min(92vw, 560px) !important;
+  max-width: 560px !important;
+  border-radius: 14px !important;
+  border: 1px solid rgb(var(--cf-color-border-default-rgb) / 1) !important;
+  background-color: rgb(var(--cf-color-surface-card-rgb) / 1) !important;
+  color: rgb(var(--cf-color-text-primary-rgb) / 1) !important;
+  box-shadow: var(--cf-shadow-modal-light) !important;
+}
+
+.dark .username-edit-modal-content,
+.dark .email-edit-modal-content {
+  border-color: rgb(var(--cf-color-border-muted-rgb) / 1) !important;
+  background-color: rgb(var(--cf-color-surface-card-rgb) / 1) !important;
+  color: rgb(var(--cf-color-text-primary-rgb) / 1) !important;
+  box-shadow: var(--cf-shadow-modal-dark) !important;
+}
+
+.username-edit-modal-header,
+.email-edit-modal-header {
+  border-bottom: 1px solid rgb(var(--cf-color-border-default-rgb) / 1);
+  background-color: rgb(var(--cf-color-modal-header-rgb) / 1);
+}
+
+.dark .username-edit-modal-header,
+.dark .email-edit-modal-header {
+  border-bottom-color: rgb(var(--cf-color-border-muted-rgb) / 1);
+  background-color: rgb(var(--cf-color-modal-header-rgb) / 1);
+}
+
+.username-edit-modal-title,
+.email-edit-modal-title {
+  color: rgb(var(--cf-color-text-primary-rgb) / 1);
+  font-weight: 700;
+}
+
+.username-edit-modal-description,
+.email-edit-modal-description {
+  color: rgb(var(--cf-color-text-secondary-rgb) / 1);
+}
+
+.username-edit-modal-close,
+.email-edit-modal-close {
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.username-edit-modal-close:hover,
+.email-edit-modal-close:hover {
+  background-color: rgb(var(--cf-color-text-secondary-rgb) / 0.14);
+}
+
+.username-edit-modal-body,
+.email-edit-modal-body {
+  max-height: min(58vh, 420px);
+  overflow-y: auto;
+}
+
+.username-edit-modal-footer,
+.email-edit-modal-footer {
+  border-top: 1px solid rgb(var(--cf-color-border-default-rgb) / 1);
+}
+
+.dark .username-edit-modal-footer,
+.dark .email-edit-modal-footer {
+  border-top-color: rgb(var(--cf-color-border-muted-rgb) / 1);
+}
+
+html.username-modal-scroll-lock,
+body.username-modal-scroll-lock,
+html.email-modal-scroll-lock,
+body.email-modal-scroll-lock {
+  overflow: hidden !important;
+}
+
+body.username-modal-scroll-lock {
+  position: fixed;
+  width: 100%;
+  top: calc(var(--username-modal-scroll-y, 0px) * -1);
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+body.email-modal-scroll-lock {
+  position: fixed;
+  width: 100%;
+  top: calc(var(--email-modal-scroll-y, 0px) * -1);
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+@media (max-width: 1024px) {
+  .username-edit-modal-content,
+  .email-edit-modal-content {
+    width: min(94vw, 520px) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .username-edit-modal-content,
+  .email-edit-modal-content {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    border-radius: 12px !important;
+  }
+
+  .username-edit-modal-body,
+  .email-edit-modal-body {
+    max-height: 52vh;
+  }
+
+  .username-edit-modal-footer,
+  .email-edit-modal-footer {
+    padding-top: 12px;
+  }
+
+  .username-edit-modal-actions,
+  .email-edit-modal-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .username-edit-modal-actions > *,
+  .email-edit-modal-actions > * {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .username-edit-modal-content,
+  .email-edit-modal-content {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    border-radius: 10px !important;
+  }
+
+  .username-edit-modal-body,
+  .email-edit-modal-body {
+    max-height: 48vh;
+  }
+}

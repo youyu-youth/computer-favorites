@@ -1,0 +1,44 @@
+/* 全局基础布局与字体规则 */
+html {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+body {
+  min-height: 100vh;
+  background-color: rgb(var(--cf-color-surface-page-rgb) / 1);
+  color: rgb(var(--cf-color-text-primary-rgb) / 1);
+  transition:
+    color var(--cf-motion-page) var(--cf-ease-standard),
+    background-color var(--cf-motion-page) var(--cf-ease-standard);
+}
+
+html.lang-zh body {
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+
+html.lang-en body {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: 0.01em;
+  line-height: 1.55;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--cf-color-text-secondary-rgb) / 0.42);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--cf-color-text-secondary-rgb) / 0.6);
+}

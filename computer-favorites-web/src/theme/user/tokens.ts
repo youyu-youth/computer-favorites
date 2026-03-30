@@ -5,17 +5,37 @@ import type { ThemeTokenValueMap } from '../types'
  */
 export const USER_THEME_TOKEN_VALUE_MAP: ThemeTokenValueMap = {
   color: {
-    primary50: '#fffbeb',
-    primary100: '#fef3c7',
-    primary400: '#fbbf24',
-    primary500: '#f59e0b',
-    primary600: '#d97706',
-    darkBg: '#121212',
-    darkCard: '#1c1c1e',
-    darkBorder: '#2d2d2d',
+    primary50: '#fff7ed',
+    primary100: '#ffedd5',
+    primary400: '#fb923c',
+    primary500: '#d97706',
+    primary600: '#b45309',
+
+    secondary50: '#f4fbe7',
+    secondary100: '#e6f5c4',
+    secondary400: '#9fda34',
+    secondary500: '#8bca10',
+    secondary600: '#72a70d',
+
+    tertiary50: '#ebf3ef',
+    tertiary100: '#d6e7de',
+    tertiary400: '#4d8a74',
+    tertiary500: '#33735d',
+    tertiary600: '#2a5f4d',
+
+    neutral50: '#faf8f6',
+    neutral100: '#f2ece8',
+    neutral400: '#d7ccc3',
+    neutral500: '#e9e1db',
+    neutral600: '#b8aba1',
+
+    darkBg: '#000000',
+    darkCard: '#111111',
+    darkBorder: '#262626',
+
     semanticSuccess: '#10b981',
     semanticError: '#f43f5e',
-    semanticWarning: '#f59e0b',
+    semanticWarning: '#d97706',
     semanticInfo: '#3b82f6',
   },
   border: {

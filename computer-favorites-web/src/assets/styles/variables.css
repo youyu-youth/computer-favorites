@@ -1,0 +1,11 @@
+/* 全局 UI 变量：用于统一尺寸、圆角与触控规范 */
+:root {
+  --cf-ui-nav-height: 4rem;
+  --cf-ui-touch-target: 44px;
+
+  --cf-ui-radius-sm: 0.5rem;
+  --cf-ui-radius-md: 0.75rem;
+  --cf-ui-radius-lg: 1rem;
+
+  --cf-ui-content-max-width: 80rem;
+}

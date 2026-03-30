@@ -14,6 +14,25 @@ export const ADMIN_THEME_TOKEN_VALUE_MAP: ThemeTokenValueMap = {
     primary400: '#60a5fa',
     primary500: '#3b82f6',
     primary600: '#2563eb',
+
+    secondary50: '#ecfdf5',
+    secondary100: '#d1fae5',
+    secondary400: '#34d399',
+    secondary500: '#10b981',
+    secondary600: '#059669',
+
+    tertiary50: '#f0f9ff',
+    tertiary100: '#e0f2fe',
+    tertiary400: '#38bdf8',
+    tertiary500: '#0ea5e9',
+    tertiary600: '#0284c7',
+
+    neutral50: '#f8fafc',
+    neutral100: '#f1f5f9',
+    neutral400: '#94a3b8',
+    neutral500: '#e2e8f0',
+    neutral600: '#cbd5e1',
+
     darkBg: '#0f172a',
     darkCard: '#1e293b',
     darkBorder: '#334155',

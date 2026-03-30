@@ -1,0 +1,104 @@
+/* 通用样式工具：保持组件复用且降低样式重复 */
+.glass-nav {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.cf-surface-card {
+  border: 1px solid rgb(var(--cf-color-border-default-rgb) / 1);
+  background-color: rgb(var(--cf-color-surface-card-rgb) / 1);
+}
+
+.cf-focus-ring {
+  outline: 2px solid rgb(var(--cf-color-primary-500-rgb) / 0.32);
+  outline-offset: 2px;
+}
+
+.neon-bg {
+  position: relative;
+  overflow: hidden;
+  background-color: rgb(var(--cf-color-surface-page-rgb) / 1);
+}
+
+.neon-bg::before,
+.neon-bg::after {
+  content: '';
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  border-radius: 9999px;
+  filter: blur(64px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.neon-bg::before {
+  left: -180px;
+  top: 80px;
+  background-color: rgb(var(--cf-color-secondary-500-rgb) / 0.12);
+}
+
+.neon-bg::after {
+  right: -180px;
+  bottom: 40px;
+  background-color: rgb(var(--cf-color-primary-500-rgb) / 0.1);
+}
+
+.dark .neon-bg::before {
+  background-color: rgb(var(--cf-color-secondary-500-rgb) / 0.18);
+}
+
+.dark .neon-bg::after {
+  background-color: rgb(var(--cf-color-primary-500-rgb) / 0.16);
+}
+
+.neon-bg > :not(.fixed) {
+  position: relative;
+  z-index: 1;
+}
+
+/* User Home V2 Styles */
+.cyber-border {
+  border: 1px solid rgb(var(--cf-color-dark-border-rgb) / 1);
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 10px;
+  height: 1.2em;
+  background: rgb(var(--cf-color-primary-500-rgb) / 1);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.liquid-glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 30%, rgb(var(--cf-color-primary-500-rgb) / 0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.liquid-glass:hover {
+  border-color: rgb(var(--cf-color-primary-500-rgb) / 0.3);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
