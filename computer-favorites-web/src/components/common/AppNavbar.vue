@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import PrimeButton from 'primevue/button'
+import Avatar from 'primevue/avatar'
 import { logout as logoutApi } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { ChevronDown, IdCard, LogOut, Menu, Settings, User, X } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -136,14 +139,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <UHeader
-    v-model:open="mobileMenuOpen"
-    class="fixed inset-x-0 top-0 z-50 glass-nav border-b border-gray-200 bg-white/70 backdrop-blur-md dark:border-dark-border dark:bg-dark-bg/80"
-    :ui="{
-      container: 'max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8',
-    }"
-  >
-    <template #left>
+  <header class="fixed inset-x-0 top-0 z-50 glass-nav border-b border-gray-200 bg-white/70 backdrop-blur-md dark:border-dark-border dark:bg-dark-bg/80">
+    <div class="mx-auto h-16 max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex h-full items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
       <RouterLink :to="{ name: 'home' }" class="flex items-center gap-3">
         <svg
           class="w-8 h-8 text-primary-500"
@@ -161,9 +160,9 @@ onBeforeUnmount(() => {
         </svg>
         <span class="hidden text-xl font-bold tracking-tight text-gray-900 dark:text-white sm:inline">Computer Favorites</span>
       </RouterLink>
-    </template>
+        </div>
 
-    <div class="hidden items-center space-x-6 md:flex">
+        <div class="hidden items-center space-x-6 md:flex">
         <RouterLink
           :to="{ name: 'home' }"
           :class="[
@@ -195,13 +194,12 @@ onBeforeUnmount(() => {
         >
           {{ t('user.home.hero.uploadButton') }}
         </button>
-    </div>
+        </div>
 
-    <template #right>
-      <div class="flex items-center gap-3 sm:gap-4">
+        <div class="flex items-center gap-3 sm:gap-4">
         <button
           @click="appStore.toggleTheme"
-          class="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800"
+          class="cursor-pointer rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800"
           :aria-label="t('common.theme.toggle')"
         >
           <svg
@@ -230,7 +228,7 @@ onBeforeUnmount(() => {
         <button
           v-if="!authStore.isSessionValid"
           @click="goToLogin"
-          class="hidden items-center gap-2 rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-600 sm:flex"
+          class="hidden cursor-pointer items-center gap-2 rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-600 sm:flex"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -246,14 +244,14 @@ onBeforeUnmount(() => {
         <div v-else ref="profileMenuRef" class="relative">
           <button
             type="button"
-            class="inline-flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 pr-3 text-sm text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+            class="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 pr-3 text-sm text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
             @click.stop="toggleProfileMenu"
           >
-            <UAvatar :src="avatarSrc" :alt="t('user.profile.basicInfo')" size="sm">
+            <Avatar :image="avatarSrc" shape="circle" size="small" class="h-7 w-7 overflow-hidden rounded-full">
               <span class="text-xs font-semibold">{{ initials }}</span>
-            </UAvatar>
+            </Avatar>
             <span class="hidden max-w-24 truncate sm:inline">{{ displayName }}</span>
-            <UIcon name="i-lucide-chevron-down" class="size-4" />
+            <ChevronDown class="size-4" />
           </button>
           <Transition name="fade">
             <div
@@ -262,75 +260,86 @@ onBeforeUnmount(() => {
             >
               <button
                 type="button"
-                class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
                 @click="goToProfile"
               >
-                <UIcon name="i-lucide-user" class="size-4" />
+                <User class="size-4" />
                 {{ t('user.profile.title') }}
               </button>
               <button
                 type="button"
-                class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
                 @click="goToSettings"
               >
-                <UIcon name="i-lucide-settings" class="size-4" />
+                <Settings class="size-4" />
                 {{ t('settings.title') }}
               </button>
               <button
                 type="button"
-                class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
                 @click="goToAccount"
               >
-                <UIcon name="i-lucide-id-card" class="size-4" />
+                <IdCard class="size-4" />
                 {{ t('settings.sidebar.account') }}
               </button>
               <button
                 type="button"
                 :disabled="logoutLoading"
-                class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+                class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
                 @click="logout"
               >
-                <UIcon name="i-lucide-log-out" class="size-4" />
+                <LogOut class="size-4" />
                 {{ logoutLoading ? t('common.loading') : t('auth.logout.button') }}
               </button>
             </div>
           </Transition>
         </div>
-      </div>
-    </template>
 
-    <template #body>
-      <div class="space-y-1 px-2 pb-3">
-        <UButton
-          color="neutral"
-          variant="ghost"
-          class="w-full justify-start"
-          :class="isHomeRoute ? 'text-primary-500 dark:text-primary-400' : ''"
+          <button
+            type="button"
+            class="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-100 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 md:hidden"
+            :aria-label="mobileMenuOpen ? 'Close navigation' : 'Open navigation'"
+            @click="mobileMenuOpen = !mobileMenuOpen"
+          >
+            <Menu v-if="!mobileMenuOpen" class="h-5 w-5" />
+            <X v-else class="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <Transition name="fade">
+      <div
+        v-if="mobileMenuOpen"
+        class="border-t border-slate-200 bg-white px-2 pb-3 pt-2 dark:border-white/10 dark:bg-slate-900 md:hidden"
+      >
+        <PrimeButton
+          text
+          class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium"
+          :class="isHomeRoute ? '!text-primary-500 dark:!text-primary-400' : '!text-gray-600 dark:!text-gray-300'"
           @click="goToHome"
         >
           {{ t('user.home.hero.browseButton') }}
-        </UButton>
-        <UButton color="neutral" variant="ghost" class="w-full justify-start" @click="handlePendingFeature">
+        </PrimeButton>
+        <PrimeButton text class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 dark:!text-gray-300" @click="handlePendingFeature">
           {{ t('user.home.filter.categories') }}
-        </UButton>
-        <UButton color="neutral" variant="ghost" class="w-full justify-start" @click="goToProfile">
+        </PrimeButton>
+        <PrimeButton text class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 dark:!text-gray-300" @click="goToProfile">
           {{ t('user.profile.title') }}
-        </UButton>
-        <UButton color="neutral" variant="ghost" class="w-full justify-start" @click="handlePendingFeature">
+        </PrimeButton>
+        <PrimeButton text class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 dark:!text-gray-300" @click="handlePendingFeature">
           {{ t('user.home.hero.uploadButton') }}
-        </UButton>
-        <UButton
+        </PrimeButton>
+        <PrimeButton
           v-if="!authStore.isSessionValid"
-          color="primary"
-          variant="solid"
-          class="mt-2 w-full justify-center"
+          class="!mt-2 !flex !w-full !cursor-pointer !justify-center !rounded-lg !bg-primary-500 !px-3 !py-2 !text-sm !font-medium !text-white hover:!bg-primary-600"
           @click="goToLogin"
         >
           {{ t('auth.login.loginButton') }} / {{ t('auth.login.registerButton') }}
-        </UButton>
+        </PrimeButton>
       </div>
-    </template>
-  </UHeader>
+    </Transition>
+  </header>
 </template>
 
 <style scoped>
