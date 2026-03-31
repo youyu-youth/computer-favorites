@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { useToast } from '@/composables/useToast'
-import { sendEmailUpdateCode } from '@/services/profile'
+import { sendEmailUpdateCode } from '@/api/user'
 
 interface Props {
   open: boolean

@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { getCurrentUserProfile } from '@/services/profile'
-import { renewSession } from '@/services/auth'
+import { getCurrentUserProfile } from '@/api/user'
+import { renewSession } from '@/api/auth'
 import { isUnauthorizedError } from '@/utils/http'
 
 export interface AuthUserSnapshot {

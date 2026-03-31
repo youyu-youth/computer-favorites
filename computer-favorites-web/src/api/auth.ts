@@ -1,4 +1,5 @@
 import { deleteJson, getJson, postJson, putJson } from '@/utils/http'
+import type { ApiResult } from '@/api/types'
 
 export type LoginRequest = {
   username: string
@@ -35,12 +36,6 @@ export type AuthTokenResponse = {
   accessToken: string
   tokenName?: string
   expireTime?: string
-}
-
-type ApiResult<T> = {
-  code: number
-  msg: string
-  data?: T
 }
 
 type LoginRawData = {

@@ -8,7 +8,7 @@ import {
   register,
   sendLoginCode,
   sendRegisterCode,
-} from '@/services/auth'
+} from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 

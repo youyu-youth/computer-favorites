@@ -6,7 +6,7 @@ import EmailEditDialog from '@/components/user/settings/components/EmailEditDial
 import UsernameEditDialog from '@/components/user/settings/components/UsernameEditDialog.vue'
 import { settingsStateKey } from '@/components/user/settings/context'
 import type { SettingsStoreState } from '@/components/user/settings/mock'
-import { updateCurrentEmail, updateCurrentUsername, verifyEmailUpdateCode } from '@/services/profile'
+import { updateCurrentEmail, updateCurrentUsername, verifyEmailUpdateCode } from '@/api/user'
 
 const settingsState = inject<SettingsStoreState>(settingsStateKey)
 if (!settingsState) {

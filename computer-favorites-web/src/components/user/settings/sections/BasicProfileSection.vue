@@ -12,7 +12,7 @@ import giteeIcon from '@/assets/icons/svg/gitee.svg'
 import blogIcon from '@/assets/icons/svg/blog.svg'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
-import { deleteCurrentUserAvatar, uploadCurrentUserAvatar } from '@/services/profile'
+import { deleteCurrentUserAvatar, uploadCurrentUserAvatar } from '@/api/user'
 
 const settingsState = inject<SettingsStoreState | null>(settingsStateKey, null)
 if (!settingsState) {

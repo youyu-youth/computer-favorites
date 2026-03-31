@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import PrimeButton from 'primevue/button'
 import Avatar from 'primevue/avatar'
-import { logout as logoutApi } from '@/services/auth'
+import { logout as logoutApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'

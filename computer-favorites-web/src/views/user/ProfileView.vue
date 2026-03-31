@@ -5,7 +5,7 @@ import ProfileHeatmapSection from '@/components/user/profile/ProfileHeatmapSecti
 import ProfileHeroSection from '@/components/user/profile/ProfileHeroSection.vue'
 import ProfileSidebarCard from '@/components/user/profile/ProfileSidebarCard.vue'
 import ProfileSkillsSection from '@/components/user/profile/ProfileSkillsSection.vue'
-import { getCurrentUserProfile, type LoginUserProfileResponse } from '@/services/profile'
+import { getCurrentUserProfile, type LoginUserProfileResponse } from '@/api/user'
 import { useToast } from '@/composables/useToast'
 import type { ProfileData, ProfileSiteItem, ProfileSocialLink } from '@/types/profile'
 

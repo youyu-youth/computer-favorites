@@ -14,7 +14,7 @@ import DataManagementSection from '@/components/user/settings/sections/DataManag
 import MessageSettingsSection from '@/components/user/settings/sections/MessageSettingsSection.vue'
 import { mockUserBasicInfo, mockUserDetailProfile, mockUserPreferenceSetting } from '@/components/user/settings/mock'
 import { settingsStateKey } from '@/components/user/settings/context'
-import { getCurrentUserProfile, updateCurrentUserProfile, updateCurrentUserSetting } from '@/services/profile'
+import { getCurrentUserProfile, updateCurrentUserProfile, updateCurrentUserSetting } from '@/api/user'
 import { useToast } from '@/composables/useToast'
 import { useAppStore, type ThemeMode } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'

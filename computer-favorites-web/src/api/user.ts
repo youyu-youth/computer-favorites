@@ -1,10 +1,5 @@
 import { deleteJson, getJson, postFormData, postJson, putJson } from '@/utils/http'
-
-type ApiResult<T> = {
-  code: number
-  msg: string
-  data?: T
-}
+import type { ApiResult } from '@/api/types'
 
 export interface LoginUserBasicInfo {
   id?: number

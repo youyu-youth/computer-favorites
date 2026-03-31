@@ -2,9 +2,9 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 // @ts-ignore
-import { changePassword, sendPasswordChangeCode } from '@/services/auth'
+import { changePassword, sendPasswordChangeCode } from '@/api/auth'
 // @ts-ignore
-import { getCurrentUserProfile } from '@/services/profile'
+import { getCurrentUserProfile } from '@/api/user'
 // @ts-ignore
 import { useToast } from '@/composables/useToast'
 
