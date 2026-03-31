@@ -216,7 +216,17 @@ public enum AuthErrorCode {
     /**
      * 偏好设置保存失败
      */
-    USER_SETTING_UPDATE_FAILED(100242, "偏好设置保存失败，请稍后重试");
+    USER_SETTING_UPDATE_FAILED(100242, "偏好设置保存失败，请稍后重试"),
+
+    /**
+     * 管理员不存在或已被禁用
+     */
+    ADMIN_PROFILE_NOT_FOUND(100243, "管理员不存在或已被禁用"),
+
+    /**
+     * 管理员资料更新失败
+     */
+    ADMIN_PROFILE_UPDATE_FAILED(100244, "管理员资料更新失败，请稍后重试");
 
     private final int code;
 

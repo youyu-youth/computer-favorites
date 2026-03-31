@@ -1,5 +1,6 @@
 import { deleteJson, getJson, postJson, putJson } from '@/utils/http'
 import type { ApiResult } from '@/api/types'
+import { buildAdminAuthHeaders } from '@/api/admin-auth-headers'
 
 export type AdminLoginRequest = {
   username: string
@@ -56,19 +57,10 @@ const parseAdminTokenResponse = (
   }
 }
 
-const buildAdminAuthHeaders = (): Headers => {
-  const headers = new Headers()
-  const token = localStorage.getItem('adminAccessToken')
-  const tokenName = localStorage.getItem('adminTokenName') || 'satoken'
-  if (!token) {
-    return headers
-  }
-  headers.set(tokenName, token)
-  return headers
-}
-
 export async function adminLogin(req: AdminLoginRequest): Promise<AdminTokenResponse> {
-  const res = await postJson<ApiResult<AdminLoginRawData>>('/api/admin/auth/login', req)
+  const res = await postJson<ApiResult<AdminLoginRawData>>('/api/admin/auth/login', req, {
+    headers: buildAdminAuthHeaders({ includeToken: false }),
+  })
   return parseAdminTokenResponse(res, '管理员登录失败')
 }
 

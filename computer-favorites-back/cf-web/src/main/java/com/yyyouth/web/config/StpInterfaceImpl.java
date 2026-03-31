@@ -36,7 +36,9 @@ public class StpInterfaceImpl implements StpInterface {
     private static final List<String> DEFAULT_ADMIN_PERMISSIONS = List.of(
             "admin:auth:renew",
             "admin:auth:delete",
-            "admin:auth:detail"
+            "admin:auth:detail",
+            "admin:profile:detail",
+            "admin:profile:edit"
     );
 
     private static final List<String> DEFAULT_USER_ROLES = List.of("user");

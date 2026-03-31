@@ -12,6 +12,8 @@ export class HttpError extends Error {
 
 const AUTH_UNAUTHORIZED_CODE = 100202
 
+const SKIP_DEFAULT_AUTH_HEADER = 'X-CF-Skip-Auth'
+
 // type ApiErrorBody = {
 //   code?: number
 //   msg?: string
@@ -77,12 +79,17 @@ const getAuthHeaders = () => {
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
-  const authHeaders = getAuthHeaders()
-  authHeaders.forEach((value, key) => {
-    if (!headers.has(key)) {
-      headers.set(key, value)
-    }
-  })
+  const shouldSkipDefaultAuth = headers.get(SKIP_DEFAULT_AUTH_HEADER) === '1'
+  headers.delete(SKIP_DEFAULT_AUTH_HEADER)
+
+  if (!shouldSkipDefaultAuth) {
+    const authHeaders = getAuthHeaders()
+    authHeaders.forEach((value, key) => {
+      if (!headers.has(key)) {
+        headers.set(key, value)
+      }
+    })
+  }
 
   const res = await fetch(url, {
     ...init,
@@ -117,14 +124,16 @@ export async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export async function postJson<T>(url: string, data: unknown, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers)
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
   return requestJson<T>(url, {
     method: 'POST',
-    headers: new Headers({
-      'Content-Type': 'application/json',
-      ...(init?.headers ? Object.fromEntries(new Headers(init.headers).entries()) : {}),
-    }),
-    body: JSON.stringify(data),
     ...init,
+    headers,
+    body: JSON.stringify(data),
   })
 }
 

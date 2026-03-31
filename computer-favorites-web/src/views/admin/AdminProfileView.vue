@@ -1,62 +1,158 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import { getAdminProfile, updateAdminProfile } from '@/api/admin-profile'
+import { useToast } from '@/composables/useToast'
+import { useAdminAuthStore } from '@/stores/adminAuth'
+import type { AdminProfile, UpdateAdminProfileRequest } from '@/types/admin'
 
-// Mock data based on t_admin
-const adminInfo = reactive({
-  id: 1,
-  username: 'admin_root',
-  email: 'root@glama.sys',
+const adminAuthStore = useAdminAuthStore()
+const toast = useToast()
+
+const adminInfo = reactive<AdminProfile>({
+  id: 0,
+  username: '',
+  email: '',
   avatar: '',
-  nickname: 'System Administrator',
-  role: 'admin',
+  nickname: '',
+  role: '',
   status: 1,
-  last_login_time: '2026-03-31 20:15:42',
-  last_login_ip: '192.168.1.254',
-  create_time: '2025-01-01 00:00:00',
-  update_time: '2026-03-25 14:20:11'
+  lastLoginTime: '',
+  lastLoginIp: '',
+  createTime: '',
+  updateTime: ''
 })
 
 // UI State
 const isEditing = ref(false)
 const isSaving = ref(false)
+const isLoading = ref(true)
+const loadError = ref('')
 
 // Form state
 const editForm = reactive({
   nickname: '',
-  email: '',
-  avatar: ''
+  email: ''
 })
 
-const enableEdit = () => {
+const resolveErrorMessage = (error: unknown): string => {
+  return error instanceof Error ? error.message : '请求失败，请稍后重试'
+}
+
+const applyAdminProfile = (profile: AdminProfile) => {
+  adminInfo.id = profile.id ?? 0
+  adminInfo.username = profile.username ?? ''
+  adminInfo.email = profile.email ?? ''
+  adminInfo.avatar = profile.avatar ?? ''
+  adminInfo.nickname = profile.nickname ?? ''
+  adminInfo.role = profile.role ?? ''
+  adminInfo.status = profile.status ?? 1
+  adminInfo.lastLoginTime = profile.lastLoginTime ?? ''
+  adminInfo.lastLoginIp = profile.lastLoginIp ?? ''
+  adminInfo.createTime = profile.createTime ?? ''
+  adminInfo.updateTime = profile.updateTime ?? ''
+}
+
+const syncEditForm = () => {
   editForm.nickname = adminInfo.nickname
   editForm.email = adminInfo.email
-  editForm.avatar = adminInfo.avatar
+}
+
+const loadProfile = async (showErrorToast = true): Promise<boolean> => {
+  isLoading.value = true
+  loadError.value = ''
+  try {
+    const profile = await getAdminProfile()
+    applyAdminProfile(profile)
+    syncEditForm()
+    return true
+  } catch (error) {
+    const message = resolveErrorMessage(error)
+    loadError.value = message
+    if (showErrorToast) {
+      toast.add({
+        title: '管理员资料加载失败',
+        description: message,
+        type: 'error',
+      })
+    }
+    return false
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const reloadProfile = () => {
+  void loadProfile()
+}
+
+const enableEdit = () => {
+  syncEditForm()
   isEditing.value = true
 }
 
 const cancelEdit = () => {
+  syncEditForm()
   isEditing.value = false
 }
 
 const saveProfile = async () => {
   isSaving.value = true
+  try {
+    const payload: UpdateAdminProfileRequest = {}
+    const nickname = editForm.nickname.trim()
+    const email = editForm.email.trim()
 
-  // Simulate network request
-  await new Promise(resolve => setTimeout(resolve, 1200))
+    if (nickname !== adminInfo.nickname) {
+      payload.nickname = nickname
+    }
+    if (email !== adminInfo.email) {
+      payload.email = email
+    }
 
-  adminInfo.nickname = editForm.nickname
-  adminInfo.email = editForm.email
-  adminInfo.avatar = editForm.avatar
+    if (Object.keys(payload).length === 0) {
+      isEditing.value = false
+      toast.add({
+        title: '没有需要保存的变更',
+        type: 'info',
+      })
+      return
+    }
 
-  const now = new Date()
-  adminInfo.update_time = now.toISOString().replace('T', ' ').substring(0, 19)
+    await updateAdminProfile(payload)
+    const loaded = await loadProfile(false)
+    if (!loaded) {
+      if (payload.nickname !== undefined) {
+        adminInfo.nickname = payload.nickname
+      }
+      if (payload.email !== undefined) {
+        adminInfo.email = payload.email
+      }
+      syncEditForm()
+    }
 
-  isSaving.value = false
-  isEditing.value = false
+    adminAuthStore.setUserSnapshot({
+      nickname: adminInfo.nickname,
+    })
 
-  // Replace with toast later
-  console.log(`[SYS] Config updated for UID: ${adminInfo.id}`)
+    isEditing.value = false
+    toast.add({
+      title: '管理员资料保存成功',
+      type: 'success',
+    })
+  } catch (error) {
+    toast.add({
+      title: '管理员资料保存失败',
+      description: resolveErrorMessage(error),
+      type: 'error',
+    })
+  } finally {
+    isSaving.value = false
+  }
 }
+
+onMounted(() => {
+  void loadProfile()
+})
 
 </script>
 
@@ -67,12 +163,27 @@ const saveProfile = async () => {
       <!-- Terminal Navigation -->
       <div class="mb-6 sm:mb-8 border-b border-[#cbd5e1] dark:border-[#273138] pb-3 sm:pb-4">
         <div class="text-sm text-slate-500 dark:text-gray-400 flex flex-wrap items-center gap-2 break-all">
-          <span class="text-[#e95322]">{{ adminInfo.username }}@sys</span>:<span class="text-[#3b82f6]">~</span>$ cat /etc/admin/profile.conf
+          <span class="text-[#e95322]">{{ adminInfo.username || 'admin_root' }}@sys</span>:<span class="text-[#3b82f6]">~</span>$ cat /etc/admin/profile.conf
           <span class="cursor-blink"></span>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-5 lg:gap-8">
+      <div v-if="isLoading" class="border border-[#cbd5e1] dark:border-[#273138] bg-white dark:bg-[#151b21] p-6 text-sm text-slate-600 dark:text-gray-300">
+        <span class="text-[#e95322]">[SYS]</span> Loading admin profile...
+      </div>
+
+      <div v-else-if="loadError" class="border border-[#cbd5e1] dark:border-[#273138] bg-white dark:bg-[#151b21] p-6">
+        <p class="text-sm text-red-600 dark:text-red-400">{{ loadError }}</p>
+        <button
+          type="button"
+          @click="reloadProfile"
+          class="mt-4 border border-[#e95322] text-[#e95322] px-4 py-2 text-xs uppercase tracking-wider hover:bg-[#e95322] hover:text-white transition-colors cursor-pointer"
+        >
+          Retry_Load
+        </button>
+      </div>
+
+      <div v-else class="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-5 lg:gap-8">
 
         <!-- Left Panel: Readonly System Info -->
         <aside class="w-full space-y-5 sm:space-y-6">
@@ -88,7 +199,7 @@ const saveProfile = async () => {
                 <i v-else class="pi pi-user text-4xl text-slate-500 dark:text-gray-500 group-hover:text-[#e95322] transition-colors"></i>
               </div>
 
-              <h2 class="text-xl text-slate-900 dark:text-white font-bold mb-1 uppercase tracking-wider break-all text-center">{{ adminInfo.username }}</h2>
+              <h2 class="text-xl text-slate-900 dark:text-white font-bold mb-1 uppercase tracking-wider break-all text-center">{{ adminInfo.username || 'UNKNOWN' }}</h2>
               <p class="text-sm text-slate-500 dark:text-gray-500 mb-4 text-center">"{{ adminInfo.nickname || 'NO_NICKNAME' }}"</p>
 
               <div class="flex gap-2 w-full flex-wrap sm:flex-nowrap">
@@ -114,19 +225,19 @@ const saveProfile = async () => {
               </div>
               <div>
                 <span class="text-slate-500 dark:text-gray-500 block mb-0.5">LAST_LOGIN_TIME:</span>
-                <span class="text-slate-700 dark:text-gray-300">{{ adminInfo.last_login_time || 'NULL' }}</span>
+                <span class="text-slate-700 dark:text-gray-300">{{ adminInfo.lastLoginTime || 'NULL' }}</span>
               </div>
               <div>
                 <span class="text-slate-500 dark:text-gray-500 block mb-0.5">LAST_LOGIN_IP:</span>
-                <span class="text-[#3b82f6]">{{ adminInfo.last_login_ip || '0.0.0.0' }}</span>
+                <span class="text-[#3b82f6]">{{ adminInfo.lastLoginIp || '0.0.0.0' }}</span>
               </div>
               <div class="pt-2 border-t border-[#cbd5e1] dark:border-[#273138] border-dashed">
                 <span class="text-slate-500 dark:text-gray-500 block mb-0.5">CREATED_AT:</span>
-                <span class="text-slate-600 dark:text-gray-400">{{ adminInfo.create_time }}</span>
+                <span class="text-slate-600 dark:text-gray-400">{{ adminInfo.createTime || 'NULL' }}</span>
               </div>
               <div>
                 <span class="text-slate-500 dark:text-gray-500 block mb-0.5">UPDATED_AT:</span>
-                <span class="text-slate-600 dark:text-gray-400">{{ adminInfo.update_time }}</span>
+                <span class="text-slate-600 dark:text-gray-400">{{ adminInfo.updateTime || 'NULL' }}</span>
               </div>
             </div>
           </div>
