@@ -30,6 +30,12 @@ const router = createRouter({
           name: 'adminWebsites',
           component: WebsitesManagementView,
           meta: { requiresAdminAuth: true },
+        },
+        {
+          path: 'profile',
+          name: 'adminProfile',
+          component: () => import('@/views/admin/AdminProfileView.vue'),
+          meta: { requiresAdminAuth: true },
         }
       ]
     },
