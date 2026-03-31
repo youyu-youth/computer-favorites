@@ -1,4 +1,4 @@
-package com.yyyouth.web.controller.auth;
+package com.yyyouth.web.controller.user;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
@@ -12,8 +12,8 @@ import com.yyyouth.model.dto.auth.AuthRegisterEmailCodeDTO;
 import com.yyyouth.model.dto.auth.AuthRegisterDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
-import com.yyyouth.service.auth.AuthSessionService;
-import com.yyyouth.service.auth.AuthenticationService;
+import com.yyyouth.service.user.auth.AuthSessionService;
+import com.yyyouth.service.user.auth.AuthenticationService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
@@ -42,7 +42,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
-public class AuthController {
+public class UserAuthController {
 
     private final AuthenticationService authenticationService;
 

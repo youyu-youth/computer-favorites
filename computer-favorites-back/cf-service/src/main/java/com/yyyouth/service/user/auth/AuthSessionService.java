@@ -1,4 +1,4 @@
-package com.yyyouth.service.auth;
+package com.yyyouth.service.user.auth;
 
 import com.yyyouth.model.vo.auth.AuthSessionVO;
 

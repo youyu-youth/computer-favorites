@@ -1,4 +1,4 @@
-package com.yyyouth.service.mapper.admin;
+package com.yyyouth.service.mapper.admin.auth;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.yyyouth.model.pojo.admin.AdminAccount;

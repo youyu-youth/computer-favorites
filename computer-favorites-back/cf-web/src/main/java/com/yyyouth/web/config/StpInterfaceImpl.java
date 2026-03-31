@@ -5,8 +5,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yyyouth.common.constants.CommonConstants;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
-import com.yyyouth.service.mapper.admin.AdminAccountMapper;
-import com.yyyouth.service.mapper.auth.UserAccountMapper;
+import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
+import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

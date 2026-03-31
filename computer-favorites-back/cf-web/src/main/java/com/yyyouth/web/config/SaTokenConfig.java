@@ -3,7 +3,7 @@ package com.yyyouth.web.config;
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
-import com.yyyouth.service.auth.support.StpAdminUtil;
+import com.yyyouth.service.user.auth.support.StpAdminUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;

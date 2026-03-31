@@ -1,4 +1,4 @@
-package com.yyyouth.service.user;
+package com.yyyouth.service.user.profile;
 
 import com.yyyouth.model.dto.user.UserEmailCodeSendDTO;
 import com.yyyouth.model.dto.user.UserEmailUpdateDTO;

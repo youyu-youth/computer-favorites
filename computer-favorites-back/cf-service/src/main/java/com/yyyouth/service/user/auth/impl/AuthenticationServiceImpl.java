@@ -1,4 +1,4 @@
-package com.yyyouth.service.auth.impl;
+package com.yyyouth.service.user.auth.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.stp.parameter.SaLoginParameter;
@@ -21,9 +21,9 @@ import com.yyyouth.model.pojo.user.UserProfile;
 import com.yyyouth.model.pojo.user.UserSetting;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthUserVO;
-import com.yyyouth.service.auth.AuthenticationService;
-import com.yyyouth.service.mapper.auth.UserAccountMapper;
-import com.yyyouth.service.mapper.auth.UserSessionMapper;
+import com.yyyouth.service.user.auth.AuthenticationService;
+import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
+import com.yyyouth.service.mapper.user.auth.UserSessionMapper;
 import com.yyyouth.service.mapper.user.UserProfileMapper;
 import com.yyyouth.service.mapper.user.UserSettingMapper;
 import lombok.RequiredArgsConstructor;

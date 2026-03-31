@@ -1,4 +1,4 @@
-package com.yyyouth.service.admin.impl;
+package com.yyyouth.service.admin.auth.impl;
 
 import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 import cn.hutool.core.bean.BeanUtil;
@@ -10,9 +10,9 @@ import com.yyyouth.model.dto.auth.AuthLoginDTO;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthUserVO;
-import com.yyyouth.service.admin.AdminAuthenticationService;
-import com.yyyouth.service.auth.support.StpAdminUtil;
-import com.yyyouth.service.mapper.admin.AdminAccountMapper;
+import com.yyyouth.service.admin.auth.AdminAuthenticationService;
+import com.yyyouth.service.user.auth.support.StpAdminUtil;
+import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;

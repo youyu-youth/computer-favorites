@@ -1,11 +1,11 @@
-package com.yyyouth.service.auth.impl;
+package com.yyyouth.service.user.auth.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yyyouth.model.pojo.auth.UserSession;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
-import com.yyyouth.service.auth.AuthSessionService;
-import com.yyyouth.service.mapper.auth.UserSessionMapper;
+import com.yyyouth.service.user.auth.AuthSessionService;
+import com.yyyouth.service.mapper.user.auth.UserSessionMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

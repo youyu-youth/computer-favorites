@@ -1,4 +1,4 @@
-package com.yyyouth.service.user.impl;
+package com.yyyouth.service.user.profile.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
@@ -24,11 +24,11 @@ import com.yyyouth.model.vo.user.UserBasicInfoVO;
 import com.yyyouth.model.vo.user.UserDetailProfileVO;
 import com.yyyouth.model.vo.user.UserPreferenceSettingVO;
 import com.yyyouth.service.file.MinioFileService;
-import com.yyyouth.service.mapper.auth.UserAccountMapper;
+import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.user.TechStackMapper;
 import com.yyyouth.service.mapper.user.UserProfileMapper;
 import com.yyyouth.service.mapper.user.UserSettingMapper;
-import com.yyyouth.service.user.UserProfileService;
+import com.yyyouth.service.user.profile.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;

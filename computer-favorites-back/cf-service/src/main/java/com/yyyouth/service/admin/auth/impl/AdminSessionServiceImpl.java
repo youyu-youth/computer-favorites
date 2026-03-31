@@ -1,8 +1,8 @@
-package com.yyyouth.service.admin.impl;
+package com.yyyouth.service.admin.auth.impl;
 
 import com.yyyouth.model.vo.auth.AuthSessionVO;
-import com.yyyouth.service.admin.AdminSessionService;
-import com.yyyouth.service.auth.support.StpAdminUtil;
+import com.yyyouth.service.admin.auth.AdminSessionService;
+import com.yyyouth.service.user.auth.support.StpAdminUtil;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

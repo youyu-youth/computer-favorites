@@ -1,4 +1,4 @@
-package com.yyyouth.service.auth.support;
+package com.yyyouth.service.user.auth.support;
 
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpLogic;

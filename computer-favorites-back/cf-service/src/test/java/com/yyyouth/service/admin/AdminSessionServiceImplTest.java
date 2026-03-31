@@ -2,8 +2,8 @@ package com.yyyouth.service.admin;
 
 import cn.dev33.satoken.session.SaSession;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
-import com.yyyouth.service.admin.impl.AdminSessionServiceImpl;
-import com.yyyouth.service.auth.support.StpAdminUtil;
+import com.yyyouth.service.admin.auth.impl.AdminSessionServiceImpl;
+import com.yyyouth.service.user.auth.support.StpAdminUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

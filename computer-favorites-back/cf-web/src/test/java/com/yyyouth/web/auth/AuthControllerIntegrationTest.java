@@ -11,10 +11,10 @@ import com.yyyouth.model.dto.auth.AuthPasswordChangeDTO;
 import com.yyyouth.model.vo.auth.AuthLoginVO;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
 import com.yyyouth.model.vo.auth.AuthUserVO;
-import com.yyyouth.service.auth.AuthSessionService;
-import com.yyyouth.service.auth.AuthenticationService;
+import com.yyyouth.service.user.auth.AuthSessionService;
+import com.yyyouth.service.user.auth.AuthenticationService;
 import com.yyyouth.web.config.GlobalExceptionHandler;
-import com.yyyouth.web.controller.auth.AuthController;
+import com.yyyouth.web.controller.user.UserAuthController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,14 +57,14 @@ class AuthControllerIntegrationTest {
     private AuthSessionService authSessionService;
 
     @InjectMocks
-    private AuthController authController;
+    private UserAuthController userAuthController;
 
     /**
      * 初始化 MockMvc
      */
     @BeforeEach
     void setUp() {
-        this.mockMvc = MockMvcBuilders.standaloneSetup(authController)
+        this.mockMvc = MockMvcBuilders.standaloneSetup(userAuthController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();

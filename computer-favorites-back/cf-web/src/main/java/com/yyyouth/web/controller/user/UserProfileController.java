@@ -9,7 +9,7 @@ import com.yyyouth.model.dto.user.UserProfileUpdateDTO;
 import com.yyyouth.model.dto.user.UserUsernameUpdateDTO;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
 import com.yyyouth.model.vo.user.UserAvatarUploadVO;
-import com.yyyouth.service.user.UserProfileService;
+import com.yyyouth.service.user.profile.UserProfileService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;

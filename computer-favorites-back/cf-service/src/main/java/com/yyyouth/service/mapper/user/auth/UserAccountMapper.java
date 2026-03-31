@@ -1,4 +1,4 @@
-package com.yyyouth.service.mapper.auth;
+package com.yyyouth.service.mapper.user.auth;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.yyyouth.model.pojo.auth.UserAccount;
