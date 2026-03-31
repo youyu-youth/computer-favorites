@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import WebsitesManagementView from '@/views/admin/WebsitesManagementView.vue'
 import UserLayout from '@/layouts/UserLayout.vue'
-import HomeView from '@/views/user2/HomeView.vue'
+import HomeView from '@/views/user/HomeView.vue'
 import ProfileView from '@/views/user/ProfileView.vue'
 import SettingsView from '@/views/user/SettingsView.vue'
 import AccountView from '@/views/user/AccountView.vue'
@@ -38,6 +38,11 @@ const router = createRouter({
       path: '/computer/login',
       name: 'login',
       component: LoginView,
+    },
+    {
+      path: '/computer/login2',
+      name: 'login2',
+      component: () => import('@/views/auth2/LoginView.vue'),
     },
     {
       path: '/computer',

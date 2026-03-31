@@ -164,7 +164,7 @@ watch(
 
 <template>
   <header class="fixed inset-x-0 top-0 z-50 border-b border-border-default bg-surface-page/95 backdrop-blur-md">
-    <nav class="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <nav class="mx-auto flex h-16 w-full max-w-7xl items-center justify-between pl-4 pr-2 sm:pl-6 sm:pr-4 lg:pl-8 lg:pr-6">
       <div class="flex items-center gap-6">
         <RouterLink :to="{ name: 'home' }" class="text-xl font-black tracking-tighter text-text-primary sm:text-2xl">
           Monolith Pro

@@ -1,0 +1,709 @@
+{
+  "generatedAt": "2026-03-30T14:20:09.022Z",
+  "baseUrl": "http://localhost:5188",
+  "results": [
+    {
+      "scenario": "public",
+      "viewport": "desktop-1517x768",
+      "route": "/computer/login",
+      "targetUrl": "http://localhost:5188/computer/login",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\public_desktop-1517x768_computer_login.png",
+      "redirected": false,
+      "pathname": "/computer/login",
+      "clientWidth": 1518,
+      "scrollWidth": 1518,
+      "clientHeight": 768,
+      "scrollHeight": 900,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 2,
+      "overflowItems": [
+        {
+          "tag": "div",
+          "className": "absolute -left-24 top-10 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl",
+          "left": -96,
+          "right": 192,
+          "width": 288
+        },
+        {
+          "tag": "div",
+          "className": "absolute -right-24 top-10 h-72 w-72 rounded-full bg-[#d97706]/18 blur-3xl",
+          "left": 1325.6,
+          "right": 1613.6,
+          "width": 288
+        }
+      ]
+    },
+    {
+      "scenario": "public",
+      "viewport": "desktop-1517x768",
+      "route": "/computer/login2",
+      "targetUrl": "http://localhost:5188/computer/login2",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\public_desktop-1517x768_computer_login2.png",
+      "redirected": false,
+      "pathname": "/computer/login2",
+      "clientWidth": 1518,
+      "scrollWidth": 1518,
+      "clientHeight": 768,
+      "scrollHeight": 770,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgba(255, 255, 255, 0.04)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 1,
+      "overflowItems": [
+        {
+          "tag": "div",
+          "className": "absolute -top-48 -left-48 h-full w-full rounded-full bg-[rgb(var(--cf-color-primary-500-rgb)/0.2)] blur-[180px] opacity-20 pointer-events-none",
+          "left": -191.2,
+          "right": 717.6,
+          "width": 908.8
+        }
+      ]
+    },
+    {
+      "scenario": "public",
+      "viewport": "desktop-1517x768",
+      "route": "/computer/home",
+      "targetUrl": "http://localhost:5188/computer/home",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\public_desktop-1517x768_computer_home.png",
+      "redirected": false,
+      "pathname": "/computer/home",
+      "clientWidth": 1518,
+      "scrollWidth": 1518,
+      "clientHeight": 768,
+      "scrollHeight": 1630,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 0,
+      "overflowItems": []
+    },
+    {
+      "scenario": "public",
+      "viewport": "desktop-1517x768",
+      "route": "/computer/admin/websites",
+      "targetUrl": "http://localhost:5188/computer/admin/websites",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\public_desktop-1517x768_computer_admin_websites.png",
+      "redirected": false,
+      "pathname": "/computer/admin/websites",
+      "clientWidth": 1518,
+      "scrollWidth": 1518,
+      "clientHeight": 768,
+      "scrollHeight": 892,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(14, 19, 23)",
+      "bodyBackground": "rgb(14, 19, 23)",
+      "appBackground": "rgb(14, 19, 23)",
+      "overflowCount": 0,
+      "overflowItems": []
+    },
+    {
+      "scenario": "authed",
+      "viewport": "desktop-1517x768",
+      "route": "/computer/profile",
+      "targetUrl": "http://localhost:5188/computer/profile",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\authed_desktop-1517x768_computer_profile.png",
+      "redirected": false,
+      "pathname": "/computer/profile",
+      "clientWidth": 1518,
+      "scrollWidth": 1518,
+      "clientHeight": 768,
+      "scrollHeight": 1190,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 0,
+      "overflowItems": []
+    },
+    {
+      "scenario": "authed",
+      "viewport": "desktop-1517x768",
+      "route": "/computer/settings",
+      "targetUrl": "http://localhost:5188/computer/settings",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\authed_desktop-1517x768_computer_settings.png",
+      "redirected": false,
+      "pathname": "/computer/settings",
+      "clientWidth": 1518,
+      "scrollWidth": 1518,
+      "clientHeight": 768,
+      "scrollHeight": 975,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 0,
+      "overflowItems": []
+    },
+    {
+      "scenario": "authed",
+      "viewport": "desktop-1517x768",
+      "route": "/computer/account",
+      "targetUrl": "http://localhost:5188/computer/account",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\authed_desktop-1517x768_computer_account.png",
+      "redirected": false,
+      "pathname": "/computer/account",
+      "clientWidth": 1518,
+      "scrollWidth": 1518,
+      "clientHeight": 768,
+      "scrollHeight": 857,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 0,
+      "overflowItems": []
+    },
+    {
+      "scenario": "authed",
+      "viewport": "desktop-1517x768",
+      "route": "/computer/password-change",
+      "targetUrl": "http://localhost:5188/computer/password-change",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\authed_desktop-1517x768_computer_password-change.png",
+      "redirected": false,
+      "pathname": "/computer/password-change",
+      "clientWidth": 1518,
+      "scrollWidth": 1518,
+      "clientHeight": 768,
+      "scrollHeight": 857,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 0,
+      "overflowItems": []
+    },
+    {
+      "scenario": "public",
+      "viewport": "mobile-390x844",
+      "route": "/computer/login",
+      "targetUrl": "http://localhost:5188/computer/login",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\public_mobile-390x844_computer_login.png",
+      "redirected": false,
+      "pathname": "/computer/login",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "clientHeight": 844,
+      "scrollHeight": 886,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 4,
+      "overflowItems": [
+        {
+          "tag": "div",
+          "className": "absolute -right-24 top-10 h-72 w-72 rounded-full bg-[#d97706]/18 blur-3xl",
+          "left": 198.4,
+          "right": 486.4,
+          "width": 288
+        },
+        {
+          "tag": "div",
+          "className": "absolute -left-24 bottom-10 h-72 w-72 rounded-full bg-[#d97706]/12 blur-3xl",
+          "left": -95.2,
+          "right": 192.8,
+          "width": 288
+        },
+        {
+          "tag": "div",
+          "className": "w-full sm:max-w-[360px]",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        },
+        {
+          "tag": "div",
+          "className": "",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        }
+      ]
+    },
+    {
+      "scenario": "public",
+      "viewport": "mobile-390x844",
+      "route": "/computer/login2",
+      "targetUrl": "http://localhost:5188/computer/login2",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\public_mobile-390x844_computer_login2.png",
+      "redirected": false,
+      "pathname": "/computer/login2",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "clientHeight": 844,
+      "scrollHeight": 846,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgba(255, 255, 255, 0.04)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 2,
+      "overflowItems": [
+        {
+          "tag": "div",
+          "className": "w-full sm:max-w-[360px]",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        },
+        {
+          "tag": "div",
+          "className": "",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        }
+      ]
+    },
+    {
+      "scenario": "public",
+      "viewport": "mobile-390x844",
+      "route": "/computer/home",
+      "targetUrl": "http://localhost:5188/computer/home",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\public_mobile-390x844_computer_home.png",
+      "redirected": false,
+      "pathname": "/computer/home",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "clientHeight": 844,
+      "scrollHeight": 2529,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 6,
+      "overflowItems": [
+        {
+          "tag": "div",
+          "className": "flex w-max min-w-full items-center gap-2 sm:gap-4",
+          "left": 16,
+          "right": 911.73,
+          "width": 895.73
+        },
+        {
+          "tag": "button",
+          "className": "cursor-pointer whitespace-nowrap border px-4 py-2 font-label text-xs uppercase tracking-widest transition-colors sm:px-6 border-transparent text-text-secondary hover:text-text-primary",
+          "left": 347.66,
+          "right": 547.35,
+          "width": 199.69
+        },
+        {
+          "tag": "button",
+          "className": "cursor-pointer whitespace-nowrap border px-4 py-2 font-label text-xs uppercase tracking-widest transition-colors sm:px-6 border-transparent text-text-secondary hover:text-text-primary",
+          "left": 555.35,
+          "right": 724.43,
+          "width": 169.07
+        },
+        {
+          "tag": "button",
+          "className": "cursor-pointer whitespace-nowrap border px-4 py-2 font-label text-xs uppercase tracking-widest transition-colors sm:px-6 border-transparent text-text-secondary hover:text-text-primary",
+          "left": 732.42,
+          "right": 911.72,
+          "width": 179.3
+        },
+        {
+          "tag": "div",
+          "className": "w-full sm:max-w-[360px]",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        },
+        {
+          "tag": "div",
+          "className": "",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        }
+      ]
+    },
+    {
+      "scenario": "public",
+      "viewport": "mobile-390x844",
+      "route": "/computer/admin/websites",
+      "targetUrl": "http://localhost:5188/computer/admin/websites",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\public_mobile-390x844_computer_admin_websites.png",
+      "redirected": false,
+      "pathname": "/computer/admin/websites",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "clientHeight": 844,
+      "scrollHeight": 1856,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(14, 19, 23)",
+      "bodyBackground": "rgb(14, 19, 23)",
+      "appBackground": "rgb(14, 19, 23)",
+      "overflowCount": 2,
+      "overflowItems": [
+        {
+          "tag": "div",
+          "className": "w-full sm:max-w-[360px]",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        },
+        {
+          "tag": "div",
+          "className": "",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        }
+      ]
+    },
+    {
+      "scenario": "authed",
+      "viewport": "mobile-390x844",
+      "route": "/computer/profile",
+      "targetUrl": "http://localhost:5188/computer/profile",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\authed_mobile-390x844_computer_profile.png",
+      "redirected": false,
+      "pathname": "/computer/profile",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "clientHeight": 844,
+      "scrollHeight": 2590,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 80,
+      "overflowItems": [
+        {
+          "tag": "div",
+          "className": "w-max space-y-2",
+          "left": 32.8,
+          "right": 542.8,
+          "width": 510
+        },
+        {
+          "tag": "div",
+          "className": "flex pl-14 text-xs text-gray-500 dark:text-gray-400",
+          "left": 32.8,
+          "right": 542.8,
+          "width": 510
+        },
+        {
+          "tag": "span",
+          "className": "leading-none",
+          "left": 383.26,
+          "right": 406.95,
+          "width": 23.69
+        },
+        {
+          "tag": "span",
+          "className": "leading-none",
+          "left": 420.95,
+          "right": 442.93,
+          "width": 21.98
+        },
+        {
+          "tag": "span",
+          "className": "leading-none",
+          "left": 456.93,
+          "right": 475.54,
+          "width": 18.61
+        },
+        {
+          "tag": "span",
+          "className": "leading-none",
+          "left": 489.54,
+          "right": 510.39,
+          "width": 20.85
+        },
+        {
+          "tag": "div",
+          "className": "flex gap-2",
+          "left": 32.8,
+          "right": 542.8,
+          "width": 510
+        },
+        {
+          "tag": "div",
+          "className": "space-y-1.5",
+          "left": 80.8,
+          "right": 542.8,
+          "width": 462
+        },
+        {
+          "tag": "div",
+          "className": "flex gap-1.5",
+          "left": 80.8,
+          "right": 542.8,
+          "width": 462
+        },
+        {
+          "tag": "div",
+          "className": "size-3 sm:size-3.5 rounded-sm bg-gray-200 dark:bg-gray-700",
+          "left": 386.8,
+          "right": 398.8,
+          "width": 12
+        },
+        {
+          "tag": "div",
+          "className": "size-3 sm:size-3.5 rounded-sm bg-emerald-600",
+          "left": 404.8,
+          "right": 416.8,
+          "width": 12
+        },
+        {
+          "tag": "div",
+          "className": "size-3 sm:size-3.5 rounded-sm bg-emerald-800/80",
+          "left": 422.8,
+          "right": 434.8,
+          "width": 12
+        },
+        {
+          "tag": "div",
+          "className": "size-3 sm:size-3.5 rounded-sm bg-emerald-500",
+          "left": 440.8,
+          "right": 452.8,
+          "width": 12
+        },
+        {
+          "tag": "div",
+          "className": "size-3 sm:size-3.5 rounded-sm bg-emerald-800/80",
+          "left": 458.8,
+          "right": 470.8,
+          "width": 12
+        },
+        {
+          "tag": "div",
+          "className": "size-3 sm:size-3.5 rounded-sm bg-emerald-500",
+          "left": 476.8,
+          "right": 488.8,
+          "width": 12
+        },
+        {
+          "tag": "div",
+          "className": "size-3 sm:size-3.5 rounded-sm bg-emerald-700",
+          "left": 494.8,
+          "right": 506.8,
+          "width": 12
+        },
+        {
+          "tag": "div",
+          "className": "size-3 sm:size-3.5 rounded-sm bg-emerald-500",
+          "left": 512.8,
+          "right": 524.8,
+          "width": 12
+        },
+        {
+          "tag": "div",
+          "className": "size-3 sm:size-3.5 rounded-sm bg-emerald-700",
+          "left": 530.8,
+          "right": 542.8,
+          "width": 12
+        },
+        {
+          "tag": "div",
+          "className": "flex gap-1.5",
+          "left": 80.8,
+          "right": 542.8,
+          "width": 462
+        },
+        {
+          "tag": "div",
+          "className": "size-3 sm:size-3.5 rounded-sm bg-emerald-500",
+          "left": 386.8,
+          "right": 398.8,
+          "width": 12
+        }
+      ]
+    },
+    {
+      "scenario": "authed",
+      "viewport": "mobile-390x844",
+      "route": "/computer/settings",
+      "targetUrl": "http://localhost:5188/computer/settings",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\authed_mobile-390x844_computer_settings.png",
+      "redirected": false,
+      "pathname": "/computer/settings",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "clientHeight": 844,
+      "scrollHeight": 1348,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 10,
+      "overflowItems": [
+        {
+          "tag": "button",
+          "className": "flex cursor-pointer items-center space-x-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-colors text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5 ",
+          "left": 320,
+          "right": 416,
+          "width": 96
+        },
+        {
+          "tag": "span",
+          "className": "",
+          "left": 336,
+          "right": 400,
+          "width": 64
+        },
+        {
+          "tag": "button",
+          "className": "flex cursor-pointer items-center space-x-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-colors text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5 ",
+          "left": 416,
+          "right": 512,
+          "width": 96
+        },
+        {
+          "tag": "svg",
+          "className": "[object SVGAnimatedString]",
+          "left": 432,
+          "right": 432,
+          "width": 0
+        },
+        {
+          "tag": "ellipse",
+          "className": "[object SVGAnimatedString]",
+          "left": 435,
+          "right": 453,
+          "width": 18
+        },
+        {
+          "tag": "path",
+          "className": "[object SVGAnimatedString]",
+          "left": 435,
+          "right": 453,
+          "width": 18
+        },
+        {
+          "tag": "path",
+          "className": "[object SVGAnimatedString]",
+          "left": 435,
+          "right": 453,
+          "width": 18
+        },
+        {
+          "tag": "span",
+          "className": "",
+          "left": 432,
+          "right": 496,
+          "width": 64
+        },
+        {
+          "tag": "div",
+          "className": "w-full sm:max-w-[360px]",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        },
+        {
+          "tag": "div",
+          "className": "",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        }
+      ]
+    },
+    {
+      "scenario": "authed",
+      "viewport": "mobile-390x844",
+      "route": "/computer/account",
+      "targetUrl": "http://localhost:5188/computer/account",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\authed_mobile-390x844_computer_account.png",
+      "redirected": false,
+      "pathname": "/computer/account",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "clientHeight": 844,
+      "scrollHeight": 1129,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 2,
+      "overflowItems": [
+        {
+          "tag": "div",
+          "className": "w-full sm:max-w-[360px]",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        },
+        {
+          "tag": "div",
+          "className": "",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        }
+      ]
+    },
+    {
+      "scenario": "authed",
+      "viewport": "mobile-390x844",
+      "route": "/computer/password-change",
+      "targetUrl": "http://localhost:5188/computer/password-change",
+      "screenshotPath": "D:\\java_project\\my\\computer-favorites\\computer-favorites-web\\test-results\\white-edge-audit\\authed_mobile-390x844_computer_password-change.png",
+      "redirected": false,
+      "pathname": "/computer/password-change",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "clientHeight": 844,
+      "scrollHeight": 1129,
+      "horizontalOverflow": false,
+      "bodyMargin": "0px",
+      "bodyPadding": "0px",
+      "htmlBackground": "rgb(0, 0, 0)",
+      "bodyBackground": "rgb(0, 0, 0)",
+      "appBackground": "rgb(0, 0, 0)",
+      "overflowCount": 2,
+      "overflowItems": [
+        {
+          "tag": "div",
+          "className": "w-full sm:max-w-[360px]",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        },
+        {
+          "tag": "div",
+          "className": "",
+          "left": -20,
+          "right": 370.4,
+          "width": 390.4
+        }
+      ]
+    }
+  ]
+}
