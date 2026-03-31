@@ -38,7 +38,7 @@ const visible = computed({
 const ptConfig = computed(() => ({
   mask: { class: props.ui?.overlay },
   root: { class: props.ui?.content },
-  header: { class: props.ui?.header },
+  header: { class: ['flex items-center justify-between', props.ui?.header].filter(Boolean).join(' ') },
   content: { class: props.ui?.body },
   footer: { class: props.ui?.footer },
 }))

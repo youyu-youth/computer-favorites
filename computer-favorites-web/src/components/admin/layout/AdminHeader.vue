@@ -127,7 +127,7 @@ const confirmLogout = async () => {
           class:
             'w-[min(92vw,420px)] rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card shadow-[0_16px_36px_rgba(15,23,42,0.28)] dark:shadow-[0_22px_44px_rgba(2,6,23,0.62)] overflow-hidden'
         },
-        header: { class: 'border-b border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg px-5 py-4' },
+        header: { class: 'border-b border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg px-5 py-4 flex items-center justify-between' },
         content: { class: 'px-5 py-4 text-sm text-gray-600 dark:text-gray-300' },
         footer: {
           class:

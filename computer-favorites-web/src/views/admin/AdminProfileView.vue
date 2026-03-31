@@ -301,7 +301,7 @@ onMounted(() => {
               </div>
 
                <!-- Password Alert -->
-               <div class="mt-8 border border-[#cbd5e1] dark:border-[#273138] border-dashed p-4 bg-[#f8fafc] dark:bg-[#151b21] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+               <div class="mt-8 border border-[#cbd5e1] dark:border-[#273138] border-dashed p-4 bg-yellow-500/10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0">
                   <h4 class="text-sm text-slate-700 dark:text-gray-300 mb-1">SECURITY_KEYS (PASSWORD)</h4>
                   <p class="text-xs text-slate-500 dark:text-gray-600">BCrypt hashed. Requires specific permissions to alter.</p>
