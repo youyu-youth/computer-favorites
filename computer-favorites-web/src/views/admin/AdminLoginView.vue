@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminAuthStore } from '@/stores/adminAuth'
 import { useAppStore } from '@/stores/app'
@@ -16,22 +16,37 @@ const username = ref('')
 const password = ref('')
 const isLoading = ref(false)
 const errorText = ref('')
+const formRenderKey = ref(0)
 
-// Hacker / typing effect for the title
+// 标题打字机效果
 const typedTitle = ref('')
-const fullTitle = 'ADMIN_ACCESS_TERMINAL'
+const fullTitle = '管理员访问终端'
 
-// Terminal logs
+// 终端日志
 const terminalLogs = ref<string[]>([
-  '[sys] INITIALIZING SECURE PROTOCOL...',
-  '[sys] AWAITING ADMIN CREDENTIALS...'
+  '[系统] 正在初始化安全协议...',
+  '[系统] 正在等待管理员凭据...'
 ])
 
 let typeInterval: ReturnType<typeof setInterval>
 let logInterval: ReturnType<typeof setInterval>
 
+const shouldResetFromLogout = () => typeof route.query.logoutReset === 'string'
+
+const resetCredentialForm = async () => {
+  username.value = ''
+  password.value = ''
+  errorText.value = ''
+  formRenderKey.value += 1
+  await nextTick()
+}
+
 onMounted(() => {
-  // Title Animation
+  if (shouldResetFromLogout()) {
+    void resetCredentialForm()
+  }
+
+  // 标题动画
   let i = 0
   typeInterval = setInterval(() => {
     typedTitle.value += fullTitle.charAt(i)
@@ -39,14 +54,14 @@ onMounted(() => {
     if (i >= fullTitle.length) clearInterval(typeInterval)
   }, 80)
 
-  // Random ambient terminal logs
+  // 终端随机环境日志
   const ambientLogs = [
-    '[net] Monitoring proxy gateways...',
-    '[sec] Firewall configurations loaded.',
-    '[sys] Memory allocation verified.',
-    '[net] Syncing external load balancers...',
-    '[sec] Threat detection protocol active.',
-    '[sys] Waiting for user input...'
+    '[网络] 正在监控代理网关...',
+    '[安全] 防火墙配置已加载。',
+    '[系统] 内存分配校验通过。',
+    '[网络] 正在同步外部负载均衡...',
+    '[安全] 威胁检测协议已激活。',
+    '[系统] 正在等待用户输入...'
   ]
 
   logInterval = setInterval(() => {
@@ -60,6 +75,15 @@ onMounted(() => {
   }, 1500)
 })
 
+watch(
+  () => route.query.logoutReset,
+  (value, oldValue) => {
+    if (typeof value === 'string' && value !== oldValue) {
+      void resetCredentialForm()
+    }
+  },
+)
+
 onUnmounted(() => {
   if (typeInterval) clearInterval(typeInterval)
   if (logInterval) clearInterval(logInterval)
@@ -70,14 +94,14 @@ const handleLogin = async () => {
   isLoading.value = true
   errorText.value = ''
 
-  terminalLogs.value.push('[auth] Verifying administrator credentials...')
+  terminalLogs.value.push('[认证] 正在校验管理员凭据...')
   if (terminalLogs.value.length > 8) {
     terminalLogs.value.shift()
   }
 
   try {
     await adminAuthStore.login(username.value.trim(), password.value, 'web')
-    terminalLogs.value.push('[sys] Access granted. Redirecting...')
+    terminalLogs.value.push('[系统] 验证通过，正在跳转...')
     if (terminalLogs.value.length > 8) {
       terminalLogs.value.shift()
     }
@@ -90,7 +114,7 @@ const handleLogin = async () => {
   } catch (error) {
     const message = error instanceof Error ? error.message : '管理员登录失败'
     errorText.value = message
-    terminalLogs.value.push(`[auth] ${message}`)
+    terminalLogs.value.push(`[认证] ${message}`)
     if (terminalLogs.value.length > 8) {
       terminalLogs.value.shift()
     }
@@ -130,19 +154,19 @@ const toggleTheme = () => {
             <i class="pi pi-server text-xl"></i>
           </div>
           <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100 flex items-center">
-            CF_CONSOLE
+            CF_控制台
             <span class="w-2 h-5 bg-brand-orange ml-2 animate-pulse inline-block"></span>
           </h1>
         </div>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-12">
-          Strictly authorized access only. <br/>
-          All connection requests are monitored and logged.
+          仅限严格授权访问。 <br/>
+          所有连接请求都会被监控并记录。
         </p>
 
         <!-- Dynamic Terminal Window -->
         <div class="font-mono text-xs sm:text-sm bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-dark-border p-4 rounded-sm shadow-inner h-64 overflow-hidden flex flex-col justify-end text-gray-600 dark:text-[#a0a5aa]">
           <div v-for="(log, idx) in terminalLogs" :key="idx" class="mb-1 last:mb-0"
-               :class="{'text-brand-orange dark:text-brand-orange font-bold': log.includes('[auth]')}">
+            :class="{'text-brand-orange dark:text-brand-orange font-bold': log.includes('[认证]')}">
              {{ log }}
           </div>
           <div class="mt-2 flex items-center text-brand-orange">
@@ -153,8 +177,8 @@ const toggleTheme = () => {
       </div>
 
       <div class="text-xs text-gray-400 dark:text-gray-500 font-mono mt-8 uppercase tracking-widest flex justify-between">
-        <span>V 3.4.12 // SYNERGY</span>
-        <span>SYS_OK</span>
+        <span>V 3.4.12 // 协同</span>
+        <span>系统正常</span>
       </div>
     </div>
 
@@ -167,7 +191,7 @@ const toggleTheme = () => {
           <div class="w-2.5 h-2.5 rounded-full bg-red-400/80"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-400/80"></div>
           <div class="w-2.5 h-2.5 rounded-full bg-green-400/80"></div>
-          <span class="ml-auto text-[10px] text-gray-400 font-sans tracking-wide uppercase">Auth_Module</span>
+          <span class="ml-auto text-[10px] text-gray-400 font-sans tracking-wide uppercase">认证模块</span>
         </div>
 
         <div class="p-8 sm:p-10">
@@ -176,18 +200,18 @@ const toggleTheme = () => {
               {{ typedTitle }}<span class="animate-pulse" v-if="typedTitle.length < fullTitle.length">_</span>
             </h2>
             <p class="text-gray-500 dark:text-gray-400 text-sm mt-2 font-mono">
-              Provide credentials to proceed.
+              请输入凭据以继续。
             </p>
             <p v-if="errorText" class="text-red-500 dark:text-red-400 text-xs mt-2 font-mono">
               {{ errorText }}
             </p>
           </div>
 
-          <form @submit.prevent="handleLogin" class="space-y-6">
+          <form :key="formRenderKey" autocomplete="off" @submit.prevent="handleLogin" class="space-y-6">
             <!-- Username Input -->
             <div class="space-y-2">
               <label for="username" class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest">
-                <i class="pi pi-user mr-1 text-brand-orange"></i> Ident
+                <i class="pi pi-user mr-1 text-brand-orange"></i> 账号
               </label>
               <div class="relative flex items-center">
                 <span class="absolute left-3 text-gray-400 dark:text-gray-500 font-bold select-none">&gt;</span>
@@ -196,7 +220,8 @@ const toggleTheme = () => {
                            v-model="username"
                            class="w-full pl-8 pr-4 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-dark-border text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-colors font-mono text-sm placeholder-gray-400/50 rounded-sm"
                            :pt="{ root: { class: '!border-gray-200 dark:!border-dark-border focus:!border-brand-orange outline-none shadow-none' } }"
-                           placeholder="root_admin"
+                           placeholder="请输入管理员账号"
+                           name="admin-login-username"
                            autocomplete="off" />
               </div>
             </div>
@@ -205,9 +230,9 @@ const toggleTheme = () => {
             <div class="space-y-2">
               <div class="flex justify-between items-center">
                 <label for="password" class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest">
-                  <i class="pi pi-key mr-1 text-brand-orange"></i> Pass_Key
+                  <i class="pi pi-key mr-1 text-brand-orange"></i> 密码
                 </label>
-                <a href="#" class="text-[10px] text-gray-500 hover:text-brand-orange transition-colors uppercase">Bypass?</a>
+                <a href="#" class="text-[10px] text-gray-500 hover:text-brand-orange transition-colors uppercase">绕过?</a>
               </div>
               <div class="relative flex items-center">
                 <span class="absolute left-3 text-gray-400 dark:text-gray-500 font-bold select-none z-10">&gt;</span>
@@ -216,9 +241,10 @@ const toggleTheme = () => {
                           :feedback="false"
                           toggleMask
                           class="w-full flex"
+                          autocomplete="new-password"
                           :pt="{
                             root: { class: 'w-full' },
-                            input: { root: { class: 'w-full pl-8 pr-10 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-dark-border text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-colors font-mono text-sm placeholder-gray-400/50 rounded-sm !shadow-none' } },
+                            input: { root: { class: 'w-full pl-8 pr-10 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-dark-border text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-colors font-mono text-sm placeholder-gray-400/50 rounded-sm !shadow-none', autocomplete: 'new-password', name: 'admin-login-password' } },
                             showicon: { class: 'text-gray-400 absolute right-3 cursor-pointer hover:text-brand-orange z-10 text-sm mt-0.5' },
                             hideicon: { class: 'text-gray-400 absolute right-3 cursor-pointer hover:text-brand-orange z-10 text-sm mt-0.5' }
                           }"
@@ -235,9 +261,9 @@ const toggleTheme = () => {
                  <!-- Hover Scanline effect -->
                  <span class="absolute top-0 left-0 w-full h-[2px] bg-white opacity-50 -translate-x-full group-hover:animate-[scanline_1s_ease-in-out_infinite]"></span>
 
-                 <span v-if="!isLoading">INITIATE_UPLINK</span>
+                  <span v-if="!isLoading">发起连接</span>
                  <span v-else class="flex flex-col items-center justify-center">
-                    Executing...
+                    执行中...
                  </span>
                  <i v-if="!isLoading" class="pi pt-0.5" :class="'pi-arrow-right group-hover:translate-x-1 transition-transform'"></i>
                  <i v-else class="pi pi-spinner pi-spin"></i>

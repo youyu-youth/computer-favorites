@@ -1,6 +1,18 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('管理端认证链路', () => {
+  test('退出回跳到登录页时应清空账号与密码输入框', async ({ page }) => {
+    await page.goto('/computer/admin/login')
+
+    await page.locator('#username').fill('root_admin')
+    await page.locator('#password').fill('Admin@123456')
+
+    await page.goto('/computer/admin/login?logoutReset=1')
+
+    await expect(page.locator('#username')).toHaveValue('')
+    await expect(page.locator('#password')).toHaveValue('')
+  })
+
   test('未登录访问管理端受保护路由会跳转到管理员登录页并带 redirect', async ({ page }) => {
     await page.goto('/computer/admin/websites')
     await expect(page).toHaveURL(
