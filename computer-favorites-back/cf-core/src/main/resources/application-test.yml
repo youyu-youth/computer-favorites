@@ -26,6 +26,7 @@ cf:
     enable: true
     whitelist:
       - /api/auth/login
+      - /api/admin/auth/login
       - /api/auth/register
   profile:
     marker: test

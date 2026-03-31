@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { useAppStore } from '@/stores/app'
+import { useAdminAuthStore } from '@/stores/adminAuth'
 import { useAuthStore } from '@/stores/auth'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
@@ -18,6 +19,7 @@ import 'vue3-slider-verify/lib/style.css'
 
 const app = createApp(App)
 const pinia = createPinia()
+const adminAuthStore = useAdminAuthStore(pinia)
 const authStore = useAuthStore(pinia)
 
 app.use(pinia)
@@ -38,11 +40,34 @@ appStore.initLanguage()
 applyThemeScope(resolveThemeScopeByPath(window.location.pathname))
 
 registerUnauthorizedHandler(async () => {
+  const currentRoute = router.currentRoute.value
+  const currentPath = currentRoute.path || ''
+  const browserPath = window.location.pathname || ''
+  const isAdminRoute =
+    currentPath.startsWith('/computer/admin') || browserPath.startsWith('/computer/admin')
+
+  if (isAdminRoute) {
+    if (!adminAuthStore.isAuthed) {
+      return
+    }
+    adminAuthStore.clear()
+    if (currentRoute.name === 'adminLogin') {
+      return
+    }
+    if (!currentRoute.meta.requiresAdminAuth) {
+      return
+    }
+    await router.replace({
+      name: 'adminLogin',
+      query: { redirect: currentRoute.fullPath },
+    })
+    return
+  }
+
   if (!authStore.isAuthed) {
     return
   }
   authStore.clear()
-  const currentRoute = router.currentRoute.value
   if (currentRoute.name === 'login') {
     return
   }

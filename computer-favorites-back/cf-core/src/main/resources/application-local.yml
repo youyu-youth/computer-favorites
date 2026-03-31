@@ -45,6 +45,7 @@ cf:
     enable: false
     whitelist:
       - /api/auth/login
+      - /api/admin/auth/login
       - /api/auth/register
       - /api/auth/register/code
       - /api/auth/register/username/check

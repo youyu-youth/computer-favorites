@@ -2,7 +2,10 @@ package com.yyyouth.web.config;
 
 import cn.dev33.satoken.stp.StpInterface;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.yyyouth.common.constants.CommonConstants;
+import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
+import com.yyyouth.service.mapper.admin.AdminAccountMapper;
 import com.yyyouth.service.mapper.auth.UserAccountMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -24,15 +27,27 @@ public class StpInterfaceImpl implements StpInterface {
 
     private static final int NOT_DELETED = 0;
 
-    private static final List<String> DEFAULT_PERMISSIONS = List.of(
+    private static final List<String> DEFAULT_USER_PERMISSIONS = List.of(
             "auth:session:renew",
             "auth:session:delete",
             "auth:session:detail"
     );
 
-    private static final List<String> DEFAULT_ROLES = List.of("user");
+    private static final List<String> DEFAULT_ADMIN_PERMISSIONS = List.of(
+            "admin:auth:renew",
+            "admin:auth:delete",
+            "admin:auth:detail"
+    );
+
+    private static final List<String> DEFAULT_USER_ROLES = List.of("user");
+
+    private static final List<String> DEFAULT_ADMIN_ROLES = List.of(CommonConstants.SUPER_ADMIN);
+
+    private static final String ADMIN_LOGIN_TYPE = "admin";
 
     private final UserAccountMapper userAccountMapper;
+
+    private final AdminAccountMapper adminAccountMapper;
 
     /**
      * 返回账号权限集合
@@ -43,10 +58,16 @@ public class StpInterfaceImpl implements StpInterface {
      */
     @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
+        if (isAdminLoginType(loginType)) {
+            if (!isEnabledAdmin(loginId)) {
+                return Collections.emptyList();
+            }
+            return DEFAULT_ADMIN_PERMISSIONS;
+        }
         if (!isEnabledUser(loginId)) {
             return Collections.emptyList();
         }
-        return DEFAULT_PERMISSIONS;
+        return DEFAULT_USER_PERMISSIONS;
     }
 
     /**
@@ -58,10 +79,26 @@ public class StpInterfaceImpl implements StpInterface {
      */
     @Override
     public List<String> getRoleList(Object loginId, String loginType) {
+        if (isAdminLoginType(loginType)) {
+            if (!isEnabledAdmin(loginId)) {
+                return Collections.emptyList();
+            }
+            return DEFAULT_ADMIN_ROLES;
+        }
         if (!isEnabledUser(loginId)) {
             return Collections.emptyList();
         }
-        return DEFAULT_ROLES;
+        return DEFAULT_USER_ROLES;
+    }
+
+    /**
+     * 判断是否为管理员登录体系
+     *
+     * @param loginType 登录体系
+     * @return 是否管理员登录体系
+     */
+    private boolean isAdminLoginType(String loginType) {
+        return ADMIN_LOGIN_TYPE.equals(loginType);
     }
 
     /**
@@ -83,5 +120,26 @@ public class StpInterfaceImpl implements StpInterface {
                 .eq(UserAccount::getDeleted, NOT_DELETED)
                 .last("limit 1"));
         return userAccount != null;
+    }
+
+    /**
+     * 判断管理员账号是否启用
+     *
+     * @param loginId 登录账号ID
+     * @return 是否启用
+     */
+    private boolean isEnabledAdmin(Object loginId) {
+        Long adminId;
+        try {
+            adminId = Long.parseLong(String.valueOf(loginId));
+        } catch (Exception ex) {
+            return false;
+        }
+        AdminAccount adminAccount = adminAccountMapper.selectOne(new LambdaQueryWrapper<AdminAccount>()
+                .eq(AdminAccount::getId, adminId)
+                .eq(AdminAccount::getStatus, ENABLED_STATUS)
+                .eq(AdminAccount::getDeleted, NOT_DELETED)
+                .last("limit 1"));
+        return adminAccount != null;
     }
 }

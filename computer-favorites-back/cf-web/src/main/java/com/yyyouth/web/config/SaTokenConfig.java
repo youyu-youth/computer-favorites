@@ -3,6 +3,7 @@ package com.yyyouth.web.config;
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
+import com.yyyouth.service.auth.support.StpAdminUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +38,11 @@ public class SaTokenConfig implements WebMvcConfigurer {
             String[] whitelistArray = CollectionUtils.isEmpty(authSecurityProperties.getWhitelist())
                     ? new String[0]
                     : authSecurityProperties.getWhitelist().toArray(new String[0]);
+            SaRouter.match("/api/admin/**")
+                .notMatch(whitelistArray)
+                .check(r -> StpAdminUtil.checkLogin());
             SaRouter.match("/api/**")
+                .notMatch("/api/admin/**")
                     .notMatch(whitelistArray)
                     .check(r -> StpUtil.checkLogin());
         })).addPathPatterns("/**");

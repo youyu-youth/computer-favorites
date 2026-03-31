@@ -7,7 +7,8 @@ import ProfileView from '@/views/user/ProfileView.vue'
 import SettingsView from '@/views/user/SettingsView.vue'
 import AccountView from '@/views/user/AccountView.vue'
 import PasswordChangeView from '@/views/user/PasswordChangeView.vue'
-import LoginView from '@/views/auth/LoginView.vue'
+import LoginView from '@/views/user/LoginView.vue'
+import { useAdminAuthStore } from '@/stores/adminAuth'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { applyThemeScope, resolveThemeScopeByPath } from '@/theme/scope'
@@ -18,6 +19,7 @@ const router = createRouter({
     {
       path: '/computer/admin',
       component: AdminLayout,
+      meta: { requiresAdminAuth: true },
       children: [
         {
           path: '',
@@ -27,6 +29,7 @@ const router = createRouter({
           path: 'websites',
           name: 'adminWebsites',
           component: WebsitesManagementView,
+          meta: { requiresAdminAuth: true },
         }
       ]
     },
@@ -38,6 +41,12 @@ const router = createRouter({
       path: '/computer/login',
       name: 'login',
       component: LoginView,
+    },
+    {
+      path: '/computer/admin/login',
+      name: 'adminLogin',
+      component: () => import('@/views/admin/AdminLoginView.vue'),
+      meta: { requiresAuth: false, requiresAdminAuth: false },
     },
     {
       path: '/computer',
@@ -86,8 +95,11 @@ router.beforeEach(async (to) => {
   applyThemeScope(resolveThemeScopeByPath(to.path))
   const appStore = useAppStore()
   appStore.startRouteTransition()
+  const adminAuthStore = useAdminAuthStore()
   const authStore = useAuthStore()
   const redirectQuery = typeof to.query.redirect === 'string' ? to.query.redirect : '/computer/home'
+  const adminRedirectQuery =
+    typeof to.query.redirect === 'string' ? to.query.redirect : '/computer/admin/websites'
 
   if (to.name === 'login') {
     if (!authStore.isAuthed) {
@@ -98,6 +110,38 @@ router.beforeEach(async (to) => {
       return redirectQuery.startsWith('/computer/') ? redirectQuery : '/computer/home'
     }
     return true
+  }
+
+  if (to.name === 'adminLogin') {
+    if (!adminAuthStore.isAuthed) {
+      return true
+    }
+    const valid = await adminAuthStore.ensureSession()
+    if (valid) {
+      return adminRedirectQuery.startsWith('/computer/admin/')
+        ? adminRedirectQuery
+        : '/computer/admin/websites'
+    }
+    return true
+  }
+
+  if (to.meta.requiresAdminAuth) {
+    if (!adminAuthStore.isAuthed) {
+      return {
+        name: 'adminLogin',
+        query: { redirect: to.fullPath },
+      }
+    }
+
+    const valid = await adminAuthStore.ensureSession()
+    if (valid) {
+      return true
+    }
+
+    return {
+      name: 'adminLogin',
+      query: { redirect: to.fullPath },
+    }
   }
 
   if (!to.meta.requiresAuth) {
