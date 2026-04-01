@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Select from 'primevue/select'
+import UVditor from '@/components/ui-adapter/UVditor.vue'
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAdminNavStore } from '@/stores/adminNav'
@@ -285,12 +286,11 @@ const handleSubmit = async () => {
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             详细描述
           </label>
-          <textarea
+          <UVditor
             v-model="formData.description"
-            rows="3"
             placeholder="支持输入更详细的站点介绍..."
-            class="w-full px-4 py-2 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg text-sm focus:ring-2 focus:ring-brand-orange focus:border-brand-orange dark:text-white transition-all outline-none resize-none"
-          ></textarea>
+            :minHeight="220"
+          />
         </div>
 
         <!-- 标签与排序 -->
