@@ -213,12 +213,12 @@ const toggleTheme = () => {
               <label for="username" class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest">
                 <i class="pi pi-user mr-1 text-brand-orange"></i> 账号
               </label>
-              <div class="relative flex items-center">
-                <span class="absolute left-3 text-gray-400 dark:text-gray-500 font-bold select-none">&gt;</span>
+              <div class="relative flex items-center isolate">
+                <span class="absolute left-3 text-gray-400 dark:text-gray-500 font-bold select-none pointer-events-none z-[1]">&gt;</span>
                 <!-- Unstyled PrimeVue Component replaced via tailwind pt/class -->
                 <InputText id="username"
                            v-model="username"
-                           class="w-full pl-8 pr-4 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-dark-border text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-colors font-mono text-sm placeholder-gray-400/50 rounded-sm"
+                           class="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-dark-border text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-colors font-mono text-sm placeholder-gray-400/50 rounded-sm relative z-[2]"
                            :pt="{ root: { class: '!border-gray-200 dark:!border-dark-border focus:!border-brand-orange outline-none shadow-none' } }"
                            placeholder="请输入管理员账号"
                            name="admin-login-username"
@@ -234,19 +234,23 @@ const toggleTheme = () => {
                 </label>
                 <a href="#" class="text-[10px] text-gray-500 hover:text-brand-orange transition-colors uppercase">绕过?</a>
               </div>
-              <div class="relative flex items-center">
-                <span class="absolute left-3 text-gray-400 dark:text-gray-500 font-bold select-none z-10">&gt;</span>
+              <div class="admin-login-password-field relative flex items-center isolate">
+                <span class="absolute left-3 text-gray-400 dark:text-gray-500 font-bold select-none z-[1] pointer-events-none">&gt;</span>
                 <Password inputId="password"
                           v-model="password"
                           :feedback="false"
                           toggleMask
-                          class="w-full flex"
+                          class="w-full flex !relative !z-[2]"
                           autocomplete="new-password"
                           :pt="{
                             root: { class: 'w-full' },
-                            input: { root: { class: 'w-full pl-8 pr-10 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-dark-border text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-colors font-mono text-sm placeholder-gray-400/50 rounded-sm !shadow-none', autocomplete: 'new-password', name: 'admin-login-password' } },
-                            showicon: { class: 'text-gray-400 absolute right-3 cursor-pointer hover:text-brand-orange z-10 text-sm mt-0.5' },
-                            hideicon: { class: 'text-gray-400 absolute right-3 cursor-pointer hover:text-brand-orange z-10 text-sm mt-0.5' }
+                            input: {
+                              class: 'w-full pl-10 pr-10 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-dark-border text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-colors font-mono text-sm placeholder-gray-400/50 rounded-sm !shadow-none',
+                              autocomplete: 'new-password',
+                              name: 'admin-login-password'
+                            },
+                            showicon: { class: 'text-gray-400 absolute right-3 cursor-pointer hover:text-brand-orange z-[3] text-sm mt-0.5' },
+                            hideicon: { class: 'text-gray-400 absolute right-3 cursor-pointer hover:text-brand-orange z-[3] text-sm mt-0.5' }
                           }"
                           placeholder="••••••••" />
               </div>
@@ -291,10 +295,25 @@ const toggleTheme = () => {
   100% { transform: translateX(100%); }
 }
 
+/* 修复浏览器默认的表单自动填充导致的白色或黄色背景 */
+:deep(input:-webkit-autofill),
+:deep(input:-webkit-autofill:hover),
+:deep(input:-webkit-autofill:focus),
+:deep(input:-webkit-autofill:active) {
+  transition: background-color 5000s ease-in-out 0s;
+  -webkit-text-fill-color: currentColor !important;
+}
+
 /* Ensure PrimeVue Password component container wraps properly since we override base classes */
 :deep(.p-password) {
   width: 100%;
   display: block;
   position: relative;
+}
+
+/* Ensure the inner input for password field has enough padding so dots don't cover the > chevron */
+.admin-login-password-field :deep(input) {
+  padding-left: 2.5rem !important; /* pl-10 roughly equals 40px */
+  padding-right: 2.5rem !important;
 }
 </style>

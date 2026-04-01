@@ -1,9 +1,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import {
     getAdminWebsiteCategories,
     getAdminWebsitePage,
     getAdminWebsiteStats,
 } from '@/api/admin-website'
+import { useAdminNavStore } from '@/stores/adminNav'
 import type {
     AdminWebsiteListItem,
     AdminWebsiteStats,
@@ -32,7 +34,6 @@ type WebsiteCategoryItem = {
     id: number
     name: string
     count: number
-    active: boolean
 }
 
 const ALL_CATEGORY_ID = 0
@@ -115,12 +116,12 @@ function mapRecordToCard(record: AdminWebsiteListItem): WebsiteCardItem {
 }
 
 export function useWebsitesData() {
+    const adminNavStore = useAdminNavStore()
+    const { selectedCategoryId, activeMenu } = storeToRefs(adminNavStore)
+
     const viewMode = ref('grid')
     const searchQuery = ref('')
     const deletedFilter = ref<DeletedFilterValue>(-1)
-    const selectedCategoryId = ref<number>(ALL_CATEGORY_ID)
-
-    const categories = ref<WebsiteCategoryItem[]>([])
 
     const tools = ref([
         { title: 'API-delete-a-block', subtitle: 'Notion MCP Server' },
@@ -153,6 +154,7 @@ export function useWebsitesData() {
 
     let listRequestId = 0
     let searchTimer: ReturnType<typeof setTimeout> | null = null
+    let syncingCategorySelection = false
 
     const pageSize = DEFAULT_PAGE_SIZE
 
@@ -188,13 +190,6 @@ export function useWebsitesData() {
         latestUpdateTime: formatTimeDisplay(stats.value.latestUpdateTime),
     }))
 
-    const refreshCategoryActiveState = () => {
-        categories.value = categories.value.map((item) => ({
-            ...item,
-            active: item.id === selectedCategoryId.value,
-        }))
-    }
-
     const loadCategories = async () => {
         const categoryList = await getAdminWebsiteCategories(deletedFilter.value)
         const totalCount = categoryList.reduce((sum, item) => sum + Number(item.count || 0), 0)
@@ -203,22 +198,14 @@ export function useWebsitesData() {
                 id: ALL_CATEGORY_ID,
                 name: '全部分类',
                 count: totalCount,
-                active: selectedCategoryId.value === ALL_CATEGORY_ID,
             },
             ...categoryList.map((item) => ({
                 id: item.id,
                 name: item.name,
                 count: Number(item.count || 0),
-                active: item.id === selectedCategoryId.value,
             })),
         ]
-        categories.value = mappedList
-
-        const exists = mappedList.some((item) => item.id === selectedCategoryId.value)
-        if (!exists) {
-            selectedCategoryId.value = ALL_CATEGORY_ID
-            refreshCategoryActiveState()
-        }
+        adminNavStore.setWebsiteCategories(mappedList)
     }
 
     const loadStats = async () => {
@@ -226,6 +213,10 @@ export function useWebsitesData() {
     }
 
     const loadWebsitePage = async () => {
+        if (activeMenu.value !== 'websites') {
+            return
+        }
+
         listRequestId += 1
         const requestId = listRequestId
         loading.value = true
@@ -291,17 +282,11 @@ export function useWebsitesData() {
         await loadWebsitePage()
     }
 
-    const selectCategory = async (categoryId: number) => {
-        if (selectedCategoryId.value === categoryId) {
+    const reloadData = async () => {
+        if (activeMenu.value !== 'websites') {
             return
         }
-        selectedCategoryId.value = categoryId
-        refreshCategoryActiveState()
-        currentPage.value = 1
-        await loadWebsitePage()
-    }
 
-    const reloadData = async () => {
         errorMessage.value = ''
         try {
             await Promise.all([loadCategories(), loadStats()])
@@ -313,7 +298,33 @@ export function useWebsitesData() {
 
     watch(deletedFilter, async () => {
         currentPage.value = 1
-        selectedCategoryId.value = ALL_CATEGORY_ID
+        syncingCategorySelection = true
+        adminNavStore.setSelectedCategoryId(ALL_CATEGORY_ID)
+        syncingCategorySelection = false
+        await reloadData()
+    })
+
+    watch(selectedCategoryId, async (nextValue, previousValue) => {
+        if (syncingCategorySelection) {
+            return
+        }
+        if (nextValue === previousValue) {
+            return
+        }
+        if (activeMenu.value !== 'websites') {
+            return
+        }
+        currentPage.value = 1
+        await loadWebsitePage()
+    })
+
+    watch(activeMenu, async (nextMenu, previousMenu) => {
+        if (nextMenu !== 'websites') {
+            return
+        }
+        if (previousMenu === 'websites') {
+            return
+        }
         await reloadData()
     })
 
@@ -328,6 +339,9 @@ export function useWebsitesData() {
     })
 
     onMounted(() => {
+        if (activeMenu.value !== 'websites') {
+            return
+        }
         void reloadData()
     })
 
@@ -342,7 +356,6 @@ export function useWebsitesData() {
         viewMode,
         searchQuery,
         deletedFilter,
-        categories,
         tools,
         connectors,
         filteredServers,
@@ -356,7 +369,6 @@ export function useWebsitesData() {
         prevPage,
         nextPage,
         goToPage,
-        selectCategory,
         reloadData,
         visiblePages,
     }

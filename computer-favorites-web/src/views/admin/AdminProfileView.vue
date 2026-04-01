@@ -119,6 +119,26 @@ const reloadProfile = () => {
   void loadProfile()
 }
 
+const canUseRouterBack = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false
+  }
+  const backPath = window.history.state?.back
+  return (
+    typeof backPath === 'string'
+    && backPath.startsWith('/computer/admin/')
+    && !backPath.startsWith('/computer/admin/login')
+  )
+}
+
+const goBack = () => {
+  if (canUseRouterBack()) {
+    router.back()
+    return
+  }
+  void router.push({ name: 'adminWebsites' })
+}
+
 const enableEdit = () => {
   syncEditForm()
   isEditing.value = true
@@ -297,9 +317,20 @@ onMounted(() => {
 
       <!-- Terminal Navigation -->
       <div class="mb-6 sm:mb-8 border-b border-[#cbd5e1] dark:border-[#273138] pb-3 sm:pb-4">
-        <div class="text-sm text-slate-500 dark:text-gray-400 flex flex-wrap items-center gap-2 break-all">
-          <span class="text-[#e95322]">{{ adminInfo.username || 'admin_root' }}@sys</span>:<span class="text-[#3b82f6]">~</span>$ cat /etc/admin/profile.conf
-          <span class="cursor-blink"></span>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="text-sm text-slate-500 dark:text-gray-400 flex flex-wrap items-center gap-2 break-all min-w-0">
+            <span class="text-[#e95322]">{{ adminInfo.username || 'admin_root' }}@sys</span>:<span class="text-[#3b82f6]">~</span>$ cat /etc/admin/profile.conf
+            <span class="cursor-blink"></span>
+          </div>
+
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 border border-[#cbd5e1] dark:border-[#273138] px-3 py-1.5 text-xs sm:text-sm text-slate-600 dark:text-gray-300 hover:border-[#e95322] hover:text-[#e95322] transition-colors cursor-pointer"
+            @click="goBack"
+          >
+            <i class="pi pi-arrow-left text-[11px]"></i>
+            返回
+          </button>
         </div>
       </div>
 

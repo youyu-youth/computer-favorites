@@ -19,7 +19,7 @@ const router = createRouter({
     {
       path: '/computer/admin',
       component: AdminLayout,
-      meta: { requiresAdminAuth: true },
+      meta: { requiresAdminAuth: true, title: '管理后台' },
       children: [
         {
           path: '',
@@ -29,13 +29,13 @@ const router = createRouter({
           path: 'websites',
           name: 'adminWebsites',
           component: WebsitesManagementView,
-          meta: { requiresAdminAuth: true },
+          meta: { requiresAdminAuth: true, title: '网站管理' },
         },
         {
           path: 'profile',
           name: 'adminProfile',
           component: () => import('@/views/admin/AdminProfileView.vue'),
-          meta: { requiresAdminAuth: true },
+          meta: { requiresAdminAuth: true, title: '个人资料', hideAdminSidebar: true },
         }
       ]
     },
