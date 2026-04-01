@@ -12,6 +12,7 @@ export type AdminLoginUserInfo = {
   userId?: number
   username?: string
   nickname?: string
+  avatar?: string
 }
 
 export type AdminTokenResponse = {
@@ -30,6 +31,9 @@ type AdminLoginRawData = {
 
 export type AdminSessionResponse = {
   userId?: number
+  username?: string
+  nickname?: string
+  avatar?: string
   tokenValue?: string
   deviceType?: string
   timeoutSeconds?: number

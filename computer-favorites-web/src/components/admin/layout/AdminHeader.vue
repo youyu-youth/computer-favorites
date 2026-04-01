@@ -7,8 +7,8 @@ import { useAdminNavStore } from '@/stores/adminNav'
 import { storeToRefs } from 'pinia'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
-import Avatar from 'primevue/avatar'
 import { useToast } from '@/composables/useToast'
+import { buildAdminAuthHeaders } from '@/api/admin-auth-headers'
 
 const appStore = useAppStore()
 const adminAuthStore = useAdminAuthStore()
@@ -25,6 +25,11 @@ const logoutError = ref('')
 const profileMenuOpen = ref(false)
 const themeModeMenuOpen = ref(false)
 const profileMenuRef = ref<HTMLElement | null>(null)
+const avatarLoadFailed = ref(false)
+const resolvedAvatarUrl = ref<string>()
+
+let avatarObjectUrl: string | null = null
+let avatarResolveRequestId = 0
 
 const displayName = computed(() => {
   const nickname = adminAuthStore.userSnapshot.nickname.trim()
@@ -42,9 +47,85 @@ const avatarInitial = computed(() => {
   return displayName.value.slice(0, 1).toUpperCase()
 })
 
+const avatarUrl = computed(() => {
+  const rawValue = adminAuthStore.userSnapshot.avatar
+  if (typeof rawValue !== 'string') {
+    return undefined
+  }
+
+  const value = rawValue.trim().replace(/\\/g, '/')
+  if (!value) {
+    return undefined
+  }
+
+  if (/^(https?:|data:|blob:)/i.test(value)) {
+    return value
+  }
+  if (value.startsWith('//')) {
+    return `${window.location.protocol}${value}`
+  }
+  if (value.startsWith('/')) {
+    return value
+  }
+  return `/${value}`
+})
+
+const displayAvatarUrl = computed(() => {
+  if (avatarLoadFailed.value) {
+    return undefined
+  }
+  return resolvedAvatarUrl.value
+})
+
 const showSidebarToggle = computed(() => {
   return route.meta.hideAdminSidebar !== true
 })
+
+const handleAvatarError = () => {
+  resolvedAvatarUrl.value = undefined
+  avatarLoadFailed.value = true
+}
+
+const releaseAvatarObjectUrl = () => {
+  if (!avatarObjectUrl) {
+    return
+  }
+  URL.revokeObjectURL(avatarObjectUrl)
+  avatarObjectUrl = null
+}
+
+const shouldResolveAvatarWithAuth = (url: string): boolean => {
+  if (url.startsWith('/api/')) {
+    return true
+  }
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return false
+  }
+  try {
+    const targetUrl = new URL(url)
+    return targetUrl.pathname.startsWith('/api/')
+  } catch {
+    return false
+  }
+}
+
+const resolveAvatarSource = async (url: string): Promise<string> => {
+  if (!shouldResolveAvatarWithAuth(url)) {
+    return url
+  }
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: buildAdminAuthHeaders(),
+  })
+  if (!response.ok) {
+    throw new Error(`头像资源加载失败: ${response.status}`)
+  }
+  const avatarBlob = await response.blob()
+  releaseAvatarObjectUrl()
+  avatarObjectUrl = URL.createObjectURL(avatarBlob)
+  return avatarObjectUrl
+}
 
 const toggleDarkMode = () => {
   appStore.toggleTheme()
@@ -158,12 +239,59 @@ watch(
   }
 )
 
+watch(
+  () => avatarUrl.value,
+  async (nextUrl) => {
+    avatarResolveRequestId += 1
+    const requestId = avatarResolveRequestId
+    avatarLoadFailed.value = false
+    releaseAvatarObjectUrl()
+
+    if (!nextUrl) {
+      resolvedAvatarUrl.value = undefined
+      return
+    }
+
+    const needAuthResolve = shouldResolveAvatarWithAuth(nextUrl)
+    resolvedAvatarUrl.value = needAuthResolve ? undefined : nextUrl
+    try {
+      const finalUrl = await resolveAvatarSource(nextUrl)
+      if (requestId !== avatarResolveRequestId) {
+        return
+      }
+      avatarLoadFailed.value = false
+      resolvedAvatarUrl.value = finalUrl
+    } catch {
+      if (requestId !== avatarResolveRequestId) {
+        return
+      }
+      if (!needAuthResolve) {
+        resolvedAvatarUrl.value = nextUrl
+        return
+      }
+      resolvedAvatarUrl.value = undefined
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => adminAuthStore.isAuthed,
+  (isAuthed) => {
+    if (isAuthed) {
+      void adminAuthStore.loadCurrentProfile()
+    }
+  },
+  { immediate: true }
+)
+
 onMounted(() => {
   window.addEventListener('click', closeProfileMenuByOutside)
   window.addEventListener('keydown', closeProfileMenuByEsc)
 })
 
 onBeforeUnmount(() => {
+  releaseAvatarObjectUrl()
   window.removeEventListener('click', closeProfileMenuByOutside)
   window.removeEventListener('keydown', closeProfileMenuByEsc)
 })
@@ -207,11 +335,16 @@ onBeforeUnmount(() => {
               :aria-expanded="profileMenuOpen"
               @click.stop="toggleProfileMenu"
             >
-              <Avatar
-                :label="avatarInitial"
-                shape="circle"
-                class="!w-6 !h-6 !text-xs !bg-[#e95322] !text-white"
-              />
+              <div class="w-6 h-6 rounded-full overflow-hidden bg-[#e95322] text-white flex items-center justify-center flex-shrink-0">
+                <img
+                  v-if="displayAvatarUrl"
+                  :src="displayAvatarUrl"
+                  :alt="displayName"
+                  class="w-full h-full object-cover"
+                  @error="handleAvatarError"
+                >
+                <span v-else class="text-xs font-semibold">{{ avatarInitial }}</span>
+              </div>
               <span class="hidden lg:inline-block max-w-24 truncate">{{ displayName }}</span>
               <i class="fas fa-chevron-down text-[10px] transition-transform" :class="profileMenuOpen ? 'rotate-180' : ''" aria-hidden="true"></i>
             </button>
@@ -299,7 +432,7 @@ onBeforeUnmount(() => {
           <Button
             type="button"
             @click="openLogoutConfirm"
-            class="cursor-pointer bg-gray-900 text-white dark:bg-white dark:text-gray-900 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+            class="cursor-pointer bg-[#131d2e] text-white dark:bg-[#131d2e] dark:text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#1b2a44] dark:hover:bg-[#1b2a44] transition-colors"
           >
             Sign Out
           </Button>

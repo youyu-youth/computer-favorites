@@ -1,12 +1,14 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { adminCurrentSession, adminLogin, adminLogout, adminRenewSession } from '@/api/admin-auth'
+import { getAdminProfile } from '@/api/admin-profile'
 import { isUnauthorizedError } from '@/utils/http'
 
 export interface AdminUserSnapshot {
   userId: number | null
   username: string
   nickname: string
+  avatar: string
 }
 
 export const useAdminAuthStore = defineStore('adminAuth', () => {
@@ -19,6 +21,8 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
   )
   const username = ref<string>(localStorage.getItem('adminUsername') || '')
   const nickname = ref<string>(localStorage.getItem('adminNickname') || '')
+  const avatar = ref<string>(localStorage.getItem('adminAvatar') || '')
+  const profileLoading = ref(false)
   const sessionChecked = ref(false)
   const sessionValid = ref(false)
   const sessionLoading = ref(false)
@@ -32,6 +36,7 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     userId: userId.value,
     username: username.value,
     nickname: nickname.value,
+    avatar: avatar.value,
   }))
 
   let renewPromise: Promise<boolean> | null = null
@@ -50,6 +55,7 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     userId.value = snapshot.userId ?? userId.value
     username.value = snapshot.username ?? username.value
     nickname.value = snapshot.nickname ?? nickname.value
+    avatar.value = snapshot.avatar ?? avatar.value
 
     if (userId.value === null) {
       localStorage.removeItem('adminUserId')
@@ -58,6 +64,7 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     }
     localStorage.setItem('adminUsername', username.value)
     localStorage.setItem('adminNickname', nickname.value)
+    localStorage.setItem('adminAvatar', avatar.value)
   }
 
   const loadCurrentSession = async () => {
@@ -69,6 +76,9 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
       const session = await adminCurrentSession()
       setUserSnapshot({
         userId: session.userId ?? null,
+        username: session.username,
+        nickname: session.nickname,
+        avatar: session.avatar,
       })
       sessionValid.value = true
       return true
@@ -82,6 +92,31 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     } finally {
       sessionChecked.value = true
       sessionLoading.value = false
+    }
+  }
+
+  const loadCurrentProfile = async () => {
+    if (!token.value || profileLoading.value) {
+      return false
+    }
+    profileLoading.value = true
+    try {
+      const profile = await getAdminProfile()
+      setUserSnapshot({
+        userId: profile.id,
+        username: profile.username,
+        nickname: profile.nickname,
+        avatar: profile.avatar,
+      })
+      return true
+    } catch (error) {
+      if (isUnauthorizedError(error)) {
+        clear()
+        return false
+      }
+      return false
+    } finally {
+      profileLoading.value = false
     }
   }
 
@@ -131,7 +166,15 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
         return false
       }
     }
-    return renewSessionIfNeeded()
+    const renewed = await renewSessionIfNeeded()
+    if (!renewed) {
+      return false
+    }
+    // 登录与会话接口不返回头像字段，按需补拉管理员资料，避免阻塞路由。
+    if (!avatar.value) {
+      void loadCurrentProfile()
+    }
+    return true
   }
 
   const login = async (usernameInput: string, password: string, deviceType: string) => {
@@ -146,11 +189,16 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
       userId: result.userInfo?.userId ?? null,
       username: result.userInfo?.username || '',
       nickname: result.userInfo?.nickname || '',
+      avatar: result.userInfo?.avatar || '',
     })
 
     const valid = await loadCurrentSession()
     if (!valid) {
       throw new Error('管理员会话校验失败，请重新登录')
+    }
+
+    if (!avatar.value) {
+      void loadCurrentProfile()
     }
 
     return result
@@ -178,6 +226,7 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     userId.value = null
     username.value = ''
     nickname.value = ''
+    avatar.value = ''
     sessionChecked.value = true
     sessionValid.value = false
     lastRenewAt.value = 0
@@ -187,6 +236,7 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     localStorage.removeItem('adminUserId')
     localStorage.removeItem('adminUsername')
     localStorage.removeItem('adminNickname')
+    localStorage.removeItem('adminAvatar')
   }
 
   return {
@@ -195,12 +245,15 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     userId,
     username,
     nickname,
+    avatar,
+    profileLoading,
     isAuthed,
     isSessionValid,
     userSnapshot,
     setToken,
     setUserSnapshot,
     loadCurrentSession,
+    loadCurrentProfile,
     renewSessionIfNeeded,
     ensureSession,
     login,

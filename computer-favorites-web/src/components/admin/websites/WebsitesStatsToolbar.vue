@@ -67,6 +67,11 @@ const handleDeletedFilterChange = (event: Event) => {
       <button class="bg-gray-900 text-white dark:bg-[#1f2937] dark:hover:bg-gray-700 border dark:border-gray-600 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors cursor-pointer">
         待审核 {{ stats.pendingAudit }}
       </button>
+
+      <button @click="emit('update:viewMode', 'add')" class="bg-brand-orange text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-orange-600 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm">
+        <i class="fas fa-plus text-xs"></i>
+        <span>添加网站</span>
+      </button>
     </div>
   </div>
 </template>

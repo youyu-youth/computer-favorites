@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import WebsitesBreadcrumbs from '@/components/admin/websites/WebsitesBreadcrumbs.vue'
@@ -7,6 +7,7 @@ import WebsitesSearchArea from '@/components/admin/websites/WebsitesSearchArea.v
 import WebsitesMiniCards from '@/components/admin/websites/WebsitesMiniCards.vue'
 import WebsitesList from '@/components/admin/websites/WebsitesList.vue'
 import WebsitesPagination from '@/components/admin/websites/WebsitesPagination.vue'
+import AdminAddWebsite from '@/components/admin/websites/AdminAddWebsite.vue'
 import { useWebsitesData } from '@/composables/admin/useWebsitesData'
 import { useAdminNavStore } from '@/stores/adminNav'
 
@@ -54,59 +55,67 @@ const {
 <template>
   <main class="flex-grow w-full px-4 sm:px-6 lg:px-8 py-6">
     <div class="max-w-[1320px] mx-auto min-w-0">
-      <WebsitesBreadcrumbs />
+      <WebsitesBreadcrumbs :viewMode="viewMode" />
 
       <template v-if="isWebsiteMenuActive">
-        <WebsitesStatsToolbar
-          :viewMode="viewMode"
-          :deletedFilter="deletedFilter"
-          :stats="stats"
-          @update:viewMode="(value) => (viewMode = value)"
-          @update:deletedFilter="(value) => (deletedFilter = value)"
-          @refresh="reloadData"
-        />
-
-        <WebsitesSearchArea
-          :searchQuery="searchQuery"
-          @update:searchQuery="(value) => (searchQuery = value)"
-        />
-
-        <WebsitesMiniCards title="MCP tools" :items="tools" />
-
-        <WebsitesMiniCards title="MCP Connectors" :items="connectors" is-connector />
-
-        <div>
-          <h2 class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-4">Popular MCP servers</h2>
-
-          <div v-if="loading" class="text-center py-12 text-gray-500 dark:text-gray-400">
-            <i class="fas fa-spinner fa-spin text-3xl mb-3 opacity-70"></i>
-            <p>Loading website data...</p>
+        <Transition name="fade-slide" mode="out-in">
+          <div v-if="viewMode === 'add'" key="add">
+            <AdminAddWebsite @cancel="viewMode = 'grid'" />
           </div>
 
-          <div v-else-if="errorMessage" class="text-center py-12 text-red-500 dark:text-red-400">
-            <i class="fas fa-exclamation-circle text-3xl mb-3 opacity-80"></i>
-            <p>{{ errorMessage }}</p>
-          </div>
+          <div v-else key="list">
+            <WebsitesStatsToolbar
+              :viewMode="viewMode"
+              :deletedFilter="deletedFilter"
+              :stats="stats"
+              @update:viewMode="(value) => (viewMode = value)"
+              @update:deletedFilter="(value) => (deletedFilter = value)"
+              @refresh="reloadData"
+            />
 
-          <WebsitesList v-else :servers="filteredServers" :viewMode="viewMode" />
-
-          <div v-if="!loading && !errorMessage && filteredServers.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
-            <i class="fas fa-search text-3xl mb-3 opacity-50"></i>
-            <p>No servers found matching "{{ searchQuery }}"</p>
-          </div>
-
-          <WebsitesPagination
-            v-if="!loading && !errorMessage && filteredServers.length > 0"
-            :currentPage="currentPage"
-            :totalPages="totalPages"
-            :total="totalItems"
-            :pageSize="pageSize"
-            :visiblePages="visiblePages"
-            @prev="prevPage"
-            @next="nextPage"
-            @goto="goToPage"
+            <WebsitesSearchArea
+            :searchQuery="searchQuery"
+            @update:searchQuery="(value) => (searchQuery = value)"
           />
-        </div>
+
+          <WebsitesMiniCards title="MCP tools" :items="tools" />
+
+          <WebsitesMiniCards title="MCP Connectors" :items="connectors" is-connector />
+
+          <div>
+            <h2 class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-4">Popular MCP servers</h2>
+
+            <div v-if="loading" class="text-center py-12 text-gray-500 dark:text-gray-400">
+              <i class="fas fa-spinner fa-spin text-3xl mb-3 opacity-70"></i>
+              <p>Loading website data...</p>
+            </div>
+
+            <div v-else-if="errorMessage" class="text-center py-12 text-red-500 dark:text-red-400">
+              <i class="fas fa-exclamation-circle text-3xl mb-3 opacity-80"></i>
+              <p>{{ errorMessage }}</p>
+            </div>
+
+            <WebsitesList v-else :servers="filteredServers" :viewMode="viewMode" />
+
+            <div v-if="!loading && !errorMessage && filteredServers.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
+              <i class="fas fa-search text-3xl mb-3 opacity-50"></i>
+              <p>No servers found matching "{{ searchQuery }}"</p>
+            </div>
+
+            <WebsitesPagination
+              v-if="!loading && !errorMessage && filteredServers.length > 0"
+              :currentPage="currentPage"
+              :totalPages="totalPages"
+              :total="totalItems"
+              :pageSize="pageSize"
+              :visiblePages="visiblePages"
+              @prev="prevPage"
+              @next="nextPage"
+              @goto="goToPage"
+            />
+          </div>
+          </div>
+        </Transition>
       </template>
 
       <div v-else class="rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card px-6 py-12 text-center">
@@ -124,4 +133,21 @@ const {
     </div>
   </main>
 </template>
+
+<style scoped>
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-15px);
+}
+</style>
 

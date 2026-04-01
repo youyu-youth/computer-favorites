@@ -4,6 +4,13 @@ import { storeToRefs } from 'pinia'
 import type { AdminMenuKey } from '@/stores/adminNav'
 import { useAdminNavStore } from '@/stores/adminNav'
 
+const props = defineProps({
+  viewMode: {
+    type: String,
+    default: 'grid'
+  }
+})
+
 const adminNavStore = useAdminNavStore()
 
 const {
@@ -21,10 +28,17 @@ const breadcrumbItems = computed(() => {
   ]
 
   if (isWebsiteMenuActive.value) {
-    items.push({
-      key: `category-${selectedCategoryLabel.value}`,
-      label: selectedCategoryLabel.value,
-    })
+    if (props.viewMode === 'add') {
+      items.push({
+        key: `add-website`,
+        label: '添加网站',
+      })
+    } else {
+      items.push({
+        key: `category-${selectedCategoryLabel.value}`,
+        label: selectedCategoryLabel.value,
+      })
+    }
   }
 
   return items

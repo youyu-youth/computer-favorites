@@ -1,8 +1,12 @@
 package com.yyyouth.service.admin.auth.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.vo.auth.AuthSessionVO;
 import com.yyyouth.service.admin.auth.AdminSessionService;
+import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.user.auth.support.StpAdminUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,9 +18,14 @@ import java.time.LocalDateTime;
  * 管理员会话服务实现
  */
 @Service
+@RequiredArgsConstructor
 public class AdminSessionServiceImpl implements AdminSessionService {
 
     private static final long DEFAULT_RENEW_TIMEOUT_SECONDS = 3600L;
+
+    private static final int NOT_DELETED = 0;
+
+    private final AdminAccountMapper adminAccountMapper;
 
     /**
      * 续期当前管理员会话
@@ -53,7 +62,17 @@ public class AdminSessionServiceImpl implements AdminSessionService {
         LocalDateTime expireTime = calculateExpireTime(timeoutSeconds, LocalDateTime.now());
 
         AuthSessionVO sessionVO = new AuthSessionVO();
+        AdminAccount adminAccount = adminAccountMapper.selectOne(new LambdaQueryWrapper<AdminAccount>()
+            .eq(AdminAccount::getId, adminId)
+            .eq(AdminAccount::getDeleted, NOT_DELETED)
+            .last("limit 1"));
+
         sessionVO.setUserId(adminId);
+        if (adminAccount != null) {
+            sessionVO.setUsername(adminAccount.getUsername());
+            sessionVO.setNickname(adminAccount.getNickname());
+            sessionVO.setAvatar(adminAccount.getAvatar());
+        }
         sessionVO.setTokenValue(tokenValue);
         sessionVO.setDeviceType(getCurrentDeviceType());
         sessionVO.setTimeoutSeconds(timeoutSeconds);

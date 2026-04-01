@@ -98,6 +98,12 @@ const loadProfile = async (showErrorToast = true): Promise<boolean> => {
     const profile = await getAdminProfile()
     applyAdminProfile(profile)
     syncEditForm()
+    adminAuthStore.setUserSnapshot({
+      userId: profile.id,
+      username: profile.username,
+      nickname: profile.nickname,
+      avatar: profile.avatar,
+    })
     return true
   } catch (error) {
     const message = resolveErrorMessage(error)
@@ -286,7 +292,9 @@ const saveProfile = async () => {
     }
 
     adminAuthStore.setUserSnapshot({
+      username: adminInfo.username,
       nickname: adminInfo.nickname,
+      avatar: adminInfo.avatar,
     })
 
     isEditing.value = false
