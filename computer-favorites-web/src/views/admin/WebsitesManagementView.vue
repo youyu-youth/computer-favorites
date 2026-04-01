@@ -14,12 +14,20 @@ const {
     connectors,
     searchQuery,
     viewMode,
+  deletedFilter,
+  stats,
     currentPage,
+  totalItems,
+  pageSize,
+  loading,
+  errorMessage,
     totalPages,
     visiblePages,
     prevPage,
     nextPage,
     goToPage,
+  reloadData,
+  selectCategory,
     filteredServers
 } = useWebsitesData()
 
@@ -29,7 +37,7 @@ const {
   <main class="flex-grow max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-8">
 
     <!-- 左侧边栏 -->
-    <WebsitesSidebar :categories="categories" />
+    <WebsitesSidebar :categories="categories" @select="selectCategory" />
 
     <!-- 右侧主要内容区 -->
     <div class="flex-grow min-w-0">
@@ -38,10 +46,20 @@ const {
       <WebsitesBreadcrumbs />
 
       <!-- 统计与操作栏 -->
-      <WebsitesStatsToolbar v-model:viewMode="viewMode" />
+      <WebsitesStatsToolbar
+        :viewMode="viewMode"
+        :deletedFilter="deletedFilter"
+        :stats="stats"
+        @update:viewMode="(value) => (viewMode = value)"
+        @update:deletedFilter="(value) => (deletedFilter = value)"
+        @refresh="reloadData"
+      />
 
       <!-- 搜索框与公告 -->
-      <WebsitesSearchArea v-model:searchQuery="searchQuery" />
+      <WebsitesSearchArea
+        :searchQuery="searchQuery"
+        @update:searchQuery="(value) => (searchQuery = value)"
+      />
 
       <!-- 小工具区 -->
       <WebsitesMiniCards title="MCP tools" :items="tools" />
@@ -53,17 +71,29 @@ const {
       <div>
         <h2 class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-4">Popular MCP servers</h2>
 
-        <WebsitesList :servers="filteredServers" :viewMode="viewMode" />
+        <div v-if="loading" class="text-center py-12 text-gray-500 dark:text-gray-400">
+          <i class="fas fa-spinner fa-spin text-3xl mb-3 opacity-70"></i>
+          <p>Loading website data...</p>
+        </div>
 
-        <div v-if="filteredServers.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
+        <div v-else-if="errorMessage" class="text-center py-12 text-red-500 dark:text-red-400">
+          <i class="fas fa-exclamation-circle text-3xl mb-3 opacity-80"></i>
+          <p>{{ errorMessage }}</p>
+        </div>
+
+        <WebsitesList v-else :servers="filteredServers" :viewMode="viewMode" />
+
+        <div v-if="!loading && !errorMessage && filteredServers.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
             <i class="fas fa-search text-3xl mb-3 opacity-50"></i>
             <p>No servers found matching "{{ searchQuery }}"</p>
         </div>
 
         <WebsitesPagination
-            v-if="filteredServers.length > 0"
+            v-if="!loading && !errorMessage && filteredServers.length > 0"
             :currentPage="currentPage"
             :totalPages="totalPages"
+            :total="totalItems"
+            :pageSize="pageSize"
             :visiblePages="visiblePages"
             @prev="prevPage"
             @next="nextPage"

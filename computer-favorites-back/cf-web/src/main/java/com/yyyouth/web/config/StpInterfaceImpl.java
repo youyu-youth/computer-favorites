@@ -39,7 +39,10 @@ public class StpInterfaceImpl implements StpInterface {
             "admin:auth:detail",
             "admin:profile:detail",
             "admin:profile:edit",
-            "admin:profile:password"
+            "admin:profile:password",
+            "admin:website:list",
+            "admin:website:category:list",
+            "admin:website:stats"
     );
 
     private static final List<String> DEFAULT_USER_ROLES = List.of("user");

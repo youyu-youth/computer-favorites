@@ -1,8 +1,17 @@
 ﻿<script setup lang="ts">
 
 const props = defineProps<{
-    servers: Array<any>;
-    viewMode: string;
+        servers: Array<{
+            id: number;
+            title: string;
+            author: string;
+            isOfficial: boolean;
+            icon: string;
+            iconBg: string;
+            description: string;
+            tags: Array<{ name: string; status: 'good' | 'warning' }>;
+        }>;
+        viewMode: string;
 }>()
 </script>
 
@@ -18,7 +27,7 @@ const props = defineProps<{
     name="list">
 
     <!-- 服务器卡片列表 -->
-    <div v-for="server in servers" :key="server.title"
+    <div v-for="server in servers" :key="server.id"
          :class="[
              'bg-white dark:bg-[#1a2126] border border-gray-200 dark:border-dark-border rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 transition-all hover:shadow-md dark:shadow-none',
              viewMode === 'list' ? 'flex flex-col sm:flex-row items-stretch' : 'flex flex-col p-5'

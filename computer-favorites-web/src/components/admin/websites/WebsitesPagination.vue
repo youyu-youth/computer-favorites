@@ -1,9 +1,11 @@
 ﻿<script setup lang="ts">
 
 const props = defineProps<{
-    currentPage: number;
-    totalPages: number;
-    visiblePages: Array<number | string>;
+  currentPage: number;
+  totalPages: number;
+  visiblePages: Array<number | string>;
+  total: number;
+  pageSize: number;
 }>()
 
 const emit = defineEmits<{
@@ -11,6 +13,17 @@ const emit = defineEmits<{
     (e: 'next'): void;
     (e: 'goto', page: number | string): void;
 }>()
+
+const resolveStart = (): number => {
+  if (props.total <= 0) {
+    return 0
+  }
+  return (props.currentPage - 1) * props.pageSize + 1
+}
+
+const resolveEnd = (): number => {
+  return Math.min(props.currentPage * props.pageSize, props.total)
+}
 </script>
 
 <template>
@@ -33,11 +46,11 @@ const emit = defineEmits<{
       <div>
         <p class="text-sm text-gray-700 dark:text-gray-400">
           Showing
-          <span class="font-medium text-gray-900 dark:text-white">{{ (currentPage - 1) * 12 + 1 }}</span>
+          <span class="font-medium text-gray-900 dark:text-white">{{ resolveStart() }}</span>
           to
-          <span class="font-medium text-gray-900 dark:text-white">{{ Math.min(currentPage * 12, 20362) }}</span>
+          <span class="font-medium text-gray-900 dark:text-white">{{ resolveEnd() }}</span>
           of
-          <span class="font-medium text-gray-900 dark:text-white">20,362</span>
+          <span class="font-medium text-gray-900 dark:text-white">{{ total }}</span>
           results
         </p>
       </div>
@@ -48,11 +61,11 @@ const emit = defineEmits<{
             <i class="fas fa-chevron-left w-5 h-5 flex items-center justify-center"></i>
           </button>
 
-          <template v-for="(page, index) in visiblePages" :key="index">
-            <span v-if="page === '...'" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-sm font-medium text-gray-700 dark:text-gray-400">
+          <template v-for="(page, index) in visiblePages">
+            <span v-if="page === '...'" :key="`ellipsis-${index}`" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-sm font-medium text-gray-700 dark:text-gray-400">
                 ...
             </span>
-            <button v-else @click="$emit('goto', page)"
+            <button v-else :key="`page-${page}`" @click="$emit('goto', page)"
                     :class="[
                         page === currentPage
                             ? 'z-10 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-dark-border text-brand-orange dark:text-brand-orange font-bold'
