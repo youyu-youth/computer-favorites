@@ -16,3 +16,9 @@ export interface UpdateAdminProfileRequest {
   nickname?: string
   email?: string
 }
+
+export interface UpdateAdminPasswordRequest {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}

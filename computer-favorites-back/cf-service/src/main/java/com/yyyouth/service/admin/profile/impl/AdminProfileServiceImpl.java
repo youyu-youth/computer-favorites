@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yyyouth.common.constants.AuthErrorCode;
 import com.yyyouth.common.exception.BusinessException;
+import com.yyyouth.model.dto.admin.AdminPasswordUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminProfileUpdateDTO;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.vo.admin.AdminProfileVO;
@@ -12,6 +13,7 @@ import com.yyyouth.service.admin.profile.AdminProfileService;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.user.auth.support.StpAdminUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -34,6 +36,10 @@ public class AdminProfileServiceImpl implements AdminProfileService {
     private static final int ENABLED_STATUS = 1;
 
     private static final int NOT_DELETED = 0;
+
+    private static final String PASSWORD_STRENGTH_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d]).+$";
+
+    private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
 
     private final AdminAccountMapper adminAccountMapper;
 
@@ -101,6 +107,44 @@ public class AdminProfileServiceImpl implements AdminProfileService {
     }
 
     /**
+     * 更新登录管理员密码
+     *
+     * @param updateDTO 修改密码参数
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateLoginAdminPassword(AdminPasswordUpdateDTO updateDTO) {
+        AdminAccount currentAdmin = getCurrentActiveAdmin();
+        String encodedPassword = resolveEncodedPassword(currentAdmin);
+        if (!StringUtils.hasText(encodedPassword) || !PASSWORD_ENCODER.matches(updateDTO.getCurrentPassword(), encodedPassword)) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_CURRENT_INVALID.getCode(), AuthErrorCode.CHANGE_PASSWORD_CURRENT_INVALID.getMessage());
+        }
+        if (!updateDTO.getNewPassword().equals(updateDTO.getConfirmPassword())) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_CONFIRM_MISMATCH.getCode(), AuthErrorCode.CHANGE_PASSWORD_CONFIRM_MISMATCH.getMessage());
+        }
+        if (!updateDTO.getNewPassword().matches(PASSWORD_STRENGTH_PATTERN)) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_STRENGTH_INVALID.getCode(), AuthErrorCode.CHANGE_PASSWORD_STRENGTH_INVALID.getMessage());
+        }
+        if (PASSWORD_ENCODER.matches(updateDTO.getNewPassword(), encodedPassword)) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_SAME_AS_OLD.getCode(), AuthErrorCode.CHANGE_PASSWORD_SAME_AS_OLD.getMessage());
+        }
+
+        String newPasswordHash = PASSWORD_ENCODER.encode(updateDTO.getNewPassword());
+        int affectedRows = adminAccountMapper.update(null, new LambdaUpdateWrapper<AdminAccount>()
+                .eq(AdminAccount::getId, currentAdmin.getId())
+                .eq(AdminAccount::getDeleted, NOT_DELETED)
+                .eq(AdminAccount::getStatus, ENABLED_STATUS)
+                .set(AdminAccount::getPasswordHash, newPasswordHash)
+                .set(AdminAccount::getPassword, newPasswordHash)
+                .set(AdminAccount::getUpdateTime, LocalDateTime.now()));
+        if (affectedRows != 1) {
+            throw new BusinessException(AuthErrorCode.CHANGE_PASSWORD_UPDATE_FAILED.getCode(), AuthErrorCode.CHANGE_PASSWORD_UPDATE_FAILED.getMessage());
+        }
+
+        StpAdminUtil.logout();
+    }
+
+    /**
      * 查询当前登录且有效的管理员账号
      *
      * @return 管理员账号
@@ -117,6 +161,19 @@ public class AdminProfileServiceImpl implements AdminProfileService {
             throw new BusinessException(AuthErrorCode.ADMIN_PROFILE_NOT_FOUND.getCode(), AuthErrorCode.ADMIN_PROFILE_NOT_FOUND.getMessage());
         }
         return adminAccount;
+    }
+
+    /**
+     * 解析数据库中的加密密码
+     *
+     * @param adminAccount 管理员账号
+     * @return 加密密码
+     */
+    private String resolveEncodedPassword(AdminAccount adminAccount) {
+        if (StringUtils.hasText(adminAccount.getPasswordHash())) {
+            return adminAccount.getPasswordHash();
+        }
+        return adminAccount.getPassword();
     }
 
     /**

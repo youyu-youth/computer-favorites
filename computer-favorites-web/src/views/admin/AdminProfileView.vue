@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { getAdminProfile, updateAdminProfile } from '@/api/admin-profile'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
+import { getAdminProfile, updateAdminPassword, updateAdminProfile } from '@/api/admin-profile'
 import { useToast } from '@/composables/useToast'
 import { useAdminAuthStore } from '@/stores/adminAuth'
-import type { AdminProfile, UpdateAdminProfileRequest } from '@/types/admin'
+import type { AdminProfile, UpdateAdminPasswordRequest, UpdateAdminProfileRequest } from '@/types/admin'
 
 const adminAuthStore = useAdminAuthStore()
 const toast = useToast()
+const router = useRouter()
 
 const adminInfo = reactive<AdminProfile>({
   id: 0,
@@ -27,11 +31,41 @@ const isEditing = ref(false)
 const isSaving = ref(false)
 const isLoading = ref(true)
 const loadError = ref('')
+const passwordDialogVisible = ref(false)
+const isChangingPassword = ref(false)
+const passwordError = ref('')
 
 // Form state
 const editForm = reactive({
   nickname: '',
   email: ''
+})
+
+const passwordForm = reactive<UpdateAdminPasswordRequest>({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+
+const passwordStrengthLevel = computed(() => {
+  const password = passwordForm.newPassword
+  const hasMinLength = password.length >= 8
+  const hasLetter = /[A-Za-z]/.test(password)
+  const hasNumber = /\d/.test(password)
+  const hasSpecial = /[^A-Za-z\d]/.test(password)
+  const score = [hasMinLength, hasLetter, hasNumber, hasSpecial].filter(Boolean).length
+
+  if (score <= 1) {
+    return { text: 'WEAK', color: 'text-red-500 dark:text-red-400' }
+  }
+  if (score <= 3) {
+    return { text: 'MEDIUM', color: 'text-amber-500 dark:text-amber-400' }
+  }
+  return { text: 'STRONG', color: 'text-emerald-500 dark:text-emerald-400' }
+})
+
+const canSubmitPassword = computed(() => {
+  return Boolean(passwordForm.currentPassword && passwordForm.newPassword && passwordForm.confirmPassword)
 })
 
 const resolveErrorMessage = (error: unknown): string => {
@@ -93,6 +127,107 @@ const enableEdit = () => {
 const cancelEdit = () => {
   syncEditForm()
   isEditing.value = false
+}
+
+const resetPasswordForm = () => {
+  passwordForm.currentPassword = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+}
+
+const openPasswordDialog = () => {
+  passwordError.value = ''
+  resetPasswordForm()
+  passwordDialogVisible.value = true
+}
+
+const closePasswordDialog = (force = false) => {
+  if (!force && isChangingPassword.value) {
+    return
+  }
+  passwordDialogVisible.value = false
+  passwordError.value = ''
+  resetPasswordForm()
+}
+
+const onPasswordDialogVisibleChange = (visible: boolean) => {
+  if (visible) {
+    passwordDialogVisible.value = true
+    return
+  }
+  closePasswordDialog()
+}
+
+const validatePasswordForm = (): string => {
+  if (!passwordForm.currentPassword) {
+    return '请输入当前密码'
+  }
+  if (!passwordForm.newPassword) {
+    return '请输入新密码'
+  }
+  if (passwordForm.newPassword.length < 8 || passwordForm.newPassword.length > 64) {
+    return '新密码长度需在8-64位之间'
+  }
+  if (!/[A-Za-z]/.test(passwordForm.newPassword)
+    || !/\d/.test(passwordForm.newPassword)
+    || !/[^A-Za-z\d]/.test(passwordForm.newPassword)) {
+    return '新密码需包含字母、数字和特殊字符'
+  }
+  if (!passwordForm.confirmPassword) {
+    return '请输入确认新密码'
+  }
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    return '两次输入的新密码不一致'
+  }
+  if (passwordForm.currentPassword === passwordForm.newPassword) {
+    return '新密码不能与当前密码相同'
+  }
+  return ''
+}
+
+const changePassword = async () => {
+  if (isChangingPassword.value) {
+    return
+  }
+
+  const validationError = validatePasswordForm()
+  if (validationError) {
+    passwordError.value = validationError
+    return
+  }
+
+  isChangingPassword.value = true
+  passwordError.value = ''
+  try {
+    await updateAdminPassword({
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword,
+      confirmPassword: passwordForm.confirmPassword,
+    })
+
+    closePasswordDialog(true)
+    toast.add({
+      title: '管理员密码修改成功',
+      description: '请使用新密码重新登录',
+      type: 'success',
+    })
+
+    try {
+      await adminAuthStore.logout()
+    } catch {
+      adminAuthStore.clear()
+    }
+    await router.replace({
+      name: 'adminLogin',
+      query: {
+        logoutReset: Date.now().toString(),
+      },
+    })
+  } catch (error) {
+    passwordError.value = resolveErrorMessage(error)
+  } finally {
+    isChangingPassword.value = false
+  }
 }
 
 const saveProfile = async () => {
@@ -306,7 +441,7 @@ onMounted(() => {
                   <h4 class="text-sm text-slate-700 dark:text-gray-300 mb-1">SECURITY_KEYS (PASSWORD)</h4>
                   <p class="text-xs text-slate-500 dark:text-gray-600">BCrypt hashed. Requires specific permissions to alter.</p>
                 </div>
-                <button type="button" class="w-full sm:w-auto border border-slate-400 dark:border-gray-600 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-700 dark:hover:border-white px-3 py-2 sm:py-1 text-xs uppercase transition-colors cursor-pointer">
+                <button type="button" @click="openPasswordDialog" class="w-full sm:w-auto border border-slate-400 dark:border-gray-600 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-700 dark:hover:border-white px-3 py-2 sm:py-1 text-xs uppercase transition-colors cursor-pointer">
                   --reset-passwd
                 </button>
               </div>
@@ -339,6 +474,101 @@ onMounted(() => {
 
       </div>
     </main>
+
+    <Dialog
+      :visible="passwordDialogVisible"
+      modal
+      :draggable="false"
+      :closable="!isChangingPassword"
+      :dismissableMask="!isChangingPassword"
+      :pt="{
+        mask: { class: 'bg-black/45 backdrop-blur-[1px] z-[120]' },
+        root: {
+          class:
+            'w-[min(94vw,560px)] rounded-lg border border-[#cbd5e1] dark:border-[#273138] bg-white dark:bg-[#0e1317] shadow-[0_18px_40px_rgba(15,23,42,0.28)] dark:shadow-[0_24px_48px_rgba(2,6,23,0.68)] overflow-hidden'
+        },
+        header: {
+          class:
+            'border-b border-[#cbd5e1] dark:border-[#273138] bg-[#eef2f6] dark:bg-[#151b21] px-4 sm:px-5 py-3 flex items-center justify-between'
+        },
+        content: { class: 'px-4 sm:px-5 py-4 text-sm text-slate-700 dark:text-gray-300' },
+        footer: {
+          class:
+            'px-4 sm:px-5 py-3 border-t border-[#cbd5e1] dark:border-[#273138] bg-[#f8fafc] dark:bg-[#151b21] flex flex-col-reverse sm:flex-row sm:justify-end gap-3'
+        }
+      }"
+      @update:visible="onPasswordDialogVisibleChange"
+    >
+      <template #header>
+        <div class="flex items-center gap-2 min-w-0">
+          <i class="pi pi-lock text-[#e95322]"></i>
+          <span class="text-sm sm:text-base font-semibold text-slate-800 dark:text-gray-100 uppercase tracking-wider truncate">Modify_Admin_Password</span>
+        </div>
+      </template>
+
+      <form id="admin-password-form" class="space-y-4" @submit.prevent="changePassword">
+        <div v-if="passwordError" class="rounded border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-xs text-red-600 dark:text-red-300">
+          {{ passwordError }}
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-gray-500 mb-2">CURRENT_PASSWORD</label>
+          <input
+            v-model="passwordForm.currentPassword"
+            type="password"
+            autocomplete="current-password"
+            class="w-full bg-transparent border border-[#cbd5e1] dark:border-[#273138] text-slate-800 dark:text-gray-200 px-3 py-2 outline-none text-sm focus:border-[#e95322] transition-colors"
+            placeholder="Enter current password"
+          >
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-gray-500 mb-2">NEW_PASSWORD</label>
+          <input
+            v-model="passwordForm.newPassword"
+            type="password"
+            autocomplete="new-password"
+            class="w-full bg-transparent border border-[#cbd5e1] dark:border-[#273138] text-slate-800 dark:text-gray-200 px-3 py-2 outline-none text-sm focus:border-[#e95322] transition-colors"
+            placeholder="8-64 chars with letter, number and symbol"
+          >
+          <div class="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-gray-500">
+            <span>PASSWORD_STRENGTH</span>
+            <span :class="passwordStrengthLevel.color">{{ passwordStrengthLevel.text }}</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-gray-500 mb-2">CONFIRM_NEW_PASSWORD</label>
+          <input
+            v-model="passwordForm.confirmPassword"
+            type="password"
+            autocomplete="new-password"
+            class="w-full bg-transparent border border-[#cbd5e1] dark:border-[#273138] text-slate-800 dark:text-gray-200 px-3 py-2 outline-none text-sm focus:border-[#e95322] transition-colors"
+            placeholder="Re-enter new password"
+          >
+        </div>
+      </form>
+
+      <template #footer>
+        <Button
+          type="button"
+          :disabled="isChangingPassword"
+          @click="closePasswordDialog()"
+          class="w-full sm:w-auto cursor-pointer border border-slate-400 dark:border-gray-600 text-slate-600 dark:text-gray-300 px-4 py-2 text-sm font-semibold hover:border-slate-700 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-colors"
+        >
+          取消
+        </Button>
+        <Button
+          type="button"
+          :disabled="!canSubmitPassword || isChangingPassword"
+          @click="changePassword"
+          class="w-full sm:w-auto cursor-pointer bg-[#e95322] border border-[#e95322] text-white px-4 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-colors"
+        >
+          <span v-if="isChangingPassword">提交中...</span>
+          <span v-else>确认修改</span>
+        </Button>
+      </template>
+    </Dialog>
   </div>
 </template>
 

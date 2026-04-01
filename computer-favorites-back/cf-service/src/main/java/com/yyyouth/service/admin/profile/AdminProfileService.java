@@ -1,5 +1,6 @@
 package com.yyyouth.service.admin.profile;
 
+import com.yyyouth.model.dto.admin.AdminPasswordUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminProfileUpdateDTO;
 import com.yyyouth.model.vo.admin.AdminProfileVO;
 
@@ -24,4 +25,11 @@ public interface AdminProfileService {
      * @param updateDTO 更新参数
      */
     void updateLoginAdminProfile(AdminProfileUpdateDTO updateDTO);
+
+    /**
+     * 更新登录管理员密码
+     *
+     * @param updateDTO 修改密码参数
+     */
+    void updateLoginAdminPassword(AdminPasswordUpdateDTO updateDTO);
 }

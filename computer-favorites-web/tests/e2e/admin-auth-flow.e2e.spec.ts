@@ -107,4 +107,105 @@ test.describe('管理端认证链路', () => {
     expect(storageSnapshot.accessToken).toBe('user-token-keep')
     expect(storageSnapshot.tokenName).toBe('satoken')
   })
+
+  test('管理员修改密码成功后应退出并跳转登录页', async ({ context, page }) => {
+    const passwordHeaders: Record<string, string>[] = []
+
+    await context.addInitScript(() => {
+      localStorage.setItem('adminAccessToken', 'admin-token-change-password')
+      localStorage.setItem('adminTokenName', 'satoken')
+      localStorage.setItem('adminUserId', '9001')
+      localStorage.setItem('adminUsername', 'root_admin')
+      localStorage.setItem('adminNickname', '超级管理员')
+    })
+
+    await page.route('**/api/admin/auth/session/current', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '查询成功',
+          data: {
+            userId: 9001,
+            tokenValue: 'admin-token-change-password',
+            deviceType: 'web',
+            timeoutSeconds: 1800,
+          },
+        }),
+      })
+    })
+
+    await page.route('**/api/admin/auth/session/renew', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '续期成功',
+        }),
+      })
+    })
+
+    await page.route('**/api/admin/profile/current', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '查询成功',
+          data: {
+            id: 9001,
+            username: 'root_admin',
+            email: 'admin@test.com',
+            avatar: '',
+            nickname: '超级管理员',
+            role: 'super_admin',
+            status: 1,
+            lastLoginTime: '2026-03-31 10:00:00',
+            lastLoginIp: '127.0.0.1',
+            createTime: '2026-03-01 00:00:00',
+            updateTime: '2026-03-31 10:00:00',
+          },
+        }),
+      })
+    })
+
+    await page.route('**/api/admin/profile/password', async (route) => {
+      passwordHeaders.push(route.request().headers())
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '密码修改成功',
+        }),
+      })
+    })
+
+    await page.route('**/api/admin/auth/session', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '退出成功',
+        }),
+      })
+    })
+
+    await page.goto('/computer/admin/profile')
+
+    await page.getByRole('button', { name: '--reset-passwd' }).click()
+    await page.getByPlaceholder('Enter current password').fill('Admin@123456')
+    await page.getByPlaceholder('8-64 chars with letter, number and symbol').fill('Admin@654321')
+    await page.getByPlaceholder('Re-enter new password').fill('Admin@654321')
+    await page.getByRole('button', { name: '确认修改' }).click()
+
+    await expect(page).toHaveURL(/\/computer\/admin\/login\?logoutReset=/)
+
+    expect(passwordHeaders.length).toBeGreaterThan(0)
+    expect(passwordHeaders[0].satoken).toBe('admin-token-change-password')
+    expect(passwordHeaders[0].authorization).toBeUndefined()
+  })
 })

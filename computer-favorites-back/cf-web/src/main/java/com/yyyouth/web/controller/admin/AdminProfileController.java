@@ -2,12 +2,14 @@ package com.yyyouth.web.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.yyyouth.common.web.HttpResult;
+import com.yyyouth.model.dto.admin.AdminPasswordUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminProfileUpdateDTO;
 import com.yyyouth.model.vo.admin.AdminProfileVO;
 import com.yyyouth.service.admin.profile.AdminProfileService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -57,10 +59,26 @@ public class AdminProfileController {
     @ApiOperation(value = "更新当前登录管理员资料")
     @PutMapping({"", "/"})
     @SaCheckPermission(value = "admin:profile:edit", type = "admin")
-    public HttpResult updateLoginAdminProfile(@RequestBody @Valid AdminProfileUpdateDTO updateDTO) {
+    public HttpResult updateLoginAdminProfile(@RequestBody @Valid @NotNull AdminProfileUpdateDTO updateDTO) {
         log.info("更新管理员资料请求");
         adminProfileService.updateLoginAdminProfile(updateDTO);
         log.info("更新管理员资料成功");
         return HttpResult.success("保存成功");
+    }
+
+    /**
+     * 更新当前登录管理员密码
+     *
+     * @param updateDTO 修改密码参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "更新当前登录管理员密码")
+    @PutMapping("/password")
+    @SaCheckPermission(value = "admin:profile:password", type = "admin")
+    public HttpResult updateLoginAdminPassword(@RequestBody @Valid @NotNull AdminPasswordUpdateDTO updateDTO) {
+        log.info("更新管理员密码请求");
+        adminProfileService.updateLoginAdminPassword(updateDTO);
+        log.info("更新管理员密码成功");
+        return HttpResult.success("密码修改成功");
     }
 }

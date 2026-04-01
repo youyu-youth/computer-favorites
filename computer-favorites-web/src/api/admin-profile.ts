@@ -1,7 +1,7 @@
 import { getJson, putJson } from '@/utils/http'
 import type { ApiResult } from '@/api/types'
 import { buildAdminAuthHeaders } from '@/api/admin-auth-headers'
-import type { AdminProfile, UpdateAdminProfileRequest } from '@/types/admin'
+import type { AdminProfile, UpdateAdminPasswordRequest, UpdateAdminProfileRequest } from '@/types/admin'
 
 export async function getAdminProfile(): Promise<AdminProfile> {
   const res = await getJson<ApiResult<AdminProfile>>('/api/admin/profile/current', {
@@ -22,5 +22,14 @@ export async function updateAdminProfile(payload: UpdateAdminProfileRequest): Pr
   })
   if (res.code !== 200) {
     throw new Error(res.msg || '保存管理员资料失败')
+  }
+}
+
+export async function updateAdminPassword(payload: UpdateAdminPasswordRequest): Promise<void> {
+  const res = await putJson<ApiResult<null>>('/api/admin/profile/password', payload, {
+    headers: buildAdminAuthHeaders(),
+  })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '管理员密码修改失败')
   }
 }
