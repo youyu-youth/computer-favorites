@@ -32,6 +32,12 @@ const router = createRouter({
           meta: { requiresAdminAuth: true, title: '网站管理' },
         },
         {
+          path: 'websites/:id',
+          name: 'adminWebsiteDetail',
+          component: () => import('@/views/admin/AdminWebsiteDetailView.vue'),
+          meta: { requiresAdminAuth: true, title: '网站详情' },
+        },
+        {
           path: 'profile',
           name: 'adminProfile',
           component: () => import('@/views/admin/AdminProfileView.vue'),

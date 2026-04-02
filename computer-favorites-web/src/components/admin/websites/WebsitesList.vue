@@ -1,18 +1,131 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
+import shangjiaIcon from '@/assets/icons/svg/shangjia.svg'
+import xiajiaIcon from '@/assets/icons/svg/xiajia.svg'
+import type { AdminWebsiteStatusValue } from '@/types/admin-website'
+
+import { shallowRef } from 'vue'
+
+type WebsiteCard = {
+    id: number
+    title: string
+    author: string
+    isOfficial: boolean
+    icon: string
+    fallbackIcon: string
+    iconBg: string
+    description: string
+    tags: Array<{ name: string; status: 'good' | 'warning' }>
+    status: AdminWebsiteStatusValue
+    deleted: number
+}
+
+const DEFAULT_WEBSITE_ICON = 'fas fa-globe'
+
+const failedImageIds = shallowRef<number[]>([])
 
 const props = defineProps<{
-        servers: Array<{
-            id: number;
-            title: string;
-            author: string;
-            isOfficial: boolean;
-            icon: string;
-            iconBg: string;
-            description: string;
-            tags: Array<{ name: string; status: 'good' | 'warning' }>;
-        }>;
-        viewMode: string;
+        servers: WebsiteCard[]
+        viewMode: string
+    selectedIds: number[]
+    updatingWebsiteIds: number[]
 }>()
+
+const emit = defineEmits<{
+    (e: 'toggle-select', websiteId: number): void
+    (e: 'update-status', payload: { websiteId: number; status: AdminWebsiteStatusValue }): void
+    (e: 'view-detail', websiteId: number): void
+}>()
+
+const isImageUrl = (icon: string): boolean => {
+    if (!icon) {
+        return false
+    }
+    const normalizedIcon = icon.trim().toLowerCase()
+    if (!normalizedIcon) {
+        return false
+    }
+    if (normalizedIcon.startsWith('http://') || normalizedIcon.startsWith('https://')) {
+        return true
+    }
+    if (normalizedIcon.startsWith('data:image/')) {
+        return true
+    }
+    if (normalizedIcon.startsWith('/')) {
+        return true
+    }
+    return /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/.test(normalizedIcon)
+}
+
+const shouldShowImageIcon = (server: WebsiteCard): boolean => {
+    return isImageUrl(server.icon) && !failedImageIds.value.includes(server.id)
+}
+
+const handleImageError = (serverId: number): void => {
+    if (failedImageIds.value.includes(serverId)) {
+        return
+    }
+    failedImageIds.value = [...failedImageIds.value, serverId]
+}
+
+const resolveFallbackIcon = (server: WebsiteCard): string => {
+    return server.fallbackIcon || DEFAULT_WEBSITE_ICON
+}
+
+const isSelected = (serverId: number): boolean => {
+    return props.selectedIds.includes(serverId)
+}
+
+const isStatusUpdating = (serverId: number): boolean => {
+    return props.updatingWebsiteIds.includes(serverId)
+}
+
+const isDeletedServer = (server: WebsiteCard): boolean => {
+    return server.deleted === 1
+}
+
+const resolveStatusText = (server: WebsiteCard): string => {
+    if (isDeletedServer(server)) {
+        return '已删除'
+    }
+    return server.status === 1 ? '已上架' : '已下架'
+}
+
+const resolveStatusBadgeClass = (server: WebsiteCard): string => {
+    if (isDeletedServer(server)) {
+        return 'border-gray-300 bg-gray-100 text-gray-600 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-300'
+    }
+    if (server.status === 1) {
+        return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-200'
+    }
+    return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-900/25 dark:text-amber-200'
+}
+
+const resolveStatusActionLabel = (server: WebsiteCard): string => {
+    return server.status === 1 ? '下架' : '上架'
+}
+
+const resolveStatusActionIcon = (server: WebsiteCard): string => {
+    return server.status === 1 ? xiajiaIcon : shangjiaIcon
+}
+
+const handleToggleSelect = (server: WebsiteCard): void => {
+    if (isDeletedServer(server)) {
+        return
+    }
+    emit('toggle-select', server.id)
+}
+
+const handleToggleStatus = (server: WebsiteCard): void => {
+    if (isDeletedServer(server)) {
+        return
+    }
+    const targetStatus: AdminWebsiteStatusValue = server.status === 1 ? 0 : 1
+    emit('update-status', { websiteId: server.id, status: targetStatus })
+}
+
+const handleViewDetail = (server: WebsiteCard): void => {
+    emit('view-detail', server.id)
+}
 </script>
 
 <template>
@@ -35,32 +148,74 @@ const props = defineProps<{
 
         <!-- 列表视图图标区 -->
         <div v-if="viewMode === 'list'" class="p-4 sm:pr-0 flex items-center justify-center sm:justify-start">
-            <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" :class="server.iconBg">
-                <i :class="server.icon" class="text-white text-xl"></i>
+                        <div
+                            class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden"
+                            :class="shouldShowImageIcon(server) ? 'bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border' : server.iconBg"
+                        >
+                                <img
+                                    v-if="shouldShowImageIcon(server)"
+                                    :src="server.icon"
+                                    :alt="`${server.title} 图标`"
+                                    class="h-10 w-10 rounded-md object-cover"
+                                    @error="handleImageError(server.id)"
+                                >
+                                <i v-else :class="resolveFallbackIcon(server)" class="text-white text-xl"></i>
             </div>
         </div>
 
         <!-- 卡片内容 -->
         <div :class="[viewMode === 'list' ? 'flex-grow p-4' : '']">
             <!-- 头部：图标、标题、操作 -->
-            <div class="flex items-start justify-between mb-4">
+            <div
+                class="-m-1 mb-3 cursor-pointer rounded-lg p-1 transition-colors hover:bg-gray-50 dark:hover:bg-dark-card/40"
+                @click="handleViewDetail(server)"
+            >
+                <div class="flex items-start justify-between mb-4">
                 <div class="flex items-center gap-3">
                     <!-- 网格视图图标 -->
-                    <div v-if="viewMode === 'grid'" class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" :class="server.iconBg">
-                        <i :class="server.icon" class="text-white text-lg"></i>
+                                        <div
+                                            v-if="viewMode === 'grid'"
+                                            class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden"
+                                            :class="shouldShowImageIcon(server) ? 'bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border' : server.iconBg"
+                                        >
+                                                <img
+                                                    v-if="shouldShowImageIcon(server)"
+                                                    :src="server.icon"
+                                                    :alt="`${server.title} 图标`"
+                                                    class="h-8 w-8 rounded-md object-cover"
+                                                    @error="handleImageError(server.id)"
+                                                >
+                                                <i v-else :class="resolveFallbackIcon(server)" class="text-white text-lg"></i>
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <a href="#" class="text-brand-blue font-medium hover:underline">{{ server.title }}</a>
+                            <span class="text-brand-blue font-medium hover:underline">{{ server.title }}</span>
                             <span v-if="server.isOfficial" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-brand-blue border border-blue-200 dark:border-blue-800/50">official</span>
                         </div>
                         <div class="text-gray-500 dark:text-gray-500 text-xs">{{ server.author }}</div>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 text-gray-400 dark:text-gray-500">
-                    <button class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer" title="Copy"><i class="far fa-copy"></i></button>
-                    <button class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer" title="Settings"><i class="fas fa-wrench"></i></button>
-                    <button class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer" title="Link"><i class="fas fa-link"></i></button>
+                    <button
+                        type="button"
+                        :disabled="isDeletedServer(server)"
+                        @click.stop="handleToggleSelect(server)"
+                        class="cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        :class="isSelected(server.id) ? 'text-brand-orange' : 'hover:text-gray-700 dark:hover:text-gray-300'"
+                        :title="isSelected(server.id) ? '取消选择' : '选择网站'"
+                    >
+                        <i :class="isSelected(server.id) ? 'fas fa-check-square' : 'far fa-square'"></i>
+                    </button>
+                    <button
+                        type="button"
+                        class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                        title="详情"
+                        @click.stop="handleViewDetail(server)"
+                    >
+                        <i class="fas fa-circle-info"></i>
+                    </button>
+                    <button type="button" class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer" title="Settings" @click.stop><i class="fas fa-wrench"></i></button>
+                    <button type="button" class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer" title="Link" @click.stop><i class="fas fa-link"></i></button>
                 </div>
             </div>
 
@@ -78,6 +233,33 @@ const props = defineProps<{
             <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
                 {{ server.description }}
             </p>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between gap-3">
+                <span
+                    class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium"
+                    :class="resolveStatusBadgeClass(server)"
+                >
+                    {{ resolveStatusText(server) }}
+                </span>
+
+                <button
+                    type="button"
+                    :disabled="isDeletedServer(server) || isStatusUpdating(server.id)"
+                    @click.stop="handleToggleStatus(server)"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                    :class="server.status === 1
+                        ? 'border-amber-300 bg-amber-50 text-[#2d241f] hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/20 dark:text-[#e95322] dark:hover:bg-amber-900/35'
+                        : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-200 dark:hover:bg-emerald-900/35'"
+                >
+                    <img
+                        :src="resolveStatusActionIcon(server)"
+                        :alt="resolveStatusActionLabel(server)"
+                        class="h-3.5 w-3.5"
+                    >
+                    <span>{{ isStatusUpdating(server.id) ? '处理中...' : resolveStatusActionLabel(server) }}</span>
+                </button>
+            </div>
         </div>
     </div>
   </transition-group>

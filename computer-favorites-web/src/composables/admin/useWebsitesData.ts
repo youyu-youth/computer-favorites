@@ -1,13 +1,17 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import {
+    batchUpdateAdminWebsiteStatus,
     getAdminWebsiteCategories,
     getAdminWebsitePage,
     getAdminWebsiteStats,
+    updateAdminWebsiteStatus,
 } from '@/api/admin-website'
 import { useAdminNavStore } from '@/stores/adminNav'
+import { useToast } from '@/composables/useToast'
 import type {
     AdminWebsiteListItem,
+    AdminWebsiteStatusValue,
     AdminWebsiteStats,
     DeletedFilterValue,
 } from '@/types/admin-website'
@@ -25,9 +29,12 @@ type WebsiteCardItem = {
     author: string
     isOfficial: boolean
     icon: string
+    fallbackIcon: string
     iconBg: string
     description: string
     tags: WebsiteTag[]
+    status: AdminWebsiteStatusValue
+    deleted: number
 }
 
 type WebsiteCategoryItem = {
@@ -39,6 +46,14 @@ type WebsiteCategoryItem = {
 const ALL_CATEGORY_ID = 0
 const DEFAULT_PAGE_SIZE = 12
 const SEARCH_DEBOUNCE_MS = 300
+
+type LoadWebsitePageOptions = {
+    silent?: boolean
+}
+
+type ReloadDataOptions = {
+    silentListLoading?: boolean
+}
 
 function resolveErrorMessage(error: unknown, fallback: string): string {
     if (error instanceof Error && error.message) {
@@ -85,17 +100,17 @@ function resolveCardIconBg(record: AdminWebsiteListItem): string {
 
 function resolveCardTags(record: AdminWebsiteListItem): WebsiteTag[] {
     const statusTag: WebsiteTag = {
-        name: record.deleted === 1 ? 'deleted' : record.status === 1 ? 'online' : 'offline',
+        name: record.deleted === 1 ? '已删除' : record.status === 1 ? '已上架' : '已下架',
         status: record.deleted === 1 ? 'warning' : 'good',
     }
 
     const auditTag: WebsiteTag = {
-        name: record.auditStatus === 0 ? 'pending' : record.auditStatus === 2 ? 'rejected' : 'approved',
+        name: record.auditStatus === 0 ? '待审核' : record.auditStatus === 2 ? '已拒绝' : '已通过',
         status: record.auditStatus === 2 ? 'warning' : 'good',
     }
 
     const recommendTag: WebsiteTag = {
-        name: record.isRecommend === 1 ? 'recommend' : 'normal',
+        name: record.isRecommend === 1 ? '已推荐' : '普通',
         status: record.isRecommend === 1 ? 'good' : 'warning',
     }
 
@@ -108,15 +123,19 @@ function mapRecordToCard(record: AdminWebsiteListItem): WebsiteCardItem {
         title: record.name,
         author: record.categoryName || '未分类',
         isOfficial: record.source === 0,
-        icon: resolveCardIcon(record),
+        icon: (record.icon || '').trim(),
+        fallbackIcon: resolveCardIcon(record),
         iconBg: resolveCardIconBg(record),
         description: record.summary || record.description || record.url || '-',
         tags: resolveCardTags(record),
+        status: record.status,
+        deleted: record.deleted,
     }
 }
 
 export function useWebsitesData() {
     const adminNavStore = useAdminNavStore()
+    const { add: showToast } = useToast()
     const { selectedCategoryId, activeMenu } = storeToRefs(adminNavStore)
 
     const viewMode = ref('grid')
@@ -138,6 +157,9 @@ export function useWebsitesData() {
     ])
 
     const servers = ref<WebsiteCardItem[]>([])
+    const selectedIds = ref<number[]>([])
+    const updatingWebsiteIds = ref<number[]>([])
+    const batchStatusUpdating = ref(false)
     const currentPage = ref(1)
     const totalItems = ref(0)
     const loading = ref(false)
@@ -180,6 +202,16 @@ export function useWebsitesData() {
 
     const filteredServers = computed(() => servers.value)
 
+    const selectedCount = computed(() => selectedIds.value.length)
+
+    const allSelectableSelected = computed(() => {
+        const selectableIds = servers.value.filter((item) => item.deleted !== 1).map((item) => item.id)
+        if (selectableIds.length === 0) {
+            return false
+        }
+        return selectableIds.every((id) => selectedIds.value.includes(id))
+    })
+
     const formattedStats = computed(() => ({
         total: stats.value.total,
         online: stats.value.online,
@@ -212,15 +244,19 @@ export function useWebsitesData() {
         stats.value = await getAdminWebsiteStats(deletedFilter.value)
     }
 
-    const loadWebsitePage = async () => {
+    const loadWebsitePage = async (options?: LoadWebsitePageOptions) => {
         if (activeMenu.value !== 'websites') {
             return
         }
 
+        const silent = options?.silent === true
+
         listRequestId += 1
         const requestId = listRequestId
-        loading.value = true
-        errorMessage.value = ''
+        if (!silent) {
+            loading.value = true
+            errorMessage.value = ''
+        }
         try {
             const pageData = await getAdminWebsitePage({
                 pageNum: currentPage.value,
@@ -236,6 +272,9 @@ export function useWebsitesData() {
 
             totalItems.value = Number(pageData.total || 0)
             servers.value = (pageData.records || []).map(mapRecordToCard)
+            selectedIds.value = selectedIds.value.filter((id) =>
+                servers.value.some((item) => item.id === id && item.deleted !== 1)
+            )
 
             if (totalItems.value > 0 && currentPage.value > totalPages.value) {
                 currentPage.value = totalPages.value
@@ -245,11 +284,15 @@ export function useWebsitesData() {
             if (requestId !== listRequestId) {
                 return
             }
-            servers.value = []
-            totalItems.value = 0
-            errorMessage.value = resolveErrorMessage(error, '网站列表加载失败')
+            if (!silent) {
+                servers.value = []
+                totalItems.value = 0
+                errorMessage.value = resolveErrorMessage(error, '网站列表加载失败')
+                return
+            }
+            throw error
         } finally {
-            if (requestId === listRequestId) {
+            if (requestId === listRequestId && !silent) {
                 loading.value = false
             }
         }
@@ -282,17 +325,111 @@ export function useWebsitesData() {
         await loadWebsitePage()
     }
 
-    const reloadData = async () => {
+    const reloadData = async (options?: ReloadDataOptions) => {
         if (activeMenu.value !== 'websites') {
             return
         }
 
-        errorMessage.value = ''
+        const silentListLoading = options?.silentListLoading === true
+
+        if (!silentListLoading) {
+            errorMessage.value = ''
+        }
         try {
             await Promise.all([loadCategories(), loadStats()])
-            await loadWebsitePage()
+            await loadWebsitePage({ silent: silentListLoading })
         } catch (error) {
-            errorMessage.value = resolveErrorMessage(error, '网站管理数据加载失败')
+            if (!silentListLoading) {
+                errorMessage.value = resolveErrorMessage(error, '网站管理数据加载失败')
+                return
+            }
+            throw error
+        }
+    }
+
+    const clearSelection = () => {
+        selectedIds.value = []
+    }
+
+    const toggleSelect = (websiteId: number) => {
+        const targetWebsite = servers.value.find((item) => item.id === websiteId)
+        if (!targetWebsite || targetWebsite.deleted === 1) {
+            return
+        }
+
+        if (selectedIds.value.includes(websiteId)) {
+            selectedIds.value = selectedIds.value.filter((id) => id !== websiteId)
+            return
+        }
+        selectedIds.value = [...selectedIds.value, websiteId]
+    }
+
+    const toggleSelectAll = () => {
+        if (allSelectableSelected.value) {
+            clearSelection()
+            return
+        }
+        selectedIds.value = servers.value
+            .filter((item) => item.deleted !== 1)
+            .map((item) => item.id)
+    }
+
+    const updateWebsiteStatus = async (websiteId: number, status: AdminWebsiteStatusValue) => {
+        const targetWebsite = servers.value.find((item) => item.id === websiteId)
+        if (!targetWebsite) {
+            return
+        }
+        if (targetWebsite.deleted === 1) {
+            showToast({ type: 'warning', title: '已删除网站不可修改上架状态' })
+            return
+        }
+        if (targetWebsite.status === status) {
+            showToast({ type: 'info', title: status === 1 ? '该网站已是上架状态' : '该网站已是下架状态' })
+            return
+        }
+        if (updatingWebsiteIds.value.includes(websiteId) || batchStatusUpdating.value) {
+            return
+        }
+
+        updatingWebsiteIds.value = [...updatingWebsiteIds.value, websiteId]
+        try {
+            await updateAdminWebsiteStatus({ websiteId, status })
+            showToast({ type: 'success', title: status === 1 ? '网站上架成功' : '网站下架成功' })
+            selectedIds.value = selectedIds.value.filter((id) => id !== websiteId)
+            await reloadData({ silentListLoading: true })
+        } catch (error) {
+            showToast({ type: 'error', title: resolveErrorMessage(error, '更新网站状态失败') })
+        } finally {
+            updatingWebsiteIds.value = updatingWebsiteIds.value.filter((id) => id !== websiteId)
+        }
+    }
+
+    const batchUpdateWebsiteStatus = async (status: AdminWebsiteStatusValue) => {
+        if (batchStatusUpdating.value) {
+            return
+        }
+        const websiteIds = selectedIds.value.filter((id) =>
+            servers.value.some((item) => item.id === id && item.deleted !== 1)
+        )
+        if (websiteIds.length === 0) {
+            showToast({ type: 'warning', title: '请先选择要操作的网站' })
+            return
+        }
+
+        batchStatusUpdating.value = true
+        try {
+            const updatedCount = await batchUpdateAdminWebsiteStatus({ websiteIds, status })
+            clearSelection()
+            showToast({
+                type: 'success',
+                title: status === 1 ? '批量上架成功' : '批量下架成功',
+                description: `共更新 ${updatedCount} 条网站记录`,
+            })
+            await reloadData({ silentListLoading: true })
+        } catch (error) {
+            showToast({ type: 'error', title: resolveErrorMessage(error, '批量更新网站状态失败') })
+        } finally {
+            batchStatusUpdating.value = false
         }
     }
 
@@ -301,6 +438,7 @@ export function useWebsitesData() {
         syncingCategorySelection = true
         adminNavStore.setSelectedCategoryId(ALL_CATEGORY_ID)
         syncingCategorySelection = false
+        clearSelection()
         await reloadData()
     })
 
@@ -315,6 +453,7 @@ export function useWebsitesData() {
             return
         }
         currentPage.value = 1
+        clearSelection()
         await loadWebsitePage()
     })
 
@@ -334,6 +473,7 @@ export function useWebsitesData() {
             clearTimeout(searchTimer)
         }
         searchTimer = setTimeout(() => {
+            clearSelection()
             void loadWebsitePage()
         }, SEARCH_DEBOUNCE_MS)
     })
@@ -366,6 +506,16 @@ export function useWebsitesData() {
         loading,
         errorMessage,
         stats: formattedStats,
+        selectedIds,
+        selectedCount,
+        allSelectableSelected,
+        updatingWebsiteIds,
+        batchStatusUpdating,
+        toggleSelect,
+        toggleSelectAll,
+        clearSelection,
+        updateWebsiteStatus,
+        batchUpdateWebsiteStatus,
         prevPage,
         nextPage,
         goToPage,

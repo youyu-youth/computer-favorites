@@ -2,9 +2,12 @@ package com.yyyouth.web.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.yyyouth.common.web.HttpResult;
+import com.yyyouth.model.dto.admin.AdminWebsiteBatchStatusUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
 import com.yyyouth.model.vo.admin.AdminWebsiteCategoryVO;
+import com.yyyouth.model.vo.admin.AdminWebsiteDetailVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteLogoUploadVO;
 import com.yyyouth.model.vo.admin.AdminWebsitePageVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteStatsVO;
@@ -14,12 +17,15 @@ import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -59,6 +65,22 @@ public class AdminWebsiteController {
         AdminWebsitePageVO pageVO = adminWebsiteService.queryWebsitePage(queryDTO);
         log.info("查询管理端网站列表成功，total={}", pageVO.getTotal());
         return HttpResult.success("查询成功", pageVO);
+    }
+
+    /**
+     * 查询网站详情
+     *
+     * @param id 网站ID
+     * @return 网站详情
+     */
+    @ApiOperation(value = "查询网站详情")
+    @GetMapping("/{id}")
+    @SaCheckPermission(value = "admin:website:detail", type = "admin")
+    public HttpResult detail(@PathVariable("id") @NotNull @Positive Long id) {
+        log.info("查询管理端网站详情请求，id={}", id);
+        AdminWebsiteDetailVO detailVO = adminWebsiteService.queryWebsiteDetail(id);
+        log.info("查询管理端网站详情成功，id={}", id);
+        return HttpResult.success("查询成功", detailVO);
     }
 
     /**
@@ -139,5 +161,37 @@ public class AdminWebsiteController {
         Long websiteId = adminWebsiteService.createWebsite(createDTO);
         log.info("管理端新增网站成功，websiteId={}", websiteId);
         return HttpResult.success("添加网站成功", websiteId);
+    }
+
+    /**
+     * 更新网站上架状态
+     *
+     * @param updateDTO 状态更新参数
+     * @return 操作结果
+     */
+    @ApiOperation(value = "更新网站上架状态")
+    @PutMapping("/status")
+    @SaCheckPermission(value = "admin:website:status", type = "admin")
+    public HttpResult updateWebsiteStatus(@RequestBody @Valid @NotNull AdminWebsiteStatusUpdateDTO updateDTO) {
+        log.info("管理端更新网站状态请求，websiteId={}, status={}", updateDTO.getWebsiteId(), updateDTO.getStatus());
+        adminWebsiteService.updateWebsiteStatus(updateDTO);
+        log.info("管理端更新网站状态成功，websiteId={}, status={}", updateDTO.getWebsiteId(), updateDTO.getStatus());
+        return HttpResult.success("网站状态更新成功");
+    }
+
+    /**
+     * 批量更新网站上架状态
+     *
+     * @param updateDTO 批量状态更新参数
+     * @return 操作结果
+     */
+    @ApiOperation(value = "批量更新网站上架状态")
+    @PutMapping("/status/batch")
+    @SaCheckPermission(value = "admin:website:status", type = "admin")
+    public HttpResult batchUpdateWebsiteStatus(@RequestBody @Valid @NotNull AdminWebsiteBatchStatusUpdateDTO updateDTO) {
+        log.info("管理端批量更新网站状态请求，count={}, status={}", updateDTO.getWebsiteIds().size(), updateDTO.getStatus());
+        int updatedCount = adminWebsiteService.batchUpdateWebsiteStatus(updateDTO);
+        log.info("管理端批量更新网站状态成功，updatedCount={}, status={}", updatedCount, updateDTO.getStatus());
+        return HttpResult.success("批量状态更新成功", updatedCount);
     }
 }

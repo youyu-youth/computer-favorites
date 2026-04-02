@@ -7,11 +7,14 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.common.utils.SensitiveWordUtils;
+import com.yyyouth.model.dto.admin.AdminWebsiteBatchStatusUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
 import com.yyyouth.model.vo.admin.AdminWebsiteCategoryVO;
+import com.yyyouth.model.vo.admin.AdminWebsiteDetailVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteListItemVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteLogoUploadVO;
 import com.yyyouth.model.vo.admin.AdminWebsitePageVO;
@@ -142,6 +145,24 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
     }
 
     /**
+     * 查询网站详情
+     *
+     * @param websiteId 网站ID
+     * @return 网站详情
+     */
+    @Override
+    public AdminWebsiteDetailVO queryWebsiteDetail(Long websiteId) {
+        Website website = websiteMapper.selectById(websiteId);
+        if (website == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "网站不存在");
+        }
+
+        AdminWebsiteDetailVO detailVO = BeanUtil.copyProperties(website, AdminWebsiteDetailVO.class);
+        detailVO.setCategoryName(resolveCategoryName(website.getCategoryId()));
+        return detailVO;
+    }
+
+    /**
      * 查询网站分类统计
      *
      * @param deleted 删除筛选
@@ -253,6 +274,66 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
     }
 
     /**
+     * 更新网站上架状态
+     *
+     * @param updateDTO 状态更新参数
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateWebsiteStatus(AdminWebsiteStatusUpdateDTO updateDTO) {
+        Website website = queryAvailableWebsiteById(updateDTO.getWebsiteId());
+        if (Objects.equals(website.getStatus(), updateDTO.getStatus())) {
+            return;
+        }
+
+        LocalDateTime operationTime = LocalDateTime.now();
+        Website updateEntity = buildStatusUpdateEntity(website.getId(), updateDTO.getStatus(), operationTime);
+        int affectedRows = websiteMapper.updateById(updateEntity);
+        if (affectedRows != 1) {
+            throw new BusinessException(HttpStatus.ERROR, "网站状态更新失败，请稍后重试");
+        }
+    }
+
+    /**
+     * 批量更新网站上架状态
+     *
+     * @param updateDTO 批量状态更新参数
+     * @return 实际更新数量
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int batchUpdateWebsiteStatus(AdminWebsiteBatchStatusUpdateDTO updateDTO) {
+        List<Long> normalizedWebsiteIds = updateDTO.getWebsiteIds().stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (CollUtil.isEmpty(normalizedWebsiteIds)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "网站ID列表不能为空");
+        }
+
+        List<Website> websiteList = queryAvailableWebsiteByIds(normalizedWebsiteIds);
+        if (websiteList.size() != normalizedWebsiteIds.size()) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "存在无效的网站ID，无法批量更新状态");
+        }
+
+        LocalDateTime operationTime = LocalDateTime.now();
+        int updateCount = 0;
+        for (Website website : websiteList) {
+            if (Objects.equals(website.getStatus(), updateDTO.getStatus())) {
+                continue;
+            }
+
+            Website updateEntity = buildStatusUpdateEntity(website.getId(), updateDTO.getStatus(), operationTime);
+            int affectedRows = websiteMapper.updateById(updateEntity);
+            if (affectedRows != 1) {
+                throw new BusinessException(HttpStatus.ERROR, "批量更新网站状态失败，请稍后重试");
+            }
+            updateCount++;
+        }
+        return updateCount;
+    }
+
+    /**
      * 构建网站列表查询条件
      *
      * @param queryDTO 查询参数
@@ -312,6 +393,23 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
                 WebsiteCategory::getName,
                 (left, right) -> left
         ));
+    }
+
+    /**
+     * 查询分类名称
+     *
+     * @param categoryId 分类ID
+     * @return 分类名称
+     */
+    private String resolveCategoryName(Long categoryId) {
+        if (categoryId == null) {
+            return "";
+        }
+        WebsiteCategory category = categoryMapper.selectById(categoryId);
+        if (category == null || !StringUtils.hasText(category.getName())) {
+            return "";
+        }
+        return category.getName();
     }
 
     /**
@@ -437,6 +535,60 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         } catch (NumberFormatException ex) {
             return null;
         }
+    }
+
+    /**
+     * 查询可操作的网站
+     *
+     * @param websiteId 网站ID
+     * @return 网站信息
+     */
+    private Website queryAvailableWebsiteById(Long websiteId) {
+        Website website = websiteMapper.selectOne(new LambdaQueryWrapper<Website>()
+                .eq(Website::getId, websiteId)
+                .eq(Website::getDeleted, NOT_DELETED)
+                .last("limit 1"));
+        if (website == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "网站不存在或已删除");
+        }
+        return website;
+    }
+
+    /**
+     * 批量查询可操作的网站
+     *
+     * @param websiteIds 网站ID列表
+     * @return 网站列表
+     */
+    private List<Website> queryAvailableWebsiteByIds(List<Long> websiteIds) {
+        if (CollUtil.isEmpty(websiteIds)) {
+            return Collections.emptyList();
+        }
+        return websiteMapper.selectList(new LambdaQueryWrapper<Website>()
+                .in(Website::getId, websiteIds)
+                .eq(Website::getDeleted, NOT_DELETED));
+    }
+
+    /**
+     * 构建状态更新实体
+     *
+     * @param websiteId 网站ID
+     * @param status 目标状态
+     * @param operationTime 操作时间
+     * @return 更新实体
+     */
+    private Website buildStatusUpdateEntity(Long websiteId, Integer status, LocalDateTime operationTime) {
+        Website updateEntity = new Website();
+        updateEntity.setId(websiteId);
+        updateEntity.setStatus(status);
+        updateEntity.setUpdateTime(operationTime);
+        if (Objects.equals(status, ONLINE_STATUS)) {
+            updateEntity.setShelfTime(operationTime);
+        }
+        if (Objects.equals(status, OFFLINE_STATUS)) {
+            updateEntity.setTakedownTime(operationTime);
+        }
+        return updateEntity;
     }
 
     /**

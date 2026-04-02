@@ -1,12 +1,15 @@
-import { deleteJson, getJson, postFormData, postJson } from '@/utils/http'
+import { deleteJson, getJson, postFormData, postJson, putJson } from '@/utils/http'
 import type { ApiResult } from '@/api/types'
 import { buildAdminAuthHeaders } from '@/api/admin-auth-headers'
 import type {
+  AdminWebsiteBatchStatusUpdatePayload,
   AdminWebsiteCreatePayload,
   AdminWebsiteCategory,
+  AdminWebsiteDetail,
   AdminWebsiteListQuery,
   AdminWebsiteLogoUploadResult,
   AdminWebsitePage,
+  AdminWebsiteStatusUpdatePayload,
   AdminWebsiteStats,
   DeletedFilterValue,
 } from '@/types/admin-website'
@@ -38,6 +41,19 @@ export async function getAdminWebsitePage(query: AdminWebsiteListQuery): Promise
   }
   if (!res.data) {
     throw new Error('网站列表为空')
+  }
+  return res.data
+}
+
+export async function getAdminWebsiteDetail(websiteId: number): Promise<AdminWebsiteDetail> {
+  const res = await getJson<ApiResult<AdminWebsiteDetail>>(`/api/admin/website/${websiteId}`, {
+    headers: buildAdminAuthHeaders(),
+  })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '查询网站详情失败')
+  }
+  if (!res.data) {
+    throw new Error('网站详情为空')
   }
   return res.data
 }
@@ -104,4 +120,26 @@ export async function deleteAdminWebsiteLogo(objectKey: string): Promise<void> {
   if (res.code !== 200) {
     throw new Error(res.msg || '删除 Logo 失败')
   }
+}
+
+export async function updateAdminWebsiteStatus(payload: AdminWebsiteStatusUpdatePayload): Promise<void> {
+  const res = await putJson<ApiResult<unknown>>('/api/admin/website/status', payload, {
+    headers: buildAdminAuthHeaders(),
+  })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '更新网站状态失败')
+  }
+}
+
+export async function batchUpdateAdminWebsiteStatus(payload: AdminWebsiteBatchStatusUpdatePayload): Promise<number> {
+  const res = await putJson<ApiResult<number>>('/api/admin/website/status/batch', payload, {
+    headers: buildAdminAuthHeaders(),
+  })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '批量更新网站状态失败')
+  }
+  if (typeof res.data === 'number') {
+    return res.data
+  }
+  return 0
 }

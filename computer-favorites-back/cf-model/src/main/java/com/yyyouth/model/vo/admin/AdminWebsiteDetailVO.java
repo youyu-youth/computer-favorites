@@ -1,9 +1,5 @@
-package com.yyyouth.model.pojo.website;
+package com.yyyouth.model.vo.admin;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -11,18 +7,16 @@ import java.time.LocalDateTime;
 
 /**
  * @author yyyouth zg
- * @date 2026-04-01
+ * @date 2026-04-02
  *
- * 网站实体
+ * 管理端网站详情
  */
 @Data
-@TableName("t_website")
-public class Website {
+public class AdminWebsiteDetailVO {
 
     /**
-     * 主键ID
+     * 网站ID
      */
-    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -53,8 +47,12 @@ public class Website {
     /**
      * 分类ID
      */
-    @TableField("category_id")
     private Long categoryId;
+
+    /**
+     * 分类名称
+     */
+    private String categoryName;
 
     /**
      * 点击量
@@ -87,20 +85,18 @@ public class Website {
     private Integer scoreCount;
 
     /**
-     * 标签列表
+     * 标签
      */
     private String tags;
 
     /**
      * 是否置顶
      */
-    @TableField("is_top")
     private Integer isTop;
 
     /**
      * 是否推荐
      */
-    @TableField("is_recommend")
     private Integer isRecommend;
 
     /**
@@ -109,7 +105,7 @@ public class Website {
     private Integer status;
 
     /**
-     * 排序
+     * 排序值
      */
     private Integer sort;
 
@@ -151,18 +147,15 @@ public class Website {
     /**
      * 上架时间
      */
-    @TableField("shelf_time")
     private LocalDateTime shelfTime;
 
     /**
      * 下架时间
      */
-    @TableField("takedown_time")
     private LocalDateTime takedownTime;
 
     /**
      * 审核管理员ID
      */
-    @TableField("audit_admin_id")
     private Integer auditAdminId;
 }

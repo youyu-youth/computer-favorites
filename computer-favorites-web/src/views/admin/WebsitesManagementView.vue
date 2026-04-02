@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import WebsitesBreadcrumbs from '@/components/admin/websites/WebsitesBreadcrumbs.vue'
 import WebsitesStatsToolbar from '@/components/admin/websites/WebsitesStatsToolbar.vue'
@@ -13,6 +14,7 @@ import { useAdminNavStore } from '@/stores/adminNav'
 
 const adminNavStore = useAdminNavStore()
 const { activeMenu, activeMenuLabel } = storeToRefs(adminNavStore)
+const router = useRouter()
 
 const isWebsiteMenuActive = computed(() => activeMenu.value === 'websites')
 
@@ -36,6 +38,11 @@ const {
   viewMode,
   deletedFilter,
   stats,
+  selectedIds,
+  selectedCount,
+  allSelectableSelected,
+  updatingWebsiteIds,
+  batchStatusUpdating,
   currentPage,
   totalItems,
   pageSize,
@@ -47,8 +54,22 @@ const {
   nextPage,
   goToPage,
   reloadData,
-  filteredServers
+  filteredServers,
+  toggleSelect,
+  toggleSelectAll,
+  clearSelection,
+  updateWebsiteStatus,
+  batchUpdateWebsiteStatus,
 } = useWebsitesData()
+
+const selectableTotal = computed(() => filteredServers.value.filter((item) => item.deleted !== 1).length)
+
+const handleViewDetail = (websiteId: number) => {
+  void router.push({
+    name: 'adminWebsiteDetail',
+    params: { id: String(websiteId) },
+  })
+}
 
 </script>
 
@@ -68,9 +89,16 @@ const {
               :viewMode="viewMode"
               :deletedFilter="deletedFilter"
               :stats="stats"
+              :selectedCount="selectedCount"
+              :selectableTotal="selectableTotal"
+              :allSelectableSelected="allSelectableSelected"
+              :batchStatusUpdating="batchStatusUpdating"
               @update:viewMode="(value) => (viewMode = value)"
               @update:deletedFilter="(value) => (deletedFilter = value)"
               @refresh="reloadData"
+              @toggle-select-all="toggleSelectAll"
+              @clear-selection="clearSelection"
+              @batch-status="batchUpdateWebsiteStatus"
             />
 
             <WebsitesSearchArea
@@ -85,17 +113,34 @@ const {
           <div>
             <h2 class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-4">Popular MCP servers</h2>
 
-            <div v-if="loading" class="text-center py-12 text-gray-500 dark:text-gray-400">
+            <div
+              v-if="loading && filteredServers.length > 0"
+              class="mb-4 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:border-dark-border dark:bg-dark-card dark:text-gray-300"
+            >
+              <i class="fas fa-sync-alt fa-spin mr-2"></i>
+              正在同步最新网站状态...
+            </div>
+
+            <div v-if="loading && filteredServers.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
               <i class="fas fa-spinner fa-spin text-3xl mb-3 opacity-70"></i>
               <p>Loading website data...</p>
             </div>
 
-            <div v-else-if="errorMessage" class="text-center py-12 text-red-500 dark:text-red-400">
+            <div v-else-if="errorMessage && filteredServers.length === 0" class="text-center py-12 text-red-500 dark:text-red-400">
               <i class="fas fa-exclamation-circle text-3xl mb-3 opacity-80"></i>
               <p>{{ errorMessage }}</p>
             </div>
 
-            <WebsitesList v-else :servers="filteredServers" :viewMode="viewMode" />
+            <WebsitesList
+              v-else
+              :servers="filteredServers"
+              :viewMode="viewMode"
+              :selectedIds="selectedIds"
+              :updatingWebsiteIds="updatingWebsiteIds"
+              @toggle-select="toggleSelect"
+              @update-status="({ websiteId, status }) => updateWebsiteStatus(websiteId, status)"
+              @view-detail="handleViewDetail"
+            />
 
             <div v-if="!loading && !errorMessage && filteredServers.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
               <i class="fas fa-search text-3xl mb-3 opacity-50"></i>

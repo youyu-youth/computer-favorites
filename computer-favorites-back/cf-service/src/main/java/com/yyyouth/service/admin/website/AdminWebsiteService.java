@@ -1,8 +1,11 @@
 package com.yyyouth.service.admin.website;
 
+import com.yyyouth.model.dto.admin.AdminWebsiteBatchStatusUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
 import com.yyyouth.model.vo.admin.AdminWebsiteCategoryVO;
+import com.yyyouth.model.vo.admin.AdminWebsiteDetailVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteLogoUploadVO;
 import com.yyyouth.model.vo.admin.AdminWebsitePageVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteStatsVO;
@@ -25,6 +28,14 @@ public interface AdminWebsiteService {
      * @return 分页数据
      */
     AdminWebsitePageVO queryWebsitePage(AdminWebsiteQueryDTO queryDTO);
+
+    /**
+     * 查询网站详情
+     *
+     * @param websiteId 网站ID
+     * @return 网站详情
+     */
+    AdminWebsiteDetailVO queryWebsiteDetail(Long websiteId);
 
     /**
      * 查询网站分类统计
@@ -64,4 +75,19 @@ public interface AdminWebsiteService {
      * @return 新增网站ID
      */
     Long createWebsite(AdminWebsiteCreateDTO createDTO);
+
+    /**
+     * 更新网站上架状态
+     *
+     * @param updateDTO 状态更新参数
+     */
+    void updateWebsiteStatus(AdminWebsiteStatusUpdateDTO updateDTO);
+
+    /**
+     * 批量更新网站上架状态
+     *
+     * @param updateDTO 批量状态更新参数
+     * @return 实际更新数量
+     */
+    int batchUpdateWebsiteStatus(AdminWebsiteBatchStatusUpdateDTO updateDTO);
 }
