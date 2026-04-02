@@ -2,6 +2,7 @@ import type { App } from 'vue'
 
 import UAvatar from '@/components/ui-adapter/UAvatar.vue'
 import UBadge from '@/components/ui-adapter/UBadge.vue'
+import UBreadcrumb from '@/components/ui-adapter/UBreadcrumb.vue'
 import UButton from '@/components/ui-adapter/UButton.vue'
 import UCard from '@/components/ui-adapter/UCard.vue'
 import UContainer from '@/components/ui-adapter/UContainer.vue'
@@ -21,6 +22,7 @@ import UTextarea from '@/components/ui-adapter/UTextarea.vue'
 export const registerUiAdapter = (app: App): void => {
   app.component('UAvatar', UAvatar)
   app.component('UBadge', UBadge)
+  app.component('UBreadcrumb', UBreadcrumb)
   app.component('UButton', UButton)
   app.component('UCard', UCard)
   app.component('UContainer', UContainer)

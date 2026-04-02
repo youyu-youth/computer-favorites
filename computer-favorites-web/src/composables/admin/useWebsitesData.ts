@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import {
     batchUpdateAdminWebsiteStatus,
+    deleteAdminWebsite,
     getAdminWebsiteCategories,
     getAdminWebsitePage,
     getAdminWebsiteStats,
@@ -433,6 +434,26 @@ export function useWebsitesData() {
         }
     }
 
+    const deleteWebsite = async (websiteId: number) => {
+        const targetWebsite = servers.value.find((item) => item.id === websiteId)
+        if (!targetWebsite) {
+            return
+        }
+        if (targetWebsite.deleted === 1) {
+            showToast({ type: 'warning', title: '该网站已在垃圾桶中' })
+            return
+        }
+
+        try {
+            await deleteAdminWebsite(websiteId)
+            selectedIds.value = selectedIds.value.filter((id) => id !== websiteId)
+            showToast({ type: 'success', title: '网站已放入垃圾桶' })
+            await reloadData({ silentListLoading: true })
+        } catch (error) {
+            showToast({ type: 'error', title: resolveErrorMessage(error, '删除网站失败') })
+        }
+    }
+
     watch(deletedFilter, async () => {
         currentPage.value = 1
         syncingCategorySelection = true
@@ -516,6 +537,7 @@ export function useWebsitesData() {
         clearSelection,
         updateWebsiteStatus,
         batchUpdateWebsiteStatus,
+        deleteWebsite,
         prevPage,
         nextPage,
         goToPage,

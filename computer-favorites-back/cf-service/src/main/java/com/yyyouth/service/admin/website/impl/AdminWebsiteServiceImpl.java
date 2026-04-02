@@ -9,6 +9,7 @@ import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.common.utils.SensitiveWordUtils;
 import com.yyyouth.model.dto.admin.AdminWebsiteBatchStatusUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
 import com.yyyouth.model.pojo.website.Website;
@@ -271,6 +272,65 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
             throw new BusinessException(HttpStatus.ERROR, "添加网站失败，请稍后重试");
         }
         return website.getId();
+    }
+
+    /**
+     * 编辑网站
+     *
+     * @param websiteId 网站ID
+     * @param editDTO 编辑参数
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void editWebsite(Long websiteId, AdminWebsiteEditDTO editDTO) {
+        queryAvailableWebsiteById(websiteId);
+
+        validateCategoryForCreate(editDTO.getCategoryId());
+        validateSensitiveFields(editDTO);
+        validateIconValue(editDTO.getIcon());
+
+        Website updateEntity = new Website();
+        updateEntity.setId(websiteId);
+        updateEntity.setName(normalizeRequiredText(editDTO.getName()));
+        updateEntity.setUrl(normalizeUrl(editDTO.getUrl()));
+        updateEntity.setIcon(normalizeOptionalText(editDTO.getIcon()));
+        updateEntity.setSummary(normalizeOptionalText(editDTO.getSummary()));
+        updateEntity.setDescription(normalizeOptionalText(editDTO.getDescription()));
+        updateEntity.setCategoryId(editDTO.getCategoryId());
+        updateEntity.setTags(normalizeTags(editDTO.getTags()));
+        updateEntity.setSort(editDTO.getSort() == null ? DEFAULT_SORT : editDTO.getSort());
+        updateEntity.setIsTop(Boolean.TRUE.equals(editDTO.getIsTop()) ? 1 : 0);
+        updateEntity.setIsRecommend(Boolean.TRUE.equals(editDTO.getIsRecommend()) ? 1 : 0);
+        updateEntity.setUpdateTime(LocalDateTime.now());
+
+        int affectedRows = websiteMapper.updateById(updateEntity);
+        if (affectedRows != 1) {
+            throw new BusinessException(HttpStatus.ERROR, "修改网站失败，请稍后重试");
+        }
+    }
+
+    /**
+     * 删除网站（逻辑删除）
+     *
+     * @param websiteId 网站ID
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteWebsite(Long websiteId) {
+        queryAvailableWebsiteById(websiteId);
+
+        LocalDateTime operationTime = LocalDateTime.now();
+        Website updateEntity = new Website();
+        updateEntity.setId(websiteId);
+        updateEntity.setDeleted(DELETED);
+        updateEntity.setStatus(OFFLINE_STATUS);
+        updateEntity.setUpdateTime(operationTime);
+        updateEntity.setTakedownTime(operationTime);
+
+        int affectedRows = websiteMapper.updateById(updateEntity);
+        if (affectedRows != 1) {
+            throw new BusinessException(HttpStatus.ERROR, "网站删除失败，请稍后重试");
+        }
     }
 
     /**
@@ -605,7 +665,7 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "分类不存在");
         }
         if (!Objects.equals(category.getStatus(), CATEGORY_ENABLED_STATUS)) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "分类已禁用，无法添加网站");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "分类已禁用，无法保存网站");
         }
     }
 
@@ -619,6 +679,18 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         checkSensitiveField("一句话简介", normalizeOptionalText(createDTO.getSummary()));
         checkSensitiveField("详细描述", normalizeOptionalText(createDTO.getDescription()));
         checkSensitiveField("标签", normalizeTags(createDTO.getTags()));
+    }
+
+    /**
+     * 校验编辑参数中的敏感词
+     *
+     * @param editDTO 编辑参数
+     */
+    private void validateSensitiveFields(AdminWebsiteEditDTO editDTO) {
+        checkSensitiveField("网站名称", normalizeRequiredText(editDTO.getName()));
+        checkSensitiveField("一句话简介", normalizeOptionalText(editDTO.getSummary()));
+        checkSensitiveField("详细描述", normalizeOptionalText(editDTO.getDescription()));
+        checkSensitiveField("标签", normalizeTags(editDTO.getTags()));
     }
 
     /**

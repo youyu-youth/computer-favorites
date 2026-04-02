@@ -34,6 +34,8 @@ const emit = defineEmits<{
     (e: 'toggle-select', websiteId: number): void
     (e: 'update-status', payload: { websiteId: number; status: AdminWebsiteStatusValue }): void
     (e: 'view-detail', websiteId: number): void
+    (e: 'edit-website', websiteId: number): void
+    (e: 'delete-website', websiteId: number): void
 }>()
 
 const isImageUrl = (icon: string): boolean => {
@@ -126,6 +128,20 @@ const handleToggleStatus = (server: WebsiteCard): void => {
 const handleViewDetail = (server: WebsiteCard): void => {
     emit('view-detail', server.id)
 }
+
+const handleEditWebsite = (server: WebsiteCard): void => {
+    if (isDeletedServer(server)) {
+        return
+    }
+    emit('edit-website', server.id)
+}
+
+const handleDeleteWebsite = (server: WebsiteCard): void => {
+    if (isDeletedServer(server)) {
+        return
+    }
+    emit('delete-website', server.id)
+}
 </script>
 
 <template>
@@ -195,12 +211,12 @@ const handleViewDetail = (server: WebsiteCard): void => {
                         <div class="text-gray-500 dark:text-gray-500 text-xs">{{ server.author }}</div>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                <div class="flex items-center gap-0 sm:gap-0.5 text-gray-400 dark:text-gray-500">
                     <button
                         type="button"
                         :disabled="isDeletedServer(server)"
                         @click.stop="handleToggleSelect(server)"
-                        class="cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        class="inline-flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center rounded-md cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                         :class="isSelected(server.id) ? 'text-brand-orange' : 'hover:text-gray-700 dark:hover:text-gray-300'"
                         :title="isSelected(server.id) ? '取消选择' : '选择网站'"
                     >
@@ -208,14 +224,31 @@ const handleViewDetail = (server: WebsiteCard): void => {
                     </button>
                     <button
                         type="button"
-                        class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                        class="inline-flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center rounded-md hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
                         title="详情"
                         @click.stop="handleViewDetail(server)"
                     >
                         <i class="fas fa-circle-info"></i>
                     </button>
-                    <button type="button" class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer" title="Settings" @click.stop><i class="fas fa-wrench"></i></button>
-                    <button type="button" class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer" title="Link" @click.stop><i class="fas fa-link"></i></button>
+                    <button
+                        type="button"
+                        :disabled="isDeletedServer(server)"
+                        class="inline-flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center rounded-md hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                        title="修改网站"
+                        @click.stop="handleEditWebsite(server)"
+                    >
+                        <i class="fas fa-wrench"></i>
+                    </button>
+                    <button
+                        type="button"
+                        :disabled="isDeletedServer(server)"
+                        class="inline-flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center rounded-md hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                        title="放入垃圾桶"
+                        @click.stop="handleDeleteWebsite(server)"
+                    >
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                    <button type="button" class="inline-flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center rounded-md hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer" title="Link" @click.stop><i class="fas fa-link"></i></button>
                 </div>
             </div>
 

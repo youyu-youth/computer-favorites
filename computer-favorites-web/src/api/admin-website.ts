@@ -6,6 +6,7 @@ import type {
   AdminWebsiteCreatePayload,
   AdminWebsiteCategory,
   AdminWebsiteDetail,
+  AdminWebsiteEditPayload,
   AdminWebsiteListQuery,
   AdminWebsiteLogoUploadResult,
   AdminWebsitePage,
@@ -110,6 +111,24 @@ export async function createAdminWebsite(payload: AdminWebsiteCreatePayload): Pr
     throw new Error('添加网站返回数据异常')
   }
   return res.data
+}
+
+export async function updateAdminWebsite(websiteId: number, payload: AdminWebsiteEditPayload): Promise<void> {
+  const res = await putJson<ApiResult<unknown>>(`/api/admin/website/${websiteId}`, payload, {
+    headers: buildAdminAuthHeaders(),
+  })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '修改网站失败')
+  }
+}
+
+export async function deleteAdminWebsite(websiteId: number): Promise<void> {
+  const res = await deleteJson<ApiResult<unknown>>(`/api/admin/website/${websiteId}`, {
+    headers: buildAdminAuthHeaders(),
+  })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '删除网站失败')
+  }
 }
 
 export async function deleteAdminWebsiteLogo(objectKey: string): Promise<void> {

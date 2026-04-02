@@ -220,6 +220,18 @@ const goBack = () => {
 const retryLoad = () => {
   void loadDetail()
 }
+
+const goEdit = () => {
+  if (!websiteId.value) {
+    showToast({ type: 'error', title: '网站ID不合法，无法进入编辑页面' })
+    return
+  }
+
+  void router.push({
+    name: 'adminWebsiteEdit',
+    params: { id: String(websiteId.value) },
+  })
+}
 </script>
 
 <template>
@@ -235,14 +247,25 @@ const retryLoad = () => {
           <span>返回网站列表</span>
         </button>
 
-        <button
-          type="button"
-          class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-border dark:bg-dark-card dark:text-gray-200 dark:hover:bg-dark-border"
-          @click="retryLoad"
-        >
-          <i class="fas fa-rotate-right"></i>
-          <span>刷新详情</span>
-        </button>
+        <div class="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-brand-orange/35 bg-orange-50 px-4 py-2 text-sm font-medium text-brand-orange transition-colors hover:bg-orange-100 dark:border-brand-orange/40 dark:bg-brand-orange/10 dark:text-brand-orange dark:hover:bg-brand-orange/20"
+            @click="goEdit"
+          >
+            <i class="fas fa-pen-to-square"></i>
+            <span>修改网站</span>
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-border dark:bg-dark-card dark:text-gray-200 dark:hover:bg-dark-border"
+            @click="retryLoad"
+          >
+            <i class="fas fa-rotate-right"></i>
+            <span>刷新详情</span>
+          </button>
+        </div>
       </div>
 
       <div

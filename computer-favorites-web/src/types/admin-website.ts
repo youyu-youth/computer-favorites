@@ -108,6 +108,19 @@ export interface AdminWebsiteCreatePayload {
   sort: number
 }
 
+export interface AdminWebsiteEditPayload {
+  name: string
+  url: string
+  icon?: string
+  summary?: string
+  description?: string
+  categoryId: number
+  tags?: string
+  isTop: boolean
+  isRecommend: boolean
+  sort: number
+}
+
 export interface AdminWebsiteStatusUpdatePayload {
   websiteId: number
   status: AdminWebsiteStatusValue

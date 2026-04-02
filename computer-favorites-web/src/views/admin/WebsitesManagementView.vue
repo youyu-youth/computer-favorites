@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import WebsitesBreadcrumbs from '@/components/admin/websites/WebsitesBreadcrumbs.vue'
@@ -9,6 +9,8 @@ import WebsitesMiniCards from '@/components/admin/websites/WebsitesMiniCards.vue
 import WebsitesList from '@/components/admin/websites/WebsitesList.vue'
 import WebsitesPagination from '@/components/admin/websites/WebsitesPagination.vue'
 import AdminAddWebsite from '@/components/admin/websites/AdminAddWebsite.vue'
+import UModal from '@/components/ui-adapter/UModal.vue'
+import UButton from '@/components/ui-adapter/UButton.vue'
 import { useWebsitesData } from '@/composables/admin/useWebsitesData'
 import { useAdminNavStore } from '@/stores/adminNav'
 
@@ -60,7 +62,13 @@ const {
   clearSelection,
   updateWebsiteStatus,
   batchUpdateWebsiteStatus,
+  deleteWebsite,
 } = useWebsitesData()
+
+const deleteDialogOpen = ref(false)
+const deletingWebsiteId = ref<number | null>(null)
+const deletingWebsiteTitle = ref('')
+const deletingWebsiteLoading = ref(false)
 
 const selectableTotal = computed(() => filteredServers.value.filter((item) => item.deleted !== 1).length)
 
@@ -71,12 +79,60 @@ const handleViewDetail = (websiteId: number) => {
   })
 }
 
+const handleEditWebsite = (websiteId: number) => {
+  void router.push({
+    name: 'adminWebsiteEdit',
+    params: { id: String(websiteId) },
+  })
+}
+
+const handleGoWebsitesRoot = () => {
+  viewMode.value = 'grid'
+  adminNavStore.setSelectedCategoryId(0)
+}
+
+const resetDeleteDialog = () => {
+  deleteDialogOpen.value = false
+  deletingWebsiteId.value = null
+  deletingWebsiteTitle.value = ''
+}
+
+const handleRequestDeleteWebsite = (websiteId: number) => {
+  const targetWebsite = filteredServers.value.find((item) => item.id === websiteId)
+  if (!targetWebsite || targetWebsite.deleted === 1) {
+    return
+  }
+  deletingWebsiteId.value = websiteId
+  deletingWebsiteTitle.value = targetWebsite.title
+  deleteDialogOpen.value = true
+}
+
+const closeDeleteDialog = () => {
+  if (deletingWebsiteLoading.value) {
+    return
+  }
+  resetDeleteDialog()
+}
+
+const confirmDeleteWebsite = async () => {
+  if (deletingWebsiteLoading.value || !deletingWebsiteId.value) {
+    return
+  }
+  deletingWebsiteLoading.value = true
+  try {
+    await deleteWebsite(deletingWebsiteId.value)
+    resetDeleteDialog()
+  } finally {
+    deletingWebsiteLoading.value = false
+  }
+}
+
 </script>
 
 <template>
   <main class="flex-grow w-full px-4 sm:px-6 lg:px-8 py-6">
     <div class="max-w-[1320px] mx-auto min-w-0">
-      <WebsitesBreadcrumbs :viewMode="viewMode" />
+      <WebsitesBreadcrumbs :viewMode="viewMode" @go-websites-root="handleGoWebsitesRoot" />
 
       <template v-if="isWebsiteMenuActive">
         <Transition name="fade-slide" mode="out-in">
@@ -140,6 +196,8 @@ const handleViewDetail = (websiteId: number) => {
               @toggle-select="toggleSelect"
               @update-status="({ websiteId, status }) => updateWebsiteStatus(websiteId, status)"
               @view-detail="handleViewDetail"
+              @edit-website="handleEditWebsite"
+              @delete-website="handleRequestDeleteWebsite"
             />
 
             <div v-if="!loading && !errorMessage && filteredServers.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
@@ -161,6 +219,50 @@ const handleViewDetail = (websiteId: number) => {
           </div>
           </div>
         </Transition>
+
+        <UModal
+          :open="deleteDialogOpen"
+          title="确认放入垃圾桶"
+          description="确认要将该网站放入垃圾桶吗，后续可以从垃圾桶恢复过来。"
+          :ui="{
+            overlay: 'bg-black/45 backdrop-blur-[1px] z-[120]',
+            content: 'w-[min(92vw,440px)] rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card shadow-[0_16px_36px_rgba(15,23,42,0.28)] dark:shadow-[0_22px_44px_rgba(2,6,23,0.62)] overflow-hidden',
+            header: 'border-b border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg px-5 py-4',
+            title: 'text-base font-semibold text-gray-900 dark:text-gray-100',
+            description: 'mt-1 text-sm text-gray-600 dark:text-gray-300',
+            body: 'px-5 py-4',
+            footer: 'px-5 py-4 border-t border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
+          }"
+          @update:open="(value) => { if (!value) closeDeleteDialog() }"
+        >
+          <template #body>
+            <p class="text-sm text-gray-700 dark:text-gray-200 break-all">
+              网站名称：
+              <span class="font-medium text-gray-900 dark:text-gray-100">{{ deletingWebsiteTitle || '未命名网站' }}</span>
+            </p>
+          </template>
+
+          <template #footer>
+            <UButton
+              color="neutral"
+              variant="soft"
+              class="w-full sm:w-auto"
+              :disabled="deletingWebsiteLoading"
+              @click="closeDeleteDialog"
+            >
+              取消
+            </UButton>
+            <UButton
+              color="red"
+              :loading="deletingWebsiteLoading"
+              :disabled="deletingWebsiteLoading"
+              class="w-full sm:w-auto"
+              @click="confirmDeleteWebsite"
+            >
+              确认放入
+            </UButton>
+          </template>
+        </UModal>
       </template>
 
       <div v-else class="rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card px-6 py-12 text-center">

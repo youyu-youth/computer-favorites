@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import type { AdminMenuKey } from '@/stores/adminNav'
 import { useAdminNavStore } from '@/stores/adminNav'
@@ -11,7 +12,13 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits<{
+  (e: 'go-websites-root'): void
+}>()
+
 const adminNavStore = useAdminNavStore()
+const router = useRouter()
+const route = useRoute()
 
 const {
   menuItems,
@@ -21,22 +28,78 @@ const {
   selectedCategoryLabel,
 } = storeToRefs(adminNavStore)
 
+type BreadcrumbItem = {
+  key: string
+  label: string
+  level: number
+  current: boolean
+  clickable: boolean
+  onClick: () => void | Promise<void>
+}
+
+const goWebsites = async () => {
+  adminNavStore.setActiveMenu('websites')
+  adminNavStore.setSelectedCategoryId(0)
+  emit('go-websites-root')
+  if (route.name === 'adminWebsites') {
+    return
+  }
+  await router.push({ name: 'adminWebsites' })
+}
+
 const breadcrumbItems = computed(() => {
-  const items = [
-    { key: 'admin-root', label: '管理后台' },
-    { key: `menu-${activeMenu.value}`, label: activeMenuLabel.value },
+  const items: BreadcrumbItem[] = [
+    {
+      key: 'admin-root',
+      label: '管理后台',
+      level: 1,
+      current: false,
+      clickable: true,
+      onClick: () => goWebsites(),
+    },
+    {
+      key: `menu-${activeMenu.value}`,
+      label: activeMenuLabel.value,
+      level: 2,
+      current: false,
+      clickable: true,
+      onClick: async () => {
+        const menuKey = activeMenu.value as AdminMenuKey
+        adminNavStore.setActiveMenu(menuKey)
+        if (menuKey === 'websites') {
+          await goWebsites()
+        }
+      },
+    },
   ]
 
   if (isWebsiteMenuActive.value) {
     if (props.viewMode === 'add') {
       items.push({
-        key: `add-website`,
+        key: 'add-website',
         label: '添加网站',
+        level: 3,
+        current: true,
+        clickable: true,
+        onClick: () => {},
+      })
+    } else if (props.viewMode === 'edit') {
+      items.push({
+        key: 'edit-website',
+        label: '修改网站',
+        level: 3,
+        current: true,
+        clickable: true,
+        onClick: () => {},
       })
     } else {
       items.push({
         key: `category-${selectedCategoryLabel.value}`,
         label: selectedCategoryLabel.value,
+        level: 3,
+        current: true,
+        clickable: true,
+        onClick: () => goWebsites(),
       })
     }
   }
@@ -51,14 +114,7 @@ const activateMenu = (menuKey: AdminMenuKey) => {
 
 <template>
   <div class="mb-6">
-    <div class="menu-scroll text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
-      <template v-for="(item, index) in breadcrumbItems" :key="item.key">
-        <span class="text-gray-900 dark:text-gray-100 font-medium">
-          {{ item.label }}
-        </span>
-        <i v-if="index < breadcrumbItems.length - 1" class="fas fa-chevron-right text-xs text-gray-400 dark:text-gray-500"></i>
-      </template>
-    </div>
+    <UBreadcrumb :items="breadcrumbItems" className="mb-4" />
 
     <div class="border-b border-gray-200 dark:border-dark-border pb-3">
       <div class="md:hidden -mx-1 px-1 menu-scroll overflow-x-auto">

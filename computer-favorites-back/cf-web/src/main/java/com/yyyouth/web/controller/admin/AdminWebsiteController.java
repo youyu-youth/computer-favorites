@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.yyyouth.common.web.HttpResult;
 import com.yyyouth.model.dto.admin.AdminWebsiteBatchStatusUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
 import com.yyyouth.model.vo.admin.AdminWebsiteCategoryVO;
@@ -161,6 +162,40 @@ public class AdminWebsiteController {
         Long websiteId = adminWebsiteService.createWebsite(createDTO);
         log.info("管理端新增网站成功，websiteId={}", websiteId);
         return HttpResult.success("添加网站成功", websiteId);
+    }
+
+    /**
+     * 编辑网站
+     *
+     * @param id 网站ID
+     * @param editDTO 编辑参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "编辑网站")
+    @PutMapping("/{id}")
+    @SaCheckPermission(value = "admin:website:edit", type = "admin")
+    public HttpResult editWebsite(@PathVariable("id") @NotNull @Positive Long id,
+                                  @RequestBody @Valid @NotNull AdminWebsiteEditDTO editDTO) {
+        log.info("管理端编辑网站请求，id={}, name={}, categoryId={}", id, editDTO.getName(), editDTO.getCategoryId());
+        adminWebsiteService.editWebsite(id, editDTO);
+        log.info("管理端编辑网站成功，id={}", id);
+        return HttpResult.success("修改网站成功");
+    }
+
+    /**
+     * 删除网站（逻辑删除）
+     *
+     * @param id 网站ID
+     * @return 执行结果
+     */
+    @ApiOperation(value = "删除网站")
+    @DeleteMapping("/{id}")
+    @SaCheckPermission(value = "admin:website:delete", type = "admin")
+    public HttpResult deleteWebsite(@PathVariable("id") @NotNull @Positive Long id) {
+        log.info("管理端删除网站请求，id={}", id);
+        adminWebsiteService.deleteWebsite(id);
+        log.info("管理端删除网站成功，id={}", id);
+        return HttpResult.success("网站已放入垃圾桶");
     }
 
     /**

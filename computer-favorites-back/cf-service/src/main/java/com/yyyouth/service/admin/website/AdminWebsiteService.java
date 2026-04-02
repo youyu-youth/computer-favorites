@@ -2,6 +2,7 @@ package com.yyyouth.service.admin.website;
 
 import com.yyyouth.model.dto.admin.AdminWebsiteBatchStatusUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
 import com.yyyouth.model.vo.admin.AdminWebsiteCategoryVO;
@@ -75,6 +76,21 @@ public interface AdminWebsiteService {
      * @return 新增网站ID
      */
     Long createWebsite(AdminWebsiteCreateDTO createDTO);
+
+    /**
+     * 编辑网站
+     *
+     * @param websiteId 网站ID
+     * @param editDTO 编辑参数
+     */
+    void editWebsite(Long websiteId, AdminWebsiteEditDTO editDTO);
+
+    /**
+     * 删除网站（逻辑删除）
+     *
+     * @param websiteId 网站ID
+     */
+    void deleteWebsite(Long websiteId);
 
     /**
      * 更新网站上架状态

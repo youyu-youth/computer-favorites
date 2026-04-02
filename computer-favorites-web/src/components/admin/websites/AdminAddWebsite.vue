@@ -3,21 +3,64 @@ import FileUpload from 'primevue/fileupload'
 import type { FileUploadUploaderEvent } from 'primevue/fileupload'
 import Select from 'primevue/select'
 import UVditor from '@/components/ui-adapter/UVditor.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAdminNavStore } from '@/stores/adminNav'
 import { useToast } from '@/composables/useToast'
-import { createAdminWebsite, deleteAdminWebsiteLogo, uploadAdminWebsiteLogo } from '@/api/admin-website'
-import type { AdminWebsiteCreatePayload } from '@/types/admin-website'
+import {
+  createAdminWebsite,
+  deleteAdminWebsiteLogo,
+  getAdminWebsiteCategories,
+  getAdminWebsiteDetail,
+  updateAdminWebsite,
+  uploadAdminWebsiteLogo,
+} from '@/api/admin-website'
+import type {
+  AdminWebsiteCreatePayload,
+  AdminWebsiteDetail,
+  AdminWebsiteEditPayload,
+  DeletedFilterValue,
+} from '@/types/admin-website'
+
+const props = withDefaults(
+  defineProps<{
+    mode?: 'add' | 'edit'
+    websiteId?: number | null
+  }>(),
+  {
+    mode: 'add',
+    websiteId: null,
+  },
+)
 
 const emit = defineEmits<{
   (e: 'cancel'): void
-  (e: 'submit', data: AdminWebsiteCreatePayload): void
+  (e: 'submit', data: AdminWebsiteCreatePayload | AdminWebsiteEditPayload): void
 }>()
 
 const adminNavStore = useAdminNavStore()
 const { websiteCategories } = storeToRefs(adminNavStore)
 const { add: showToast } = useToast()
+
+const ALL_DELETED_FILTER: DeletedFilterValue = -1
+const LOGO_OBJECT_KEY_PREFIX = 'admin/website/logo/'
+
+const isEditMode = computed(() => props.mode === 'edit')
+
+const pageCommand = computed(() => {
+  return isEditMode.value ? './edit_website.sh' : './add_website.sh'
+})
+
+const pageTitle = computed(() => {
+  return isEditMode.value ? '修改网站' : '添加新网站'
+})
+
+const pageDescription = computed(() => {
+  if (isEditMode.value) {
+    return '管理员可在此修改网站基础信息与运营信息。保存后会自动刷新修改时间并回显最新数据。'
+  }
+  return '管理员手动录入系统收录的推荐站点。请确保 URL 的有效性及分类归属的准确。提交后将默认标记为“已自动审核”。'
+})
 
 const validCategories = computed(() => {
   return websiteCategories.value.filter((c) => c.id !== 0)
@@ -51,8 +94,10 @@ const MAX_LOGO_FILE_SIZE = 1024 * 1024
 const isSubmitting = ref(false)
 const isLogoUploading = ref(false)
 const isLogoDeleting = ref(false)
+const isDetailLoading = ref(false)
 const logoFileName = ref('')
 const logoObjectKey = ref('')
+const originalLogoObjectKey = ref('')
 
 const logoChooseButtonProps = {
   type: 'button',
@@ -66,14 +111,74 @@ const resolveErrorMessage = (error: unknown, fallbackMessage: string) => {
   return fallbackMessage
 }
 
-const resetLogo = () => {
+const resolveFileNameFromUrl = (url: string) => {
+  if (!url) {
+    return ''
+  }
+  const normalizedUrl = url.split('?')[0] ?? ''
+  const fileName = normalizedUrl.substring(normalizedUrl.lastIndexOf('/') + 1)
+  try {
+    return decodeURIComponent(fileName)
+  } catch (error) {
+    return fileName
+  }
+}
+
+const extractObjectKeyFromLogoUrl = (url: string) => {
+  if (!url) {
+    return ''
+  }
+  const normalizedUrl = url.split('?')[0] ?? ''
+  const markerIndex = normalizedUrl.indexOf(LOGO_OBJECT_KEY_PREFIX)
+  if (markerIndex < 0) {
+    return ''
+  }
+
+  const objectKey = normalizedUrl.substring(markerIndex)
+  try {
+    return decodeURIComponent(objectKey)
+  } catch (error) {
+    return objectKey
+  }
+}
+
+const clearLogoLocalState = () => {
   formData.value.icon = ''
   logoFileName.value = ''
   logoObjectKey.value = ''
 }
 
+const deleteLogoByObjectKey = async (objectKey: string) => {
+  if (!objectKey) {
+    return
+  }
+  await deleteAdminWebsiteLogo(objectKey)
+}
+
+const resetLogo = () => {
+  clearLogoLocalState()
+}
+
 const clearLogo = async () => {
   const currentObjectKey = logoObjectKey.value
+
+  if (isEditMode.value) {
+    if (currentObjectKey && currentObjectKey !== originalLogoObjectKey.value) {
+      isLogoDeleting.value = true
+      try {
+        await deleteLogoByObjectKey(currentObjectKey)
+      } catch (error) {
+        showToast({ type: 'error', title: resolveErrorMessage(error, 'Logo 删除失败，请稍后重试') })
+        return
+      } finally {
+        isLogoDeleting.value = false
+      }
+    }
+
+    resetLogo()
+    return
+  }
+
   if (!currentObjectKey) {
     resetLogo()
     return
@@ -81,7 +186,7 @@ const clearLogo = async () => {
 
   isLogoDeleting.value = true
   try {
-    await deleteAdminWebsiteLogo(currentObjectKey)
+    await deleteLogoByObjectKey(currentObjectKey)
     resetLogo()
     showToast({ type: 'success', title: 'Logo 已删除' })
   } catch (error) {
@@ -92,6 +197,18 @@ const clearLogo = async () => {
 }
 
 const handleCancel = async () => {
+  if (isEditMode.value) {
+    if (logoObjectKey.value && logoObjectKey.value !== originalLogoObjectKey.value) {
+      try {
+        await deleteLogoByObjectKey(logoObjectKey.value)
+      } catch (error) {
+        showToast({ type: 'warning', title: '临时Logo清理失败，可稍后手动处理' })
+      }
+    }
+    emit('cancel')
+    return
+  }
+
   await clearLogo()
   emit('cancel')
 }
@@ -117,7 +234,20 @@ const handleLogoUpload = async (event: FileUploadUploaderEvent) => {
     return
   }
 
-  if (logoObjectKey.value) {
+  if (logoObjectKey.value && logoObjectKey.value !== originalLogoObjectKey.value) {
+    isLogoDeleting.value = true
+    try {
+      await deleteLogoByObjectKey(logoObjectKey.value)
+      resetLogo()
+    } catch (error) {
+      showToast({ type: 'error', title: resolveErrorMessage(error, '旧Logo清理失败，请稍后重试') })
+      return
+    } finally {
+      isLogoDeleting.value = false
+    }
+  }
+
+  if (!isEditMode.value && logoObjectKey.value) {
     await clearLogo()
   }
 
@@ -233,6 +363,69 @@ const buildCreatePayload = (): AdminWebsiteCreatePayload => {
   }
 }
 
+const loadCategoriesIfNeed = async () => {
+  if (websiteCategories.value.length > 1) {
+    return
+  }
+
+  const categoryList = await getAdminWebsiteCategories(ALL_DELETED_FILTER)
+  const totalCount = categoryList.reduce((sum, item) => sum + Number(item.count || 0), 0)
+  const mappedList = [
+    {
+      id: 0,
+      name: '全部分类',
+      count: totalCount,
+    },
+    ...categoryList.map((item) => ({
+      id: item.id,
+      name: item.name,
+      count: Number(item.count || 0),
+    })),
+  ]
+  adminNavStore.setWebsiteCategories(mappedList)
+}
+
+const mapDetailToForm = (detail: AdminWebsiteDetail) => {
+  formData.value.name = detail.name || ''
+  formData.value.url = detail.url || ''
+  formData.value.icon = (detail.icon || '').trim()
+  formData.value.summary = detail.summary || ''
+  formData.value.description = detail.description || ''
+  formData.value.categoryId = typeof detail.categoryId === 'number' ? detail.categoryId : ''
+  formData.value.tags = detail.tags || ''
+  formData.value.isTop = detail.isTop === 1
+  formData.value.isRecommend = detail.isRecommend === 1
+  formData.value.sort = Number.isFinite(detail.sort) ? detail.sort : 0
+
+  logoFileName.value = resolveFileNameFromUrl(formData.value.icon)
+  logoObjectKey.value = extractObjectKeyFromLogoUrl(formData.value.icon)
+  originalLogoObjectKey.value = logoObjectKey.value
+}
+
+const loadEditDetail = async () => {
+  if (!isEditMode.value) {
+    return
+  }
+
+  if (!props.websiteId || props.websiteId <= 0) {
+    showToast({ type: 'error', title: '网站ID不合法，无法加载编辑数据' })
+    return
+  }
+
+  isDetailLoading.value = true
+  try {
+    const detail = await getAdminWebsiteDetail(props.websiteId)
+    mapDetailToForm(detail)
+  } catch (error) {
+    showToast({
+      type: 'error',
+      title: resolveErrorMessage(error, '网站详情加载失败，无法编辑')
+    })
+  } finally {
+    isDetailLoading.value = false
+  }
+}
+
 const handleSubmit = async () => {
   if (!formData.value.name.trim() || !formData.value.url.trim() || formData.value.categoryId === '') {
     showToast({ type: 'warning', title: '请填写带 * 号的必填项' })
@@ -249,22 +442,46 @@ const handleSubmit = async () => {
     return
   }
 
+  if (isEditMode.value && isDetailLoading.value) {
+    showToast({ type: 'warning', title: '编辑数据加载中，请稍后再提交' })
+    return
+  }
+
   isSubmitting.value = true
   try {
     const payload = buildCreatePayload()
-    await createAdminWebsite(payload)
-    showToast({ type: 'success', title: '添加网站成功' })
+    if (isEditMode.value) {
+      if (!props.websiteId || props.websiteId <= 0) {
+        throw new Error('网站ID不合法，无法提交修改')
+      }
+      await updateAdminWebsite(props.websiteId, payload)
+      showToast({ type: 'success', title: '修改网站成功' })
+    } else {
+      await createAdminWebsite(payload)
+      showToast({ type: 'success', title: '添加网站成功' })
+    }
     emit('submit', payload)
     emit('cancel')
   } catch (error) {
     showToast({
       type: 'error',
-      title: resolveErrorMessage(error, '添加网站失败，请重试')
+      title: resolveErrorMessage(error, isEditMode.value ? '修改网站失败，请重试' : '添加网站失败，请重试')
     })
   } finally {
     isSubmitting.value = false
   }
 }
+
+onMounted(async () => {
+  try {
+    await loadCategoriesIfNeed()
+  } catch (error) {
+    showToast({ type: 'error', title: resolveErrorMessage(error, '分类数据加载失败') })
+  }
+  if (isEditMode.value) {
+    await loadEditDetail()
+  }
+})
 </script>
 
 <template>
@@ -280,7 +497,7 @@ const handleSubmit = async () => {
 
       <div class="mt-8 font-mono text-sm space-y-4 relative z-10">
         <div>
-          <span class="text-green-400">admin@system</span><span class="text-blue-400">:</span><span class="text-purple-400">~/websites</span>$ ./add_website.sh
+          <span class="text-green-400">admin@system</span><span class="text-blue-400">:</span><span class="text-cyan-400">~/websites</span>$ {{ pageCommand }}
         </div>
         <div class="text-gray-400">
           > 初始化录入环境...<br>
@@ -291,9 +508,9 @@ const handleSubmit = async () => {
       </div>
 
       <div class="mt-12 relative z-10">
-        <h3 class="text-white text-xl font-bold mb-2">添加新网站</h3>
+        <h3 class="text-white text-xl font-bold mb-2">{{ pageTitle }}</h3>
         <p class="text-gray-400 text-sm leading-relaxed">
-          管理员手动录入系统收录的推荐站点。请确保 URL 的有效性及分类归属的准确。提交后将默认标记为“已自动审核”。
+          {{ pageDescription }}
         </p>
       </div>
 
@@ -305,7 +522,15 @@ const handleSubmit = async () => {
 
     <!-- 右侧表单区 -->
     <div class="w-full md:w-2/3 p-6 md:p-8 bg-gray-50 dark:bg-dark-bg/50">
-      <form @submit.prevent="handleSubmit" class="space-y-6">
+      <div
+        v-if="isEditMode && isDetailLoading"
+        class="rounded-lg border border-gray-200 bg-white py-14 text-center text-gray-500 dark:border-dark-border dark:bg-dark-card dark:text-gray-300"
+      >
+        <i class="fas fa-spinner fa-spin text-2xl"></i>
+        <p class="mt-3 text-sm">正在回显网站数据...</p>
+      </div>
+
+      <form v-if="!isEditMode || !isDetailLoading" @submit.prevent="handleSubmit" class="space-y-6">
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <!-- 必填：网站名称 -->
@@ -527,7 +752,7 @@ const handleSubmit = async () => {
             @click="handleCancel"
             class="cursor-pointer px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border transition-colors disabled:cursor-not-allowed disabled:opacity-60"
           >
-            取消录入
+            {{ isEditMode ? '取消修改' : '取消录入' }}
           </button>
           <button
             type="submit"
@@ -536,7 +761,7 @@ const handleSubmit = async () => {
           >
             <i v-if="isSubmitting || isLogoUploading || isLogoDeleting" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-check"></i>
-            <span>{{ isSubmitting ? '执行中...' : isLogoUploading ? '上传中...' : isLogoDeleting ? '删除中...' : '确认并保存' }}</span>
+            <span>{{ isSubmitting ? (isEditMode ? '更新中...' : '执行中...') : isLogoUploading ? '上传中...' : isLogoDeleting ? '删除中...' : (isEditMode ? '确认并更新' : '确认并保存') }}</span>
           </button>
         </div>
 

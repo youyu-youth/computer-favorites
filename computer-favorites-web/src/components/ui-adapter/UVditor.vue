@@ -25,6 +25,13 @@ const editorRef = ref<Vditor | null>(null)
 const isDarkTheme = ref(false)
 let classObserver: MutationObserver | null = null
 let fromEditor = false
+let isUnmounted = false
+
+type VditorRuntime = Vditor & {
+  vditor?: {
+    element?: HTMLElement
+  }
+}
 
 const resolveTheme = (): 'dark' | 'classic' => {
   return document.documentElement.classList.contains('dark') ? 'dark' : 'classic'
@@ -40,10 +47,36 @@ const syncDarkThemeState = (): void => {
 
 const applyEditorTheme = (): void => {
   syncDarkThemeState()
-  if (!editorRef.value) {
+  const editor = editorRef.value as VditorRuntime | null
+  if (!editor || !editor.vditor?.element || isUnmounted) {
     return
   }
-  editorRef.value.setTheme(resolveTheme(), undefined, resolveCodeTheme())
+  editor.setTheme(resolveTheme(), undefined, resolveCodeTheme())
+}
+
+const getActiveEditor = (): VditorRuntime | null => {
+  if (isUnmounted) {
+    return null
+  }
+  const editor = editorRef.value as VditorRuntime | null
+  if (!editor || !editor.vditor?.element) {
+    return null
+  }
+  return editor
+}
+
+const destroyEditorSafely = (): void => {
+  const editor = editorRef.value
+  editorRef.value = null
+  if (!editor) {
+    return
+  }
+
+  void Promise.resolve()
+    .then(() => editor.destroy())
+    .catch(() => {
+      // Vditor 在初始化未完成时销毁可能抛错，这里忽略销毁期异常，避免未捕获 Promise 报错。
+    })
 }
 
 const setupEditor = (): void => {
@@ -79,15 +112,20 @@ const setupEditor = (): void => {
       })
     },
     after: () => {
+      if (isUnmounted) {
+        return
+      }
       applyEditorTheme()
-      if (props.disabled) {
-        editorRef.value?.disabled()
+      const editor = getActiveEditor()
+      if (props.disabled && editor) {
+        editor.disabled()
       }
     },
   })
 }
 
 onMounted(() => {
+  isUnmounted = false
   syncDarkThemeState()
   setupEditor()
 
@@ -104,7 +142,7 @@ onMounted(() => {
 watch(
   () => props.modelValue,
   (nextValue) => {
-    const editor = editorRef.value
+    const editor = getActiveEditor()
     if (!editor || fromEditor) {
       return
     }
@@ -117,22 +155,23 @@ watch(
 watch(
   () => props.disabled,
   (disabled) => {
-    if (!editorRef.value) {
+    const editor = getActiveEditor()
+    if (!editor) {
       return
     }
     if (disabled) {
-      editorRef.value.disabled()
+      editor.disabled()
       return
     }
-    editorRef.value.enable()
+    editor.enable()
   }
 )
 
 onBeforeUnmount(() => {
+  isUnmounted = true
   classObserver?.disconnect()
   classObserver = null
-  editorRef.value?.destroy()
-  editorRef.value = null
+  destroyEditorSafely()
 })
 </script>
 
