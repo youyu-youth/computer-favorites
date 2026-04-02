@@ -20,6 +20,8 @@ public final class MinioObjectKeyUtils {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
+    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
+
     private MinioObjectKeyUtils() {
     }
 
@@ -39,6 +41,35 @@ public final class MinioObjectKeyUtils {
             return normalizedBusinessName + "/" + datePart + "/" + uuid + "." + extension;
         }
         return normalizedBusinessName + "/" + datePart + "/" + uuid;
+    }
+
+    /**
+     * 生成按月分段的对象键
+     *
+     * @param module 模块
+     * @param business 业务
+     * @param purpose 作用
+     * @param originalFilename 原始文件名
+     * @return 对象键
+     */
+    public static String buildObjectKeyByMonth(
+            String module,
+            String business,
+            String purpose,
+            String originalFilename
+    ) {
+        String normalizedModule = sanitizePathPart(module);
+        String normalizedBusiness = sanitizePathPart(business);
+        String normalizedPurpose = sanitizePathPart(purpose);
+        String monthPart = LocalDate.now().format(MONTH_FORMATTER);
+        String extension = resolveExtension(originalFilename);
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+
+        String pathPrefix = normalizedModule + "/" + normalizedBusiness + "/" + normalizedPurpose + "/" + monthPart;
+        if (StringUtils.hasText(extension)) {
+            return pathPrefix + "/" + uuid + "." + extension;
+        }
+        return pathPrefix + "/" + uuid;
     }
 
     /**

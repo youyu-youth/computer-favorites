@@ -1,9 +1,11 @@
-import { getJson } from '@/utils/http'
+import { deleteJson, getJson, postFormData, postJson } from '@/utils/http'
 import type { ApiResult } from '@/api/types'
 import { buildAdminAuthHeaders } from '@/api/admin-auth-headers'
 import type {
+  AdminWebsiteCreatePayload,
   AdminWebsiteCategory,
   AdminWebsiteListQuery,
+  AdminWebsiteLogoUploadResult,
   AdminWebsitePage,
   AdminWebsiteStats,
   DeletedFilterValue,
@@ -63,4 +65,43 @@ export async function getAdminWebsiteStats(deleted: DeletedFilterValue): Promise
     throw new Error('网站统计数据为空')
   }
   return res.data
+}
+
+export async function uploadAdminWebsiteLogo(file: File): Promise<AdminWebsiteLogoUploadResult> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const res = await postFormData<ApiResult<AdminWebsiteLogoUploadResult>>('/api/admin/website/logo', formData, {
+    headers: buildAdminAuthHeaders(),
+  })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '上传 Logo 失败')
+  }
+  if (!res.data) {
+    throw new Error('上传结果为空')
+  }
+  return res.data
+}
+
+export async function createAdminWebsite(payload: AdminWebsiteCreatePayload): Promise<number> {
+  const res = await postJson<ApiResult<number>>('/api/admin/website', payload, {
+    headers: buildAdminAuthHeaders(),
+  })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '添加网站失败')
+  }
+  if (typeof res.data !== 'number') {
+    throw new Error('添加网站返回数据异常')
+  }
+  return res.data
+}
+
+export async function deleteAdminWebsiteLogo(objectKey: string): Promise<void> {
+  const encodedObjectKey = encodeURIComponent(objectKey)
+  const res = await deleteJson<ApiResult<unknown>>(`/api/admin/website/logo?objectKey=${encodedObjectKey}`, {
+    headers: buildAdminAuthHeaders(),
+  })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '删除 Logo 失败')
+  }
 }

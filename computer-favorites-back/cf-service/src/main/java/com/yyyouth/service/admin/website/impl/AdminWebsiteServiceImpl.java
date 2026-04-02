@@ -6,22 +6,31 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.common.exception.BusinessException;
+import com.yyyouth.common.utils.SensitiveWordUtils;
+import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
 import com.yyyouth.model.vo.admin.AdminWebsiteCategoryVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteListItemVO;
+import com.yyyouth.model.vo.admin.AdminWebsiteLogoUploadVO;
 import com.yyyouth.model.vo.admin.AdminWebsitePageVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteStatsVO;
+import com.yyyouth.model.vo.file.MinioUploadVO;
 import com.yyyouth.service.admin.website.AdminWebsiteService;
+import com.yyyouth.service.file.MinioFileService;
 import com.yyyouth.service.mapper.website.CategoryMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
+import com.yyyouth.service.user.auth.support.StpAdminUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +63,27 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
 
     private static final int AUDIT_PENDING_STATUS = 0;
 
+    private static final int AUDIT_APPROVED_STATUS = 1;
+
     private static final int AUDIT_REJECTED_STATUS = 2;
+
+    private static final int CATEGORY_ENABLED_STATUS = 1;
+
+    private static final int ADMIN_SOURCE = 0;
+
+    private static final int DEFAULT_SORT = 0;
+
+    private static final int MAX_TAG_LENGTH = 500;
+
+    private static final long MAX_LOGO_FILE_SIZE = 1024 * 1024;
+
+    private static final String LOGO_PATH_MODULE = "admin";
+
+    private static final String LOGO_PATH_BUSINESS = "website";
+
+    private static final String LOGO_PATH_PURPOSE = "logo";
+
+    private static final String LOGO_OBJECT_KEY_PREFIX = LOGO_PATH_MODULE + "/" + LOGO_PATH_BUSINESS + "/" + LOGO_PATH_PURPOSE + "/";
 
     private static final int DEFAULT_PAGE_NUM = 1;
 
@@ -63,6 +92,8 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
     private final WebsiteMapper websiteMapper;
 
     private final CategoryMapper categoryMapper;
+
+    private final MinioFileService minioFileService;
 
     /**
      * 查询网站分页列表
@@ -155,6 +186,70 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         statsVO.setDeleted(countByCondition(deletedFlag, wrapper -> wrapper.eq(Website::getDeleted, DELETED)));
         statsVO.setLatestUpdateTime(queryLatestUpdateTime(deletedFlag));
         return statsVO;
+    }
+
+    /**
+     * 上传网站 Logo
+     *
+     * @param file Logo 文件
+     * @return 上传结果
+     */
+    @Override
+    public AdminWebsiteLogoUploadVO uploadWebsiteLogo(MultipartFile file) {
+        AdminWebsiteLogoUploadVO logoUploadVO = new AdminWebsiteLogoUploadVO();
+        MinioUploadVO uploadVO = minioFileService.uploadImageByMonth(
+                file,
+                LOGO_PATH_MODULE,
+                LOGO_PATH_BUSINESS,
+                LOGO_PATH_PURPOSE,
+                MAX_LOGO_FILE_SIZE
+        );
+        logoUploadVO.setObjectKey(uploadVO.getObjectKey());
+        logoUploadVO.setLogoUrl(uploadVO.getFileUrl());
+        return logoUploadVO;
+    }
+
+    /**
+     * 删除网站 Logo
+     *
+     * @param objectKey 对象键
+     */
+    @Override
+    public void deleteWebsiteLogo(String objectKey) {
+        if (!StringUtils.hasText(objectKey)) {
+            return;
+        }
+        String normalizedObjectKey = objectKey.trim();
+        if (!normalizedObjectKey.startsWith(LOGO_OBJECT_KEY_PREFIX)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Logo对象键不合法");
+        }
+        minioFileService.deleteByObjectKey(normalizedObjectKey);
+    }
+
+    /**
+     * 创建网站
+     *
+     * @param createDTO 创建参数
+     * @return 网站ID
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createWebsite(AdminWebsiteCreateDTO createDTO) {
+        Long adminId = StpAdminUtil.getLoginIdAsLong();
+        if (adminId == null) {
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "管理员未登录");
+        }
+
+        validateCategoryForCreate(createDTO.getCategoryId());
+        validateSensitiveFields(createDTO);
+        validateIconValue(createDTO.getIcon());
+
+        Website website = buildWebsiteEntity(createDTO, adminId);
+        int insertedRows = websiteMapper.insert(website);
+        if (insertedRows != 1 || website.getId() == null) {
+            throw new BusinessException(HttpStatus.ERROR, "添加网站失败，请稍后重试");
+        }
+        return website.getId();
     }
 
     /**
@@ -341,6 +436,176 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
             return Long.parseLong(valueText);
         } catch (NumberFormatException ex) {
             return null;
+        }
+    }
+
+    /**
+     * 校验分类是否可用
+     *
+     * @param categoryId 分类ID
+     */
+    private void validateCategoryForCreate(Long categoryId) {
+        WebsiteCategory category = categoryMapper.selectOne(new LambdaQueryWrapper<WebsiteCategory>()
+                .eq(WebsiteCategory::getId, categoryId)
+                .eq(WebsiteCategory::getDeleted, NOT_DELETED)
+                .last("limit 1"));
+        if (category == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "分类不存在");
+        }
+        if (!Objects.equals(category.getStatus(), CATEGORY_ENABLED_STATUS)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "分类已禁用，无法添加网站");
+        }
+    }
+
+    /**
+     * 校验新增参数中的敏感词
+     *
+     * @param createDTO 新增参数
+     */
+    private void validateSensitiveFields(AdminWebsiteCreateDTO createDTO) {
+        checkSensitiveField("网站名称", normalizeRequiredText(createDTO.getName()));
+        checkSensitiveField("一句话简介", normalizeOptionalText(createDTO.getSummary()));
+        checkSensitiveField("详细描述", normalizeOptionalText(createDTO.getDescription()));
+        checkSensitiveField("标签", normalizeTags(createDTO.getTags()));
+    }
+
+    /**
+     * 校验 Logo 地址
+     *
+     * @param icon Logo 地址
+     */
+    private void validateIconValue(String icon) {
+        if (!StringUtils.hasText(icon)) {
+            return;
+        }
+        String normalizedIcon = icon.trim();
+        if (!normalizedIcon.contains("/" + LOGO_OBJECT_KEY_PREFIX)
+                && !normalizedIcon.startsWith(LOGO_OBJECT_KEY_PREFIX)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Logo地址不合法，请重新上传Logo");
+        }
+    }
+
+    /**
+     * 检测单个字段敏感词
+     *
+     * @param fieldName 字段名
+     * @param fieldValue 字段值
+     */
+    private void checkSensitiveField(String fieldName, String fieldValue) {
+        if (!StringUtils.hasText(fieldValue)) {
+            return;
+        }
+        if (!SensitiveWordUtils.containsForUserContent(fieldValue)) {
+            return;
+        }
+
+        String sensitiveWord = SensitiveWordUtils.findFirst(fieldValue);
+        String message = StringUtils.hasText(sensitiveWord)
+                ? fieldName + "包含敏感词：" + sensitiveWord
+                : fieldName + "包含敏感词";
+        throw new BusinessException(HttpStatus.BAD_REQUEST, message);
+    }
+
+    /**
+     * 构建新增网站实体
+     *
+     * @param createDTO 新增参数
+     * @param adminId 管理员ID
+     * @return 网站实体
+     */
+    private Website buildWebsiteEntity(AdminWebsiteCreateDTO createDTO, Long adminId) {
+        Website website = BeanUtil.copyProperties(createDTO, Website.class);
+        LocalDateTime now = LocalDateTime.now();
+
+        website.setName(normalizeRequiredText(createDTO.getName()));
+        website.setUrl(normalizeUrl(createDTO.getUrl()));
+        website.setIcon(normalizeOptionalText(createDTO.getIcon()));
+        website.setSummary(normalizeOptionalText(createDTO.getSummary()));
+        website.setDescription(normalizeOptionalText(createDTO.getDescription()));
+        website.setTags(normalizeTags(createDTO.getTags()));
+        website.setSort(createDTO.getSort() == null ? DEFAULT_SORT : createDTO.getSort());
+        website.setIsTop(Boolean.TRUE.equals(createDTO.getIsTop()) ? 1 : 0);
+        website.setIsRecommend(Boolean.TRUE.equals(createDTO.getIsRecommend()) ? 1 : 0);
+
+        website.setStatus(ONLINE_STATUS);
+        website.setDeleted(NOT_DELETED);
+        website.setSource(ADMIN_SOURCE);
+        website.setAuditStatus(AUDIT_APPROVED_STATUS);
+        website.setAuditRemark("管理员录入自动通过");
+        website.setSubmitterId(adminId);
+        website.setAuditAdminId(toIntExactAdminId(adminId));
+        website.setCreateTime(now);
+        website.setUpdateTime(now);
+        return website;
+    }
+
+    /**
+     * 标准化必填文本
+     *
+     * @param text 原始文本
+     * @return 标准化结果
+     */
+    private String normalizeRequiredText(String text) {
+        return text == null ? "" : text.trim();
+    }
+
+    /**
+     * 标准化可选文本
+     *
+     * @param text 原始文本
+     * @return 标准化结果
+     */
+    private String normalizeOptionalText(String text) {
+        if (!StringUtils.hasText(text)) {
+            return "";
+        }
+        return text.trim();
+    }
+
+    /**
+     * 标准化 URL
+     *
+     * @param url 原始URL
+     * @return 标准化结果
+     */
+    private String normalizeUrl(String url) {
+        return normalizeRequiredText(url);
+    }
+
+    /**
+     * 标准化标签
+     *
+     * @param tags 原始标签
+     * @return 标准化后的标签
+     */
+    private String normalizeTags(String tags) {
+        if (!StringUtils.hasText(tags)) {
+            return "";
+        }
+
+        String normalizedTags = Arrays.stream(tags.replace('，', ',').split(","))
+            .map(tag -> tag.replaceAll("\\s+", ""))
+                .filter(StringUtils::hasText)
+                .distinct()
+                .collect(Collectors.joining(","));
+
+        if (normalizedTags.length() > MAX_TAG_LENGTH) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "标签总长度不能超过500");
+        }
+        return normalizedTags;
+    }
+
+    /**
+     * 转换管理员ID
+     *
+     * @param adminId 管理员ID
+     * @return int类型管理员ID
+     */
+    private Integer toIntExactAdminId(Long adminId) {
+        try {
+            return Math.toIntExact(adminId);
+        } catch (ArithmeticException ex) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "管理员ID不合法");
         }
     }
 }

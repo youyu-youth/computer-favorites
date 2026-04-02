@@ -55,3 +55,21 @@ export interface AdminWebsiteStats {
   deleted: number
   latestUpdateTime?: string
 }
+
+export interface AdminWebsiteLogoUploadResult {
+  objectKey: string
+  logoUrl: string
+}
+
+export interface AdminWebsiteCreatePayload {
+  name: string
+  url: string
+  icon?: string
+  summary?: string
+  description?: string
+  categoryId: number
+  tags?: string
+  isTop: boolean
+  isRecommend: boolean
+  sort: number
+}

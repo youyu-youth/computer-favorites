@@ -61,6 +61,9 @@ const setupEditor = (): void => {
       hljs: {
         style: resolveCodeTheme(),
       },
+      markdown: {
+        mark: true,
+      },
     },
     cache: {
       enable: false,
@@ -197,6 +200,14 @@ onBeforeUnmount(() => {
   color: currentColor;
 }
 
+:deep(.vditor-reset mark),
+:deep(.vditor-ir__preview mark) {
+  color: inherit;
+  background-color: rgb(250 204 21 / 0.4);
+  border-radius: 0.25rem;
+  padding: 0 0.2em;
+}
+
 :deep(.vditor-content) {
   background-color: rgb(255 255 255 / 1);
 }
@@ -268,6 +279,11 @@ onBeforeUnmount(() => {
 .cf-vditor-wrapper.is-dark :deep(.vditor-reset code:not(.hljs):not(.highlight-chroma)) {
   background-color: rgb(30 41 59 / 1);
   color: rgb(241 245 249 / 1);
+}
+
+.cf-vditor-wrapper.is-dark :deep(.vditor-reset mark),
+.cf-vditor-wrapper.is-dark :deep(.vditor-ir__preview mark) {
+  background-color: rgb(234 179 8 / 0.35);
 }
 
 :deep(.vditor-reset:focus-visible) {

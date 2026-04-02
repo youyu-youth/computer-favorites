@@ -1,14 +1,18 @@
 <script setup lang="ts">
+import FileUpload from 'primevue/fileupload'
+import type { FileUploadUploaderEvent } from 'primevue/fileupload'
 import Select from 'primevue/select'
 import UVditor from '@/components/ui-adapter/UVditor.vue'
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAdminNavStore } from '@/stores/adminNav'
 import { useToast } from '@/composables/useToast'
+import { createAdminWebsite, deleteAdminWebsiteLogo, uploadAdminWebsiteLogo } from '@/api/admin-website'
+import type { AdminWebsiteCreatePayload } from '@/types/admin-website'
 
 const emit = defineEmits<{
   (e: 'cancel'): void
-  (e: 'submit', data: any): void
+  (e: 'submit', data: AdminWebsiteCreatePayload): void
 }>()
 
 const adminNavStore = useAdminNavStore()
@@ -19,27 +23,131 @@ const validCategories = computed(() => {
   return websiteCategories.value.filter((c) => c.id !== 0)
 })
 
-const formData = ref({
+const formData = ref<{
+  name: string
+  url: string
+  icon: string
+  summary: string
+  description: string
+  categoryId: number | ''
+  tags: string
+  isTop: boolean
+  isRecommend: boolean
+  sort: number
+}>({
   name: '',
   url: '',
   icon: '',
   summary: '',
   description: '',
-  category_id: '' as number | '',
+  categoryId: '',
   tags: '',
-  is_top: false,
-  is_recommend: false,
+  isTop: false,
+  isRecommend: false,
   sort: 0
 })
 
+const MAX_LOGO_FILE_SIZE = 1024 * 1024
 const isSubmitting = ref(false)
+const isLogoUploading = ref(false)
+const isLogoDeleting = ref(false)
+const logoFileName = ref('')
+const logoObjectKey = ref('')
+
+const logoChooseButtonProps = {
+  type: 'button',
+  class: 'w-full cursor-pointer justify-center rounded-lg border border-dashed border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-brand-orange hover:text-brand-orange dark:border-dark-border dark:bg-dark-card dark:text-gray-200 dark:hover:border-brand-orange dark:hover:text-brand-orange'
+}
+
+const resolveErrorMessage = (error: unknown, fallbackMessage: string) => {
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+  return fallbackMessage
+}
+
+const resetLogo = () => {
+  formData.value.icon = ''
+  logoFileName.value = ''
+  logoObjectKey.value = ''
+}
+
+const clearLogo = async () => {
+  const currentObjectKey = logoObjectKey.value
+  if (!currentObjectKey) {
+    resetLogo()
+    return
+  }
+
+  isLogoDeleting.value = true
+  try {
+    await deleteAdminWebsiteLogo(currentObjectKey)
+    resetLogo()
+    showToast({ type: 'success', title: 'Logo 已删除' })
+  } catch (error) {
+    showToast({ type: 'error', title: resolveErrorMessage(error, 'Logo 删除失败，请稍后重试') })
+  } finally {
+    isLogoDeleting.value = false
+  }
+}
+
+const handleCancel = async () => {
+  await clearLogo()
+  emit('cancel')
+}
+
+const handleLogoUpload = async (event: FileUploadUploaderEvent) => {
+  const selectedFile = Array.isArray(event.files) ? event.files[0] : event.files
+  if (!selectedFile) {
+    return
+  }
+
+  if (!selectedFile.type.startsWith('image/')) {
+    showToast({ type: 'warning', title: '仅支持图片格式的 Logo 文件' })
+    return
+  }
+
+  if (selectedFile.size > MAX_LOGO_FILE_SIZE) {
+    showToast({ type: 'warning', title: 'Logo 文件不能超过 1MB' })
+    return
+  }
+
+  if (isLogoDeleting.value) {
+    showToast({ type: 'warning', title: 'Logo 正在删除，请稍后重试' })
+    return
+  }
+
+  if (logoObjectKey.value) {
+    await clearLogo()
+  }
+
+  isLogoUploading.value = true
+  try {
+    const uploadResult = await uploadAdminWebsiteLogo(selectedFile)
+    logoFileName.value = selectedFile.name
+    logoObjectKey.value = uploadResult.objectKey
+    formData.value.icon = uploadResult.logoUrl
+    showToast({
+      type: 'success',
+      title: 'Logo 上传成功'
+    })
+  } catch (error) {
+    resetLogo()
+    showToast({
+      type: 'error',
+      title: resolveErrorMessage(error, 'Logo 上传失败，请稍后重试')
+    })
+  } finally {
+    isLogoUploading.value = false
+  }
+}
 
 const selectedCategoryId = computed<number | null>({
   get: () => {
-    return formData.value.category_id === '' ? null : formData.value.category_id
+    return formData.value.categoryId === '' ? null : formData.value.categoryId
   },
   set: (value) => {
-    formData.value.category_id = value ?? ''
+    formData.value.categoryId = value ?? ''
   }
 })
 
@@ -110,21 +218,49 @@ const categorySelectPt = {
   }
 }
 
+const buildCreatePayload = (): AdminWebsiteCreatePayload => {
+  return {
+    name: formData.value.name.trim(),
+    url: formData.value.url.trim(),
+    icon: formData.value.icon.trim() || undefined,
+    summary: formData.value.summary.trim() || undefined,
+    description: formData.value.description.trim() || undefined,
+    categoryId: Number(formData.value.categoryId),
+    tags: formData.value.tags.trim() || undefined,
+    isTop: formData.value.isTop,
+    isRecommend: formData.value.isRecommend,
+    sort: Number.isFinite(formData.value.sort) ? formData.value.sort : 0
+  }
+}
+
 const handleSubmit = async () => {
-  if (!formData.value.name || !formData.value.url || formData.value.category_id === '') {
+  if (!formData.value.name.trim() || !formData.value.url.trim() || formData.value.categoryId === '') {
     showToast({ type: 'warning', title: '请填写带 * 号的必填项' })
+    return
+  }
+
+  if (isLogoUploading.value) {
+    showToast({ type: 'warning', title: 'Logo 正在上传，请稍后再提交' })
+    return
+  }
+
+  if (isLogoDeleting.value) {
+    showToast({ type: 'warning', title: 'Logo 正在删除，请稍后再提交' })
     return
   }
 
   isSubmitting.value = true
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 800))
-    showToast({ type: 'success', title: '网站添加成功！' })
-    emit('submit', formData.value)
+    const payload = buildCreatePayload()
+    await createAdminWebsite(payload)
+    showToast({ type: 'success', title: '添加网站成功' })
+    emit('submit', payload)
     emit('cancel')
   } catch (error) {
-    showToast({ type: 'error', title: '操作失败，请重试' })
+    showToast({
+      type: 'error',
+      title: resolveErrorMessage(error, '添加网站失败，请重试')
+    })
   } finally {
     isSubmitting.value = false
   }
@@ -253,17 +389,64 @@ const handleSubmit = async () => {
             </Select>
           </div>
 
-          <!-- 网站图标URL -->
-          <div class="space-y-2">
+          <!-- 网站图标上传 -->
+          <div class="space-y-2 min-w-0">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Logo URL
+              Logo 上传
             </label>
-            <input
-              v-model="formData.icon"
-              type="url"
-              placeholder="图标链接..."
-              class="w-full px-4 py-2 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg text-sm focus:ring-2 focus:ring-brand-orange focus:border-brand-orange dark:text-white transition-all outline-none"
+
+            <FileUpload
+              mode="basic"
+              name="websiteLogo"
+              accept="image/*"
+              :maxFileSize="MAX_LOGO_FILE_SIZE"
+              :auto="true"
+              :disabled="isLogoUploading || isLogoDeleting || isSubmitting"
+              customUpload
+              chooseLabel="上传 Logo"
+              chooseIcon="fas fa-cloud-arrow-up"
+              :chooseButtonProps="logoChooseButtonProps"
+              class="cf-logo-upload w-full"
+              @uploader="handleLogoUpload"
             />
+
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              支持 JPG/PNG/WebP，单文件不超过 1MB。
+              <span v-if="isLogoUploading" class="ml-1 text-brand-orange">上传中...</span>
+              <span v-if="isLogoDeleting" class="ml-1 text-brand-orange">删除中...</span>
+            </p>
+
+            <div
+              v-if="formData.icon"
+              class="rounded-lg border border-gray-200 bg-white p-3 dark:border-dark-border dark:bg-dark-card"
+            >
+              <div class="flex items-start gap-3 min-w-0">
+                <img
+                  :src="formData.icon"
+                  alt="Logo 预览"
+                  class="h-12 w-12 shrink-0 rounded-md border border-gray-200 object-cover dark:border-dark-border"
+                />
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {{ logoFileName || 'logo-preview' }}
+                  </p>
+                  <p class="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
+                    {{ formData.icon }}
+                  </p>
+                  <p v-if="logoObjectKey" class="mt-1 truncate text-xs text-gray-400 dark:text-gray-500">
+                    {{ logoObjectKey }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  :disabled="isLogoDeleting || isLogoUploading || isSubmitting"
+                  @click="clearLogo"
+                  class="shrink-0 cursor-pointer rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:border-red-300 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-dark-border dark:text-gray-300 dark:hover:border-red-400 dark:hover:text-red-400"
+                >
+                  清除
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -311,7 +494,7 @@ const handleSubmit = async () => {
               排序值 (越小越靠前)
             </label>
             <input
-              v-model="formData.sort"
+              v-model.number="formData.sort"
               type="number"
               placeholder="0"
               class="w-full px-4 py-2 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg text-sm focus:ring-2 focus:ring-brand-orange focus:border-brand-orange dark:text-white transition-all outline-none"
@@ -323,13 +506,13 @@ const handleSubmit = async () => {
         <div class="border-t border-gray-200 dark:border-dark-border pt-6 pb-2">
           <div class="flex items-center gap-6">
             <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" v-model="formData.is_top" class="sr-only peer">
+              <input type="checkbox" v-model="formData.isTop" class="sr-only peer">
               <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-brand-orange"></div>
               <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">置顶推荐</span>
             </label>
 
             <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" v-model="formData.is_recommend" class="sr-only peer">
+              <input type="checkbox" v-model="formData.isRecommend" class="sr-only peer">
               <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
               <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">编辑精选</span>
             </label>
@@ -340,19 +523,20 @@ const handleSubmit = async () => {
         <div class="flex items-center justify-end gap-3 pt-4">
           <button
             type="button"
-            @click="emit('cancel')"
-            class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border transition-colors"
+            :disabled="isLogoUploading || isLogoDeleting || isSubmitting"
+            @click="handleCancel"
+            class="cursor-pointer px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-border transition-colors disabled:cursor-not-allowed disabled:opacity-60"
           >
             取消录入
           </button>
           <button
             type="submit"
-            :disabled="isSubmitting"
-            class="px-6 py-2 rounded-lg text-sm font-medium text-white bg-brand-orange hover:bg-orange-600 focus:ring-2 focus:ring-brand-orange focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+            :disabled="isSubmitting || isLogoUploading || isLogoDeleting"
+            class="cursor-pointer px-6 py-2 rounded-lg text-sm font-medium text-white bg-brand-orange hover:bg-orange-600 focus:ring-2 focus:ring-brand-orange focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            <i v-if="isSubmitting" class="fas fa-spinner fa-spin"></i>
+            <i v-if="isSubmitting || isLogoUploading || isLogoDeleting" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-check"></i>
-            <span>{{ isSubmitting ? '执行中...' : '确认并保存' }}</span>
+            <span>{{ isSubmitting ? '执行中...' : isLogoUploading ? '上传中...' : isLogoDeleting ? '删除中...' : '确认并保存' }}</span>
           </button>
         </div>
 
@@ -386,5 +570,19 @@ const handleSubmit = async () => {
 
 :deep(.cf-category-select-panel .cf-select-scroll::-webkit-scrollbar-thumb:hover) {
   background: rgb(100 116 139 / 0.85);
+}
+
+:deep(.cf-logo-upload button) {
+  width: 100%;
+}
+
+:deep(.cf-logo-upload input[type='file']) {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  :deep(.cf-logo-upload button) {
+    min-height: 2.5rem;
+  }
 }
 </style>
