@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch, shallowRef, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, shallowRef, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import type { AdminMenuKey } from '@/stores/adminNav'
 import { useAdminNavStore } from '@/stores/adminNav'
 import AdminSidebarCategoryList from '@/components/admin/layout/AdminSidebarCategoryList.vue'
 
 const navStore = useAdminNavStore()
+const router = useRouter()
+const route = useRoute()
 const {
   activeMenu,
   menuItems,
@@ -72,12 +75,30 @@ const goToMainLevel = () => {
   currentSidebarLevel.value = 'main'
 }
 
+const navigateByMenu = async (menuKey: AdminMenuKey): Promise<void> => {
+  if (menuKey === 'websites') {
+    if (route.name !== 'adminWebsites') {
+      await router.push({ name: 'adminWebsites' })
+    }
+    return
+  }
+
+  if (menuKey === 'tags' && route.name !== 'adminTags') {
+    await router.push({ name: 'adminTags' })
+  }
+}
+
 const handleMainMenuClick = (key: AdminMenuKey) => {
   navStore.setActiveMenu(key)
   if (key === 'websites') {
     resetCategoryKeyword()
     currentSidebarLevel.value = 'sub'
+  } else {
+    currentSidebarLevel.value = 'main'
   }
+
+  void navigateByMenu(key)
+
   if (typeof window !== 'undefined' && window.innerWidth < 768 && key !== 'websites') {
     navStore.closeMobileSidebar()
   }
@@ -85,6 +106,9 @@ const handleMainMenuClick = (key: AdminMenuKey) => {
 
 const handleSubMenuClick = (categoryId: number) => {
   navStore.syncSelectionFromTreeKey(`category:${categoryId}`)
+  if (route.name !== 'adminWebsites') {
+    void router.push({ name: 'adminWebsites' })
+  }
 }
 
 // 可拖拽改变侧栏宽度逻辑

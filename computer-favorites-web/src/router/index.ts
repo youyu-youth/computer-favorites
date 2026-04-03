@@ -11,6 +11,7 @@ import LoginView from '@/views/user/LoginView.vue'
 import { useAdminAuthStore } from '@/stores/adminAuth'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+import { useAdminNavStore } from '@/stores/adminNav'
 import { applyThemeScope, resolveThemeScopeByPath } from '@/theme/scope'
 
 const router = createRouter({
@@ -24,6 +25,12 @@ const router = createRouter({
         {
           path: '',
           redirect: '/computer/admin/websites',
+        },
+        {
+          path: 'tags',
+          name: 'adminTags',
+          component: () => import('@/views/admin/TagManagementView.vue'),
+          meta: { requiresAdminAuth: true, title: '分类标签' },
         },
         {
           path: 'websites',
@@ -184,8 +191,21 @@ router.beforeEach(async (to) => {
   }
 })
 
-router.afterEach(() => {
+router.afterEach((to) => {
   useAppStore().finishRouteTransition()
+
+  if (to.name === 'adminTags') {
+    useAdminNavStore().setActiveMenu('tags')
+    return
+  }
+
+  if (
+    to.name === 'adminWebsites'
+    || to.name === 'adminWebsiteDetail'
+    || to.name === 'adminWebsiteEdit'
+  ) {
+    useAdminNavStore().setActiveMenu('websites')
+  }
 })
 
 router.onError(() => {

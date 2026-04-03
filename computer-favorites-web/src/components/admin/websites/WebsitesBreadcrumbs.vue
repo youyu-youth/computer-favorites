@@ -68,6 +68,10 @@ const breadcrumbItems = computed(() => {
         adminNavStore.setActiveMenu(menuKey)
         if (menuKey === 'websites') {
           await goWebsites()
+          return
+        }
+        if (menuKey === 'tags' && route.name !== 'adminTags') {
+          await router.push({ name: 'adminTags' })
         }
       },
     },
@@ -107,8 +111,15 @@ const breadcrumbItems = computed(() => {
   return items
 })
 
-const activateMenu = (menuKey: AdminMenuKey) => {
+const activateMenu = async (menuKey: AdminMenuKey) => {
   adminNavStore.setActiveMenu(menuKey)
+  if (menuKey === 'websites') {
+    await goWebsites()
+    return
+  }
+  if (menuKey === 'tags' && route.name !== 'adminTags') {
+    await router.push({ name: 'adminTags' })
+  }
 }
 </script>
 
@@ -127,7 +138,7 @@ const activateMenu = (menuKey: AdminMenuKey) => {
             :class="activeMenu === menu.key
               ? 'text-[#e95322] border-[#e95322] bg-orange-50 dark:bg-[#161b22]'
               : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card'"
-            @click="activateMenu(menu.key)"
+            @click="void activateMenu(menu.key)"
           >
             <i :class="menu.icon" class="text-xs"></i>
             <span>{{ menu.label }}</span>
@@ -153,7 +164,7 @@ const activateMenu = (menuKey: AdminMenuKey) => {
           :class="activeMenu === menu.key
             ? 'text-[#e95322] border-[#e95322] bg-orange-50 dark:bg-[#161b22]'
             : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card'"
-          @click="activateMenu(menu.key)"
+          @click="void activateMenu(menu.key)"
         >
           <i :class="menu.icon" class="text-xs"></i>
           <span>{{ menu.label }}</span>
