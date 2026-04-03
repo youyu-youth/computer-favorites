@@ -56,6 +56,87 @@ const title = computed(() => (isLoginMode.value ? '欢迎回来' : '创建账号
 const subtitle = computed(() =>
   isLoginMode.value ? '登录以管理你的收藏夹' : '开始收藏你的宝藏站点',
 )
+const sliderVerifyImage = ref('')
+
+const sliderImageFallback =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360"><rect width="640" height="360" fill="#f8fafc"/><rect x="40" y="40" width="220" height="90" fill="#94a3b8" fill-opacity="0.35"/><rect x="300" y="120" width="280" height="120" fill="#0ea5e9" fill-opacity="0.28"/><rect x="80" y="220" width="220" height="80" fill="#0f766e" fill-opacity="0.3"/><text x="36" y="70" fill="#0f172a" font-size="40" font-family="sans-serif" font-weight="700">CF</text><text x="36" y="104" fill="#334155" font-size="24" font-family="sans-serif">Slider Verify</text></svg>',
+  )
+const sliderImagePalette = [
+  '#0f766e',
+  '#0ea5e9',
+  '#f59e0b',
+  '#2563eb',
+  '#ef4444',
+  '#10b981',
+  '#334155',
+]
+
+const getRandomInt = (min: number, max: number) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+const getRandomSliderColor = () => {
+  return sliderImagePalette[getRandomInt(0, sliderImagePalette.length - 1)] ?? '#334155'
+}
+
+const createSliderVerifyImage = () => {
+  if (typeof document === 'undefined') {
+    return sliderImageFallback
+  }
+  const canvas = document.createElement('canvas')
+  canvas.width = 640
+  canvas.height = 360
+  const context = canvas.getContext('2d')
+  if (!context) {
+    return sliderImageFallback
+  }
+
+  context.fillStyle = '#f8fafc'
+  context.fillRect(0, 0, canvas.width, canvas.height)
+
+  for (let index = 0; index < 24; index += 1) {
+    const color = getRandomSliderColor()
+    const x = getRandomInt(0, canvas.width - 80)
+    const y = getRandomInt(0, canvas.height - 80)
+    const width = getRandomInt(40, 180)
+    const height = getRandomInt(30, 120)
+
+    context.globalAlpha = 0.18 + Math.random() * 0.2
+    context.fillStyle = color
+    context.fillRect(x, y, width, height)
+  }
+
+  context.globalAlpha = 0.3
+  for (let index = 0; index < 16; index += 1) {
+    const color = getRandomSliderColor()
+    const x = getRandomInt(20, canvas.width - 20)
+    const y = getRandomInt(20, canvas.height - 20)
+    const radius = getRandomInt(8, 24)
+
+    context.fillStyle = color
+    context.beginPath()
+    context.arc(x, y, radius, 0, Math.PI * 2)
+    context.fill()
+  }
+
+  context.globalAlpha = 1
+  context.fillStyle = '#0f172a'
+  context.font = '700 42px sans-serif'
+  context.fillText('CF', 24, 58)
+
+  context.fillStyle = '#334155'
+  context.font = '24px sans-serif'
+  context.fillText('Slider Verify', 24, 94)
+
+  return canvas.toDataURL('image/png')
+}
+
+const refreshSliderVerifyImage = () => {
+  sliderVerifyImage.value = createSliderVerifyImage()
+}
+
 const loginHintText = computed(() => {
   if (!isLoginMode.value) {
     return ''
@@ -92,6 +173,7 @@ const switchMode = (next: Mode) => {
   form.loginEmailCode = ''
   showSliderVerify.value = false
   sliderVerified.value = false
+  sliderVerifyImage.value = ''
   showUsernameDialog.value = false
   registerUsername.value = ''
   sendCodeCountdown.value = 0
@@ -110,6 +192,7 @@ const switchLoginMethodFromHint = () => {
   stopSendCodeTimer()
   showSliderVerify.value = false
   sliderVerified.value = false
+  sliderVerifyImage.value = ''
 }
 
 const onSliderSuccess = (result: SliderVerifyResult) => {
@@ -119,12 +202,14 @@ const onSliderSuccess = (result: SliderVerifyResult) => {
   }
   sliderVerified.value = true
   showSliderVerify.value = false
+  sliderVerifyImage.value = ''
   void submit()
 }
 
 const onSliderError = (result: SliderVerifyResult) => {
   sliderVerified.value = false
   errorText.value = result.message || '滑块验证失败，请重试'
+  refreshSliderVerifyImage()
 }
 
 const resolveRedirect = () => {
@@ -295,6 +380,7 @@ const submit = async () => {
     }
     if (!sliderVerified.value) {
       errorText.value = null
+      refreshSliderVerifyImage()
       showSliderVerify.value = true
       return
     }
@@ -671,6 +757,7 @@ onBeforeUnmount(() => {
         <div class="text-xs text-slate-500 dark:text-slate-400">请完成滑块验证后继续登录</div>
         <div class="mt-4 overflow-x-auto">
           <slider-verify
+            :img="sliderVerifyImage"
             :width="320"
             :height="180"
             @onSuccess="onSliderSuccess"
