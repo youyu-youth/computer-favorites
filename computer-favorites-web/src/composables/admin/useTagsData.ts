@@ -1,10 +1,20 @@
-import { computed, reactive, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
+import {
+  batchDeleteAdminTag,
+  createAdminTag,
+  deleteAdminTag,
+  getAdminTagPage,
+  getAdminTagStats,
+  updateAdminTag,
+} from '@/api/admin-tag'
 import { useToast } from '@/composables/useToast'
 import type {
+  AdminTagCreatePayload,
   AdminTagEditorMode,
   AdminTagFormErrors,
   AdminTagFormModel,
   AdminTagItem,
+  AdminTagPage,
   AdminTagSortField,
   AdminTagSortOrder,
   AdminTagStats,
@@ -13,151 +23,35 @@ import type {
 const DEFAULT_PAGE_SIZE = 8
 const DEFAULT_COLOR = '#E95322'
 const COLOR_HEX_PATTERN = /^#([0-9A-Fa-f]{6})$/
+const SEARCH_DEBOUNCE_MS = 300
 
-const COLOR_PALETTE = [
-  '#E95322',
-  '#0EA5E9',
-  '#10B981',
-  '#F59E0B',
-  '#EF4444',
-  '#6366F1',
-  '#14B8A6',
-  '#84CC16',
-]
-
-const now = (): string => {
-  return new Date().toISOString()
+type LoadTagPageOptions = {
+  silent?: boolean
 }
 
-const createMockTags = (): AdminTagItem[] => {
-  return [
-    {
-      id: 1,
-      name: 'Vue 3',
-      color: '#10B981',
-      useCount: 34,
-      createTime: '2026-03-01T09:10:00.000Z',
-      updateTime: '2026-04-02T10:30:00.000Z',
-      deleted: 0,
-    },
-    {
-      id: 2,
-      name: 'TypeScript',
-      color: '#0EA5E9',
-      useCount: 26,
-      createTime: '2026-03-02T08:20:00.000Z',
-      updateTime: '2026-04-03T08:55:00.000Z',
-      deleted: 0,
-    },
-    {
-      id: 3,
-      name: 'Spring Boot',
-      color: '#84CC16',
-      useCount: 19,
-      createTime: '2026-03-05T05:10:00.000Z',
-      updateTime: '2026-04-01T07:20:00.000Z',
-      deleted: 0,
-    },
-    {
-      id: 4,
-      name: 'MyBatis Plus',
-      color: '#F59E0B',
-      useCount: 14,
-      createTime: '2026-03-08T12:30:00.000Z',
-      updateTime: '2026-03-29T16:10:00.000Z',
-      deleted: 0,
-    },
-    {
-      id: 5,
-      name: 'PrimeVue',
-      color: '#6366F1',
-      useCount: 22,
-      createTime: '2026-03-12T02:40:00.000Z',
-      updateTime: '2026-04-03T03:25:00.000Z',
-      deleted: 0,
-    },
-    {
-      id: 6,
-      name: 'Sa-Token',
-      color: '#EF4444',
-      useCount: 11,
-      createTime: '2026-03-16T11:10:00.000Z',
-      updateTime: '2026-03-30T12:50:00.000Z',
-      deleted: 0,
-    },
-    {
-      id: 7,
-      name: 'Redis',
-      color: '#14B8A6',
-      useCount: 17,
-      createTime: '2026-03-17T08:40:00.000Z',
-      updateTime: '2026-04-02T01:35:00.000Z',
-      deleted: 0,
-    },
-    {
-      id: 8,
-      name: 'MinIO',
-      color: '#E95322',
-      useCount: 7,
-      createTime: '2026-03-20T03:15:00.000Z',
-      updateTime: '2026-03-31T06:45:00.000Z',
-      deleted: 0,
-    },
-    {
-      id: 9,
-      name: 'Playwright',
-      color: '#0EA5E9',
-      useCount: 9,
-      createTime: '2026-03-23T09:30:00.000Z',
-      updateTime: '2026-04-03T05:05:00.000Z',
-      deleted: 0,
-    },
-    {
-      id: 10,
-      name: 'Tailwind CSS',
-      color: '#10B981',
-      useCount: 28,
-      createTime: '2026-03-26T07:55:00.000Z',
-      updateTime: '2026-04-02T17:15:00.000Z',
-      deleted: 0,
-    },
-  ]
+type ReloadTagDataOptions = {
+  silentListLoading?: boolean
 }
 
-const resolveTimestamp = (value: string): number => {
-  const timestamp = new Date(value).getTime()
-  if (Number.isNaN(timestamp)) {
-    return 0
+const resolveErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message) {
+    return error.message
   }
-  return timestamp
-}
-
-const isToday = (value: string): boolean => {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return false
-  }
-  const nowDate = new Date()
-  return (
-    date.getFullYear() === nowDate.getFullYear()
-    && date.getMonth() === nowDate.getMonth()
-    && date.getDate() === nowDate.getDate()
-  )
-}
-
-const normalizeName = (name: string): string => {
-  return name.trim().toLowerCase()
+  return fallback
 }
 
 export function useTagsData() {
   const { add: showToast } = useToast()
 
-  const tags = shallowRef<AdminTagItem[]>(createMockTags())
+  const tags = shallowRef<AdminTagItem[]>([])
   const searchKeyword = shallowRef('')
   const currentPage = shallowRef(1)
   const pageSize = shallowRef(DEFAULT_PAGE_SIZE)
   const sortField = shallowRef<AdminTagSortField>('updateTime')
   const sortOrder = shallowRef<AdminTagSortOrder>(-1)
+  const totalItems = shallowRef(0)
+  const totalPages = shallowRef(1)
+  const loading = shallowRef(false)
 
   const editorOpen = shallowRef(false)
   const editorSubmitting = shallowRef(false)
@@ -167,6 +61,15 @@ export function useTagsData() {
   const deleteDialogOpen = shallowRef(false)
   const deleteSubmitting = shallowRef(false)
   const deletingTag = shallowRef<AdminTagItem | null>(null)
+  const selectedTagIds = shallowRef<number[]>([])
+  const batchDeleteSubmitting = shallowRef(false)
+
+  const stats = shallowRef<AdminTagStats>({
+    total: 0,
+    inUse: 0,
+    unused: 0,
+    updatedToday: 0,
+  })
 
   const formModel = reactive<AdminTagFormModel>({
     name: '',
@@ -178,68 +81,12 @@ export function useTagsData() {
     color: '',
   })
 
-  const colorPalette = shallowRef<string[]>([...COLOR_PALETTE])
+  const selectedTagCount = computed(() => selectedTagIds.value.length)
 
-  const activeTags = computed(() => {
-    return tags.value.filter((item) => item.deleted === 0)
-  })
+  let listRequestId = 0
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
 
-  const normalizedSearchKeyword = computed(() => {
-    return searchKeyword.value.trim().toLowerCase()
-  })
-
-  const filteredTags = computed(() => {
-    if (!normalizedSearchKeyword.value) {
-      return activeTags.value
-    }
-    return activeTags.value.filter((item) => {
-      return normalizeName(item.name).includes(normalizedSearchKeyword.value)
-    })
-  })
-
-  const sortedTags = computed(() => {
-    const list = [...filteredTags.value]
-    const order = sortOrder.value
-    const field = sortField.value
-
-    list.sort((left, right) => {
-      if (field === 'id' || field === 'useCount') {
-        const leftValue = Number(left[field])
-        const rightValue = Number(right[field])
-        return order === 1 ? leftValue - rightValue : rightValue - leftValue
-      }
-
-      if (field === 'createTime' || field === 'updateTime') {
-        const leftValue = resolveTimestamp(left[field])
-        const rightValue = resolveTimestamp(right[field])
-        return order === 1 ? leftValue - rightValue : rightValue - leftValue
-      }
-
-      const leftValue = String(left[field] || '')
-      const rightValue = String(right[field] || '')
-      const compared = leftValue.localeCompare(rightValue, 'zh-CN', {
-        sensitivity: 'base',
-      })
-      return order === 1 ? compared : -compared
-    })
-
-    return list
-  })
-
-  const totalItems = computed(() => sortedTags.value.length)
-
-  const totalPages = computed(() => {
-    if (totalItems.value <= 0) {
-      return 1
-    }
-    return Math.ceil(totalItems.value / pageSize.value)
-  })
-
-  const pagedTags = computed(() => {
-    const start = (currentPage.value - 1) * pageSize.value
-    const end = start + pageSize.value
-    return sortedTags.value.slice(start, end)
-  })
+  const pagedTags = computed(() => tags.value)
 
   const visiblePages = computed<Array<number | string>>(() => {
     if (totalPages.value <= 7) {
@@ -273,17 +120,6 @@ export function useTagsData() {
     ]
   })
 
-  const stats = computed<AdminTagStats>(() => {
-    const inUse = activeTags.value.filter((item) => item.useCount > 0).length
-    const updatedToday = activeTags.value.filter((item) => isToday(item.updateTime)).length
-    return {
-      total: activeTags.value.length,
-      inUse,
-      unused: activeTags.value.length - inUse,
-      updatedToday,
-    }
-  })
-
   const clearFormErrors = (): void => {
     formErrors.name = ''
     formErrors.color = ''
@@ -300,8 +136,14 @@ export function useTagsData() {
   }
 
   const setSort = (field: AdminTagSortField, order: AdminTagSortOrder): void => {
+    if (sortField.value === field && sortOrder.value === order) {
+      return
+    }
     sortField.value = field
     sortOrder.value = order
+    currentPage.value = 1
+    selectedTagIds.value = []
+    void loadTagPage()
   }
 
   const openCreateEditor = (): void => {
@@ -338,18 +180,6 @@ export function useTagsData() {
       return false
     }
 
-    const duplicated = activeTags.value.some((item) => {
-      if (editingTagId.value !== null && item.id === editingTagId.value) {
-        return false
-      }
-      return normalizeName(item.name) === normalizeName(name)
-    })
-
-    if (duplicated) {
-      formErrors.name = '标签名称已存在，请使用其他名称'
-      return false
-    }
-
     formErrors.name = ''
     return true
   }
@@ -370,11 +200,91 @@ export function useTagsData() {
     return validName && validColor
   }
 
-  const buildTagPayload = (): Pick<AdminTagItem, 'name' | 'color'> => {
+  const buildTagPayload = (): AdminTagCreatePayload => {
     return {
       name: formModel.name.trim(),
       color: formModel.color.trim().toUpperCase(),
     }
+  }
+
+  const applyTagPage = (pageData: AdminTagPage): void => {
+    tags.value = pageData.records || []
+    totalItems.value = Number(pageData.total || 0)
+    pageSize.value = Number(pageData.pageSize || DEFAULT_PAGE_SIZE)
+    const backendTotalPages = Number(pageData.totalPages || 0)
+    totalPages.value = backendTotalPages > 0 ? backendTotalPages : 1
+  }
+
+  const loadTagPage = async (options?: LoadTagPageOptions): Promise<void> => {
+    const silent = options?.silent === true
+    listRequestId += 1
+    const requestId = listRequestId
+
+    if (!silent) {
+      loading.value = true
+    }
+
+    try {
+      const pageData = await getAdminTagPage({
+        pageNum: currentPage.value,
+        pageSize: pageSize.value,
+        keyword: searchKeyword.value,
+        sortField: sortField.value,
+        sortOrder: sortOrder.value,
+      })
+
+      if (requestId !== listRequestId) {
+        return
+      }
+
+      applyTagPage(pageData)
+      selectedTagIds.value = []
+
+      if (totalItems.value > 0 && currentPage.value > totalPages.value) {
+        currentPage.value = totalPages.value
+        await loadTagPage({ silent: true })
+      }
+    } catch (error) {
+      if (requestId !== listRequestId) {
+        return
+      }
+
+      tags.value = []
+      totalItems.value = 0
+      totalPages.value = 1
+      selectedTagIds.value = []
+
+      if (!silent) {
+        showToast({
+          type: 'error',
+          title: resolveErrorMessage(error, '标签列表加载失败'),
+        })
+      }
+    } finally {
+      if (requestId === listRequestId && !silent) {
+        loading.value = false
+      }
+    }
+  }
+
+  const loadTagStats = async (silentErrorToast = false): Promise<void> => {
+    try {
+      stats.value = await getAdminTagStats()
+    } catch (error) {
+      if (!silentErrorToast) {
+        showToast({
+          type: 'error',
+          title: resolveErrorMessage(error, '标签统计加载失败'),
+        })
+      }
+    }
+  }
+
+  const reloadTagData = async (options?: ReloadTagDataOptions): Promise<void> => {
+    await Promise.all([
+      loadTagStats(true),
+      loadTagPage({ silent: options?.silentListLoading === true }),
+    ])
   }
 
   const saveTag = async (): Promise<void> => {
@@ -395,48 +305,28 @@ export function useTagsData() {
 
     try {
       if (editorMode.value === 'create') {
-        const nextId = tags.value.reduce((max, item) => Math.max(max, item.id), 0) + 1
-        const timestamp = now()
-        tags.value = [
-          {
-            id: nextId,
-            name: payload.name,
-            color: payload.color,
-            useCount: 0,
-            createTime: timestamp,
-            updateTime: timestamp,
-            deleted: 0,
-          },
-          ...tags.value,
-        ]
+        await createAdminTag(payload)
         showToast({ type: 'success', title: '标签创建成功' })
       } else if (editingTagId.value !== null) {
-        const timestamp = now()
-        tags.value = tags.value.map((item) => {
-          if (item.id !== editingTagId.value) {
-            return item
-          }
-          return {
-            ...item,
-            name: payload.name,
-            color: payload.color,
-            updateTime: timestamp,
-          }
-        })
+        await updateAdminTag(editingTagId.value, payload)
         showToast({ type: 'success', title: '标签更新成功' })
       }
 
       editorOpen.value = false
+      await reloadTagData({ silentListLoading: true })
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: resolveErrorMessage(error, editorMode.value === 'create' ? '创建标签失败' : '更新标签失败'),
+      })
     } finally {
       editorSubmitting.value = false
     }
   }
 
-  const refreshMockData = (): void => {
-    showToast({
-      type: 'info',
-      title: 'Mock 数据已是最新状态',
-    })
+  const refreshMockData = async (): Promise<void> => {
+    await reloadTagData()
+    showToast({ type: 'success', title: '标签数据已刷新' })
   }
 
   const requestDeleteTag = (tag: AdminTagItem): void => {
@@ -461,55 +351,110 @@ export function useTagsData() {
     const targetId = deletingTag.value.id
 
     try {
-      tags.value = tags.value.map((item) => {
-        if (item.id !== targetId) {
-          return item
-        }
-        return {
-          ...item,
-          deleted: 1,
-          updateTime: now(),
-        }
-      })
-
+      await deleteAdminTag(targetId)
       showToast({ type: 'success', title: '标签已删除' })
       closeDeleteDialog()
+      await reloadTagData({ silentListLoading: true })
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: resolveErrorMessage(error, '删除标签失败'),
+      })
     } finally {
       deleteSubmitting.value = false
     }
   }
 
-  const prevPage = (): void => {
+  const setSelectedTagIds = (tagIds: number[]): void => {
+    selectedTagIds.value = tagIds
+      .filter((id) => Number.isInteger(id) && id > 0)
+      .filter((id, index, array) => array.indexOf(id) === index)
+  }
+
+  const batchDeleteSelectedTags = async (): Promise<void> => {
+    if (batchDeleteSubmitting.value) {
+      return
+    }
+
+    if (selectedTagIds.value.length === 0) {
+      showToast({ type: 'warning', title: '请先勾选要删除的标签' })
+      return
+    }
+
+    batchDeleteSubmitting.value = true
+    try {
+      const deletedCount = await batchDeleteAdminTag({
+        tagIds: selectedTagIds.value,
+      })
+      showToast({
+        type: 'success',
+        title: '批量删除成功',
+        description: `已删除 ${deletedCount} 个标签`,
+      })
+      selectedTagIds.value = []
+      await reloadTagData({ silentListLoading: true })
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: resolveErrorMessage(error, '批量删除失败'),
+      })
+    } finally {
+      batchDeleteSubmitting.value = false
+    }
+  }
+
+  const prevPage = async (): Promise<void> => {
     if (currentPage.value <= 1) {
       return
     }
     currentPage.value -= 1
+    await loadTagPage()
   }
 
-  const nextPage = (): void => {
+  const nextPage = async (): Promise<void> => {
     if (currentPage.value >= totalPages.value) {
       return
     }
     currentPage.value += 1
+    await loadTagPage()
   }
 
-  const goToPage = (page: number | string): void => {
+  const goToPage = async (page: number | string): Promise<void> => {
     if (page === '...' || typeof page !== 'number') {
       return
     }
-    if (page < 1 || page > totalPages.value) {
+    if (page < 1 || page > totalPages.value || page === currentPage.value) {
       return
     }
     currentPage.value = page
+    await loadTagPage()
   }
 
   watch(searchKeyword, () => {
     currentPage.value = 1
+    selectedTagIds.value = []
+    if (searchTimer) {
+      clearTimeout(searchTimer)
+    }
+    searchTimer = setTimeout(() => {
+      void loadTagPage()
+    }, SEARCH_DEBOUNCE_MS)
   })
 
   watch(totalPages, (nextValue) => {
     if (currentPage.value > nextValue) {
       currentPage.value = nextValue
+    }
+  })
+
+  onMounted(() => {
+    void reloadTagData()
+  })
+
+  onBeforeUnmount(() => {
+    if (searchTimer) {
+      clearTimeout(searchTimer)
+      searchTimer = null
     }
   })
 
@@ -527,10 +472,13 @@ export function useTagsData() {
     deleteDialogOpen,
     deleteSubmitting,
     deletingTag,
-    colorPalette,
+    selectedTagIds,
+    selectedTagCount,
+    batchDeleteSubmitting,
     pagedTags,
     totalItems,
     totalPages,
+    loading,
     visiblePages,
     stats,
     setSearchKeyword,
@@ -543,6 +491,8 @@ export function useTagsData() {
     requestDeleteTag,
     closeDeleteDialog,
     confirmDeleteTag,
+    setSelectedTagIds,
+    batchDeleteSelectedTags,
     prevPage,
     nextPage,
     goToPage,

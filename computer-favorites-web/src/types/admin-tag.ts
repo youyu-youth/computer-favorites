@@ -12,6 +12,14 @@ export type AdminTagSortOrder = 1 | -1
 
 export type AdminTagEditorMode = 'create' | 'edit'
 
+export interface AdminTagPageQuery {
+  pageNum: number
+  pageSize: number
+  keyword?: string
+  sortField?: AdminTagSortField
+  sortOrder?: AdminTagSortOrder
+}
+
 export interface AdminTagItem {
   id: number
   name: string
@@ -27,6 +35,28 @@ export interface AdminTagStats {
   inUse: number
   unused: number
   updatedToday: number
+}
+
+export interface AdminTagPage {
+  records: AdminTagItem[]
+  total: number
+  pageNum: number
+  pageSize: number
+  totalPages: number
+}
+
+export interface AdminTagCreatePayload {
+  name: string
+  color: string
+}
+
+export interface AdminTagEditPayload {
+  name: string
+  color: string
+}
+
+export interface AdminTagBatchDeletePayload {
+  tagIds: number[]
 }
 
 export interface AdminTagFormModel {

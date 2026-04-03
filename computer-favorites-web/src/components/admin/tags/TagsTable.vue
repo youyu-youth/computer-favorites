@@ -1,19 +1,35 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import DataTable, { type DataTableSortEvent } from 'primevue/datatable'
 import Column from 'primevue/column'
 import type { AdminTagItem, AdminTagSortField, AdminTagSortOrder } from '@/types/admin-tag'
 
 const props = defineProps<{
   rows: AdminTagItem[]
+  selectedRowIds: number[]
   sortField: AdminTagSortField
   sortOrder: AdminTagSortOrder
 }>()
 
 const emit = defineEmits<{
+  (e: 'selection-change', selectedRowIds: number[]): void
   (e: 'sort-change', payload: { field: AdminTagSortField; order: AdminTagSortOrder }): void
   (e: 'edit', tag: AdminTagItem): void
   (e: 'delete', tag: AdminTagItem): void
 }>()
+
+const selectedRows = computed<AdminTagItem[]>(() => {
+  return props.rows.filter((item) => props.selectedRowIds.includes(item.id))
+})
+
+const handleSelectionUpdate = (value: AdminTagItem[] | AdminTagItem | null | undefined): void => {
+  const rows = Array.isArray(value)
+    ? value
+    : value
+      ? [value]
+      : []
+  emit('selection-change', rows.map((item) => item.id))
+}
 
 const formatDateTime = (value: string): string => {
   const date = new Date(value)
@@ -44,6 +60,21 @@ const handleSort = (event: DataTableSortEvent): void => {
   const order: AdminTagSortOrder = event.sortOrder === 1 ? 1 : -1
   emit('sort-change', { field, order })
 }
+
+const selectionCheckboxPt = {
+  pcHeaderCheckbox: {
+    root: { class: 'cf-tag-table-checkbox-root' },
+    input: { class: 'cf-tag-table-checkbox-input' },
+    box: { class: 'cf-tag-table-checkbox-box' },
+    icon: { class: 'cf-tag-table-checkbox-icon' },
+  },
+  pcRowCheckbox: {
+    root: { class: 'cf-tag-table-checkbox-root' },
+    input: { class: 'cf-tag-table-checkbox-input' },
+    box: { class: 'cf-tag-table-checkbox-box' },
+    icon: { class: 'cf-tag-table-checkbox-icon' },
+  },
+} as const
 </script>
 
 <template>
@@ -51,6 +82,7 @@ const handleSort = (event: DataTableSortEvent): void => {
     <div class="overflow-x-auto">
       <DataTable
         :value="rows"
+        :selection="selectedRows"
         dataKey="id"
         removableSort
         :sortField="sortField"
@@ -63,6 +95,7 @@ const handleSort = (event: DataTableSortEvent): void => {
           bodyRow: { class: 'border-b border-gray-100 transition-colors hover:bg-gray-50/70 dark:border-dark-border/70 dark:hover:bg-dark-bg/40' },
           emptyMessage: { class: 'px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400' },
         }"
+        @update:selection="handleSelectionUpdate"
         @sort="handleSort"
       >
         <template #empty>
@@ -71,6 +104,13 @@ const handleSort = (event: DataTableSortEvent): void => {
             <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">未找到符合条件的标签</p>
           </div>
         </template>
+
+        <Column
+          selectionMode="multiple"
+          :pt="selectionCheckboxPt"
+          headerClass="px-3 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+          bodyClass="px-3 py-3"
+        />
 
         <Column
           field="id"
@@ -174,3 +214,88 @@ const handleSort = (event: DataTableSortEvent): void => {
     </div>
   </section>
 </template>
+
+<style scoped>
+:deep(.p-datatable-thead > tr > th) {
+  vertical-align: middle;
+  text-align: center;
+}
+
+:deep([data-pc-section='columnheadercontent']),
+:deep(.p-column-header-content),
+:deep(.p-datatable-column-header-content) {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  white-space: nowrap;
+}
+
+:deep([data-pc-section='sort']),
+:deep(.p-sortable-column-icon),
+:deep(.p-datatable-sort-icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin: 0;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+:deep([data-pc-section='sorticon']) {
+  display: block;
+}
+
+:deep(.cf-tag-table-checkbox-root) {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  vertical-align: middle;
+}
+
+:deep(.cf-tag-table-checkbox-input) {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+:deep(.cf-tag-table-checkbox-box) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid rgb(148 163 184 / 0.85);
+  background-color: transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+:deep(.cf-tag-table-checkbox-root[data-p-checked='true'] .cf-tag-table-checkbox-box) {
+  border-color: rgb(14 165 233 / 1);
+  background-color: rgb(14 165 233 / 1);
+}
+
+:deep(.cf-tag-table-checkbox-icon) {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #ffffff;
+}
+
+:deep(html.dark .cf-tag-table-checkbox-box) {
+  border-color: rgb(100 116 139 / 0.95);
+}
+
+:deep(html.dark .cf-tag-table-checkbox-root[data-p-checked='true'] .cf-tag-table-checkbox-box) {
+  border-color: rgb(2 132 199 / 1);
+  background-color: rgb(2 132 199 / 1);
+}
+</style>

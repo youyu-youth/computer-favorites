@@ -3,12 +3,15 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   searchKeyword: string
+  selectedCount: number
+  batchDeleteSubmitting: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:searchKeyword', value: string): void
   (e: 'refresh'): void
   (e: 'create'): void
+  (e: 'batch-delete'): void
 }>()
 
 const searchModel = computed({
@@ -34,6 +37,18 @@ const searchModel = computed({
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
+        <UButton
+          class="rounded-none"
+          color="red"
+          variant="soft"
+          :loading="batchDeleteSubmitting"
+          :disabled="batchDeleteSubmitting || selectedCount <= 0"
+          @click="emit('batch-delete')"
+        >
+          <i class="fas fa-trash-can text-xs"></i>
+          批量删除
+          <span v-if="selectedCount > 0">({{ selectedCount }})</span>
+        </UButton>
         <UButton class="rounded-none" color="neutral" variant="soft" @click="emit('refresh')">
           <i class="fas fa-rotate-right text-xs"></i>
           刷新
