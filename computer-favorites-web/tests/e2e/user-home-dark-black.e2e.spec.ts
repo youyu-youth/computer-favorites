@@ -73,6 +73,9 @@ test.describe('用户端首页暗黑纯黑视觉', () => {
   })
 
   test('非首页暗黑模式不启用首页纯黑作用域', async ({ page }) => {
+    await page.goto('/computer/home')
+    await expect(page.locator('[data-testid="home-dark-scope"]')).toBeVisible()
+
     await page.goto('/computer/profile')
     await expect(page.locator('[data-testid="home-dark-scope"]')).toHaveCount(0)
   })
