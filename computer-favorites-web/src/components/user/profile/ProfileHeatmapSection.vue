@@ -58,7 +58,7 @@ const getMonthOffsetStyle = (idx: number) => {
 
 <template>
   <UCard
-    class="!ring-0 shadow-sm dark:shadow-md bg-white dark:!bg-[#131418] rounded-xl overflow-hidden"
+    class="!ring-0 shadow-none bg-white/60 dark:!bg-black/60 backdrop-blur-md border border-gray-200 dark:border-[#1f1f1f] !rounded-none overflow-hidden"
   >
     <div class="space-y-4">
       <div class="flex items-center justify-between gap-2">
@@ -100,7 +100,7 @@ const getMonthOffsetStyle = (idx: number) => {
                     <div
                       v-for="(value, colIndex) in week"
                       :key="`cell-${rowIndex}-${colIndex}`"
-                      class="size-3 sm:size-3.5 rounded-sm"
+                      class="size-3 sm:size-3.5 rounded-none"
                       :class="getCellClass(value)"
                     />
                   </div>
@@ -112,11 +112,11 @@ const getMonthOffsetStyle = (idx: number) => {
             <span>Learn how we count contributions</span>
             <div class="flex items-center gap-1">
               <span>Less</span>
-              <span class="size-3 rounded-sm bg-gray-200 dark:bg-gray-700" />
-              <span class="size-3 rounded-sm bg-emerald-800/80" />
-              <span class="size-3 rounded-sm bg-emerald-700" />
-              <span class="size-3 rounded-sm bg-emerald-600" />
-              <span class="size-3 rounded-sm bg-emerald-500" />
+              <span class="size-3 rounded-none bg-gray-200 dark:bg-gray-700" />
+              <span class="size-3 rounded-none bg-emerald-800/80" />
+              <span class="size-3 rounded-none bg-emerald-700" />
+              <span class="size-3 rounded-none bg-emerald-600" />
+              <span class="size-3 rounded-none bg-emerald-500" />
               <span>More</span>
             </div>
           </div>
@@ -127,11 +127,11 @@ const getMonthOffsetStyle = (idx: number) => {
               v-for="year in yearOptions"
               :key="year"
               type="button"
-              class="h-9 px-3 rounded-md text-sm transition-colors"
+              class="h-9 px-3 rounded-none text-sm transition-colors border border-transparent dark:border-[#1f1f1f]"
               :class="
                 selectedYear === year
                   ? 'bg-primary-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20'
+                  : 'bg-black/5 text-gray-700 hover:bg-black/10 dark:bg-black/40 dark:text-gray-300 dark:hover:bg-black/60'
               "
               @click="selectedYear = year"
             >

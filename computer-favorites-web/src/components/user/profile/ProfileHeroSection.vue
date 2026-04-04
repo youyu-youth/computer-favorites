@@ -272,7 +272,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <UCard class="!ring-0 shadow-sm dark:shadow-md bg-white dark:!bg-[#131418] rounded-xl">
+  <UCard class="!ring-0 shadow-none bg-white/60 dark:!bg-black/60 backdrop-blur-md border border-gray-200 dark:border-[#1f1f1f] !rounded-none">
     <div class="space-y-5">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -285,11 +285,12 @@ onBeforeUnmount(() => {
             color="neutral"
             variant="soft"
             size="xs"
-            :class="
+            :class="[
+              '!rounded-none border dark:border-[#1f1f1f]',
               selectedRange === item.value
-                ? '!bg-[#bc7b0e] !text-white hover:!bg-[#a96f0c] dark:!bg-[#bc7b0e] dark:hover:!bg-[#a96f0c]'
-                : '!bg-gray-100 !text-gray-700 hover:!bg-gray-200 dark:!bg-white/10 dark:!text-gray-200 dark:hover:!bg-white/20'
-            "
+                ? '!bg-[#bc7b0e] !text-white hover:!bg-[#a96f0c] dark:!bg-[#bc7b0e] dark:hover:!bg-[#a96f0c] !border-[#bc7b0e] dark:!border-[#bc7b0e]'
+                : 'bg-black/5 !text-gray-700 hover:!bg-black/10 dark:!bg-black/40 dark:!text-gray-200 dark:hover:!bg-black/60'
+            ]"
             @click="selectedRange = item.value"
           >
             {{ item.label }}
@@ -301,7 +302,7 @@ onBeforeUnmount(() => {
         <UCard
           v-for="item in overview"
           :key="item.label"
-          class="!ring-0 bg-gray-50 dark:!bg-white/5 rounded-lg"
+          class="!ring-0 shadow-none bg-black/5 dark:!bg-black/40 border border-black/10 dark:border-[#1f1f1f] !rounded-none"
         >
           <div class="space-y-1">
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
@@ -313,7 +314,7 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <UCard class="!ring-0 bg-gray-50 dark:!bg-white/5 rounded-lg">
+        <UCard class="!ring-0 shadow-none bg-black/5 dark:!bg-black/40 border border-black/10 dark:border-[#1f1f1f] !rounded-none">
           <div class="space-y-3">
             <div class="flex items-center justify-between gap-2">
               <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -333,7 +334,7 @@ onBeforeUnmount(() => {
           </div>
         </UCard>
 
-        <UCard class="!ring-0 bg-gray-50 dark:!bg-white/5 rounded-lg">
+        <UCard class="!ring-0 shadow-none bg-black/5 dark:!bg-black/40 border border-black/10 dark:border-[#1f1f1f] !rounded-none">
           <div class="space-y-3">
             <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
               内容类型占比（前6 + 其他）

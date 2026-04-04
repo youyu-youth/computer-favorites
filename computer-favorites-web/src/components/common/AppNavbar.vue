@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
 <template>
   <header
     data-testid="navbar-root"
-    class="fixed inset-x-0 top-0 z-50 glass-nav border-b border-gray-200 bg-white/70 backdrop-blur-md dark:border-dark-border dark:bg-dark-bg/80"
+    class="fixed inset-x-0 top-0 z-50 glass-nav border-b border-gray-200 bg-white/70 backdrop-blur-md dark:border-dark-border dark:bg-black/80"
   >
     <div class="mx-auto h-16 max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="flex h-full items-center justify-between gap-3">
@@ -269,7 +269,7 @@ onBeforeUnmount(() => {
               <div
                 v-if="profileMenuOpen"
                 data-testid="profile-dropdown"
-                class="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-dark-border dark:bg-dark-card dark:shadow-none"
+                class="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-dark-border dark:bg-black dark:shadow-none"
               >
                 <button
                   type="button"
@@ -325,7 +325,7 @@ onBeforeUnmount(() => {
       <div
         v-if="mobileMenuOpen"
         data-testid="navbar-mobile-menu"
-        class="border-t border-slate-200 bg-white px-2 pb-3 pt-2 dark:border-white/10 dark:bg-slate-900 md:hidden"
+        class="border-t border-slate-200 bg-white px-2 pb-3 pt-2 dark:border-white/10 dark:bg-black md:hidden"
       >
         <PrimeButton
           text
