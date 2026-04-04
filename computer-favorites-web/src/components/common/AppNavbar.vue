@@ -140,6 +140,7 @@ onBeforeUnmount(() => {
 
 <template>
   <header
+    data-testid="navbar-root"
     class="fixed inset-x-0 top-0 z-50 glass-nav border-b border-gray-200 bg-white/70 backdrop-blur-md dark:border-dark-border dark:bg-dark-bg/80"
   >
     <div class="mx-auto h-16 max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -249,6 +250,7 @@ onBeforeUnmount(() => {
           <div v-else ref="profileMenuRef" class="relative">
             <button
               type="button"
+              data-testid="profile-trigger"
               class="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 pr-3 text-sm text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:border-dark-border dark:bg-dark-card dark:text-gray-300 dark:hover:bg-white/5"
               @click.stop="toggleProfileMenu"
             >
@@ -266,6 +268,7 @@ onBeforeUnmount(() => {
             <Transition name="fade">
               <div
                 v-if="profileMenuOpen"
+                data-testid="profile-dropdown"
                 class="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-dark-border dark:bg-dark-card dark:shadow-none"
               >
                 <button
@@ -321,6 +324,7 @@ onBeforeUnmount(() => {
     <Transition name="fade">
       <div
         v-if="mobileMenuOpen"
+        data-testid="navbar-mobile-menu"
         class="border-t border-slate-200 bg-white px-2 pb-3 pt-2 dark:border-white/10 dark:bg-slate-900 md:hidden"
       >
         <PrimeButton

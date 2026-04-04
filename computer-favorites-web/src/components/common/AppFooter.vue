@@ -6,7 +6,10 @@ const currentYear = new Date().getFullYear()
 </script>
 
 <template>
-  <footer class="mt-auto shrink-0 border-t border-slate-200 bg-white dark:border-white/10 dark:bg-[#121212]">
+  <footer
+    data-testid="app-footer"
+    class="mt-auto shrink-0 border-t border-slate-200 bg-white dark:border-white/10 dark:bg-dark-bg"
+  >
     <div class="mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-3 px-4 py-5 sm:flex-row sm:items-center sm:px-6 lg:px-8">
       <p class="text-xs text-slate-500 dark:text-slate-400">© {{ currentYear }} {{ t('user.home.hero.title') }} · {{ t('settings.account.danger.deleteConfirm') }}</p>
       <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">

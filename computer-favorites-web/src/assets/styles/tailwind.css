@@ -395,3 +395,21 @@ body.email-modal-scroll-lock {
 .dark .neon-bg::after {
   background-color: rgba(180, 83, 9, 0.14);
 }
+
+.dark .cf-home-black-dark-scope {
+  --cf-color-surface-page-rgb: 0 0 0;
+  --cf-color-dark-bg-rgb: 0 0 0;
+  background-color: rgb(0 0 0 / 1) !important;
+}
+
+.dark .cf-home-black-dark-scope.neon-bg::before,
+.dark .cf-home-black-dark-scope.neon-bg::after {
+  background-color: transparent !important;
+}
+
+.dark .cf-home-black-dark-scope [data-testid='navbar-root'],
+.dark .cf-home-black-dark-scope [data-testid='navbar-mobile-menu'],
+.dark .cf-home-black-dark-scope [data-testid='profile-dropdown'],
+.dark .cf-home-black-dark-scope [data-testid='app-footer'] {
+  background-color: rgb(0 0 0 / 1) !important;
+}
