@@ -1,40 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
-
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import InputText from 'primevue/inputtext'
+import Select from 'primevue/select'
 import HomeHeroHeader from '@/components/user/HomeHeroHeader.vue'
 import HomeIntegrationsBar from '@/components/user/HomeIntegrationsBar.vue'
+import { getWebsiteCategories, getWebsitePage } from '@/api/website'
+import type { PublicWebsiteListItem } from '@/types/public-website'
 
 defineOptions({
   name: 'HomeView',
 })
 
-const isDark = ref(false);
-
-onMounted(() => {
-  const checkDarkMode = () => {
-    isDark.value = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark');
-  };
-  checkDarkMode();
-  const observer = new MutationObserver(checkDarkMode);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-  onUnmounted(() => observer.disconnect());
-});
-
 interface CategoryItem {
-  name: string
-  count: string
-}
-
-interface RawResourceItem {
   id: number
   name: string
-  author: string
-  desc: string
-  downloads: string
-  stars: string
-  category: string
-  labels: string[]
+  count: number
 }
 
 interface ResourceTag {
@@ -45,176 +25,156 @@ interface ResourceTag {
 interface ResourceItem {
   id: number
   name: string
-  author: string
   desc: string
   downloads: string
   stars: string
   category: string
+  categoryId: number
+  url: string
   tags: ResourceTag[]
 }
 
+const isDark = ref(false)
+const isLoading = ref(false)
+const loadError = ref('')
 const searchQuery = ref('')
-const activeCategory = ref('All')
+const activeCategoryId = ref(0)
+const categories = ref<CategoryItem[]>([{ id: 0, name: 'All', count: 0 }])
+const resources = ref<ResourceItem[]>([])
 
 const tagColors = [
   'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/50',
   'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/50',
-  'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/50',
-  'bg-pink-100 text-pink-700 border-pink-300 dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/50',
   'bg-cyan-100 text-cyan-700 border-cyan-300 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-500/50',
   'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/50',
-  'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/50'
+  'bg-lime-100 text-lime-700 border-lime-300 dark:bg-lime-500/10 dark:text-lime-400 dark:border-lime-500/50',
+  'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/50',
+  'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-500/50',
 ] as const
 
-const categories = ref<CategoryItem[]>([
-  { name: 'All', count: '5147' },
-  { name: 'Coding Agents & IDEs', count: '1160' },
-  { name: 'Web & Frontend Development', count: '903' },
-  { name: 'DevOps & Cloud', count: '375' },
-  { name: 'Search & Research', count: '342' },
-  { name: 'Browser & Automation', count: '306' },
-  { name: 'Productivity & Tasks', count: '201' },
-  { name: 'CLI Utilities', count: '170' },
-  { name: 'AI & LLMs', count: '160' },
-])
+const categorySelectPt = {
+  root: {
+    class: 'w-full',
+  },
+  label: {
+    class: 'truncate px-3 py-2 text-sm text-gray-900 dark:text-gray-200',
+  },
+  dropdown: {
+    class: 'cursor-pointer px-3 text-gray-500 dark:text-gray-400',
+  },
+  overlay: {
+    class: 'z-[80] mt-1 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-[#0a0a0a]',
+  },
+  list: {
+    class: 'py-1',
+  },
+  option: {
+    class: 'cursor-pointer px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10',
+  },
+}
 
-const rawResources: RawResourceItem[] = [
-  {
-    id: 1,
-    name: 'Agent Browser',
-    author: 'thesethrose/skills',
-    desc: 'A fast Rust-based headless browser automation CLI.',
-    downloads: '137.7k',
-    stars: '597',
-    category: 'Browser & Automation',
-    labels: ['Rust', 'CLI', 'V8'],
-  },
-  {
-    id: 2,
-    name: 'gog',
-    author: 'steipete/skills',
-    desc: 'Google Workspace CLI for Gmail, Calendar, Drive, Contacts, Sheets, and Docs.',
-    downloads: '117.1k',
-    stars: '745',
-    category: 'Productivity & Tasks',
-    labels: ['Google', 'OAuth', 'Productivity'],
-  },
-  {
-    id: 3,
-    name: 'auto-updater',
-    author: 'maximeprades/skills',
-    desc: 'Automatically update Clawdbot and all installed skills once.',
-    downloads: '46.8k',
-    stars: '282',
-    category: 'CLI Utilities',
-    labels: ['Auto', 'System', 'Shell'],
-  },
-  {
-    id: 4,
-    name: 'api-gateway',
-    author: 'byungkyu/skills',
-    desc: 'API gateway for calling third-party APIs with managed auth.',
-    downloads: '45.7k',
-    stars: '225',
-    category: 'DevOps & Cloud',
-    labels: ['API', 'Auth', 'Proxy'],
-  },
-  {
-    id: 5,
-    name: 'baidu-search',
-    author: 'ide-rea/skills',
-    desc: 'Search the web using Baidu AI Search Engine (BDSE).',
-    downloads: '45.2k',
-    stars: '112',
-    category: 'Search & Research',
-    labels: ['Search', 'AI', 'Web'],
-  },
-  {
-    id: 6,
-    name: 'automation-workflows',
-    author: 'jk-0001/skills',
-    desc: 'Design and implement automation workflows to save time.',
-    downloads: '41.9k',
-    stars: '182',
-    category: 'Coding Agents & IDEs',
-    labels: ['Workflow', 'Efficiency'],
-  },
-  {
-    id: 7,
-    name: 'free-ride',
-    author: 'shaivpidadi/skills',
-    desc: 'Manages free AI models from OpenRouter for OpenClaw.',
-    downloads: '37.1k',
-    stars: '277',
-    category: 'AI & LLMs',
-    labels: ['LLM', 'Router', 'Free'],
-  },
-  {
-    id: 8,
-    name: 'vue-setup',
-    author: 'frontend-guru/skills',
-    desc: 'Scaffold a modern Vue 3 application with Tailwind and Vite pre-configured.',
-    downloads: '35.0k',
-    stars: '450',
-    category: 'Web & Frontend Development',
-    labels: ['Vue3', 'Tailwind', 'Vite'],
-  },
-  {
-    id: 9,
-    name: 'k8s-deploy',
-    author: 'cloud-ninja/skills',
-    desc: 'One-click deployment script for Kubernetes clusters.',
-    downloads: '30.2k',
-    stars: '320',
-    category: 'DevOps & Cloud',
-    labels: ['K8s', 'Cloud', 'Ops'],
-  },
-  {
-    id: 10,
-    name: 'prompt-gen',
-    author: 'ai-master/skills',
-    desc: 'Generate high-quality prompts for various LLMs automatically.',
-    downloads: '28.5k',
-    stars: '510',
-    category: 'AI & LLMs',
-    labels: ['Prompt', 'Engineering'],
-  },
-]
+let darkModeObserver: MutationObserver | null = null
 
-const resources = ref<ResourceItem[]>(
-  rawResources.map((resource) => ({
-    id: resource.id,
-    name: resource.name,
-    author: resource.author,
-    desc: resource.desc,
-    downloads: resource.downloads,
-    stars: resource.stars,
-    category: resource.category,
-    tags: resource.labels.map((label, index) => ({
+const resolveErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+  return fallbackMessage
+}
+
+const updateDarkModeState = () => {
+  isDark.value = document.documentElement.classList.contains('dark')
+    || document.body.classList.contains('dark')
+}
+
+const formatMetricCount = (value: number | null | undefined): string => {
+  const normalizedValue = Number(value ?? 0)
+  if (!Number.isFinite(normalizedValue) || normalizedValue <= 0) {
+    return '0'
+  }
+  if (normalizedValue >= 1000000) {
+    return `${(normalizedValue / 1000000).toFixed(1).replace(/\.0$/, '')}m`
+  }
+  if (normalizedValue >= 1000) {
+    return `${(normalizedValue / 1000).toFixed(1).replace(/\.0$/, '')}k`
+  }
+  return String(Math.trunc(normalizedValue))
+}
+
+const mapWebsiteToResource = (item: PublicWebsiteListItem): ResourceItem => {
+  return {
+    id: item.id,
+    name: item.name,
+    desc: item.summary?.trim() || item.description?.trim() || 'No description available.',
+    downloads: formatMetricCount(item.clickCount),
+    stars: formatMetricCount(item.likeCount),
+    category: item.categoryName?.trim() || 'Uncategorized',
+    categoryId: item.categoryId ?? 0,
+    url: item.url,
+    tags: (item.tags || []).map((label, index) => ({
       label,
-      colorClass: tagColors[(resource.id + index) % tagColors.length] ?? tagColors[0],
+      colorClass: tagColors[(item.id + index) % tagColors.length] ?? tagColors[0],
     })),
-  })),
-)
+  }
+}
+
+const loadWebsiteData = async () => {
+  isLoading.value = true
+  loadError.value = ''
+  try {
+    const [pageResult, categoryResult] = await Promise.all([
+      getWebsitePage({ pageNum: 1, pageSize: 60 }),
+      getWebsiteCategories(),
+    ])
+
+    resources.value = pageResult.records.map(mapWebsiteToResource)
+
+    const mappedCategories: CategoryItem[] = categoryResult.map((category) => ({
+      id: category.id,
+      name: category.name,
+      count: Number(category.count || 0),
+    }))
+    const allCount = mappedCategories.reduce((sum, item) => sum + item.count, 0)
+    categories.value = [{ id: 0, name: 'All', count: allCount }, ...mappedCategories]
+  } catch (error) {
+    resources.value = []
+    categories.value = [{ id: 0, name: 'All', count: 0 }]
+    loadError.value = resolveErrorMessage(error, 'Failed to load website resources.')
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const filteredResources = computed(() => {
   let result = resources.value
 
-  if (activeCategory.value !== 'All') {
-    result = result.filter((item) => item.category === activeCategory.value)
+  if (activeCategoryId.value > 0) {
+    result = result.filter((item) => item.categoryId === activeCategoryId.value)
   }
 
   const keyword = searchQuery.value.trim().toLowerCase()
   if (keyword) {
     result = result.filter(
-      (item) =>
-        item.name.toLowerCase().includes(keyword)
+      (item) => item.name.toLowerCase().includes(keyword)
         || item.desc.toLowerCase().includes(keyword)
-        || item.author.toLowerCase().includes(keyword),
+        || item.category.toLowerCase().includes(keyword),
     )
   }
 
   return result
+})
+
+onMounted(() => {
+  updateDarkModeState()
+  darkModeObserver = new MutationObserver(updateDarkModeState)
+  darkModeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+  darkModeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+  void loadWebsiteData()
+})
+
+onUnmounted(() => {
+  darkModeObserver?.disconnect()
+  darkModeObserver = null
 })
 </script>
 
@@ -232,24 +192,40 @@ const filteredResources = computed(() => {
         <div class="flex flex-col lg:flex-row gap-10 lg:gap-16">
           <aside class="w-full lg:w-64 flex-shrink-0 font-mono text-sm">
             <div class="block lg:hidden mb-6">
-              <select
-                v-model="activeCategory"
-                class="w-full bg-white dark:bg-[#0a0a0a] border border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-300 p-3 rounded-md outline-none focus:border-primary-500"
+              <Select
+                v-model="activeCategoryId"
+                :options="categories"
+                optionLabel="name"
+                optionValue="id"
+                appendTo="self"
+                class="w-full rounded-md border border-gray-300 bg-white dark:border-gray-800 dark:bg-[#0a0a0a]"
+                :pt="categorySelectPt"
               >
-                <option v-for="cat in categories" :key="cat.name" :value="cat.name">
-                  {{ cat.name }} ({{ cat.count }})
-                </option>
-              </select>
+                <template #value="slotProps">
+                  <span v-if="slotProps.value == null" class="truncate text-sm text-gray-500 dark:text-gray-400">
+                    选择分类
+                  </span>
+                  <span v-else class="truncate">
+                    {{ categories.find((item) => item.id === slotProps.value)?.name }}
+                  </span>
+                </template>
+                <template #option="slotProps">
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="truncate">{{ slotProps.option.name }}</span>
+                    <span class="shrink-0 text-xs text-gray-400">{{ slotProps.option.count }}</span>
+                  </div>
+                </template>
+              </Select>
             </div>
 
             <ul class="hidden lg:flex flex-col gap-1">
-              <li v-for="cat in categories" :key="cat.name">
+              <li v-for="cat in categories" :key="cat.id">
                 <button
-                  class="w-full flex justify-between items-center py-2 px-3 border-b transition-colors"
-                  :class="activeCategory === cat.name ? 'border-gray-900 text-gray-900 bg-gray-100 dark:border-white dark:text-white dark:bg-white/5' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 dark:hover:text-gray-300 dark:hover:bg-white/5'"
-                  @click="activeCategory = cat.name"
+                  class="w-full cursor-pointer flex justify-between items-center py-2 px-3 border-b transition-colors"
+                  :class="activeCategoryId === cat.id ? 'border-gray-900 text-gray-900 bg-gray-100 dark:border-white dark:text-white dark:bg-white/5' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 dark:hover:text-gray-300 dark:hover:bg-white/5'"
+                  @click="activeCategoryId = cat.id"
                 >
-                  <span :class="activeCategory === cat.name ? 'font-bold' : ''">{{ cat.name }}</span>
+                  <span :class="activeCategoryId === cat.id ? 'font-bold' : ''">{{ cat.name }}</span>
                   <span>{{ cat.count }}</span>
                 </button>
               </li>
@@ -269,34 +245,42 @@ const filteredResources = computed(() => {
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
-                <input
+                <InputText
                   v-model="searchQuery"
-                  type="text"
                   placeholder="Search all skills"
                   class="bg-transparent border-none outline-none w-full text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:ring-0"
                 />
               </div>
               <div class="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
-                <button class="hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-1 text-gray-900 dark:text-white">DOWNLOADS ↓</button>
-                <button class="hover:text-gray-900 dark:hover:text-white transition-colors">STARS</button>
+                <button class="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-1 text-gray-900 dark:text-white">DOWNLOADS ↓</button>
+                <button class="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors">STARS</button>
               </div>
             </div>
 
-            <div v-if="filteredResources.length > 0" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div v-if="isLoading" class="py-20 text-center font-mono text-gray-500 dark:text-gray-400">
+              <p>Loading website resources...</p>
+            </div>
+
+            <div v-else-if="loadError" class="py-20 text-center font-mono text-red-500 dark:text-red-400">
+              <p>{{ loadError }}</p>
+            </div>
+
+            <div v-else-if="filteredResources.length > 0" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
               <a
                 v-for="(item, index) in filteredResources"
                 :key="item.id"
-                href="#"
-                class="group relative block p-5 transition-all duration-200 hover:-translate-y-0.5 bg-white hover:bg-gray-50 dark:bg-[#062016]/60 dark:hover:bg-[#0a3324] border border-gray-200 dark:border-transparent backdrop-blur-sm overflow-hidden"
+                :href="item.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group relative block cursor-pointer p-5 transition-all duration-200 hover:-translate-y-0.5 bg-white hover:bg-gray-50 dark:bg-[#062016]/60 dark:hover:bg-[#0a3324] border border-gray-200 dark:border-transparent backdrop-blur-sm overflow-hidden"
               >
                 <div class="flex gap-4">
                   <div class="text-xs font-mono text-gray-400 dark:text-gray-600 mt-1 w-4 text-right flex-shrink-0">{{ index + 1 }}</div>
                   <div class="flex-1 min-w-0">
-                    <div class="flex items-baseline gap-2 mb-1 flex-wrap">
+                    <div class="flex items-baseline gap-2 mb-1">
                       <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-200 group-hover:text-primary-500 dark:group-hover:text-white transition-colors font-mono truncate">
                         {{ item.name }}
                       </h3>
-                      <span class="text-[10px] sm:text-xs text-primary-500/80 dark:text-primary-500/70 font-mono truncate">{{ item.author }}</span>
                     </div>
                     <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed mb-4">{{ item.desc }}</p>
 
@@ -330,7 +314,7 @@ const filteredResources = computed(() => {
             </div>
 
             <div v-else class="py-20 text-center font-mono text-gray-500 dark:text-gray-400">
-              <p>No skills found matching your criteria.</p>
+              <p>No website resources found matching your criteria.</p>
             </div>
 
           </section>
