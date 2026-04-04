@@ -3,6 +3,38 @@ export interface PublicWebsiteListQuery {
   pageSize: number
   categoryId?: number
   keyword?: string
+  tagIds?: number[]
+}
+
+export type PublicWebsiteTagSortField = 'id' | 'name' | 'color' | 'useCount' | 'createTime' | 'updateTime'
+
+export interface PublicWebsiteTagQuery {
+  pageNum: number
+  pageSize: number
+  keyword?: string
+  sortField?: PublicWebsiteTagSortField
+  sortOrder?: 1 | -1
+}
+
+export interface PublicWebsiteTagItem {
+  id: number
+  name: string
+  color: string
+  useCount: number
+}
+
+export interface PublicWebsiteTagRef {
+  id: number
+  name: string
+  color?: string
+}
+
+export interface PublicWebsiteTagPage {
+  records: PublicWebsiteTagItem[]
+  total: number
+  pageNum: number
+  pageSize: number
+  totalPages: number
 }
 
 export interface PublicWebsiteListItem {
@@ -19,7 +51,7 @@ export interface PublicWebsiteListItem {
   collectCount: number
   commentCount: number
   score: number
-  tags: string[]
+  tags: PublicWebsiteTagRef[]
 }
 
 export interface PublicWebsiteDetail {
@@ -37,7 +69,7 @@ export interface PublicWebsiteDetail {
   commentCount: number
   score: number
   scoreCount: number
-  tags: string[]
+  tags: PublicWebsiteTagRef[]
   createTime?: string
   updateTime?: string
 }

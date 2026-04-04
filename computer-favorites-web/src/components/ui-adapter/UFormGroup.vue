@@ -1,20 +1,26 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  label?: string
-  required?: boolean
-  hint?: string
-  error?: string
-}>(), {
-  label: '',
-  required: false,
-  hint: '',
-  error: '',
-})
+const props = withDefaults(
+  defineProps<{
+    label?: string
+    required?: boolean
+    hint?: string
+    error?: string
+  }>(),
+  {
+    label: '',
+    required: false,
+    hint: '',
+    error: '',
+  },
+)
 </script>
 
 <template>
   <div class="space-y-2">
-    <label v-if="label" class="inline-flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+    <label
+      v-if="label"
+      class="inline-flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200"
+    >
       <span>{{ label }}</span>
       <span v-if="required" class="text-red-500">*</span>
     </label>

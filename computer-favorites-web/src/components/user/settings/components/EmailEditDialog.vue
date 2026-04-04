@@ -16,7 +16,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
-  (e: 'submit', payload: { email: string, emailCode: string }): void
+  (e: 'submit', payload: { email: string; emailCode: string }): void
 }>()
 
 const toast = useToast()
@@ -27,7 +27,6 @@ const sendCodeLoading = ref(false)
 const sendCodeCountdown = ref(0)
 let sendCodeTimer: number | null = null
 let previousScrollY = 0
-
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 
@@ -81,7 +80,6 @@ const closeDialog = () => {
   }
   emit('update:open', false)
 }
-
 
 const validateForm = (): string => {
   const normalizedEmail = email.value.trim()
@@ -176,7 +174,6 @@ onBeforeUnmount(() => {
   unlockPageScroll()
 })
 
-
 defineOptions({
   name: 'EmailEditDialog',
 })
@@ -196,11 +193,10 @@ defineOptions({
       description: 'email-edit-modal-description',
       close: 'email-edit-modal-close cursor-pointer',
       body: 'email-edit-modal-body',
-      footer: 'email-edit-modal-footer'
+      footer: 'email-edit-modal-footer',
     }"
     @update:open="emit('update:open', $event)"
   >
-
     <template #body>
       <div class="space-y-4">
         <UFormField label="当前邮箱">
@@ -208,12 +204,23 @@ defineOptions({
         </UFormField>
 
         <UFormField label="新邮箱" required>
-          <UInput v-model="email" type="email" autocomplete="email" placeholder="请输入新的邮箱地址" class="w-full" />
+          <UInput
+            v-model="email"
+            type="email"
+            autocomplete="email"
+            placeholder="请输入新的邮箱地址"
+            class="w-full"
+          />
         </UFormField>
 
         <UFormField label="邮箱验证码" required>
           <div class="flex flex-col gap-2 sm:flex-row">
-            <UInput v-model="emailCode" maxlength="6" placeholder="请输入6位验证码" class="w-full" />
+            <UInput
+              v-model="emailCode"
+              maxlength="6"
+              placeholder="请输入6位验证码"
+              class="w-full"
+            />
             <UButton
               type="button"
               variant="soft"
@@ -238,7 +245,6 @@ defineOptions({
 
     <template #footer>
       <div class="email-edit-modal-actions flex w-full justify-end gap-2">
-
         <UButton
           color="neutral"
           variant="soft"

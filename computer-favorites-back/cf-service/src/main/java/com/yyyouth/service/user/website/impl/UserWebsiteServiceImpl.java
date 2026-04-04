@@ -7,13 +7,16 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.UserWebsiteQueryDTO;
+import com.yyyouth.model.pojo.website.Tag;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
 import com.yyyouth.model.vo.user.UserWebsiteCategoryVO;
 import com.yyyouth.model.vo.user.UserWebsiteDetailVO;
 import com.yyyouth.model.vo.user.UserWebsiteListItemVO;
 import com.yyyouth.model.vo.user.UserWebsitePageVO;
+import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
 import com.yyyouth.service.mapper.website.CategoryMapper;
+import com.yyyouth.service.mapper.website.TagMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
 import com.yyyouth.service.user.website.UserWebsiteService;
 import lombok.RequiredArgsConstructor;
@@ -53,9 +56,13 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
 
     private static final int DEFAULT_PAGE_SIZE = 12;
 
+    private static final String DEFAULT_TAG_COLOR = "#409EFF";
+
     private final WebsiteMapper websiteMapper;
 
     private final CategoryMapper categoryMapper;
+
+    private final TagMapper tagMapper;
 
     /**
      * 查询网站分页列表
@@ -90,12 +97,20 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
 
         List<Website> websiteList = websiteMapper.selectList(listQueryWrapper);
         Map<Long, String> categoryNameMap = buildCategoryNameMap(websiteList);
+        Set<Long> tagIds = websiteList.stream()
+            .flatMap(website -> parseTagIds(website.getTags()).stream())
+            .collect(Collectors.toSet());
+        Map<Long, UserWebsiteTagItemVO> tagItemMap = buildTagItemMap(tagIds);
 
         List<UserWebsiteListItemVO> itemVOS = websiteList.stream()
                 .map(website -> {
-                    UserWebsiteListItemVO itemVO = BeanUtil.copyProperties(website, UserWebsiteListItemVO.class);
+                    UserWebsiteListItemVO itemVO = BeanUtil.copyProperties(
+                            website,
+                            UserWebsiteListItemVO.class,
+                    "tags"
+                    );
                     itemVO.setCategoryName(categoryNameMap.getOrDefault(website.getCategoryId(), ""));
-                    itemVO.setTags(parseTags(website.getTags()));
+                    itemVO.setTags(buildWebsiteTagItems(website.getTags(), tagItemMap));
                     return itemVO;
                 })
                 .toList();
@@ -151,9 +166,14 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "网站不存在或已下架");
         }
 
-        UserWebsiteDetailVO detailVO = BeanUtil.copyProperties(website, UserWebsiteDetailVO.class);
+        UserWebsiteDetailVO detailVO = BeanUtil.copyProperties(
+            website,
+            UserWebsiteDetailVO.class,
+                "tags"
+        );
         detailVO.setCategoryName(resolveCategoryName(website.getCategoryId()));
-        detailVO.setTags(parseTags(website.getTags()));
+        Map<Long, UserWebsiteTagItemVO> tagItemMap = buildTagItemMap(parseTagIds(website.getTags()));
+        detailVO.setTags(buildWebsiteTagItems(website.getTags(), tagItemMap));
         return detailVO;
     }
 
@@ -185,7 +205,169 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
                     .like(Website::getDescription, normalizedKeyword));
         }
 
+        if (CollUtil.isNotEmpty(queryDTO.getTagIds())) {
+            List<Long> normalizedTagIds = normalizeQueryTagIds(queryDTO.getTagIds());
+            if (CollUtil.isEmpty(normalizedTagIds)) {
+                queryWrapper.apply("1 = 0");
+                return queryWrapper;
+            }
+            appendTagFilterCondition(queryWrapper, normalizedTagIds);
+        }
+
         return queryWrapper;
+    }
+
+    /**
+     * 追加标签筛选条件（OR 命中）
+     *
+     * @param queryWrapper 查询条件
+     * @param tagIds 标签ID列表
+     */
+    private void appendTagFilterCondition(LambdaQueryWrapper<Website> queryWrapper, List<Long> tagIds) {
+        queryWrapper.and(wrapper -> {
+            boolean firstCondition = true;
+            for (Long tagId : tagIds) {
+                if (firstCondition) {
+                    wrapper.apply("FIND_IN_SET({0}, REPLACE(REPLACE(IFNULL(tags, ''), '，', ','), ' ', '')) > 0", tagId);
+                    firstCondition = false;
+                    continue;
+                }
+                wrapper.or().apply("FIND_IN_SET({0}, REPLACE(REPLACE(IFNULL(tags, ''), '，', ','), ' ', '')) > 0", tagId);
+            }
+        });
+    }
+
+    /**
+     * 归一化查询标签ID列表
+     *
+     * @param tagIds 原始标签ID列表
+     * @return 归一化标签ID列表
+     */
+    private List<Long> normalizeQueryTagIds(List<Long> tagIds) {
+        if (CollUtil.isEmpty(tagIds)) {
+            return Collections.emptyList();
+        }
+        return tagIds.stream()
+                .filter(Objects::nonNull)
+                .filter(tagId -> tagId > 0)
+                .distinct()
+                .toList();
+    }
+
+    /**
+     * 构建标签映射
+     *
+     * @param tagIds 标签ID集合
+     * @return 标签映射
+     */
+    private Map<Long, UserWebsiteTagItemVO> buildTagItemMap(Set<Long> tagIds) {
+        if (CollUtil.isEmpty(tagIds)) {
+            return Collections.emptyMap();
+        }
+
+        List<Tag> tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>()
+                .in(Tag::getId, tagIds)
+                .eq(Tag::getDeleted, NOT_DELETED));
+        if (CollUtil.isEmpty(tagList)) {
+            return Collections.emptyMap();
+        }
+
+        return tagList.stream().collect(Collectors.toMap(
+                Tag::getId,
+                tag -> {
+                    UserWebsiteTagItemVO tagItemVO = BeanUtil.copyProperties(tag, UserWebsiteTagItemVO.class);
+                    tagItemVO.setColor(normalizeTagColor(tag.getColor()));
+                    return tagItemVO;
+                },
+                (left, right) -> left
+        ));
+    }
+
+    /**
+     * 构建标签映射
+     *
+     * @param tagIds 标签ID列表
+     * @return 标签映射
+     */
+    private Map<Long, UserWebsiteTagItemVO> buildTagItemMap(List<Long> tagIds) {
+        if (CollUtil.isEmpty(tagIds)) {
+            return Collections.emptyMap();
+        }
+        return buildTagItemMap(tagIds.stream().collect(Collectors.toSet()));
+    }
+
+    /**
+     * 构建网站标签列表
+     *
+     * @param tagsRaw 网站标签原始文本
+     * @param tagItemMap 标签映射
+     * @return 网站标签列表
+     */
+    private List<UserWebsiteTagItemVO> buildWebsiteTagItems(String tagsRaw, Map<Long, UserWebsiteTagItemVO> tagItemMap) {
+        List<Long> tagIds = parseTagIds(tagsRaw);
+        if (CollUtil.isEmpty(tagIds) || CollUtil.isEmpty(tagItemMap)) {
+            return Collections.emptyList();
+        }
+
+        return tagIds.stream()
+                .map(tagItemMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * 解析标签ID列表
+     *
+     * @param tags 标签原始文本
+     * @return 标签ID列表
+     */
+    private List<Long> parseTagIds(String tags) {
+        if (!StringUtils.hasText(tags)) {
+            return Collections.emptyList();
+        }
+
+        return Arrays.stream(tags.replace('，', ',').split(","))
+                .map(tag -> tag.replaceAll("\\s+", ""))
+                .filter(StringUtils::hasText)
+                .map(this::parseLongSafely)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
+    /**
+     * 解析Long类型
+     *
+     * @param text 文本
+     * @return Long值
+     */
+    private Long parseLongSafely(String text) {
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    /**
+     * 标准化标签颜色
+     *
+     * @param color 原始颜色
+     * @return 标准化颜色
+     */
+    private String normalizeTagColor(String color) {
+        if (!StringUtils.hasText(color)) {
+            return DEFAULT_TAG_COLOR;
+        }
+
+        String normalizedColor = color.trim().toUpperCase();
+        if (!normalizedColor.startsWith("#")) {
+            normalizedColor = "#" + normalizedColor;
+        }
+        if (!normalizedColor.matches("^#[0-9A-F]{6}$")) {
+            return DEFAULT_TAG_COLOR;
+        }
+        return normalizedColor;
     }
 
     /**
@@ -272,24 +454,6 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
         }
 
         return countMap;
-    }
-
-    /**
-     * 解析标签列表
-     *
-     * @param tags 标签原始文本
-     * @return 标签列表
-     */
-    private List<String> parseTags(String tags) {
-        if (!StringUtils.hasText(tags)) {
-            return Collections.emptyList();
-        }
-
-        return Arrays.stream(tags.replace('，', ',').split(","))
-                .map(tag -> tag.replaceAll("\\s+", ""))
-                .filter(StringUtils::hasText)
-                .distinct()
-                .toList();
     }
 
     /**

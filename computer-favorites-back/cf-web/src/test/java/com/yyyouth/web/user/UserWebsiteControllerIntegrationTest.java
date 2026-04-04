@@ -7,6 +7,7 @@ import com.yyyouth.model.vo.user.UserWebsiteCategoryVO;
 import com.yyyouth.model.vo.user.UserWebsiteDetailVO;
 import com.yyyouth.model.vo.user.UserWebsiteListItemVO;
 import com.yyyouth.model.vo.user.UserWebsitePageVO;
+import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
 import com.yyyouth.service.user.website.UserWebsiteService;
 import com.yyyouth.web.config.GlobalExceptionHandler;
 import com.yyyouth.web.controller.user.UserWebsiteController;
@@ -23,6 +24,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -72,7 +74,18 @@ class UserWebsiteControllerIntegrationTest {
         itemVO.setCategoryName("Web & Frontend Development");
         itemVO.setClickCount(1200);
         itemVO.setLikeCount(560);
-        itemVO.setTags(List.of("Vue3", "Tailwind"));
+
+        UserWebsiteTagItemVO vueTag = new UserWebsiteTagItemVO();
+        vueTag.setId(101L);
+        vueTag.setName("Vue3");
+        vueTag.setColor("#42B883");
+
+        UserWebsiteTagItemVO tailwindTag = new UserWebsiteTagItemVO();
+        tailwindTag.setId(105L);
+        tailwindTag.setName("Tailwind");
+        tailwindTag.setColor("#38BDF8");
+
+        itemVO.setTags(List.of(vueTag, tailwindTag));
 
         UserWebsitePageVO pageVO = new UserWebsitePageVO();
         pageVO.setRecords(List.of(itemVO));
@@ -86,14 +99,20 @@ class UserWebsiteControllerIntegrationTest {
         mockMvc.perform(get("/api/website/list")
                         .param("pageNum", "1")
                         .param("pageSize", "12")
+                .param("tagIds", "1,2")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.records[0].name").value("Vue.js"))
-                .andExpect(jsonPath("$.data.records[0].tags[0]").value("Vue3"));
+                .andExpect(jsonPath("$.data.records[0].tags[0].name").value("Vue3"))
+                .andExpect(jsonPath("$.data.records[0].tags[0].color").value("#42B883"));
 
-        verify(userWebsiteService).queryWebsitePage(any());
+        verify(userWebsiteService).queryWebsitePage(argThat(queryDTO ->
+            queryDTO.getTagIds() != null
+                && queryDTO.getTagIds().size() == 2
+                && queryDTO.getTagIds().contains(1L)
+                && queryDTO.getTagIds().contains(2L)));
     }
 
     /**
@@ -130,7 +149,18 @@ class UserWebsiteControllerIntegrationTest {
         detailVO.setId(100L);
         detailVO.setName("PrimeVue");
         detailVO.setCategoryName("UI Library");
-        detailVO.setTags(List.of("Vue", "UI"));
+
+        UserWebsiteTagItemVO primeVueTag = new UserWebsiteTagItemVO();
+        primeVueTag.setId(201L);
+        primeVueTag.setName("Vue");
+        primeVueTag.setColor("#42B883");
+
+        UserWebsiteTagItemVO uiTag = new UserWebsiteTagItemVO();
+        uiTag.setId(202L);
+        uiTag.setName("UI");
+        uiTag.setColor("#334155");
+
+        detailVO.setTags(List.of(primeVueTag, uiTag));
 
         when(userWebsiteService.queryWebsiteDetail(100L)).thenReturn(detailVO);
 
@@ -139,7 +169,8 @@ class UserWebsiteControllerIntegrationTest {
                 .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
                 .andExpect(jsonPath("$.data.id").value(100))
                 .andExpect(jsonPath("$.data.name").value("PrimeVue"))
-                .andExpect(jsonPath("$.data.tags[1]").value("UI"));
+                .andExpect(jsonPath("$.data.tags[1].name").value("UI"))
+                .andExpect(jsonPath("$.data.tags[1].color").value("#334155"));
 
         verify(userWebsiteService).queryWebsiteDetail(100L);
     }

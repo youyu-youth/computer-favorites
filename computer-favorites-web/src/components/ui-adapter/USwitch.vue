@@ -2,13 +2,16 @@
 import { useAttrs } from 'vue'
 import ToggleSwitch from 'primevue/toggleswitch'
 
-const props = withDefaults(defineProps<{
-  modelValue?: boolean
-  disabled?: boolean
-}>(), {
-  modelValue: false,
-  disabled: false,
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue?: boolean
+    disabled?: boolean
+  }>(),
+  {
+    modelValue: false,
+    disabled: false,
+  },
+)
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void

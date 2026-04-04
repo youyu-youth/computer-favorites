@@ -50,7 +50,6 @@ const closeDialog = () => {
   emit('update:open', false)
 }
 
-
 const submitForm = () => {
   const normalizedUsername = username.value.trim()
   if (normalizedUsername.length < 1 || normalizedUsername.length > 120) {
@@ -79,7 +78,6 @@ onBeforeUnmount(() => {
   unlockPageScroll()
 })
 
-
 defineOptions({
   name: 'UsernameEditDialog',
 })
@@ -99,7 +97,7 @@ defineOptions({
       description: 'username-edit-modal-description',
       close: 'username-edit-modal-close cursor-pointer',
       body: 'username-edit-modal-body',
-      footer: 'username-edit-modal-footer'
+      footer: 'username-edit-modal-footer',
     }"
     @update:open="emit('update:open', $event)"
   >

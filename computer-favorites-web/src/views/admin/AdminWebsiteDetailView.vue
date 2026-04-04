@@ -202,7 +202,7 @@ watch(
   () => detail.value?.icon,
   () => {
     iconLoadFailed.value = false
-  }
+  },
 )
 
 watch(
@@ -210,7 +210,7 @@ watch(
   () => {
     void loadDetail()
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 const goBack = () => {
@@ -289,7 +289,9 @@ const goEdit = () => {
         class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-dark-border dark:bg-dark-card"
       >
         <div class="flex flex-col lg:flex-row">
-          <aside class="w-full border-b border-gray-800 bg-gray-900 p-6 text-gray-300 lg:w-1/3 lg:border-b-0 lg:border-r md:p-8">
+          <aside
+            class="w-full border-b border-gray-800 bg-gray-900 p-6 text-gray-300 lg:w-1/3 lg:border-b-0 lg:border-r md:p-8"
+          >
             <div class="flex gap-2">
               <span class="h-3 w-3 rounded-full bg-red-500"></span>
               <span class="h-3 w-3 rounded-full bg-yellow-500"></span>
@@ -297,14 +299,25 @@ const goEdit = () => {
             </div>
 
             <div class="mt-6">
-              <h1 class="break-all text-xl font-bold text-white">{{ toDisplayValue(detail.name) }}</h1>
+              <h1 class="break-all text-xl font-bold text-white">
+                {{ toDisplayValue(detail.name) }}
+              </h1>
               <p class="mt-2 break-all text-xs text-gray-400">{{ toDisplayValue(detail.url) }}</p>
             </div>
 
             <div class="mt-4 flex flex-wrap gap-2">
-              <span class="rounded-full border border-emerald-700 bg-emerald-900/20 px-2.5 py-1 text-xs text-emerald-200">{{ resolveStatusText(detail.status) }}</span>
-              <span class="rounded-full border border-blue-700 bg-blue-900/20 px-2.5 py-1 text-xs text-blue-200">{{ resolveAuditStatusText(detail.auditStatus) }}</span>
-              <span class="rounded-full border border-gray-700 bg-gray-800/60 px-2.5 py-1 text-xs text-gray-200">{{ resolveSourceText(detail.source) }}</span>
+              <span
+                class="rounded-full border border-emerald-700 bg-emerald-900/20 px-2.5 py-1 text-xs text-emerald-200"
+                >{{ resolveStatusText(detail.status) }}</span
+              >
+              <span
+                class="rounded-full border border-blue-700 bg-blue-900/20 px-2.5 py-1 text-xs text-blue-200"
+                >{{ resolveAuditStatusText(detail.auditStatus) }}</span
+              >
+              <span
+                class="rounded-full border border-gray-700 bg-gray-800/60 px-2.5 py-1 text-xs text-gray-200"
+                >{{ resolveSourceText(detail.source) }}</span
+              >
             </div>
 
             <div class="mt-8">
@@ -317,7 +330,7 @@ const goEdit = () => {
                   :alt="`${toDisplayValue(detail.name)} 图标`"
                   class="h-14 w-14 object-cover"
                   @error="iconLoadFailed = true"
-                >
+                />
               </div>
               <div
                 v-else
@@ -330,31 +343,57 @@ const goEdit = () => {
           </aside>
 
           <section class="w-full space-y-6 bg-gray-50 p-6 dark:bg-dark-bg/50 md:p-8 lg:w-2/3">
-            <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+            <div
+              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
+            >
               <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">基础信息</h2>
               <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div v-for="item in baseRows" :key="item.label" class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60">
+                <div
+                  v-for="item in baseRows"
+                  :key="item.label"
+                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
+                >
                   <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
-                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">{{ item.value }}</p>
+                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">
+                    {{ item.value }}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
-              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">简介与描述</h2>
+            <div
+              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
+            >
+              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                简介与描述
+              </h2>
               <div class="space-y-4">
-                <div class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60">
+                <div
+                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
+                >
                   <p class="text-xs text-gray-500 dark:text-gray-400">一句话简介</p>
-                  <p class="mt-1 whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-100">{{ toDisplayValue(detail.summary) }}</p>
+                  <p
+                    class="mt-1 whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-100"
+                  >
+                    {{ toDisplayValue(detail.summary) }}
+                  </p>
                 </div>
-                <div class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60">
+                <div
+                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
+                >
                   <p class="text-xs text-gray-500 dark:text-gray-400">详细描述</p>
-                  <p class="mt-1 whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-100">{{ toDisplayValue(detail.description) }}</p>
+                  <p
+                    class="mt-1 whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-100"
+                  >
+                    {{ toDisplayValue(detail.description) }}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+            <div
+              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
+            >
               <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">标签信息</h2>
               <div v-if="parsedTags.length > 0" class="flex flex-wrap gap-2">
                 <span
@@ -368,32 +407,60 @@ const goEdit = () => {
               <p v-else class="text-sm text-gray-500 dark:text-gray-400">-</p>
             </div>
 
-            <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
-              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">运营与审核</h2>
+            <div
+              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
+            >
+              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                运营与审核
+              </h2>
               <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div v-for="item in operationRows" :key="item.label" class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60">
+                <div
+                  v-for="item in operationRows"
+                  :key="item.label"
+                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
+                >
                   <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
-                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">{{ item.value }}</p>
+                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">
+                    {{ item.value }}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+            <div
+              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
+            >
               <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">统计数据</h2>
               <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                <div v-for="item in statsRows" :key="item.label" class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60">
+                <div
+                  v-for="item in statsRows"
+                  :key="item.label"
+                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
+                >
                   <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
-                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">{{ item.value }}</p>
+                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">
+                    {{ item.value }}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
-              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">时间与身份</h2>
+            <div
+              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
+            >
+              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                时间与身份
+              </h2>
               <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div v-for="item in identityRows" :key="item.label" class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60">
+                <div
+                  v-for="item in identityRows"
+                  :key="item.label"
+                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
+                >
                   <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
-                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">{{ item.value }}</p>
+                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">
+                    {{ item.value }}
+                  </p>
                 </div>
               </div>
             </div>

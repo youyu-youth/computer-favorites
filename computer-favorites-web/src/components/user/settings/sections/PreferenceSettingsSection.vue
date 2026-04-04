@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { computed, inject, ref, onMounted, onBeforeUnmount, type ComponentPublicInstance } from 'vue'
+import {
+  computed,
+  inject,
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  type ComponentPublicInstance,
+} from 'vue'
 import { settingsStateKey } from '@/components/user/settings/context'
 import { useAppStore, type ThemeMode } from '@/stores/app'
 import { useI18n } from 'vue-i18n'
@@ -36,11 +43,7 @@ const DROPDOWN_IDS = {
 } as const
 
 // 自定义下拉选择器逻辑
-const createDropdown = <T,>(
-  id: string,
-  modelValue: { value: T },
-  options: SelectOption<T>[],
-) => {
+const createDropdown = <T,>(id: string, modelValue: { value: T }, options: SelectOption<T>[]) => {
   const dropdownRef = ref<HTMLElement | null>(null)
 
   // 判断当前下拉框是否打开
@@ -48,7 +51,7 @@ const createDropdown = <T,>(
 
   // 获取当前选中项的标签
   const selectedLabel = computed(() => {
-    const option = options.find(opt => opt.value === modelValue.value)
+    const option = options.find((opt) => opt.value === modelValue.value)
     return option ? option.label : ''
   })
 
@@ -138,8 +141,8 @@ const allDropdownRefs = [languageDropdown, homepageStyleDropdown, pageSizeDropdo
 // 点击外部关闭下拉框
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as Node
-  const isInsideAnyDropdown = allDropdownRefs.some(
-    (dropdown) => dropdown.dropdownRef.value?.contains(target),
+  const isInsideAnyDropdown = allDropdownRefs.some((dropdown) =>
+    dropdown.dropdownRef.value?.contains(target),
   )
   if (!isInsideAnyDropdown) {
     activeDropdownId.value = null
@@ -162,8 +165,12 @@ defineOptions({
 <template>
   <div class="space-y-6">
     <div class="space-y-1">
-      <h3 class="text-xl font-medium text-slate-900 dark:text-white">{{ t('settings.preference.title') }}</h3>
-      <p class="text-sm text-slate-500 dark:text-slate-400">{{ t('settings.preference.subtitle') }}</p>
+      <h3 class="text-xl font-medium text-slate-900 dark:text-white">
+        {{ t('settings.preference.title') }}
+      </h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {{ t('settings.preference.subtitle') }}
+      </p>
     </div>
 
     <div
@@ -188,7 +195,9 @@ defineOptions({
               >
                 <UIcon name="i-lucide-sun" class="h-5 w-5" />
               </div>
-              <p class="text-sm font-medium text-slate-900 dark:text-white">{{ t('settings.preference.theme.light') }}</p>
+              <p class="text-sm font-medium text-slate-900 dark:text-white">
+                {{ t('settings.preference.theme.light') }}
+              </p>
             </div>
 
             <div
@@ -205,7 +214,9 @@ defineOptions({
               >
                 <UIcon name="i-lucide-moon" class="h-5 w-5" />
               </div>
-              <p class="text-sm font-medium text-slate-900 dark:text-white">{{ t('settings.preference.theme.dark') }}</p>
+              <p class="text-sm font-medium text-slate-900 dark:text-white">
+                {{ t('settings.preference.theme.dark') }}
+              </p>
             </div>
 
             <div
@@ -222,7 +233,9 @@ defineOptions({
               >
                 <UIcon name="i-lucide-monitor" class="h-5 w-5" />
               </div>
-              <p class="text-sm font-medium text-slate-900 dark:text-white">{{ t('settings.preference.theme.system') }}</p>
+              <p class="text-sm font-medium text-slate-900 dark:text-white">
+                {{ t('settings.preference.theme.system') }}
+              </p>
             </div>
           </div>
         </div>
@@ -234,8 +247,12 @@ defineOptions({
           <!-- 系统语言 -->
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-slate-900 dark:text-white">{{ t('settings.preference.language.title') }}</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ t('settings.preference.language.subtitle') }}</p>
+              <p class="text-sm font-medium text-slate-900 dark:text-white">
+                {{ t('settings.preference.language.title') }}
+              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {{ t('settings.preference.language.subtitle') }}
+              </p>
             </div>
             <div :ref="languageDropdown.setRef" class="relative">
               <button
@@ -293,10 +310,14 @@ defineOptions({
           <!-- 默认主页视图 -->
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-slate-900 dark:text-white">{{ t('settings.preference.homepage.title') }}</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ t('settings.preference.homepage.subtitle') }}</p>
+              <p class="text-sm font-medium text-slate-900 dark:text-white">
+                {{ t('settings.preference.homepage.title') }}
+              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {{ t('settings.preference.homepage.subtitle') }}
+              </p>
             </div>
-              <div :ref="homepageStyleDropdown.setRef" class="relative">
+            <div :ref="homepageStyleDropdown.setRef" class="relative">
               <button
                 type="button"
                 class="flex w-32 cursor-pointer items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors hover:border-slate-300 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-white/10 dark:!bg-slate-900 dark:text-white dark:hover:border-white/20 dark:focus:border-primary-400 dark:focus:ring-primary-400"
@@ -352,10 +373,14 @@ defineOptions({
           <!-- 默认分页大小 -->
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-slate-900 dark:text-white">{{ t('settings.preference.pageSize.title') }}</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ t('settings.preference.pageSize.subtitle') }}</p>
+              <p class="text-sm font-medium text-slate-900 dark:text-white">
+                {{ t('settings.preference.pageSize.title') }}
+              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {{ t('settings.preference.pageSize.subtitle') }}
+              </p>
             </div>
-              <div :ref="pageSizeDropdown.setRef" class="relative">
+            <div :ref="pageSizeDropdown.setRef" class="relative">
               <button
                 type="button"
                 class="flex w-32 cursor-pointer items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors hover:border-slate-300 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-white/10 dark:!bg-slate-900 dark:text-white dark:hover:border-white/20 dark:focus:border-primary-400 dark:focus:ring-primary-400"

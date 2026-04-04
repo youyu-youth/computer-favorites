@@ -1,11 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import {
-  i18n,
-  setI18nLanguage,
-  initI18nLanguage,
-  type SupportedLanguage,
-} from '@/i18n'
+import { i18n, setI18nLanguage, initI18nLanguage, type SupportedLanguage } from '@/i18n'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 

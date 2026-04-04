@@ -317,7 +317,10 @@ export function useTagsData() {
     } catch (error) {
       showToast({
         type: 'error',
-        title: resolveErrorMessage(error, editorMode.value === 'create' ? '创建标签失败' : '更新标签失败'),
+        title: resolveErrorMessage(
+          error,
+          editorMode.value === 'create' ? '创建标签失败' : '更新标签失败',
+        ),
       })
     } finally {
       editorSubmitting.value = false

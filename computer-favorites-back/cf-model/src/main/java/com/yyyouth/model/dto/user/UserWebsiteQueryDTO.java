@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * @author yyyouth zg
  * @date 2026-04-04
@@ -26,6 +28,12 @@ public class UserWebsiteQueryDTO {
      */
     @Size(max = 100, message = "关键字长度不能超过100")
     private String keyword;
+
+    /**
+     * 标签ID列表
+     */
+    @Size(max = 20, message = "标签筛选数量不能超过20")
+    private List<@Positive(message = "标签ID必须为正数") Long> tagIds;
 
     /**
      * 页码

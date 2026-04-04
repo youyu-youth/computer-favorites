@@ -12,15 +12,18 @@ interface UiConfig {
   itemDeleteIcon?: string
 }
 
-const props = withDefaults(defineProps<{
-  modelValue?: string[]
-  placeholder?: string
-  ui?: UiConfig
-}>(), {
-  modelValue: () => [],
-  placeholder: '',
-  ui: () => ({}),
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string[]
+    placeholder?: string
+    ui?: UiConfig
+  }>(),
+  {
+    modelValue: () => [],
+    placeholder: '',
+    ui: () => ({}),
+  },
+)
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string[]): void
@@ -45,7 +48,10 @@ const addPendingTag = () => {
 }
 
 const removeTag = (tag: string) => {
-  emit('update:modelValue', tags.value.filter((item) => item !== tag))
+  emit(
+    'update:modelValue',
+    tags.value.filter((item) => item !== tag),
+  )
 }
 
 const handleKeydown = (event: KeyboardEvent) => {

@@ -23,12 +23,11 @@ const selectedRows = computed<AdminTagItem[]>(() => {
 })
 
 const handleSelectionUpdate = (value: AdminTagItem[] | AdminTagItem | null | undefined): void => {
-  const rows = Array.isArray(value)
-    ? value
-    : value
-      ? [value]
-      : []
-  emit('selection-change', rows.map((item) => item.id))
+  const rows = Array.isArray(value) ? value : value ? [value] : []
+  emit(
+    'selection-change',
+    rows.map((item) => item.id),
+  )
 }
 
 const formatDateTime = (value: string): string => {
@@ -56,7 +55,9 @@ const resolveUsageTone = (useCount: number): string => {
 }
 
 const handleSort = (event: DataTableSortEvent): void => {
-  const field = (typeof event.sortField === 'string' ? event.sortField : 'updateTime') as AdminTagSortField
+  const field = (
+    typeof event.sortField === 'string' ? event.sortField : 'updateTime'
+  ) as AdminTagSortField
   const order: AdminTagSortOrder = event.sortOrder === 1 ? 1 : -1
   emit('sort-change', { field, order })
 }
@@ -92,8 +93,13 @@ const selectionCheckboxPt = {
           table: { class: 'w-full border-separate border-spacing-0' },
           thead: { class: 'bg-gray-50 dark:bg-dark-bg/60' },
           headerRow: { class: 'border-b border-gray-200 dark:border-dark-border' },
-          bodyRow: { class: 'border-b border-gray-100 transition-colors hover:bg-gray-50/70 dark:border-dark-border/70 dark:hover:bg-dark-bg/40' },
-          emptyMessage: { class: 'px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400' },
+          bodyRow: {
+            class:
+              'border-b border-gray-100 transition-colors hover:bg-gray-50/70 dark:border-dark-border/70 dark:hover:bg-dark-bg/40',
+          },
+          emptyMessage: {
+            class: 'px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400',
+          },
         }"
         @update:selection="handleSelectionUpdate"
         @sort="handleSort"
@@ -133,7 +139,9 @@ const selectionCheckboxPt = {
                 class="h-3 w-3 rounded-none border border-black/10 dark:border-white/20"
                 :style="{ backgroundColor: data.color }"
               ></span>
-              <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ data.name }}</span>
+              <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{
+                data.name
+              }}</span>
             </div>
           </template>
         </Column>
@@ -146,7 +154,9 @@ const selectionCheckboxPt = {
           bodyClass="px-4 py-3"
         >
           <template #body="{ data }">
-            <div class="inline-flex items-center gap-2 rounded-none border border-gray-200 px-2 py-1 text-xs font-medium text-gray-600 dark:border-dark-border dark:text-gray-300">
+            <div
+              class="inline-flex items-center gap-2 rounded-none border border-gray-200 px-2 py-1 text-xs font-medium text-gray-600 dark:border-dark-border dark:text-gray-300"
+            >
               <span
                 class="h-3 w-3 rounded-none border border-black/10 dark:border-white/20"
                 :style="{ backgroundColor: data.color }"
@@ -201,10 +211,22 @@ const selectionCheckboxPt = {
         >
           <template #body="{ data }">
             <div class="flex items-center gap-2">
-              <UButton class="rounded-none" color="neutral" variant="soft" size="sm" @click="emit('edit', data)">
+              <UButton
+                class="rounded-none"
+                color="neutral"
+                variant="soft"
+                size="sm"
+                @click="emit('edit', data)"
+              >
                 编辑
               </UButton>
-              <UButton class="rounded-none" color="red" variant="soft" size="sm" @click="emit('delete', data)">
+              <UButton
+                class="rounded-none"
+                color="red"
+                variant="soft"
+                size="sm"
+                @click="emit('delete', data)"
+              >
                 删除
               </UButton>
             </div>
@@ -276,7 +298,9 @@ const selectionCheckboxPt = {
   height: 1rem;
   border: 1px solid rgb(148 163 184 / 0.85);
   background-color: transparent;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 :deep(.cf-tag-table-checkbox-root[data-p-checked='true'] .cf-tag-table-checkbox-box) {

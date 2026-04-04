@@ -50,38 +50,77 @@ const handleBatchStatus = (status: AdminWebsiteStatusValue) => {
   <div class="space-y-3 mb-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-        <span>{{ stats.total }} websites，已上架 {{ stats.online }}，已删除 {{ stats.deleted }}。最近更新 {{ stats.latestUpdateTime }}</span>
+        <span
+          >{{ stats.total }} websites，已上架 {{ stats.online }}，已删除
+          {{ stats.deleted }}。最近更新 {{ stats.latestUpdateTime }}</span
+        >
         <span class="w-2 h-2 rounded-full bg-brand-green"></span>
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <button @click="emit('refresh')" class="bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-700 dark:text-gray-300 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-dark-border transition-colors cursor-pointer">
+        <button
+          @click="emit('refresh')"
+          class="bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-700 dark:text-gray-300 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-dark-border transition-colors cursor-pointer"
+        >
           Refresh
         </button>
 
         <div class="relative">
-          <select :value="deletedFilter" @change="handleDeletedFilterChange" class="appearance-none bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-700 dark:text-gray-300 pl-4 pr-8 py-1.5 rounded-md text-sm font-medium focus:outline-none focus:ring-1 focus:ring-brand-orange cursor-pointer">
+          <select
+            :value="deletedFilter"
+            @change="handleDeletedFilterChange"
+            class="appearance-none bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-700 dark:text-gray-300 pl-4 pr-8 py-1.5 rounded-md text-sm font-medium focus:outline-none focus:ring-1 focus:ring-brand-orange cursor-pointer"
+          >
             <option :value="-1">全部数据</option>
             <option :value="0">仅未删除</option>
             <option :value="1">仅已删除</option>
           </select>
-          <i class="fas fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+          <i
+            class="fas fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs pointer-events-none"
+          ></i>
         </div>
 
-        <div class="flex items-center bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-md overflow-hidden">
-          <button @click="switchView('grid')" :class="{'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white': props.viewMode === 'grid', 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-border': props.viewMode !== 'grid'}" class="p-2 transition-colors cursor-pointer" title="网格视图">
+        <div
+          class="flex items-center bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-md overflow-hidden"
+        >
+          <button
+            @click="switchView('grid')"
+            :class="{
+              'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white':
+                props.viewMode === 'grid',
+              'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-border':
+                props.viewMode !== 'grid',
+            }"
+            class="p-2 transition-colors cursor-pointer"
+            title="网格视图"
+          >
             <i class="fas fa-th-large"></i>
           </button>
-          <button @click="switchView('list')" :class="{'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white': props.viewMode === 'list', 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-border': props.viewMode !== 'list'}" class="p-2 transition-colors cursor-pointer" title="列表视图">
+          <button
+            @click="switchView('list')"
+            :class="{
+              'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white':
+                props.viewMode === 'list',
+              'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-border':
+                props.viewMode !== 'list',
+            }"
+            class="p-2 transition-colors cursor-pointer"
+            title="列表视图"
+          >
             <i class="fas fa-list"></i>
           </button>
         </div>
 
-        <button class="bg-gray-900 text-white dark:bg-[#1f2937] dark:hover:bg-gray-700 border dark:border-gray-600 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors cursor-pointer">
+        <button
+          class="bg-gray-900 text-white dark:bg-[#1f2937] dark:hover:bg-gray-700 border dark:border-gray-600 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors cursor-pointer"
+        >
           待审核 {{ stats.pendingAudit }}
         </button>
 
-        <button @click="emit('update:viewMode', 'add')" class="bg-brand-orange text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-orange-600 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm">
+        <button
+          @click="emit('update:viewMode', 'add')"
+          class="bg-brand-orange text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-orange-600 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+        >
           <i class="fas fa-plus text-xs"></i>
           <span>添加网站</span>
         </button>
@@ -95,7 +134,9 @@ const handleBatchStatus = (status: AdminWebsiteStatusValue) => {
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div class="text-sm text-orange-800 dark:text-orange-200">
           已选择 {{ selectedCount }} 个网站
-          <span class="text-xs text-orange-700/80 dark:text-orange-300/80">（当前页可选 {{ selectableTotal }} 个）</span>
+          <span class="text-xs text-orange-700/80 dark:text-orange-300/80"
+            >（当前页可选 {{ selectableTotal }} 个）</span
+          >
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -136,5 +177,3 @@ const handleBatchStatus = (status: AdminWebsiteStatusValue) => {
     </div>
   </div>
 </template>
-
-

@@ -9,13 +9,8 @@ import AdminSidebarCategoryList from '@/components/admin/layout/AdminSidebarCate
 const navStore = useAdminNavStore()
 const router = useRouter()
 const route = useRoute()
-const {
-  activeMenu,
-  menuItems,
-  websiteCategories,
-  selectedTreeKey,
-  mobileSidebarOpen,
-} = storeToRefs(navStore)
+const { activeMenu, menuItems, websiteCategories, selectedTreeKey, mobileSidebarOpen } =
+  storeToRefs(navStore)
 
 // 控制当前侧边栏展示的是第一级功能(main)还是第二级子项(sub)
 const currentSidebarLevel = ref<'main' | 'sub'>('main')
@@ -39,7 +34,7 @@ watch(
       resetCategoryKeyword()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 watch(
@@ -49,7 +44,7 @@ watch(
       // 每次打开移动端抽屉都根据当前菜单同步层级，避免“网站管理已选中但仍停留在主菜单层”
       syncSidebarLevelByActiveMenu()
     }
-  }
+  },
 )
 
 const normalizedKeyword = computed(() => {
@@ -157,12 +152,17 @@ onUnmounted(() => {
         :class="isDragging ? 'bg-[#f78166]/50' : 'hover:bg-gray-300 dark:hover:bg-gray-600'"
         @mousedown.prevent="startDrag"
       >
-        <div class="h-8 w-1 rounded-full bg-gray-400 dark:bg-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" :class="isDragging ? 'opacity-100 bg-[#f78166]' : ''"></div>
+        <div
+          class="h-8 w-1 rounded-full bg-gray-400 dark:bg-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+          :class="isDragging ? 'opacity-100 bg-[#f78166]' : ''"
+        ></div>
       </div>
 
       <!-- Primary Main Level View -->
       <div v-if="currentSidebarLevel === 'main'" class="flex-1 overflow-y-auto px-3 py-4 w-full">
-        <h2 class="text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 mb-4 px-3 uppercase">
+        <h2
+          class="text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 mb-4 px-3 uppercase"
+        >
           导航主页
         </h2>
 
@@ -172,21 +172,44 @@ onUnmounted(() => {
             :key="menu.key"
             @click="handleMainMenuClick(menu.key)"
             class="group flex items-center justify-between px-3 py-2 cursor-pointer rounded-lg transition-colors border-l-2"
-            :class="activeMenu === menu.key ? 'border-[#f78166] bg-orange-50/50 text-[#f78166] dark:bg-[#f78166]/10' : 'border-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50'"
+            :class="
+              activeMenu === menu.key
+                ? 'border-[#f78166] bg-orange-50/50 text-[#f78166] dark:bg-[#f78166]/10'
+                : 'border-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50'
+            "
           >
             <div class="flex items-center gap-3">
-              <i :class="[menu.icon, activeMenu === menu.key ? 'text-[#f78166]' : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300']" class="w-5 text-center text-lg"></i>
+              <i
+                :class="[
+                  menu.icon,
+                  activeMenu === menu.key
+                    ? 'text-[#f78166]'
+                    : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300',
+                ]"
+                class="w-5 text-center text-lg"
+              ></i>
               <span class="text-sm font-medium">{{ menu.label }}</span>
             </div>
             <!-- mock提示 -->
-            <span v-if="menu.mockOnly" class="text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-dark-card text-gray-400 dark:text-gray-500">模拟</span>
-            <i v-else class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-100 transition-opacity" :class="activeMenu === menu.key ? 'text-[#f78166]' : 'text-gray-400'"></i>
+            <span
+              v-if="menu.mockOnly"
+              class="text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-dark-card text-gray-400 dark:text-gray-500"
+              >模拟</span
+            >
+            <i
+              v-else
+              class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+              :class="activeMenu === menu.key ? 'text-[#f78166]' : 'text-gray-400'"
+            ></i>
           </div>
         </div>
       </div>
 
       <!-- Secondary Sub-Level View (Categories like the provided image) -->
-      <div v-else-if="currentSidebarLevel === 'sub'" class="flex-1 flex flex-col min-h-0 w-full animate-fade-in-left">
+      <div
+        v-else-if="currentSidebarLevel === 'sub'"
+        class="flex-1 flex flex-col min-h-0 w-full animate-fade-in-left"
+      >
         <!-- Back Button Header -->
         <div class="px-4 py-3 border-b border-gray-100 dark:border-dark-border/50">
           <button
@@ -201,13 +224,15 @@ onUnmounted(() => {
           <div class="px-2">
             <!-- Search categories -->
             <div class="relative mb-3">
-              <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i
+                class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"
+              ></i>
               <input
                 v-model="categoryKeyword"
                 type="text"
                 placeholder="搜索分类..."
                 class="w-full rounded-md border border-gray-200 dark:border-dark-card/60 bg-gray-50 dark:bg-[#0d1117] text-gray-900 dark:text-white pl-8 pr-3 py-1.5 text-[13px] outline-none transition-colors focus:border-[#f78166] focus:ring-1 focus:ring-[#f78166]/30"
-              >
+              />
             </div>
           </div>
 
@@ -225,8 +250,12 @@ onUnmounted(() => {
     <div v-if="mobileSidebarOpen" class="fixed inset-0 z-40 md:hidden">
       <div class="absolute inset-0 bg-black/45 backdrop-blur-sm" @click="closeMobileSidebar"></div>
 
-      <aside class="absolute left-0 top-16 h-[calc(100vh-4rem)] w-[84vw] max-w-xs flex flex-col border-r border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg overflow-hidden shadow-2xl transition-transform">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-dark-border/50">
+      <aside
+        class="absolute left-0 top-16 h-[calc(100vh-4rem)] w-[84vw] max-w-xs flex flex-col border-r border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg overflow-hidden shadow-2xl transition-transform"
+      >
+        <div
+          class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-dark-border/50"
+        >
           <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
             {{ currentSidebarLevel === 'main' ? '导航主页' : '网站分类' }}
           </h2>
@@ -246,20 +275,45 @@ onUnmounted(() => {
               :key="menu.key"
               @click="handleMainMenuClick(menu.key)"
               class="group flex items-center justify-between px-3 py-2 cursor-pointer rounded-lg border-l-[3px]"
-              :class="activeMenu === menu.key ? 'border-[#f78166] bg-orange-50/50 text-[#f78166] dark:bg-[#f78166]/10' : 'border-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50'"
+              :class="
+                activeMenu === menu.key
+                  ? 'border-[#f78166] bg-orange-50/50 text-[#f78166] dark:bg-[#f78166]/10'
+                  : 'border-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50'
+              "
             >
               <div class="flex items-center gap-3">
-                <i :class="[menu.icon, activeMenu === menu.key ? 'text-[#f78166]' : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300']" class="w-5 text-center text-lg"></i>
+                <i
+                  :class="[
+                    menu.icon,
+                    activeMenu === menu.key
+                      ? 'text-[#f78166]'
+                      : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300',
+                  ]"
+                  class="w-5 text-center text-lg"
+                ></i>
                 <span class="text-sm font-medium">{{ menu.label }}</span>
               </div>
-              <span v-if="menu.mockOnly" class="text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-dark-card text-gray-400 dark:text-gray-500">模拟</span>
-              <i v-else class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-100 transition-opacity" :class="activeMenu === menu.key ? 'text-[#f78166]' : 'text-gray-400'"></i>
+              <span
+                v-if="menu.mockOnly"
+                class="text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-dark-card text-gray-400 dark:text-gray-500"
+                >模拟</span
+              >
+              <i
+                v-else
+                class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                :class="activeMenu === menu.key ? 'text-[#f78166]' : 'text-gray-400'"
+              ></i>
             </div>
           </div>
         </div>
 
-        <div v-else-if="currentSidebarLevel === 'sub'" class="flex-1 overflow-y-auto flex flex-col min-h-0 w-full animate-fade-in-left">
-          <div class="px-4 py-3 bg-gray-50/50 dark:bg-dark-card/30 border-b border-gray-100 dark:border-dark-border/50">
+        <div
+          v-else-if="currentSidebarLevel === 'sub'"
+          class="flex-1 overflow-y-auto flex flex-col min-h-0 w-full animate-fade-in-left"
+        >
+          <div
+            class="px-4 py-3 bg-gray-50/50 dark:bg-dark-card/30 border-b border-gray-100 dark:border-dark-border/50"
+          >
             <button
               @click="goToMainLevel"
               class="flex items-center text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-[#f78166] transition-colors"
@@ -270,13 +324,15 @@ onUnmounted(() => {
 
           <div class="px-3 py-3">
             <div class="relative mb-4">
-              <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i
+                class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"
+              ></i>
               <input
                 v-model="categoryKeyword"
                 type="text"
                 placeholder="搜索分类..."
                 class="w-full rounded-md border border-gray-200 dark:border-dark-card/60 bg-white dark:bg-[#0d1117] text-gray-900 dark:text-white pl-8 pr-3 py-1.5 text-[13px] outline-none transition-colors focus:border-[#f78166] focus:ring-1 focus:ring-[#f78166]/30"
-              >
+              />
             </div>
 
             <AdminSidebarCategoryList

@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, shallowRef, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  provide,
+  reactive,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue'
 // @ts-ignore
 import SettingsSidebar from '@/components/user/settings/SettingsSidebar.vue'
 // @ts-ignore
@@ -12,9 +22,17 @@ import PreferenceSettingsSection from '@/components/user/settings/sections/Prefe
 import DataManagementSection from '@/components/user/settings/sections/DataManagementSection.vue'
 // @ts-ignore
 import MessageSettingsSection from '@/components/user/settings/sections/MessageSettingsSection.vue'
-import { mockUserBasicInfo, mockUserDetailProfile, mockUserPreferenceSetting } from '@/components/user/settings/mock'
+import {
+  mockUserBasicInfo,
+  mockUserDetailProfile,
+  mockUserPreferenceSetting,
+} from '@/components/user/settings/mock'
 import { settingsStateKey } from '@/components/user/settings/context'
-import { getCurrentUserProfile, updateCurrentUserProfile, updateCurrentUserSetting } from '@/api/user'
+import {
+  getCurrentUserProfile,
+  updateCurrentUserProfile,
+  updateCurrentUserSetting,
+} from '@/api/user'
 import { useToast } from '@/composables/useToast'
 import { useAppStore, type ThemeMode } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
@@ -79,7 +97,8 @@ let transitionSerial = 0
 
 // 记录稳定的基线高度，保证较短分区也能贴合页脚区域
 const syncStableContentMinHeight = (height?: number) => {
-  const measuredHeight = typeof height === 'number' ? height : (contentWrapperRef.value?.offsetHeight ?? 0)
+  const measuredHeight =
+    typeof height === 'number' ? height : (contentWrapperRef.value?.offsetHeight ?? 0)
   if (measuredHeight > stableContentMinHeight.value) {
     stableContentMinHeight.value = Math.round(measuredHeight)
   }
@@ -302,8 +321,14 @@ const syncSettingsStateFromApi = async () => {
     signature: normalizeString(profile?.signature, mockUserDetailProfile.signature),
     hobbyTags: normalizeString(profile?.hobbyTags, mockUserDetailProfile.hobbyTags),
     techStack: normalizeString(profile?.techStack, mockUserDetailProfile.techStack),
-    favoriteWebsites: normalizeString(profile?.favoriteWebsites, mockUserDetailProfile.favoriteWebsites),
-    uploadedWebsites: normalizeString(profile?.uploadedWebsites, mockUserDetailProfile.uploadedWebsites),
+    favoriteWebsites: normalizeString(
+      profile?.favoriteWebsites,
+      mockUserDetailProfile.favoriteWebsites,
+    ),
+    uploadedWebsites: normalizeString(
+      profile?.uploadedWebsites,
+      mockUserDetailProfile.uploadedWebsites,
+    ),
     contribution: normalizeString(profile?.contribution, mockUserDetailProfile.contribution),
     createTime: normalizeString(profile?.createTime, ''),
     updateTime: normalizeString(profile?.updateTime, ''),
@@ -356,21 +381,26 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div :style="{ minHeight: viewportMinHeight }" class="flex h-full w-full flex-col bg-slate-50 transition-colors duration-300 dark:bg-black">
+  <div
+    :style="{ minHeight: viewportMinHeight }"
+    class="flex h-full w-full flex-col bg-slate-50 transition-colors duration-300 dark:bg-black"
+  >
     <UContainer class="flex min-h-full w-full max-w-6xl flex-1 flex-col pt-6 pb-0 md:pt-10 md:pb-0">
       <div class="flex justify-end pb-4">
-        <UButton :loading="savingProfile" :disabled="savingProfile" variant="solid" class="cursor-pointer !bg-[#f59e0b] !text-white hover:!bg-[#d97706] active:!bg-[#d97706] focus-visible:!outline-[#f59e0b] disabled:cursor-not-allowed disabled:opacity-70" @click="handleSaveAllChanges">
+        <UButton
+          :loading="savingProfile"
+          :disabled="savingProfile"
+          variant="solid"
+          class="cursor-pointer !bg-[#f59e0b] !text-white hover:!bg-[#d97706] active:!bg-[#d97706] focus-visible:!outline-[#f59e0b] disabled:cursor-not-allowed disabled:opacity-70"
+          @click="handleSaveAllChanges"
+        >
           {{ savingProfile ? t('settings.profile.saving') : t('settings.profile.save') }}
         </UButton>
       </div>
       <div class="flex flex-col gap-8 md:flex-row">
         <!-- Sidebar -->
         <div class="w-full shrink-0 md:w-64">
-          <SettingsSidebar
-            :tabs="tabs"
-            :active-id="activeTabId"
-            @change="handleTabChange"
-          />
+          <SettingsSidebar :tabs="tabs" :active-id="activeTabId" @change="handleTabChange" />
         </div>
 
         <!-- Content Area -->
@@ -406,7 +436,9 @@ onMounted(async () => {
 
 .settings-switch-enter-active,
 .settings-switch-leave-active {
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
   will-change: opacity, transform;
 }
 

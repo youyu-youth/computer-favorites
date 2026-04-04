@@ -2,11 +2,14 @@
 import { useAttrs } from 'vue'
 import Divider from 'primevue/divider'
 
-const props = withDefaults(defineProps<{
-  orientation?: 'horizontal' | 'vertical'
-}>(), {
-  orientation: 'horizontal',
-})
+const props = withDefaults(
+  defineProps<{
+    orientation?: 'horizontal' | 'vertical'
+  }>(),
+  {
+    orientation: 'horizontal',
+  },
+)
 
 const attrs = useAttrs()
 </script>

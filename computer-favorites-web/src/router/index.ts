@@ -55,8 +55,8 @@ const router = createRouter({
           name: 'adminProfile',
           component: () => import('@/views/admin/AdminProfileView.vue'),
           meta: { requiresAdminAuth: true, title: '个人资料', hideAdminSidebar: true },
-        }
-      ]
+        },
+      ],
     },
     {
       path: '/',
@@ -200,9 +200,9 @@ router.afterEach((to) => {
   }
 
   if (
-    to.name === 'adminWebsites'
-    || to.name === 'adminWebsiteDetail'
-    || to.name === 'adminWebsiteEdit'
+    to.name === 'adminWebsites' ||
+    to.name === 'adminWebsiteDetail' ||
+    to.name === 'adminWebsiteEdit'
   ) {
     useAdminNavStore().setActiveMenu('websites')
   }

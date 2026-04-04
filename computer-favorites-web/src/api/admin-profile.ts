@@ -1,7 +1,11 @@
 import { getJson, putJson } from '@/utils/http'
 import type { ApiResult } from '@/api/types'
 import { buildAdminAuthHeaders } from '@/api/admin-auth-headers'
-import type { AdminProfile, UpdateAdminPasswordRequest, UpdateAdminProfileRequest } from '@/types/admin'
+import type {
+  AdminProfile,
+  UpdateAdminPasswordRequest,
+  UpdateAdminProfileRequest,
+} from '@/types/admin'
 
 export async function getAdminProfile(): Promise<AdminProfile> {
   const res = await getJson<ApiResult<AdminProfile>>('/api/admin/profile/current', {

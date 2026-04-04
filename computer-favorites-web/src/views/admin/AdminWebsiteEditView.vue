@@ -50,12 +50,7 @@ const handleCancel = () => {
         <p class="mt-3 text-sm">网站ID不合法，无法加载编辑页面。</p>
       </div>
 
-      <AdminAddWebsite
-        v-else
-        mode="edit"
-        :websiteId="websiteId"
-        @cancel="handleCancel"
-      />
+      <AdminAddWebsite v-else mode="edit" :websiteId="websiteId" @cancel="handleCancel" />
     </div>
   </main>
 </template>

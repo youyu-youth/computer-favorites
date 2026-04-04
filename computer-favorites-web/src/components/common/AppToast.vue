@@ -10,13 +10,19 @@ const iconClassMap: Record<string, string> = {
 </script>
 
 <template>
-  <Toast position="top-right" group="app-headless" :pt="{ root: { class: 'w-full sm:max-w-[360px]' } }">
+  <Toast
+    position="top-right"
+    group="app-headless"
+    :pt="{ root: { class: 'w-full sm:max-w-[360px]' } }"
+  >
     <template #container="{ message, closeCallback }">
       <div
         class="pointer-events-auto flex w-full items-start gap-3 rounded-xl border border-gray-100 bg-white/95 p-4 shadow-[var(--cf-shadow-toast-light)] backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/95 dark:shadow-[var(--cf-shadow-toast-dark)]"
         role="alert"
       >
-        <i :class="[iconClassMap[message.severity || 'info'] || iconClassMap.info, 'mt-0.5 text-lg']" />
+        <i
+          :class="[iconClassMap[message.severity || 'info'] || iconClassMap.info, 'mt-0.5 text-lg']"
+        />
         <div class="min-w-0 flex-1 pt-[2px]">
           <p class="truncate text-[14px] font-medium leading-snug text-gray-900 dark:text-gray-100">
             {{ message.summary }}

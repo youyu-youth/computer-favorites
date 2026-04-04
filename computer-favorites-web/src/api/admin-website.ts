@@ -62,19 +62,27 @@ export async function getAdminWebsiteDetail(websiteId: number): Promise<AdminWeb
 export async function getAdminWebsiteCategories(
   deleted: DeletedFilterValue,
 ): Promise<AdminWebsiteCategory[]> {
-  const res = await getJson<ApiResult<AdminWebsiteCategory[]>>(`/api/admin/website/categories?deleted=${deleted}`, {
-    headers: buildAdminAuthHeaders(),
-  })
+  const res = await getJson<ApiResult<AdminWebsiteCategory[]>>(
+    `/api/admin/website/categories?deleted=${deleted}`,
+    {
+      headers: buildAdminAuthHeaders(),
+    },
+  )
   if (res.code !== 200) {
     throw new Error(res.msg || '查询分类统计失败')
   }
   return res.data || []
 }
 
-export async function getAdminWebsiteStats(deleted: DeletedFilterValue): Promise<AdminWebsiteStats> {
-  const res = await getJson<ApiResult<AdminWebsiteStats>>(`/api/admin/website/stats?deleted=${deleted}`, {
-    headers: buildAdminAuthHeaders(),
-  })
+export async function getAdminWebsiteStats(
+  deleted: DeletedFilterValue,
+): Promise<AdminWebsiteStats> {
+  const res = await getJson<ApiResult<AdminWebsiteStats>>(
+    `/api/admin/website/stats?deleted=${deleted}`,
+    {
+      headers: buildAdminAuthHeaders(),
+    },
+  )
   if (res.code !== 200) {
     throw new Error(res.msg || '查询网站统计失败')
   }
@@ -88,9 +96,13 @@ export async function uploadAdminWebsiteLogo(file: File): Promise<AdminWebsiteLo
   const formData = new FormData()
   formData.append('file', file)
 
-  const res = await postFormData<ApiResult<AdminWebsiteLogoUploadResult>>('/api/admin/website/logo', formData, {
-    headers: buildAdminAuthHeaders(),
-  })
+  const res = await postFormData<ApiResult<AdminWebsiteLogoUploadResult>>(
+    '/api/admin/website/logo',
+    formData,
+    {
+      headers: buildAdminAuthHeaders(),
+    },
+  )
   if (res.code !== 200) {
     throw new Error(res.msg || '上传 Logo 失败')
   }
@@ -113,7 +125,10 @@ export async function createAdminWebsite(payload: AdminWebsiteCreatePayload): Pr
   return res.data
 }
 
-export async function updateAdminWebsite(websiteId: number, payload: AdminWebsiteEditPayload): Promise<void> {
+export async function updateAdminWebsite(
+  websiteId: number,
+  payload: AdminWebsiteEditPayload,
+): Promise<void> {
   const res = await putJson<ApiResult<unknown>>(`/api/admin/website/${websiteId}`, payload, {
     headers: buildAdminAuthHeaders(),
   })
@@ -133,15 +148,20 @@ export async function deleteAdminWebsite(websiteId: number): Promise<void> {
 
 export async function deleteAdminWebsiteLogo(objectKey: string): Promise<void> {
   const encodedObjectKey = encodeURIComponent(objectKey)
-  const res = await deleteJson<ApiResult<unknown>>(`/api/admin/website/logo?objectKey=${encodedObjectKey}`, {
-    headers: buildAdminAuthHeaders(),
-  })
+  const res = await deleteJson<ApiResult<unknown>>(
+    `/api/admin/website/logo?objectKey=${encodedObjectKey}`,
+    {
+      headers: buildAdminAuthHeaders(),
+    },
+  )
   if (res.code !== 200) {
     throw new Error(res.msg || '删除 Logo 失败')
   }
 }
 
-export async function updateAdminWebsiteStatus(payload: AdminWebsiteStatusUpdatePayload): Promise<void> {
+export async function updateAdminWebsiteStatus(
+  payload: AdminWebsiteStatusUpdatePayload,
+): Promise<void> {
   const res = await putJson<ApiResult<unknown>>('/api/admin/website/status', payload, {
     headers: buildAdminAuthHeaders(),
   })
@@ -150,7 +170,9 @@ export async function updateAdminWebsiteStatus(payload: AdminWebsiteStatusUpdate
   }
 }
 
-export async function batchUpdateAdminWebsiteStatus(payload: AdminWebsiteBatchStatusUpdatePayload): Promise<number> {
+export async function batchUpdateAdminWebsiteStatus(
+  payload: AdminWebsiteBatchStatusUpdatePayload,
+): Promise<number> {
   const res = await putJson<ApiResult<number>>('/api/admin/website/status/batch', payload, {
     headers: buildAdminAuthHeaders(),
   })

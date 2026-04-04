@@ -46,8 +46,8 @@ public class UserWebsiteController {
     @ApiOperation(value = "查询网站分页列表")
     @GetMapping("/list")
     public HttpResult list(@Valid UserWebsiteQueryDTO queryDTO) {
-        log.info("用户端查询网站列表请求，pageNum={}, pageSize={}, categoryId={}",
-                queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getCategoryId());
+        log.info("用户端查询网站列表请求，pageNum={}, pageSize={}, categoryId={}, tagIds={}",
+            queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getCategoryId(), queryDTO.getTagIds());
 
         UserWebsitePageVO pageVO = userWebsiteService.queryWebsitePage(queryDTO);
         log.info("用户端查询网站列表成功，total={}", pageVO.getTotal());

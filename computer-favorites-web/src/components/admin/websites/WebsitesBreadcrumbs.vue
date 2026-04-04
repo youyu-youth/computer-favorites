@@ -8,8 +8,8 @@ import { useAdminNavStore } from '@/stores/adminNav'
 const props = defineProps({
   viewMode: {
     type: String,
-    default: 'grid'
-  }
+    default: 'grid',
+  },
 })
 
 const emit = defineEmits<{
@@ -20,13 +20,8 @@ const adminNavStore = useAdminNavStore()
 const router = useRouter()
 const route = useRoute()
 
-const {
-  menuItems,
-  activeMenu,
-  activeMenuLabel,
-  isWebsiteMenuActive,
-  selectedCategoryLabel,
-} = storeToRefs(adminNavStore)
+const { menuItems, activeMenu, activeMenuLabel, isWebsiteMenuActive, selectedCategoryLabel } =
+  storeToRefs(adminNavStore)
 
 type BreadcrumbItem = {
   key: string
@@ -135,9 +130,11 @@ const activateMenu = async (menuKey: AdminMenuKey) => {
             :key="`mobile-${menu.key}`"
             type="button"
             class="cursor-pointer inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors border"
-            :class="activeMenu === menu.key
-              ? 'text-[#e95322] border-[#e95322] bg-orange-50 dark:bg-[#161b22]'
-              : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card'"
+            :class="
+              activeMenu === menu.key
+                ? 'text-[#e95322] border-[#e95322] bg-orange-50 dark:bg-[#161b22]'
+                : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card'
+            "
             @click="void activateMenu(menu.key)"
           >
             <i :class="menu.icon" class="text-xs"></i>
@@ -145,9 +142,11 @@ const activateMenu = async (menuKey: AdminMenuKey) => {
             <span
               v-if="menu.mockOnly"
               class="text-[11px] px-1.5 py-0.5 rounded-full"
-              :class="activeMenu === menu.key
-                ? 'bg-[#e95322]/12 text-[#e95322] border border-[#e95322]/35'
-                : 'bg-gray-100 dark:bg-dark-card text-gray-500 dark:text-gray-400'"
+              :class="
+                activeMenu === menu.key
+                  ? 'bg-[#e95322]/12 text-[#e95322] border border-[#e95322]/35'
+                  : 'bg-gray-100 dark:bg-dark-card text-gray-500 dark:text-gray-400'
+              "
             >
               模拟
             </span>
@@ -161,9 +160,11 @@ const activateMenu = async (menuKey: AdminMenuKey) => {
           :key="`desktop-${menu.key}`"
           type="button"
           class="cursor-pointer inline-flex items-center gap-2 rounded-md px-3 py-2 transition-colors border"
-          :class="activeMenu === menu.key
-            ? 'text-[#e95322] border-[#e95322] bg-orange-50 dark:bg-[#161b22]'
-            : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card'"
+          :class="
+            activeMenu === menu.key
+              ? 'text-[#e95322] border-[#e95322] bg-orange-50 dark:bg-[#161b22]'
+              : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card'
+          "
           @click="void activateMenu(menu.key)"
         >
           <i :class="menu.icon" class="text-xs"></i>
@@ -171,9 +172,11 @@ const activateMenu = async (menuKey: AdminMenuKey) => {
           <span
             v-if="menu.mockOnly"
             class="text-[11px] px-1.5 py-0.5 rounded-full"
-            :class="activeMenu === menu.key
-              ? 'bg-[#e95322]/12 text-[#e95322] border border-[#e95322]/35'
-              : 'bg-gray-100 dark:bg-dark-card text-gray-500 dark:text-gray-400'"
+            :class="
+              activeMenu === menu.key
+                ? 'bg-[#e95322]/12 text-[#e95322] border border-[#e95322]/35'
+                : 'bg-gray-100 dark:bg-dark-card text-gray-500 dark:text-gray-400'
+            "
           >
             模拟
           </span>
@@ -192,4 +195,3 @@ const activateMenu = async (menuKey: AdminMenuKey) => {
   display: none;
 }
 </style>
-

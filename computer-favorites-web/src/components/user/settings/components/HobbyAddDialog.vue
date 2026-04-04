@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = withDefaults(defineProps<{
-  open: boolean
-  modelValue: string
-  title?: string
-  description?: string
-}>(), {
-  title: '新增兴趣爱好',
-  description: '输入一个兴趣，提交后会自动追加到标签列表。'
-})
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    modelValue: string
+    title?: string
+    description?: string
+  }>(),
+  {
+    title: '新增兴趣爱好',
+    description: '输入一个兴趣，提交后会自动追加到标签列表。',
+  },
+)
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
@@ -41,7 +44,9 @@ const submitDialog = () => {
       @click.self="closeDialog"
       @keydown.esc.prevent.stop="closeDialog"
     >
-      <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-black">
+      <div
+        class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-black"
+      >
         <div class="space-y-1">
           <h4 class="text-base font-semibold text-slate-900 dark:text-white">{{ title }}</h4>
           <p class="text-sm text-slate-500 dark:text-slate-400">{{ description }}</p>

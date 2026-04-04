@@ -19,12 +19,15 @@ watch(
       adminNavStore.closeMobileSidebar()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen bg-gray-50 text-gray-900 dark:bg-dark-bg dark:text-gray-200 transition-colors duration-200 font-sans" data-cf-theme="admin">
+  <div
+    class="flex flex-col min-h-screen bg-gray-50 text-gray-900 dark:bg-dark-bg dark:text-gray-200 transition-colors duration-200 font-sans"
+    data-cf-theme="admin"
+  >
     <AdminHeader />
     <div class="flex flex-1 min-h-0">
       <AdminSidebarTree v-if="showSidebar" />
@@ -34,4 +37,3 @@ watch(
     </div>
   </div>
 </template>
-

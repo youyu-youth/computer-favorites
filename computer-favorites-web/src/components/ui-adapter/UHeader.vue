@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
 
-const props = withDefaults(defineProps<{
-  open?: boolean
-  ui?: {
-    container?: string
-  }
-}>(), {
-  open: false,
-  ui: () => ({}),
-})
+const props = withDefaults(
+  defineProps<{
+    open?: boolean
+    ui?: {
+      container?: string
+    }
+  }>(),
+  {
+    open: false,
+    ui: () => ({}),
+  },
+)
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
@@ -54,7 +57,12 @@ const hasBody = computed(() => Boolean(slots.body))
               stroke="currentColor"
               class="h-5 w-5"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
             <svg
               v-else
@@ -64,7 +72,12 @@ const hasBody = computed(() => Boolean(slots.body))
               stroke="currentColor"
               class="h-5 w-5"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>

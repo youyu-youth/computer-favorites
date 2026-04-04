@@ -236,7 +236,7 @@ watch(
   () => route.fullPath,
   () => {
     closeProfileMenu()
-  }
+  },
 )
 
 watch(
@@ -272,7 +272,7 @@ watch(
       resolvedAvatarUrl.value = undefined
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 watch(
@@ -282,7 +282,7 @@ watch(
       void adminAuthStore.loadCurrentProfile()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 onMounted(() => {
@@ -298,7 +298,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 bg-white/80 dark:bg-dark-bg/80 backdrop-blur-md border-b border-gray-200 dark:border-dark-border">
+  <header
+    class="sticky top-0 z-50 bg-white/80 dark:bg-dark-bg/80 backdrop-blur-md border-b border-gray-200 dark:border-dark-border"
+  >
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <div class="flex items-center gap-3 min-w-0">
@@ -313,16 +315,24 @@ onBeforeUnmount(() => {
 
           <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer">
             <i class="fa-solid fa-ghost text-2xl text-gray-900 dark:text-white"></i>
-            <span class="font-bold text-xl text-gray-900 dark:text-white tracking-tight">Glama Admin</span>
+            <span class="font-bold text-xl text-gray-900 dark:text-white tracking-tight"
+              >Glama Admin</span
+            >
           </div>
 
-          <span class="hidden sm:inline-flex items-center rounded-full bg-orange-50 dark:bg-orange-900/10 text-brand-orange text-xs font-semibold px-2.5 py-1">
+          <span
+            class="hidden sm:inline-flex items-center rounded-full bg-orange-50 dark:bg-orange-900/10 text-brand-orange text-xs font-semibold px-2.5 py-1"
+          >
             {{ activeMenuLabel }}
           </span>
         </div>
 
         <div class="flex items-center gap-2 sm:gap-4">
-          <button @click="toggleDarkMode" class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-dark-card transition-colors" title="切换明暗模式">
+          <button
+            @click="toggleDarkMode"
+            class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-dark-card transition-colors"
+            title="切换明暗模式"
+          >
             <i class="fas" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
           </button>
 
@@ -335,18 +345,24 @@ onBeforeUnmount(() => {
               :aria-expanded="profileMenuOpen"
               @click.stop="toggleProfileMenu"
             >
-              <div class="w-6 h-6 rounded-full overflow-hidden bg-[#e95322] text-white flex items-center justify-center flex-shrink-0">
+              <div
+                class="w-6 h-6 rounded-full overflow-hidden bg-[#e95322] text-white flex items-center justify-center flex-shrink-0"
+              >
                 <img
                   v-if="displayAvatarUrl"
                   :src="displayAvatarUrl"
                   :alt="displayName"
                   class="w-full h-full object-cover"
                   @error="handleAvatarError"
-                >
+                />
                 <span v-else class="text-xs font-semibold">{{ avatarInitial }}</span>
               </div>
               <span class="hidden lg:inline-block max-w-24 truncate">{{ displayName }}</span>
-              <i class="fas fa-chevron-down text-[10px] transition-transform" :class="profileMenuOpen ? 'rotate-180' : ''" aria-hidden="true"></i>
+              <i
+                class="fas fa-chevron-down text-[10px] transition-transform"
+                :class="profileMenuOpen ? 'rotate-180' : ''"
+                aria-hidden="true"
+              ></i>
             </button>
 
             <Transition name="fade-down">
@@ -387,7 +403,11 @@ onBeforeUnmount(() => {
                     <i class="fas fa-palette text-[13px]" aria-hidden="true"></i>
                     系统配色
                   </span>
-                  <i class="fas fa-chevron-right text-[10px] transition-transform" :class="themeModeMenuOpen ? 'rotate-90 text-[#e95322]' : 'text-gray-400'" aria-hidden="true"></i>
+                  <i
+                    class="fas fa-chevron-right text-[10px] transition-transform"
+                    :class="themeModeMenuOpen ? 'rotate-90 text-[#e95322]' : 'text-gray-400'"
+                    aria-hidden="true"
+                  ></i>
                 </button>
 
                 <div v-if="themeModeMenuOpen" class="px-2 pb-2 pt-1 space-y-1">
@@ -395,9 +415,11 @@ onBeforeUnmount(() => {
                     type="button"
                     class="w-full cursor-pointer rounded-md px-3 py-1.5 text-left text-sm transition-colors"
                     :aria-pressed="themeMode === 'light'"
-                    :class="themeMode === 'light'
-                      ? 'bg-orange-50 dark:bg-[#3b1b10] text-[#e95322] font-medium'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'"
+                    :class="
+                      themeMode === 'light'
+                        ? 'bg-orange-50 dark:bg-[#3b1b10] text-[#e95322] font-medium'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'
+                    "
                     @click="selectThemeMode('light')"
                   >
                     浅色
@@ -406,9 +428,11 @@ onBeforeUnmount(() => {
                     type="button"
                     class="w-full cursor-pointer rounded-md px-3 py-1.5 text-left text-sm transition-colors"
                     :aria-pressed="themeMode === 'dark'"
-                    :class="themeMode === 'dark'
-                      ? 'bg-orange-50 dark:bg-[#3b1b10] text-[#e95322] font-medium'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'"
+                    :class="
+                      themeMode === 'dark'
+                        ? 'bg-orange-50 dark:bg-[#3b1b10] text-[#e95322] font-medium'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'
+                    "
                     @click="selectThemeMode('dark')"
                   >
                     深色
@@ -417,9 +441,11 @@ onBeforeUnmount(() => {
                     type="button"
                     class="w-full cursor-pointer rounded-md px-3 py-1.5 text-left text-sm transition-colors"
                     :aria-pressed="themeMode === 'system'"
-                    :class="themeMode === 'system'
-                      ? 'bg-orange-50 dark:bg-[#3b1b10] text-[#e95322] font-medium'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'"
+                    :class="
+                      themeMode === 'system'
+                        ? 'bg-orange-50 dark:bg-[#3b1b10] text-[#e95322] font-medium'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'
+                    "
                     @click="selectThemeMode('system')"
                   >
                     跟随系统
@@ -450,14 +476,17 @@ onBeforeUnmount(() => {
         mask: { class: 'bg-black/45 backdrop-blur-[1px] z-[120]' },
         root: {
           class:
-            'w-[min(92vw,420px)] rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card shadow-[0_16px_36px_rgba(15,23,42,0.28)] dark:shadow-[0_22px_44px_rgba(2,6,23,0.62)] overflow-hidden'
+            'w-[min(92vw,420px)] rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card shadow-[0_16px_36px_rgba(15,23,42,0.28)] dark:shadow-[0_22px_44px_rgba(2,6,23,0.62)] overflow-hidden',
         },
-        header: { class: 'border-b border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg px-5 py-4 flex items-center justify-between' },
+        header: {
+          class:
+            'border-b border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg px-5 py-4 flex items-center justify-between',
+        },
         content: { class: 'px-5 py-4 text-sm text-gray-600 dark:text-gray-300' },
         footer: {
           class:
-            'px-5 py-4 border-t border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg flex justify-end gap-3'
-        }
+            'px-5 py-4 border-t border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg flex justify-end gap-3',
+        },
       }"
       @update:visible="onDialogVisibleChange"
     >
@@ -469,7 +498,9 @@ onBeforeUnmount(() => {
       </template>
 
       <p>退出后需要重新验证管理员账号与密码才能进入管理端，是否继续？</p>
-      <p v-if="logoutError" class="mt-2 text-sm text-red-500 dark:text-red-400">{{ logoutError }}</p>
+      <p v-if="logoutError" class="mt-2 text-sm text-red-500 dark:text-red-400">
+        {{ logoutError }}
+      </p>
 
       <template #footer>
         <Button
@@ -497,7 +528,9 @@ onBeforeUnmount(() => {
 <style scoped>
 .fade-down-enter-active,
 .fade-down-leave-active {
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
 }
 
 .fade-down-enter-from,
@@ -506,4 +539,3 @@ onBeforeUnmount(() => {
   transform: translateY(-4px);
 }
 </style>
-

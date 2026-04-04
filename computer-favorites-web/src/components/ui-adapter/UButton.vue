@@ -2,27 +2,39 @@
 import { computed, useAttrs } from 'vue'
 import Button from 'primevue/button'
 
-type ButtonColor = 'primary' | 'neutral' | 'gray' | 'white' | 'error' | 'red' | 'success' | 'warning' | 'info'
+type ButtonColor =
+  | 'primary'
+  | 'neutral'
+  | 'gray'
+  | 'white'
+  | 'error'
+  | 'red'
+  | 'success'
+  | 'warning'
+  | 'info'
 type ButtonVariant = 'solid' | 'soft' | 'ghost' | 'outline' | 'link'
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
-const props = withDefaults(defineProps<{
-  color?: ButtonColor
-  variant?: ButtonVariant
-  loading?: boolean
-  disabled?: boolean
-  size?: ButtonSize
-  type?: 'button' | 'submit' | 'reset'
-  icon?: string
-  label?: string
-}>(), {
-  color: 'primary',
-  variant: 'solid',
-  loading: false,
-  disabled: false,
-  size: 'md',
-  type: 'button',
-})
+const props = withDefaults(
+  defineProps<{
+    color?: ButtonColor
+    variant?: ButtonVariant
+    loading?: boolean
+    disabled?: boolean
+    size?: ButtonSize
+    type?: 'button' | 'submit' | 'reset'
+    icon?: string
+    label?: string
+  }>(),
+  {
+    color: 'primary',
+    variant: 'solid',
+    loading: false,
+    disabled: false,
+    size: 'md',
+    type: 'button',
+  },
+)
 
 const attrs = useAttrs()
 

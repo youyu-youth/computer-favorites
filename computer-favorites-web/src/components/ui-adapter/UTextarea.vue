@@ -2,21 +2,24 @@
 import { computed, useAttrs } from 'vue'
 import Textarea from 'primevue/textarea'
 
-const props = withDefaults(defineProps<{
-  modelValue?: string
-  rows?: number
-  placeholder?: string
-  maxlength?: number | string
-  readonly?: boolean
-  disabled?: boolean
-}>(), {
-  modelValue: '',
-  rows: 3,
-  placeholder: '',
-  maxlength: undefined,
-  readonly: false,
-  disabled: false,
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string
+    rows?: number
+    placeholder?: string
+    maxlength?: number | string
+    readonly?: boolean
+    disabled?: boolean
+  }>(),
+  {
+    modelValue: '',
+    rows: 3,
+    placeholder: '',
+    maxlength: undefined,
+    readonly: false,
+    disabled: false,
+  },
+)
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void

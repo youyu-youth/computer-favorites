@@ -2,15 +2,18 @@
 import { computed, useAttrs } from 'vue'
 import Avatar from 'primevue/avatar'
 
-const props = withDefaults(defineProps<{
-  src?: string
-  alt?: string
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
-}>(), {
-  src: '',
-  alt: '',
-  size: 'md',
-})
+const props = withDefaults(
+  defineProps<{
+    src?: string
+    alt?: string
+    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  }>(),
+  {
+    src: '',
+    alt: '',
+    size: 'md',
+  },
+)
 
 const attrs = useAttrs()
 

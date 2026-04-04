@@ -1,11 +1,14 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  ui?: {
-    container?: string
-  }
-}>(), {
-  ui: () => ({}),
-})
+const props = withDefaults(
+  defineProps<{
+    ui?: {
+      container?: string
+    }
+  }>(),
+  {
+    ui: () => ({}),
+  },
+)
 </script>
 
 <template>

@@ -8,7 +8,6 @@ import { getCurrentUserProfile } from '@/api/user'
 // @ts-ignore
 import { useToast } from '@/composables/useToast'
 
-
 defineOptions({
   name: 'PasswordChangeView',
 })
@@ -90,7 +89,11 @@ const validateForm = (): string => {
   if (form.newPassword.length < 8 || form.newPassword.length > 64) {
     return '新密码长度需在8-64位之间'
   }
-  if (!/[A-Za-z]/.test(form.newPassword) || !/\d/.test(form.newPassword) || !/[^A-Za-z\d]/.test(form.newPassword)) {
+  if (
+    !/[A-Za-z]/.test(form.newPassword) ||
+    !/\d/.test(form.newPassword) ||
+    !/[^A-Za-z\d]/.test(form.newPassword)
+  ) {
     return '新密码需包含字母、数字和特殊字符'
   }
   if (!form.confirmPassword.trim()) {
@@ -201,7 +204,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-8rem)] bg-slate-50 px-4 py-6 transition-colors duration-300 dark:bg-black md:px-6 md:py-10">
+  <div
+    class="min-h-[calc(100vh-8rem)] bg-slate-50 px-4 py-6 transition-colors duration-300 dark:bg-black md:px-6 md:py-10"
+  >
     <div class="mx-auto w-full max-w-2xl">
       <div class="mb-4 flex items-center justify-between">
         <h1 class="text-2xl font-semibold text-slate-900 dark:text-white md:text-3xl">修改密码</h1>
@@ -214,11 +219,15 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+      <div
+        class="mb-6 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+      >
         为保障账号安全，修改密码前需验证绑定邮箱。验证码5分钟内有效。
       </div>
 
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-900 md:p-6">
+      <div
+        class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-900 md:p-6"
+      >
         <div
           v-if="formError"
           class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200"
@@ -228,7 +237,11 @@ onBeforeUnmount(() => {
 
         <form class="space-y-4" autocomplete="off" @submit.prevent="handleSubmit">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300" for="currentPassword">当前密码</label>
+            <label
+              class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              for="currentPassword"
+              >当前密码</label
+            >
             <input
               id="currentPassword"
               v-model="form.currentPassword"
@@ -240,7 +253,11 @@ onBeforeUnmount(() => {
           </div>
 
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300" for="newPassword">新密码</label>
+            <label
+              class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              for="newPassword"
+              >新密码</label
+            >
             <input
               id="newPassword"
               v-model="form.newPassword"
@@ -250,7 +267,9 @@ onBeforeUnmount(() => {
               placeholder="8-64位，需含字母、数字和特殊字符"
             />
             <div class="mt-2">
-              <div class="mb-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <div
+                class="mb-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400"
+              >
                 <span>密码强度</span>
                 <span>{{ passwordStrength.text }}</span>
               </div>
@@ -265,7 +284,11 @@ onBeforeUnmount(() => {
           </div>
 
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300" for="confirmPassword">确认新密码</label>
+            <label
+              class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              for="confirmPassword"
+              >确认新密码</label
+            >
             <input
               id="confirmPassword"
               v-model="form.confirmPassword"
@@ -277,7 +300,11 @@ onBeforeUnmount(() => {
           </div>
 
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300" for="email">绑定邮箱</label>
+            <label
+              class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              for="email"
+              >绑定邮箱</label
+            >
             <input
               id="email"
               v-model="form.email"
@@ -289,7 +316,11 @@ onBeforeUnmount(() => {
           </div>
 
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300" for="emailCode">邮箱验证码</label>
+            <label
+              class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              for="emailCode"
+              >邮箱验证码</label
+            >
             <div class="flex flex-col gap-2 sm:flex-row">
               <input
                 id="emailCode"

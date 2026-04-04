@@ -88,7 +88,7 @@ public class UserWebsiteDetailVO {
     /**
      * 标签列表
      */
-    private List<String> tags;
+    private List<UserWebsiteTagItemVO> tags;
 
     /**
      * 创建时间

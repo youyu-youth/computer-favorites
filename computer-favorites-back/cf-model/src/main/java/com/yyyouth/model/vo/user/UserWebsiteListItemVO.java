@@ -82,5 +82,5 @@ public class UserWebsiteListItemVO {
     /**
      * 标签列表
      */
-    private List<String> tags;
+    private List<UserWebsiteTagItemVO> tags;
 }

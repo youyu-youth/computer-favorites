@@ -10,7 +10,7 @@ import type { AuthMessages } from '../../types'
 export const auth: AuthMessages = {
   login: {
     title: 'Login',
-    subtitle: 'Welcome back to Developer\'s Treasure Collection',
+    subtitle: "Welcome back to Developer's Treasure Collection",
     username: 'Username',
     password: 'Password',
     confirmPassword: 'Confirm Password',
@@ -20,7 +20,7 @@ export const auth: AuthMessages = {
     resendCode: 'Resend',
     rememberMe: 'Remember Me',
     forgotPassword: 'Forgot Password?',
-    noAccount: 'Don\'t have an account?',
+    noAccount: "Don't have an account?",
     hasAccount: 'Already have an account?',
     loginButton: 'Login',
     registerButton: 'Register',

@@ -39,7 +39,7 @@ export const user: UserMessages = {
   },
   home: {
     hero: {
-      title: 'Developer\'s Treasure Collection',
+      title: "Developer's Treasure Collection",
       subtitle: 'Discover, bookmark, and share quality programming resources',
       uploadButton: 'Upload Website',
       browseButton: 'Browse Popular',

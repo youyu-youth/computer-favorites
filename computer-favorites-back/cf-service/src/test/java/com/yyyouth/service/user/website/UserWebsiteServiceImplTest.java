@@ -4,12 +4,15 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.UserWebsiteQueryDTO;
+import com.yyyouth.model.pojo.website.Tag;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
 import com.yyyouth.model.vo.user.UserWebsiteCategoryVO;
 import com.yyyouth.model.vo.user.UserWebsiteDetailVO;
 import com.yyyouth.model.vo.user.UserWebsitePageVO;
+import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
 import com.yyyouth.service.mapper.website.CategoryMapper;
+import com.yyyouth.service.mapper.website.TagMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
 import com.yyyouth.service.user.website.impl.UserWebsiteServiceImpl;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
@@ -27,6 +30,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +50,9 @@ class UserWebsiteServiceImplTest {
     @Mock
     private CategoryMapper categoryMapper;
 
+    @Mock
+    private TagMapper tagMapper;
+
     @InjectMocks
     private UserWebsiteServiceImpl userWebsiteService;
 
@@ -58,6 +65,7 @@ class UserWebsiteServiceImplTest {
         MapperBuilderAssistant builderAssistant = new MapperBuilderAssistant(configuration, "");
         TableInfoHelper.initTableInfo(builderAssistant, Website.class);
         TableInfoHelper.initTableInfo(builderAssistant, WebsiteCategory.class);
+        TableInfoHelper.initTableInfo(builderAssistant, Tag.class);
     }
 
     /**
@@ -68,6 +76,7 @@ class UserWebsiteServiceImplTest {
         UserWebsiteQueryDTO queryDTO = new UserWebsiteQueryDTO();
         queryDTO.setPageNum(1);
         queryDTO.setPageSize(12);
+        queryDTO.setTagIds(List.of(101L));
 
         Website website = new Website();
         website.setId(1L);
@@ -81,13 +90,29 @@ class UserWebsiteServiceImplTest {
         website.setCollectCount(340);
         website.setCommentCount(86);
         website.setScore(new BigDecimal("4.8"));
-        website.setTags("Vue3, Tailwind, Vite,Vue3");
+        website.setTags("101, 105, 106,101");
 
         WebsiteCategory category = new WebsiteCategory();
         category.setId(10L);
         category.setName("Web & Frontend Development");
 
+        Tag vueTag = new Tag();
+        vueTag.setId(101L);
+        vueTag.setName("Vue3");
+        vueTag.setColor("#42B883");
+
+        Tag tailwindTag = new Tag();
+        tailwindTag.setId(105L);
+        tailwindTag.setName("Tailwind");
+        tailwindTag.setColor("#38BDF8");
+
+        Tag viteTag = new Tag();
+        viteTag.setId(106L);
+        viteTag.setName("Vite");
+        viteTag.setColor("#646CFF");
+
         when(websiteMapper.selectCount(any())).thenReturn(1L);
+        when(tagMapper.selectList(any())).thenReturn(List.of(vueTag, tailwindTag, viteTag));
         when(websiteMapper.selectList(any())).thenReturn(List.of(website));
         when(categoryMapper.selectBatchIds(any())).thenReturn(List.of(category));
 
@@ -99,7 +124,13 @@ class UserWebsiteServiceImplTest {
         assertThat(pageVO.getTotalPages()).isEqualTo(1L);
         assertThat(pageVO.getRecords()).hasSize(1);
         assertThat(pageVO.getRecords().get(0).getCategoryName()).isEqualTo("Web & Frontend Development");
-        assertThat(pageVO.getRecords().get(0).getTags()).containsExactly("Vue3", "Tailwind", "Vite");
+        assertThat(pageVO.getRecords().get(0).getTags())
+            .extracting(UserWebsiteTagItemVO::getId, UserWebsiteTagItemVO::getName, UserWebsiteTagItemVO::getColor)
+            .containsExactly(
+                tuple(101L, "Vue3", "#42B883"),
+                tuple(105L, "Tailwind", "#38BDF8"),
+                tuple(106L, "Vite", "#646CFF")
+            );
     }
 
     /**
@@ -141,7 +172,22 @@ class UserWebsiteServiceImplTest {
         website.setName("PrimeVue");
         website.setUrl("https://primevue.org");
         website.setCategoryId(30L);
-        website.setTags("Vue, UI, Components");
+        website.setTags("205,206,207");
+
+        Tag primeVueTag = new Tag();
+        primeVueTag.setId(205L);
+        primeVueTag.setName("PrimeVue");
+        primeVueTag.setColor("#10B981");
+
+        Tag uiTag = new Tag();
+        uiTag.setId(206L);
+        uiTag.setName("UI");
+        uiTag.setColor("#334155");
+
+        Tag componentTag = new Tag();
+        componentTag.setId(207L);
+        componentTag.setName("Component");
+        componentTag.setColor("#0EA5E9");
 
         WebsiteCategory category = new WebsiteCategory();
         category.setId(30L);
@@ -149,12 +195,19 @@ class UserWebsiteServiceImplTest {
 
         when(websiteMapper.selectOne(any())).thenReturn(website);
         when(categoryMapper.selectOne(any())).thenReturn(category);
+        when(tagMapper.selectList(any())).thenReturn(List.of(primeVueTag, uiTag, componentTag));
 
         UserWebsiteDetailVO detailVO = userWebsiteService.queryWebsiteDetail(100L);
 
         assertThat(detailVO.getId()).isEqualTo(100L);
         assertThat(detailVO.getCategoryName()).isEqualTo("UI Library");
-        assertThat(detailVO.getTags()).containsExactly("Vue", "UI", "Components");
+        assertThat(detailVO.getTags())
+            .extracting(UserWebsiteTagItemVO::getId, UserWebsiteTagItemVO::getName, UserWebsiteTagItemVO::getColor)
+            .containsExactly(
+                tuple(205L, "PrimeVue", "#10B981"),
+                tuple(206L, "UI", "#334155"),
+                tuple(207L, "Component", "#0EA5E9")
+            );
     }
 
     /**

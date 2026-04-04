@@ -50,7 +50,10 @@ const cards = computed(() => {
         :style="{ backgroundColor: card.surface }"
       >
         <p class="text-xs text-gray-500 dark:text-gray-400">{{ card.title }}</p>
-        <div class="mt-2 inline-flex items-center border px-2 py-1 text-sm font-semibold" :class="card.tone">
+        <div
+          class="mt-2 inline-flex items-center border px-2 py-1 text-sm font-semibold"
+          :class="card.tone"
+        >
           {{ card.value }}
         </div>
       </article>

@@ -87,7 +87,7 @@ const formData = ref<{
   tags: '',
   isTop: false,
   isRecommend: false,
-  sort: 0
+  sort: 0,
 })
 
 const MAX_LOGO_FILE_SIZE = 1024 * 1024
@@ -101,7 +101,8 @@ const originalLogoObjectKey = ref('')
 
 const logoChooseButtonProps = {
   type: 'button',
-  class: 'w-full cursor-pointer justify-center rounded-lg border border-dashed border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-brand-orange hover:text-brand-orange dark:border-dark-border dark:bg-dark-card dark:text-gray-200 dark:hover:border-brand-orange dark:hover:text-brand-orange'
+  class:
+    'w-full cursor-pointer justify-center rounded-lg border border-dashed border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-brand-orange hover:text-brand-orange dark:border-dark-border dark:bg-dark-card dark:text-gray-200 dark:hover:border-brand-orange dark:hover:text-brand-orange',
 }
 
 const resolveErrorMessage = (error: unknown, fallbackMessage: string) => {
@@ -259,13 +260,13 @@ const handleLogoUpload = async (event: FileUploadUploaderEvent) => {
     formData.value.icon = uploadResult.logoUrl
     showToast({
       type: 'success',
-      title: 'Logo 上传成功'
+      title: 'Logo 上传成功',
     })
   } catch (error) {
     resetLogo()
     showToast({
       type: 'error',
-      title: resolveErrorMessage(error, 'Logo 上传失败，请稍后重试')
+      title: resolveErrorMessage(error, 'Logo 上传失败，请稍后重试'),
     })
   } finally {
     isLogoUploading.value = false
@@ -278,7 +279,7 @@ const selectedCategoryId = computed<number | null>({
   },
   set: (value) => {
     formData.value.categoryId = value ?? ''
-  }
+  },
 })
 
 const categorySelectPt = {
@@ -287,65 +288,69 @@ const categorySelectPt = {
       'relative flex w-full min-w-0 items-center rounded-lg border bg-white pl-4 pr-14 py-2 text-sm leading-5 text-gray-900 transition-all dark:bg-dark-card dark:text-gray-100',
       state.focused
         ? 'border-brand-orange ring-2 ring-brand-orange'
-        : 'border-gray-300 dark:border-dark-border'
-    ]
+        : 'border-gray-300 dark:border-dark-border',
+    ],
   }),
   label: {
-    class: 'flex-1 truncate'
+    class: 'flex-1 truncate',
   },
   dropdown: {
-    class: 'absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center text-gray-400'
+    class:
+      'absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center text-gray-400',
   },
   clearIcon: {
-    class: 'absolute right-8 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+    class:
+      'absolute right-8 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300',
   },
   dropdownIcon: {
-    class: 'text-xs'
+    class: 'text-xs',
   },
   overlay: {
-    class: 'cf-category-select-panel z-[120] mt-1 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-dark-border dark:bg-dark-card'
+    class:
+      'cf-category-select-panel z-[120] mt-1 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-dark-border dark:bg-dark-card',
   },
   header: {
-    class: 'border-b border-gray-100 px-2 pb-2 pt-2 dark:border-dark-border'
+    class: 'border-b border-gray-100 px-2 pb-2 pt-2 dark:border-dark-border',
   },
   pcFilterContainer: {
     root: {
-      class: 'relative w-full'
-    }
+      class: 'relative w-full',
+    },
   },
   pcFilter: {
     root: {
-      class: 'cf-category-select-filter w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-1.5 pr-8 text-sm text-gray-900 outline-none transition-colors focus:border-brand-orange focus:ring-1 focus:ring-brand-orange dark:border-dark-border dark:bg-dark-bg dark:text-gray-100'
-    }
+      class:
+        'cf-category-select-filter w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-1.5 pr-8 text-sm text-gray-900 outline-none transition-colors focus:border-brand-orange focus:ring-1 focus:ring-brand-orange dark:border-dark-border dark:bg-dark-bg dark:text-gray-100',
+    },
   },
   pcFilterIconContainer: {
     root: {
-      class: 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400'
-    }
+      class: 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400',
+    },
   },
   filterIcon: {
-    class: 'text-xs'
+    class: 'text-xs',
   },
   listContainer: {
-    class: 'cf-select-scroll max-h-56 overflow-y-auto'
+    class: 'cf-select-scroll max-h-56 overflow-y-auto',
   },
   list: {
-    class: 'py-1'
+    class: 'py-1',
   },
   option: ({ context }: any) => ({
     class: [
       'cursor-pointer truncate px-4 py-2 text-sm transition-colors',
       context.selected
         ? 'bg-orange-50 font-medium text-brand-orange dark:bg-orange-900/20 dark:text-brand-orange'
-        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-border'
-    ]
+        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-border',
+    ],
   }),
   optionLabel: {
-    class: 'truncate'
+    class: 'truncate',
   },
   emptyMessage: {
-    class: 'px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400'
-  }
+    class: 'px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400',
+  },
 }
 
 const buildCreatePayload = (): AdminWebsiteCreatePayload => {
@@ -359,7 +364,7 @@ const buildCreatePayload = (): AdminWebsiteCreatePayload => {
     tags: formData.value.tags.trim() || undefined,
     isTop: formData.value.isTop,
     isRecommend: formData.value.isRecommend,
-    sort: Number.isFinite(formData.value.sort) ? formData.value.sort : 0
+    sort: Number.isFinite(formData.value.sort) ? formData.value.sort : 0,
   }
 }
 
@@ -419,7 +424,7 @@ const loadEditDetail = async () => {
   } catch (error) {
     showToast({
       type: 'error',
-      title: resolveErrorMessage(error, '网站详情加载失败，无法编辑')
+      title: resolveErrorMessage(error, '网站详情加载失败，无法编辑'),
     })
   } finally {
     isDetailLoading.value = false
@@ -427,7 +432,11 @@ const loadEditDetail = async () => {
 }
 
 const handleSubmit = async () => {
-  if (!formData.value.name.trim() || !formData.value.url.trim() || formData.value.categoryId === '') {
+  if (
+    !formData.value.name.trim() ||
+    !formData.value.url.trim() ||
+    formData.value.categoryId === ''
+  ) {
     showToast({ type: 'warning', title: '请填写带 * 号的必填项' })
     return
   }
@@ -465,7 +474,10 @@ const handleSubmit = async () => {
   } catch (error) {
     showToast({
       type: 'error',
-      title: resolveErrorMessage(error, isEditMode.value ? '修改网站失败，请重试' : '添加网站失败，请重试')
+      title: resolveErrorMessage(
+        error,
+        isEditMode.value ? '修改网站失败，请重试' : '添加网站失败，请重试',
+      ),
     })
   } finally {
     isSubmitting.value = false
@@ -485,9 +497,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl shadow-sm overflow-hidden flex flex-col md:flex-row">
+  <div
+    class="bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl shadow-sm overflow-hidden flex flex-col md:flex-row"
+  >
     <!-- 左侧介绍区 (终端风格) -->
-    <div class="bg-gray-900 text-gray-300 w-full md:w-1/3 p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-800 relative overflow-hidden group">
+    <div
+      class="bg-gray-900 text-gray-300 w-full md:w-1/3 p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-800 relative overflow-hidden group"
+    >
       <!-- 终端点缀 -->
       <div class="absolute top-4 left-4 flex gap-2">
         <div class="w-3 h-3 rounded-full bg-red-500"></div>
@@ -497,11 +513,12 @@ onMounted(async () => {
 
       <div class="mt-8 font-mono text-sm space-y-4 relative z-10">
         <div>
-          <span class="text-green-400">admin@system</span><span class="text-blue-400">:</span><span class="text-cyan-400">~/websites</span>$ {{ pageCommand }}
+          <span class="text-green-400">admin@system</span><span class="text-blue-400">:</span
+          ><span class="text-cyan-400">~/websites</span>$ {{ pageCommand }}
         </div>
         <div class="text-gray-400">
-          > 初始化录入环境...<br>
-          > 加载网站分类字典... [OK]<br>
+          > 初始化录入环境...<br />
+          > 加载网站分类字典... [OK]<br />
           > 准备接收网站元数据...
         </div>
         <div class="animate-pulse">_</div>
@@ -515,7 +532,9 @@ onMounted(async () => {
       </div>
 
       <!-- 装饰背景字符 -->
-      <div class="absolute bottom-0 right-0 opacity-5 text-[8rem] font-bold font-mono leading-none select-none group-hover:scale-110 transition-transform duration-700 ease-out">
+      <div
+        class="absolute bottom-0 right-0 opacity-5 text-[8rem] font-bold font-mono leading-none select-none group-hover:scale-110 transition-transform duration-700 ease-out"
+      >
         { }
       </div>
     </div>
@@ -531,7 +550,6 @@ onMounted(async () => {
       </div>
 
       <form v-if="!isEditMode || !isDetailLoading" @submit.prevent="handleSubmit" class="space-y-6">
-
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <!-- 必填：网站名称 -->
           <div class="space-y-2">
@@ -586,7 +604,10 @@ onMounted(async () => {
               class="w-full"
             >
               <template #value="slotProps">
-                <span v-if="slotProps.value == null || slotProps.value === ''" class="truncate text-gray-500 dark:text-gray-400">
+                <span
+                  v-if="slotProps.value == null || slotProps.value === ''"
+                  class="truncate text-gray-500 dark:text-gray-400"
+                >
                   {{ slotProps.placeholder || '选择分类' }}
                 </span>
                 <span v-else class="truncate">
@@ -609,7 +630,9 @@ onMounted(async () => {
                 <i class="fas fa-search"></i>
               </template>
               <template #empty>
-                <div class="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">暂无分类选项</div>
+                <div class="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
+                  暂无分类选项
+                </div>
               </template>
             </Select>
           </div>
@@ -658,7 +681,10 @@ onMounted(async () => {
                   <p class="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
                     {{ formData.icon }}
                   </p>
-                  <p v-if="logoObjectKey" class="mt-1 truncate text-xs text-gray-400 dark:text-gray-500">
+                  <p
+                    v-if="logoObjectKey"
+                    class="mt-1 truncate text-xs text-gray-400 dark:text-gray-500"
+                  >
                     {{ logoObjectKey }}
                   </p>
                 </div>
@@ -731,15 +757,23 @@ onMounted(async () => {
         <div class="border-t border-gray-200 dark:border-dark-border pt-6 pb-2">
           <div class="flex items-center gap-6">
             <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" v-model="formData.isTop" class="sr-only peer">
-              <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-brand-orange"></div>
-              <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">置顶推荐</span>
+              <input type="checkbox" v-model="formData.isTop" class="sr-only peer" />
+              <div
+                class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-brand-orange"
+              ></div>
+              <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300"
+                >置顶推荐</span
+              >
             </label>
 
             <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" v-model="formData.isRecommend" class="sr-only peer">
-              <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
-              <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">编辑精选</span>
+              <input type="checkbox" v-model="formData.isRecommend" class="sr-only peer" />
+              <div
+                class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"
+              ></div>
+              <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300"
+                >编辑精选</span
+              >
             </label>
           </div>
         </div>
@@ -759,12 +793,26 @@ onMounted(async () => {
             :disabled="isSubmitting || isLogoUploading || isLogoDeleting"
             class="cursor-pointer px-6 py-2 rounded-lg text-sm font-medium text-white bg-brand-orange hover:bg-orange-600 focus:ring-2 focus:ring-brand-orange focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            <i v-if="isSubmitting || isLogoUploading || isLogoDeleting" class="fas fa-spinner fa-spin"></i>
+            <i
+              v-if="isSubmitting || isLogoUploading || isLogoDeleting"
+              class="fas fa-spinner fa-spin"
+            ></i>
             <i v-else class="fas fa-check"></i>
-            <span>{{ isSubmitting ? (isEditMode ? '更新中...' : '执行中...') : isLogoUploading ? '上传中...' : isLogoDeleting ? '删除中...' : (isEditMode ? '确认并更新' : '确认并保存') }}</span>
+            <span>{{
+              isSubmitting
+                ? isEditMode
+                  ? '更新中...'
+                  : '执行中...'
+                : isLogoUploading
+                  ? '上传中...'
+                  : isLogoDeleting
+                    ? '删除中...'
+                    : isEditMode
+                      ? '确认并更新'
+                      : '确认并保存'
+            }}</span>
           </button>
         </div>
-
       </form>
     </div>
   </div>

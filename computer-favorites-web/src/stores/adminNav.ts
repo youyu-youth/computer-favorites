@@ -65,10 +65,7 @@ export const useAdminNavStore = defineStore('adminNav', () => {
   const menuItems = computed(() => ADMIN_MENU_ITEMS)
 
   const activeMenuMeta = computed<AdminMenuItem>(() => {
-    return (
-      menuItems.value.find((item) => item.key === activeMenu.value) ??
-      DEFAULT_MENU_ITEM
-    )
+    return menuItems.value.find((item) => item.key === activeMenu.value) ?? DEFAULT_MENU_ITEM
   })
 
   const activeMenuLabel = computed(() => activeMenuMeta.value.label)
@@ -76,9 +73,7 @@ export const useAdminNavStore = defineStore('adminNav', () => {
   const isWebsiteMenuActive = computed(() => activeMenu.value === 'websites')
 
   const selectedCategory = computed(() => {
-    return (
-      websiteCategories.value.find((item) => item.id === selectedCategoryId.value) ?? null
-    )
+    return websiteCategories.value.find((item) => item.id === selectedCategoryId.value) ?? null
   })
 
   const selectedCategoryLabel = computed(() => {

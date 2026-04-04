@@ -149,7 +149,7 @@ watch(
     if (editor.getValue() !== nextValue) {
       editor.setValue(nextValue)
     }
-  }
+  },
 )
 
 watch(
@@ -164,7 +164,7 @@ watch(
       return
     }
     editor.enable()
-  }
+  },
 )
 
 onBeforeUnmount(() => {

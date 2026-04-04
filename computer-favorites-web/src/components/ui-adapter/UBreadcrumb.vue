@@ -13,12 +13,15 @@ type UIBreadcrumbItem = {
   onClick?: () => void | Promise<void>
 }
 
-const props = withDefaults(defineProps<{
-  items: UIBreadcrumbItem[]
-  className?: string
-}>(), {
-  className: '',
-})
+const props = withDefaults(
+  defineProps<{
+    items: UIBreadcrumbItem[]
+    className?: string
+  }>(),
+  {
+    className: '',
+  },
+)
 
 const router = useRouter()
 
@@ -66,8 +69,7 @@ const handleItemClick = async (item: unknown): Promise<void> => {
       :pt="{
         root: { class: 'border-0 bg-transparent p-0' },
         list: {
-          class:
-            'flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400',
+          class: 'flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400',
         },
         separator: { class: 'm-0 p-0' },
       }"
@@ -77,9 +79,7 @@ const handleItemClick = async (item: unknown): Promise<void> => {
           type="button"
           class="cursor-pointer rounded-sm px-0.5 font-medium transition-colors hover:text-[#e95322] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e95322]/60"
           :class="
-            item.current
-              ? 'text-gray-900 dark:text-gray-100'
-              : 'text-gray-600 dark:text-gray-300'
+            item.current ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-300'
           "
           :aria-current="item.current ? 'page' : undefined"
           :data-breadcrumb-key="item.key"

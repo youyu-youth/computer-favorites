@@ -13,18 +13,21 @@ interface ModalUiConfig {
   footer?: string
 }
 
-const props = withDefaults(defineProps<{
-  open: boolean
-  portal?: boolean
-  title?: string
-  description?: string
-  ui?: ModalUiConfig
-}>(), {
-  portal: true,
-  title: '',
-  description: '',
-  ui: () => ({}),
-})
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    portal?: boolean
+    title?: string
+    description?: string
+    ui?: ModalUiConfig
+  }>(),
+  {
+    portal: true,
+    title: '',
+    description: '',
+    ui: () => ({}),
+  },
+)
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
@@ -38,7 +41,9 @@ const visible = computed({
 const ptConfig = computed(() => ({
   mask: { class: props.ui?.overlay },
   root: { class: props.ui?.content },
-  header: { class: ['flex items-center justify-between', props.ui?.header].filter(Boolean).join(' ') },
+  header: {
+    class: ['flex items-center justify-between', props.ui?.header].filter(Boolean).join(' '),
+  },
   content: { class: props.ui?.body },
   footer: { class: props.ui?.footer },
 }))

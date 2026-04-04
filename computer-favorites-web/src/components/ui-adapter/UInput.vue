@@ -2,23 +2,26 @@
 import { computed, useAttrs } from 'vue'
 import InputText from 'primevue/inputtext'
 
-const props = withDefaults(defineProps<{
-  modelValue?: string | number
-  type?: string
-  placeholder?: string
-  maxlength?: number | string
-  readonly?: boolean
-  disabled?: boolean
-  autocomplete?: string
-}>(), {
-  modelValue: '',
-  type: 'text',
-  placeholder: '',
-  maxlength: undefined,
-  readonly: false,
-  disabled: false,
-  autocomplete: undefined,
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string | number
+    type?: string
+    placeholder?: string
+    maxlength?: number | string
+    readonly?: boolean
+    disabled?: boolean
+    autocomplete?: string
+  }>(),
+  {
+    modelValue: '',
+    type: 'text',
+    placeholder: '',
+    maxlength: undefined,
+    readonly: false,
+    disabled: false,
+    autocomplete: undefined,
+  },
+)
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void

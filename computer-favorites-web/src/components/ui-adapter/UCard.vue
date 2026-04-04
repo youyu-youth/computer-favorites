@@ -18,7 +18,7 @@ const mergedClass = computed(() => [
       body: { class: 'p-0' },
       content: { class: 'p-0' },
       header: { class: 'p-0' },
-      footer: { class: 'p-0' }
+      footer: { class: 'p-0' },
     }"
   >
     <template v-if="$slots.header" #header>

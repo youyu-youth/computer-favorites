@@ -161,7 +161,10 @@ export async function updateCurrentEmail(payload: UpdateEmailRequest): Promise<v
 export async function uploadCurrentUserAvatar(file: File): Promise<UserAvatarUploadResponse> {
   const formData = new FormData()
   formData.append('file', file)
-  const res = await postFormData<ApiResult<UserAvatarUploadResponse>>('/api/user/profile/avatar', formData)
+  const res = await postFormData<ApiResult<UserAvatarUploadResponse>>(
+    '/api/user/profile/avatar',
+    formData,
+  )
   if (res.code !== 200 || !res.data) {
     throw new Error(res.msg || '头像上传失败')
   }

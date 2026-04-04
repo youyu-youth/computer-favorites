@@ -1,12 +1,6 @@
 export type AdminTagDeletedValue = 0 | 1
 
-export type AdminTagSortField =
-  | 'id'
-  | 'name'
-  | 'color'
-  | 'useCount'
-  | 'createTime'
-  | 'updateTime'
+export type AdminTagSortField = 'id' | 'name' | 'color' | 'useCount' | 'createTime' | 'updateTime'
 
 export type AdminTagSortOrder = 1 | -1
 

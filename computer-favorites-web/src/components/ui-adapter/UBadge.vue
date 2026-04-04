@@ -2,15 +2,18 @@
 import { computed, useAttrs } from 'vue'
 import Tag from 'primevue/tag'
 
-const props = withDefaults(defineProps<{
-  color?: 'primary' | 'neutral' | 'success' | 'info' | 'warn' | 'error' | 'danger'
-  variant?: 'solid' | 'soft' | 'outline'
-  value?: string
-}>(), {
-  color: 'neutral',
-  variant: 'soft',
-  value: '',
-})
+const props = withDefaults(
+  defineProps<{
+    color?: 'primary' | 'neutral' | 'success' | 'info' | 'warn' | 'error' | 'danger'
+    variant?: 'solid' | 'soft' | 'outline'
+    value?: string
+  }>(),
+  {
+    color: 'neutral',
+    variant: 'soft',
+    value: '',
+  },
+)
 
 const attrs = useAttrs()
 

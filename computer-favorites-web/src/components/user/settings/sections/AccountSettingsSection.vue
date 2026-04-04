@@ -81,7 +81,7 @@ const handleUsernameSubmit = async (username: string) => {
 }
 
 // 执行验证码校验与邮箱更新，成功后立即回写设置页状态
-const handleEmailSubmit = async (payload: { email: string, emailCode: string }) => {
+const handleEmailSubmit = async (payload: { email: string; emailCode: string }) => {
   if (updatingEmail.value) {
     return
   }
@@ -166,7 +166,11 @@ defineOptions({
             <div>
               <p class="text-sm font-medium text-slate-900 dark:text-white">手机号码</p>
               <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                {{ basicInfo.phoneVerified === 1 ? basicInfo.phone : '未绑定手机号，无法通过短信找回密码' }}
+                {{
+                  basicInfo.phoneVerified === 1
+                    ? basicInfo.phone
+                    : '未绑定手机号，无法通过短信找回密码'
+                }}
               </p>
             </div>
           </div>
@@ -191,7 +195,9 @@ defineOptions({
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-slate-900 dark:text-white">登录密码</p>
-            <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">上次修改时间：{{ passwordLastUpdateText }}</p>
+            <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              上次修改时间：{{ passwordLastUpdateText }}
+            </p>
           </div>
           <UButton
             size="sm"
