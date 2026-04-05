@@ -117,6 +117,12 @@ const router = createRouter({
           component: PasswordChangeView,
           meta: { requiresAuth: true },
         },
+        {
+          path: 'website/upload',
+          name: 'uploadWebsite',
+          component: () => import('@/views/user/UploadWebsiteView.vue'),
+          meta: { requiresAuth: false },
+        },
       ],
     },
   ],

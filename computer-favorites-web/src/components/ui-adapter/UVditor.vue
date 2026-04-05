@@ -247,6 +247,25 @@ onBeforeUnmount(() => {
   padding: 0 0.2em;
 }
 
+:deep(.vditor-reset table),
+:deep(.vditor-ir__preview table) {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+:deep(.vditor-reset th),
+:deep(.vditor-reset td),
+:deep(.vditor-ir__preview th),
+:deep(.vditor-ir__preview td) {
+  border: 1px solid rgb(209 213 219 / 1);
+  padding: 0.5rem 0.75rem;
+}
+
+:deep(.vditor-reset thead th),
+:deep(.vditor-ir__preview thead th) {
+  background-color: rgb(243 244 246 / 1);
+}
+
 :deep(.vditor-content) {
   background-color: rgb(255 255 255 / 1);
 }
@@ -323,6 +342,32 @@ onBeforeUnmount(() => {
 .cf-vditor-wrapper.is-dark :deep(.vditor-reset mark),
 .cf-vditor-wrapper.is-dark :deep(.vditor-ir__preview mark) {
   background-color: rgb(234 179 8 / 0.35);
+}
+
+.cf-vditor-wrapper.is-dark :deep(.vditor-reset table),
+.cf-vditor-wrapper.is-dark :deep(.vditor-ir__preview table) {
+  border-color: rgb(var(--cf-color-dark-border-rgb) / 1) !important;
+  background-color: transparent !important;
+}
+
+.cf-vditor-wrapper.is-dark :deep(.vditor-reset th),
+.cf-vditor-wrapper.is-dark :deep(.vditor-reset td),
+.cf-vditor-wrapper.is-dark :deep(.vditor-ir__preview th),
+.cf-vditor-wrapper.is-dark :deep(.vditor-ir__preview td) {
+  border-color: rgb(var(--cf-color-dark-border-rgb) / 1) !important;
+  background-color: rgb(15 23 42 / 0.55) !important;
+  color: rgb(241 245 249 / 1) !important;
+}
+
+.cf-vditor-wrapper.is-dark :deep(.vditor-reset thead th),
+.cf-vditor-wrapper.is-dark :deep(.vditor-ir__preview thead th) {
+  background-color: rgb(30 41 59 / 0.9) !important;
+  color: rgb(248 250 252 / 1) !important;
+}
+
+.cf-vditor-wrapper.is-dark :deep(.vditor-reset tbody tr:nth-child(even) td),
+.cf-vditor-wrapper.is-dark :deep(.vditor-ir__preview tbody tr:nth-child(even) td) {
+  background-color: rgb(15 23 42 / 0.3) !important;
 }
 
 :deep(.vditor-reset:focus-visible) {

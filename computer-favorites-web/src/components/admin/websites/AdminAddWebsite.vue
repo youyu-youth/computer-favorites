@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import FileUpload from 'primevue/fileupload'
 import type { FileUploadUploaderEvent } from 'primevue/fileupload'
-import Select from 'primevue/select'
+import AppWebsiteCategorySelect from '@/components/common/AppWebsiteCategorySelect.vue'
 import UVditor from '@/components/ui-adapter/UVditor.vue'
 import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -282,77 +282,6 @@ const selectedCategoryId = computed<number | null>({
   },
 })
 
-const categorySelectPt = {
-  root: ({ state }: any) => ({
-    class: [
-      'relative flex w-full min-w-0 items-center rounded-lg border bg-white pl-4 pr-14 py-2 text-sm leading-5 text-gray-900 transition-all dark:bg-dark-card dark:text-gray-100',
-      state.focused
-        ? 'border-brand-orange ring-2 ring-brand-orange'
-        : 'border-gray-300 dark:border-dark-border',
-    ],
-  }),
-  label: {
-    class: 'flex-1 truncate',
-  },
-  dropdown: {
-    class:
-      'absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center text-gray-400',
-  },
-  clearIcon: {
-    class:
-      'absolute right-8 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300',
-  },
-  dropdownIcon: {
-    class: 'text-xs',
-  },
-  overlay: {
-    class:
-      'cf-category-select-panel z-[120] mt-1 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-dark-border dark:bg-dark-card',
-  },
-  header: {
-    class: 'border-b border-gray-100 px-2 pb-2 pt-2 dark:border-dark-border',
-  },
-  pcFilterContainer: {
-    root: {
-      class: 'relative w-full',
-    },
-  },
-  pcFilter: {
-    root: {
-      class:
-        'cf-category-select-filter w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-1.5 pr-8 text-sm text-gray-900 outline-none transition-colors focus:border-brand-orange focus:ring-1 focus:ring-brand-orange dark:border-dark-border dark:bg-dark-bg dark:text-gray-100',
-    },
-  },
-  pcFilterIconContainer: {
-    root: {
-      class: 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400',
-    },
-  },
-  filterIcon: {
-    class: 'text-xs',
-  },
-  listContainer: {
-    class: 'cf-select-scroll max-h-56 overflow-y-auto',
-  },
-  list: {
-    class: 'py-1',
-  },
-  option: ({ context }: any) => ({
-    class: [
-      'cursor-pointer truncate px-4 py-2 text-sm transition-colors',
-      context.selected
-        ? 'bg-orange-50 font-medium text-brand-orange dark:bg-orange-900/20 dark:text-brand-orange'
-        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-border',
-    ],
-  }),
-  optionLabel: {
-    class: 'truncate',
-  },
-  emptyMessage: {
-    class: 'px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400',
-  },
-}
-
 const buildCreatePayload = (): AdminWebsiteCreatePayload => {
   return {
     name: formData.value.name.trim(),
@@ -586,55 +515,13 @@ onMounted(async () => {
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               所属分类 <span class="text-red-500">*</span>
             </label>
-            <Select
+            <AppWebsiteCategorySelect
               v-model="selectedCategoryId"
               :options="validCategories"
-              optionLabel="name"
-              optionValue="id"
               placeholder="选择分类"
-              showClear
-              filter
               filterPlaceholder="输入分类名进行搜索"
-              :filterFields="['name']"
-              filterMatchMode="contains"
-              appendTo="self"
-              scrollHeight="14rem"
-              :overlayStyle="{ width: '100%', maxWidth: '100%', minWidth: '0' }"
-              :pt="categorySelectPt"
-              class="w-full"
-            >
-              <template #value="slotProps">
-                <span
-                  v-if="slotProps.value == null || slotProps.value === ''"
-                  class="truncate text-gray-500 dark:text-gray-400"
-                >
-                  {{ slotProps.placeholder || '选择分类' }}
-                </span>
-                <span v-else class="truncate">
-                  {{ validCategories.find((item) => item.id === slotProps.value)?.name }}
-                </span>
-              </template>
-              <template #option="slotProps">
-                <div class="flex min-w-0 items-center justify-between gap-3">
-                  <span class="truncate">{{ slotProps.option.name }}</span>
-                  <span class="shrink-0 text-xs text-gray-400">{{ slotProps.option.count }}</span>
-                </div>
-              </template>
-              <template #dropdownicon>
-                <i class="fas fa-chevron-down"></i>
-              </template>
-              <template #clearicon="slotProps">
-                <i class="fas fa-xmark" @click.stop="slotProps.clearCallback($event)"></i>
-              </template>
-              <template #filtericon>
-                <i class="fas fa-search"></i>
-              </template>
-              <template #empty>
-                <div class="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
-                  暂无分类选项
-                </div>
-              </template>
-            </Select>
+              emptyText="暂无分类选项"
+            />
           </div>
 
           <!-- 网站图标上传 -->
@@ -819,32 +706,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-:deep(.cf-category-select-panel) {
-  max-width: min(100%, calc(100vw - 2rem));
-}
-
-:deep(.cf-category-select-panel .cf-select-scroll) {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(148 163 184 / 0.7) transparent;
-}
-
-:deep(.cf-category-select-panel .cf-select-scroll::-webkit-scrollbar) {
-  width: 8px;
-}
-
-:deep(.cf-category-select-panel .cf-select-scroll::-webkit-scrollbar-track) {
-  background: transparent;
-}
-
-:deep(.cf-category-select-panel .cf-select-scroll::-webkit-scrollbar-thumb) {
-  border-radius: 9999px;
-  background: rgb(148 163 184 / 0.65);
-}
-
-:deep(.cf-category-select-panel .cf-select-scroll::-webkit-scrollbar-thumb:hover) {
-  background: rgb(100 116 139 / 0.85);
-}
-
 :deep(.cf-logo-upload button) {
   width: 100%;
 }

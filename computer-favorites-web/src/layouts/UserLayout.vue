@@ -7,10 +7,6 @@ import AppFooter from '@/components/common/AppFooter.vue'
 
 const route = useRoute()
 const isHomeRoute = computed(() => route.name === 'home' || route.path === '/computer/home')
-
-const handleShare = () => {
-  alert('分享功能即将上线')
-}
 </script>
 
 <template>
@@ -28,6 +24,6 @@ const handleShare = () => {
       </main>
       <AppFooter />
     </div>
-    <FloatingActionButton @click="handleShare" />
+    <FloatingActionButton />
   </div>
 </template>
