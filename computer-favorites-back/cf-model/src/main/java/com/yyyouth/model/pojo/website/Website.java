@@ -165,4 +165,10 @@ public class Website {
      */
     @TableField("audit_admin_id")
     private Integer auditAdminId;
+
+    /**
+     * 是否官方网站
+     */
+    @TableField("is_official")
+    private Integer isOfficial;
 }

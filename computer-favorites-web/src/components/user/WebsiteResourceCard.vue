@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import websiteClickIcon from '@/assets/icons/svg/user-website-click.svg'
 import websiteCollectionIcon from '@/assets/icons/svg/user-website-collection.svg'
 import websiteLikeIcon from '@/assets/icons/svg/user-website-like.svg'
 import WebsiteDetailPopover from '@/components/user/WebsiteDetailPopover.vue'
 import { buildTagColorStyle } from '@/utils/tag-color'
 
-defineProps<{
+const props = defineProps<{
   item: {
     id: number
     name: string
@@ -23,10 +24,31 @@ defineProps<{
   rankIndex: number | string
 }>()
 
+const router = useRouter()
+
 const cardRef = ref<HTMLElement | null>(null)
 const showPopover = ref(false)
 const popoverTargetRect = ref<DOMRect | null>(null)
 let hoverTimer: number | undefined
+
+const goDetail = () => {
+  const websiteId = Number(props.item.id)
+  if (!Number.isInteger(websiteId) || websiteId <= 0) {
+    return
+  }
+  void router.push({
+    name: 'websiteDetail',
+    params: { id: String(websiteId) },
+  })
+}
+
+const handleCardKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Enter' && event.key !== ' ') {
+    return
+  }
+  event.preventDefault()
+  goDetail()
+}
 
 const handleInteraction = () => {
   if (hoverTimer) {
@@ -64,14 +86,15 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <a
+    <article
       ref="cardRef"
-      :href="item.url"
-      target="_blank"
-      rel="noopener noreferrer"
+      role="button"
+      tabindex="0"
       class="group relative block cursor-pointer p-5 transition-all duration-200 hover:-translate-y-0.5 bg-white hover:bg-gray-50 dark:bg-[#062016]/60 dark:hover:bg-[#0a3324] border border-gray-200 dark:border-transparent backdrop-blur-sm overflow-hidden"
       @mouseenter="handleMouseEnter"
       @mouseleave="handleMouseLeave"
+      @click="goDetail"
+      @keydown="handleCardKeydown"
     >
       <div class="flex gap-4">
         <div
@@ -137,18 +160,29 @@ onUnmounted(() => {
               <span class="font-bold text-right">{{ item.collections }}</span>
             </span>
           </div>
-          <span
-            class="px-2 py-0.5 bg-green-100 dark:bg-[#104d39]/30 text-[10px] text-green-700 dark:text-gray-500 rounded-sm mt-auto"
-          >
-            {{ item.category }}
-          </span>
+          <div class="mt-auto flex items-center gap-2">
+            <span
+              class="px-2 py-0.5 bg-green-100 dark:bg-[#104d39]/30 text-[10px] text-green-700 dark:text-gray-500 rounded-sm"
+            >
+              {{ item.category }}
+            </span>
+            <a
+              :href="item.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="px-2 py-0.5 rounded-sm border border-gray-300 text-[10px] text-gray-600 hover:text-primary-500 hover:border-primary-500 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary-400 dark:hover:border-primary-400"
+              @click.stop
+            >
+              访问官网
+            </a>
+          </div>
         </div>
       </div>
 
       <div
         class="absolute bottom-0 left-0 h-[2px] bg-primary-500 w-0 group-hover:w-full transition-all duration-300"
       />
-    </a>
+    </article>
 
     <WebsiteDetailPopover :visible="showPopover" :item="item" :target-rect="popoverTargetRect" />
   </div>

@@ -76,7 +76,12 @@ export interface PublicWebsiteDetail {
   score: number
   scoreCount: number
   tags: PublicWebsiteTagRef[]
+  isOfficial?: number
+  isRecommend?: number
+  submitterId?: number
+  providerName?: string
   createTime?: string
+  shelfTime?: string
   updateTime?: string
 }
 

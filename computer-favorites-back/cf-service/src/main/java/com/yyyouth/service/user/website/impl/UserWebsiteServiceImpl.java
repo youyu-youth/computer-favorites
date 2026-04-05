@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.UserWebsiteQueryDTO;
+import com.yyyouth.model.pojo.admin.AdminAccount;
+import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.website.Tag;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
@@ -15,6 +17,8 @@ import com.yyyouth.model.vo.user.UserWebsiteDetailVO;
 import com.yyyouth.model.vo.user.UserWebsiteListItemVO;
 import com.yyyouth.model.vo.user.UserWebsitePageVO;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
+import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
+import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
 import com.yyyouth.service.mapper.website.TagMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
@@ -50,6 +54,12 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
 
     private static final int AUDIT_APPROVED_STATUS = 1;
 
+    private static final int ADMIN_SOURCE = 0;
+
+    private static final int USER_SOURCE = 1;
+
+    private static final String DEFAULT_ADMIN_PROVIDER_NAME = "管理员";
+
     private static final int CATEGORY_ENABLED_STATUS = 1;
 
     private static final int DEFAULT_PAGE_NUM = 1;
@@ -63,6 +73,10 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
     private final CategoryMapper categoryMapper;
 
     private final TagMapper tagMapper;
+
+    private final UserAccountMapper userAccountMapper;
+
+    private final AdminAccountMapper adminAccountMapper;
 
     /**
      * 查询网站分页列表
@@ -174,7 +188,93 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
         detailVO.setCategoryName(resolveCategoryName(website.getCategoryId()));
         Map<Long, UserWebsiteTagItemVO> tagItemMap = buildTagItemMap(parseTagIds(website.getTags()));
         detailVO.setTags(buildWebsiteTagItems(website.getTags(), tagItemMap));
+        detailVO.setProviderName(resolveProviderName(website));
         return detailVO;
+    }
+
+    /**
+     * 解析网站提供者名称
+     *
+     * @param website 网站实体
+     * @return 提供者名称
+     */
+    private String resolveProviderName(Website website) {
+        Long submitterId = website.getSubmitterId();
+        Integer source = website.getSource();
+        if (Objects.equals(source, ADMIN_SOURCE) && (submitterId == null || submitterId <= 0)) {
+            return DEFAULT_ADMIN_PROVIDER_NAME;
+        }
+        if (submitterId == null || submitterId <= 0) {
+            return "";
+        }
+
+        if (Objects.equals(source, USER_SOURCE)) {
+            return resolveUserProviderName(submitterId);
+        }
+        if (Objects.equals(source, ADMIN_SOURCE)) {
+            String adminProviderName = resolveAdminProviderName(submitterId);
+            if (StringUtils.hasText(adminProviderName)) {
+                return adminProviderName;
+            }
+            return DEFAULT_ADMIN_PROVIDER_NAME;
+        }
+
+        String userProviderName = resolveUserProviderName(submitterId);
+        if (StringUtils.hasText(userProviderName)) {
+            return userProviderName;
+        }
+        return resolveAdminProviderName(submitterId);
+    }
+
+    /**
+     * 解析用户来源的提供者名称
+     *
+     * @param submitterId 提交用户ID
+     * @return 提供者名称
+     */
+    private String resolveUserProviderName(Long submitterId) {
+        UserAccount userAccount = userAccountMapper.selectOne(new LambdaQueryWrapper<UserAccount>()
+                .eq(UserAccount::getId, submitterId)
+                .eq(UserAccount::getDeleted, NOT_DELETED)
+                .last("limit 1"));
+        if (userAccount == null) {
+            return "";
+        }
+        return resolveAccountDisplayName(userAccount.getNickname(), userAccount.getUsername());
+    }
+
+    /**
+     * 解析管理员来源的提供者名称
+     *
+     * @param submitterId 提交用户ID
+     * @return 提供者名称
+     */
+    private String resolveAdminProviderName(Long submitterId) {
+        AdminAccount adminAccount = adminAccountMapper.selectOne(new LambdaQueryWrapper<AdminAccount>()
+                .eq(AdminAccount::getId, submitterId)
+                .eq(AdminAccount::getDeleted, NOT_DELETED)
+                .last("limit 1"));
+        if (adminAccount == null) {
+            return "";
+        }
+        return resolveAccountDisplayName(adminAccount.getNickname(), adminAccount.getUsername());
+    }
+
+    /**
+     * 解析账号显示名称
+     *
+     * @param nickname 昵称
+     * @param username 用户名
+     * @return 展示名称
+     */
+    private String resolveAccountDisplayName(String nickname, String username) {
+        if (StringUtils.hasText(nickname)) {
+            return nickname.trim();
+        }
+        if (StringUtils.hasText(username)) {
+            return username.trim();
+        }
+        return "";
     }
 
     /**

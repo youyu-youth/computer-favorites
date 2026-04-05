@@ -3,19 +3,15 @@ package com.yyyouth.web.controller.user;
 import com.yyyouth.common.web.HttpResult;
 import com.yyyouth.model.dto.user.UserWebsiteQueryDTO;
 import com.yyyouth.model.vo.user.UserWebsiteCategoryVO;
-import com.yyyouth.model.vo.user.UserWebsiteDetailVO;
 import com.yyyouth.model.vo.user.UserWebsitePageVO;
 import com.yyyouth.service.user.website.UserWebsiteService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -66,20 +62,5 @@ public class UserWebsiteController {
         List<UserWebsiteCategoryVO> categoryVOS = userWebsiteService.queryCategoryStats();
         log.info("用户端查询网站分类统计成功，size={}", categoryVOS.size());
         return HttpResult.success("查询成功", categoryVOS);
-    }
-
-    /**
-     * 查询网站详情
-     *
-     * @param id 网站ID
-     * @return 网站详情
-     */
-    @ApiOperation(value = "查询网站详情")
-    @GetMapping("/{id}")
-    public HttpResult detail(@PathVariable("id") @NotNull @Positive Long id) {
-        log.info("用户端查询网站详情请求，id={}", id);
-        UserWebsiteDetailVO detailVO = userWebsiteService.queryWebsiteDetail(id);
-        log.info("用户端查询网站详情成功，id={}", id);
-        return HttpResult.success("查询成功", detailVO);
     }
 }

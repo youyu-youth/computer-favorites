@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.UserWebsiteQueryDTO;
+import com.yyyouth.model.pojo.admin.AdminAccount;
+import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.website.Tag;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
@@ -11,6 +13,8 @@ import com.yyyouth.model.vo.user.UserWebsiteCategoryVO;
 import com.yyyouth.model.vo.user.UserWebsiteDetailVO;
 import com.yyyouth.model.vo.user.UserWebsitePageVO;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
+import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
+import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
 import com.yyyouth.service.mapper.website.TagMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
@@ -24,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +58,12 @@ class UserWebsiteServiceImplTest {
     @Mock
     private TagMapper tagMapper;
 
+    @Mock
+    private UserAccountMapper userAccountMapper;
+
+    @Mock
+    private AdminAccountMapper adminAccountMapper;
+
     @InjectMocks
     private UserWebsiteServiceImpl userWebsiteService;
 
@@ -66,6 +77,8 @@ class UserWebsiteServiceImplTest {
         TableInfoHelper.initTableInfo(builderAssistant, Website.class);
         TableInfoHelper.initTableInfo(builderAssistant, WebsiteCategory.class);
         TableInfoHelper.initTableInfo(builderAssistant, Tag.class);
+        TableInfoHelper.initTableInfo(builderAssistant, UserAccount.class);
+        TableInfoHelper.initTableInfo(builderAssistant, AdminAccount.class);
     }
 
     /**
@@ -172,7 +185,18 @@ class UserWebsiteServiceImplTest {
         website.setName("PrimeVue");
         website.setUrl("https://primevue.org");
         website.setCategoryId(30L);
+        website.setSource(1);
+        website.setIsOfficial(1);
+        website.setIsRecommend(1);
+        website.setSubmitterId(101L);
+        website.setShelfTime(LocalDateTime.of(2026, 4, 5, 9, 30, 0));
         website.setTags("205,206,207");
+
+        UserAccount submitter = new UserAccount();
+        submitter.setId(101L);
+        submitter.setNickname("前端架构师");
+        submitter.setUsername("frontend_pro");
+        submitter.setDeleted(0);
 
         Tag primeVueTag = new Tag();
         primeVueTag.setId(205L);
@@ -196,11 +220,17 @@ class UserWebsiteServiceImplTest {
         when(websiteMapper.selectOne(any())).thenReturn(website);
         when(categoryMapper.selectOne(any())).thenReturn(category);
         when(tagMapper.selectList(any())).thenReturn(List.of(primeVueTag, uiTag, componentTag));
+        when(userAccountMapper.selectOne(any())).thenReturn(submitter);
 
         UserWebsiteDetailVO detailVO = userWebsiteService.queryWebsiteDetail(100L);
 
         assertThat(detailVO.getId()).isEqualTo(100L);
         assertThat(detailVO.getCategoryName()).isEqualTo("UI Library");
+        assertThat(detailVO.getIsOfficial()).isEqualTo(1);
+        assertThat(detailVO.getIsRecommend()).isEqualTo(1);
+        assertThat(detailVO.getSubmitterId()).isEqualTo(101L);
+        assertThat(detailVO.getProviderName()).isEqualTo("前端架构师");
+        assertThat(detailVO.getShelfTime()).isEqualTo(LocalDateTime.of(2026, 4, 5, 9, 30, 0));
         assertThat(detailVO.getTags())
             .extracting(UserWebsiteTagItemVO::getId, UserWebsiteTagItemVO::getName, UserWebsiteTagItemVO::getColor)
             .containsExactly(
@@ -208,6 +238,31 @@ class UserWebsiteServiceImplTest {
                 tuple(206L, "UI", "#334155"),
                 tuple(207L, "Component", "#0EA5E9")
             );
+    }
+
+    /**
+     * 管理员来源且提交ID缺失时应回显管理员提供者名称
+     */
+    @Test
+    void shouldFallbackToAdminProviderNameWhenAdminSourceAndSubmitterIdMissing() {
+        Website website = new Website();
+        website.setId(200L);
+        website.setName("Spring 官网");
+        website.setUrl("https://spring.io");
+        website.setCategoryId(30L);
+        website.setSource(0);
+        website.setSubmitterId(0L);
+
+        WebsiteCategory category = new WebsiteCategory();
+        category.setId(30L);
+        category.setName("后端框架");
+
+        when(websiteMapper.selectOne(any())).thenReturn(website);
+        when(categoryMapper.selectOne(any())).thenReturn(category);
+
+        UserWebsiteDetailVO detailVO = userWebsiteService.queryWebsiteDetail(200L);
+
+        assertThat(detailVO.getProviderName()).isEqualTo("管理员");
     }
 
     /**

@@ -2,9 +2,7 @@ package com.yyyouth.web.user;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yyyouth.common.constants.HttpStatus;
-import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.vo.user.UserWebsiteCategoryVO;
-import com.yyyouth.model.vo.user.UserWebsiteDetailVO;
 import com.yyyouth.model.vo.user.UserWebsiteListItemVO;
 import com.yyyouth.model.vo.user.UserWebsitePageVO;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
@@ -136,60 +134,5 @@ class UserWebsiteControllerIntegrationTest {
                 .andExpect(jsonPath("$.data[0].count").value(25));
 
         verify(userWebsiteService).queryCategoryStats();
-    }
-
-    /**
-     * 查询网站详情成功应返回详情数据
-     *
-     * @throws Exception 执行异常
-     */
-    @Test
-    void shouldReturnWebsiteDetailSuccessfully() throws Exception {
-        UserWebsiteDetailVO detailVO = new UserWebsiteDetailVO();
-        detailVO.setId(100L);
-        detailVO.setName("PrimeVue");
-        detailVO.setCategoryName("UI Library");
-
-        UserWebsiteTagItemVO primeVueTag = new UserWebsiteTagItemVO();
-        primeVueTag.setId(201L);
-        primeVueTag.setName("Vue");
-        primeVueTag.setColor("#42B883");
-
-        UserWebsiteTagItemVO uiTag = new UserWebsiteTagItemVO();
-        uiTag.setId(202L);
-        uiTag.setName("UI");
-        uiTag.setColor("#334155");
-
-        detailVO.setTags(List.of(primeVueTag, uiTag));
-
-        when(userWebsiteService.queryWebsiteDetail(100L)).thenReturn(detailVO);
-
-        mockMvc.perform(get("/api/website/100"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
-                .andExpect(jsonPath("$.data.id").value(100))
-                .andExpect(jsonPath("$.data.name").value("PrimeVue"))
-                .andExpect(jsonPath("$.data.tags[1].name").value("UI"))
-                .andExpect(jsonPath("$.data.tags[1].color").value("#334155"));
-
-        verify(userWebsiteService).queryWebsiteDetail(100L);
-    }
-
-    /**
-     * 查询不存在的网站详情应返回业务错误
-     *
-     * @throws Exception 执行异常
-     */
-    @Test
-    void shouldReturnBusinessErrorWhenWebsiteNotFound() throws Exception {
-        when(userWebsiteService.queryWebsiteDetail(999L))
-                .thenThrow(new BusinessException(HttpStatus.BAD_REQUEST, "网站不存在或已下架"));
-
-        mockMvc.perform(get("/api/website/999"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(HttpStatus.BAD_REQUEST))
-                .andExpect(jsonPath("$.msg").value("网站不存在或已下架"));
-
-        verify(userWebsiteService).queryWebsiteDetail(999L);
     }
 }

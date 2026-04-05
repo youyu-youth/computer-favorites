@@ -15,7 +15,20 @@ const markedObj = new Marked(
     emptyLangClass: 'hljs',
     langPrefix: 'hljs language-',
     highlight(code, lang) {
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+      const aliasMap: Record<string, string> = {
+        vue: 'xml',
+        html: 'xml',
+        tsx: 'typescript',
+        jsx: 'javascript',
+        ts: 'typescript',
+        js: 'javascript',
+        py: 'python',
+        sh: 'bash',
+        yml: 'yaml'
+      }
+      const safeLang = (lang || '').toLowerCase()
+      const languageName = aliasMap[safeLang] || safeLang
+      const language = hljs.getLanguage(languageName) ? languageName : 'plaintext'
       return hljs.highlight(code, { language }).value
     }
   })
@@ -37,13 +50,14 @@ watch(renderedMarkdown, async () => {
 
     // Wrap the pre in a relative div to safely position the button
     const wrapper = document.createElement('div')
-    wrapper.className = 'code-wrapper relative group my-4 rounded-md overflow-hidden'
+    wrapper.className = 'code-wrapper relative group my-4 rounded-md w-full'
     pre.parentNode?.insertBefore(wrapper, pre)
     wrapper.appendChild(pre)
 
     // Remove margin from pre to fit tightly inside the wrapper
     pre.style.marginTop = '0'
     pre.style.marginBottom = '0'
+    pre.style.overflowX = 'auto'
 
     // Create the copy button
     const btn = document.createElement('button')
@@ -77,7 +91,7 @@ const handleCopy = async (e: MouseEvent) => {
   <div
     ref="markdownContainer"
     @click="handleCopy"
-    class="flat-design prose prose-sm sm:prose-base dark:prose-invert max-w-none
+    class="flat-design w-full box-border break-words prose prose-sm sm:prose-base dark:prose-invert max-w-none
            rounded border border-[#094438]/20 bg-[#094438]/10 p-6 sm:p-8
            dark:border-[#094438]/40 dark:bg-[#094438]/30
            prose-a:text-primary-500 hover:prose-a:text-primary-600

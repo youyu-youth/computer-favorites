@@ -91,9 +91,34 @@ public class UserWebsiteDetailVO {
     private List<UserWebsiteTagItemVO> tags;
 
     /**
+     * 是否官方网站
+     */
+    private Integer isOfficial;
+
+    /**
+     * 是否推荐
+     */
+    private Integer isRecommend;
+
+    /**
+     * 提交用户ID
+     */
+    private Long submitterId;
+
+    /**
+     * 提供者名称
+     */
+    private String providerName;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
+
+    /**
+     * 上架时间
+     */
+    private LocalDateTime shelfTime;
 
     /**
      * 更新时间
