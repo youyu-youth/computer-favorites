@@ -86,7 +86,9 @@ export async function getWebsiteDetail(websiteId: number): Promise<PublicWebsite
   return res.data
 }
 
-export async function getWebsiteTagPage(query: PublicWebsiteTagQuery): Promise<PublicWebsiteTagPage> {
+export async function getWebsiteTagPage(
+  query: PublicWebsiteTagQuery,
+): Promise<PublicWebsiteTagPage> {
   const queryString = buildTagQueryString(query)
   const res = await getJson<ApiResult<PublicWebsiteTagPage>>(`/api/tag/list?${queryString}`)
   if (res.code !== 200) {

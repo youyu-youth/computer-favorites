@@ -74,14 +74,22 @@ onUnmounted(() => {
       @mouseleave="handleMouseLeave"
     >
       <div class="flex gap-4">
-        <div class="text-xs font-mono text-gray-400 dark:text-gray-600 mt-1 w-4 text-right flex-shrink-0">{{ rankIndex }}</div>
+        <div
+          class="text-xs font-mono text-gray-400 dark:text-gray-600 mt-1 w-4 text-right flex-shrink-0"
+        >
+          {{ rankIndex }}
+        </div>
         <div class="flex-1 min-w-0">
           <div class="flex items-baseline gap-2 mb-1">
-            <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-200 group-hover:text-primary-500 dark:group-hover:text-white transition-colors font-mono truncate">
+            <h3
+              class="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-200 group-hover:text-primary-500 dark:group-hover:text-white transition-colors font-mono truncate"
+            >
               {{ item.name }}
             </h3>
           </div>
-          <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed mb-4">{{ item.desc }}</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed mb-4">
+            {{ item.desc }}
+          </p>
 
           <div class="flex flex-wrap gap-2">
             <span
@@ -96,27 +104,50 @@ onUnmounted(() => {
         </div>
 
         <div class="flex flex-col items-end gap-2 text-xs font-mono flex-shrink-0">
-          <div class="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-3 text-gray-500 dark:text-gray-300">
+          <div
+            class="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-3 text-gray-500 dark:text-gray-300"
+          >
             <span class="inline-flex items-center justify-end gap-1 sm:w-[76px]">
-              <img :src="websiteClickIcon" alt="" aria-hidden="true" class="w-3.5 h-3.5 opacity-80">
-              <span class="font-bold group-hover:text-primary-500 transition-colors text-right">{{ item.downloads }}</span>
+              <img
+                :src="websiteClickIcon"
+                alt=""
+                aria-hidden="true"
+                class="w-3.5 h-3.5 opacity-80"
+              />
+              <span class="font-bold group-hover:text-primary-500 transition-colors text-right">{{
+                item.downloads
+              }}</span>
             </span>
             <span class="inline-flex items-center justify-end gap-1 sm:w-[68px]">
-              <img :src="websiteLikeIcon" alt="" aria-hidden="true" class="w-3.5 h-3.5 opacity-80">
+              <img
+                :src="websiteLikeIcon"
+                alt=""
+                aria-hidden="true"
+                class="w-3.5 h-3.5 opacity-80"
+              />
               <span class="font-bold text-right">{{ item.stars }}</span>
             </span>
             <span class="inline-flex items-center justify-end gap-1 sm:w-[68px]">
-              <img :src="websiteCollectionIcon" alt="" aria-hidden="true" class="w-3.5 h-3.5 opacity-80">
+              <img
+                :src="websiteCollectionIcon"
+                alt=""
+                aria-hidden="true"
+                class="w-3.5 h-3.5 opacity-80"
+              />
               <span class="font-bold text-right">{{ item.collections }}</span>
             </span>
           </div>
-          <span class="px-2 py-0.5 bg-green-100 dark:bg-[#104d39]/30 text-[10px] text-green-700 dark:text-gray-500 rounded-sm mt-auto">
+          <span
+            class="px-2 py-0.5 bg-green-100 dark:bg-[#104d39]/30 text-[10px] text-green-700 dark:text-gray-500 rounded-sm mt-auto"
+          >
             {{ item.category }}
           </span>
         </div>
       </div>
 
-      <div class="absolute bottom-0 left-0 h-[2px] bg-primary-500 w-0 group-hover:w-full transition-all duration-300" />
+      <div
+        class="absolute bottom-0 left-0 h-[2px] bg-primary-500 w-0 group-hover:w-full transition-all duration-300"
+      />
     </a>
 
     <WebsiteDetailPopover :visible="showPopover" :item="item" :target-rect="popoverTargetRect" />

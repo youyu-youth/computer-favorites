@@ -6,7 +6,13 @@ export interface PublicWebsiteListQuery {
   tagIds?: number[]
 }
 
-export type PublicWebsiteTagSortField = 'id' | 'name' | 'color' | 'useCount' | 'createTime' | 'updateTime'
+export type PublicWebsiteTagSortField =
+  | 'id'
+  | 'name'
+  | 'color'
+  | 'useCount'
+  | 'createTime'
+  | 'updateTime'
 
 export interface PublicWebsiteTagQuery {
   pageNum: number

@@ -62,7 +62,10 @@ const clearSelectedTags = () => {
       Loading tags...
     </div>
 
-    <div v-else-if="tags.length === 0" class="font-mono text-xs text-gray-500 dark:text-gray-400 py-2">
+    <div
+      v-else-if="tags.length === 0"
+      class="font-mono text-xs text-gray-500 dark:text-gray-400 py-2"
+    >
       No tags available.
     </div>
 
@@ -73,9 +76,11 @@ const clearSelectedTags = () => {
           :key="tag.id"
           type="button"
           class="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 border text-xs font-mono transition-colors whitespace-nowrap"
-          :class="isTagSelected(tag.id)
-            ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-500/20 dark:text-primary-300'
-            : 'border-gray-300 text-gray-600 hover:border-primary-300 hover:text-primary-600 dark:border-gray-700 dark:text-gray-300 dark:hover:border-primary-400 dark:hover:text-primary-300'"
+          :class="
+            isTagSelected(tag.id)
+              ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-500/20 dark:text-primary-300'
+              : 'border-gray-300 text-gray-600 hover:border-primary-300 hover:text-primary-600 dark:border-gray-700 dark:text-gray-300 dark:hover:border-primary-400 dark:hover:text-primary-300'
+          "
           @click="toggleTagSelection(tag.id)"
         >
           <span

@@ -88,6 +88,12 @@ const router = createRouter({
           meta: { requiresAuth: false },
         },
         {
+          path: 'website/:id',
+          name: 'websiteDetail',
+          component: () => import('@/views/user/WebsiteDetailView.vue'),
+          meta: { requiresAuth: false },
+        },
+        {
           path: 'profile',
           name: 'profile',
           component: ProfileView,

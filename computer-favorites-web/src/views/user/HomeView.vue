@@ -264,11 +264,7 @@ onUnmounted(() => {
       <main class="flex-1 flex flex-col p-6 lg:p-10">
         <h2 class="text-2xl font-bold text-primary-500 mb-8 font-mono">Find Skills</h2>
 
-        <HomeTagFilterBar
-          v-model="selectedTagIds"
-          :tags="websiteTags"
-          :loading="isTagLoading"
-        />
+        <HomeTagFilterBar v-model="selectedTagIds" :tags="websiteTags" :loading="isTagLoading" />
 
         <div class="flex flex-col lg:flex-row gap-10 lg:gap-16">
           <aside class="w-full lg:w-64 flex-shrink-0 font-mono text-sm">
