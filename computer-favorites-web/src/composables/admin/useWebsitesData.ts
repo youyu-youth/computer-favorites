@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import {
+  batchAuditAdminWebsite,
   batchUpdateAdminWebsiteStatus,
   deleteAdminWebsite,
   getAdminWebsiteCategories,
@@ -11,6 +12,7 @@ import {
 import { useAdminNavStore } from '@/stores/adminNav'
 import { useToast } from '@/composables/useToast'
 import type {
+  AdminWebsiteAuditActionValue,
   AdminWebsiteListItem,
   AdminWebsiteStatusValue,
   AdminWebsiteStats,
@@ -161,6 +163,7 @@ export function useWebsitesData() {
   const selectedIds = ref<number[]>([])
   const updatingWebsiteIds = ref<number[]>([])
   const batchStatusUpdating = ref(false)
+  const batchAuditUpdating = ref(false)
   const currentPage = ref(1)
   const totalItems = ref(0)
   const loading = ref(false)
@@ -449,6 +452,50 @@ export function useWebsitesData() {
     }
   }
 
+  const batchAuditWebsite = async (action: AdminWebsiteAuditActionValue, remark?: string) => {
+    if (batchAuditUpdating.value) {
+      return
+    }
+
+    const websiteIds = selectedIds.value.filter((id) =>
+      servers.value.some((item) => item.id === id && item.deleted !== 1),
+    )
+    if (websiteIds.length === 0) {
+      showToast({ type: 'warning', title: '请先选择要审核的网站' })
+      return
+    }
+
+    batchAuditUpdating.value = true
+    try {
+      const result = await batchAuditAdminWebsite({ websiteIds, action, remark })
+      clearSelection()
+
+      if (result.failedCount > 0) {
+        const failedPreview = result.failItems
+          .slice(0, 3)
+          .map((item) => `#${item.websiteId} ${item.reason}`)
+          .join('；')
+        showToast({
+          type: 'warning',
+          title: '批量审核已完成（含部分失败）',
+          description: `成功 ${result.successCount} 条，失败 ${result.failedCount} 条。${failedPreview}`,
+        })
+      } else {
+        showToast({
+          type: 'success',
+          title: action === 1 ? '批量审核通过成功' : '批量驳回成功',
+          description: `共处理 ${result.successCount} 条网站记录`,
+        })
+      }
+
+      await reloadData({ silentListLoading: true })
+    } catch (error) {
+      showToast({ type: 'error', title: resolveErrorMessage(error, '批量审核失败') })
+    } finally {
+      batchAuditUpdating.value = false
+    }
+  }
+
   const deleteWebsite = async (websiteId: number) => {
     const targetWebsite = servers.value.find((item) => item.id === websiteId)
     if (!targetWebsite) {
@@ -547,11 +594,13 @@ export function useWebsitesData() {
     allSelectableSelected,
     updatingWebsiteIds,
     batchStatusUpdating,
+    batchAuditUpdating,
     toggleSelect,
     toggleSelectAll,
     clearSelection,
     updateWebsiteStatus,
     batchUpdateWebsiteStatus,
+    batchAuditWebsite,
     deleteWebsite,
     prevPage,
     nextPage,

@@ -2,11 +2,16 @@ export type DeletedFilterValue = -1 | 0 | 1
 
 export type AdminWebsiteStatusValue = 0 | 1
 
+export type AdminWebsiteAuditStatusValue = 0 | 1 | 2
+
+export type AdminWebsiteAuditActionValue = 1 | 2
+
 export interface AdminWebsiteListQuery {
   pageNum: number
   pageSize: number
   deleted: DeletedFilterValue
   categoryId?: number
+  auditStatus?: AdminWebsiteAuditStatusValue
   keyword?: string
 }
 
@@ -129,4 +134,26 @@ export interface AdminWebsiteStatusUpdatePayload {
 export interface AdminWebsiteBatchStatusUpdatePayload {
   websiteIds: number[]
   status: AdminWebsiteStatusValue
+}
+
+export interface AdminWebsiteAuditPayload {
+  action: AdminWebsiteAuditActionValue
+  remark?: string
+}
+
+export interface AdminWebsiteBatchAuditPayload {
+  websiteIds: number[]
+  action: AdminWebsiteAuditActionValue
+  remark?: string
+}
+
+export interface AdminWebsiteBatchAuditFailItem {
+  websiteId: number
+  reason: string
+}
+
+export interface AdminWebsiteBatchAuditResult {
+  successCount: number
+  failedCount: number
+  failItems: AdminWebsiteBatchAuditFailItem[]
 }

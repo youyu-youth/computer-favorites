@@ -1,10 +1,13 @@
 package com.yyyouth.service.admin.website;
 
 import com.yyyouth.model.dto.admin.AdminWebsiteBatchStatusUpdateDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteBatchAuditDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteAuditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
+import com.yyyouth.model.vo.admin.AdminWebsiteBatchAuditResultVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteCategoryVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteDetailVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteLogoUploadVO;
@@ -106,4 +109,20 @@ public interface AdminWebsiteService {
      * @return 实际更新数量
      */
     int batchUpdateWebsiteStatus(AdminWebsiteBatchStatusUpdateDTO updateDTO);
+
+    /**
+     * 审核网站
+     *
+     * @param websiteId 网站ID
+     * @param auditDTO 审核参数
+     */
+    void auditWebsite(Long websiteId, AdminWebsiteAuditDTO auditDTO);
+
+    /**
+     * 批量审核网站
+     *
+     * @param batchAuditDTO 批量审核参数
+     * @return 批量审核结果
+     */
+    AdminWebsiteBatchAuditResultVO batchAuditWebsite(AdminWebsiteBatchAuditDTO batchAuditDTO);
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getAdminWebsiteDetail } from '@/api/admin-website'
+import { auditAdminWebsite, getAdminWebsiteDetail } from '@/api/admin-website'
 import { useToast } from '@/composables/useToast'
 import type { AdminWebsiteDetail } from '@/types/admin-website'
 
@@ -10,6 +10,7 @@ const router = useRouter()
 const { add: showToast } = useToast()
 
 const loading = ref(false)
+const auditSubmitting = ref(false)
 const errorMessage = ref('')
 const detail = ref<AdminWebsiteDetail | null>(null)
 const iconLoadFailed = ref(false)
@@ -118,6 +119,13 @@ const parsedTags = computed<string[]>(() => {
     .split(/[;,]/)
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0)
+})
+
+const canAudit = computed(() => {
+  if (!detail.value) {
+    return false
+  }
+  return detail.value.deleted === 0 && detail.value.source === 1 && detail.value.auditStatus === 0
 })
 
 const baseRows = computed(() => {
@@ -232,6 +240,51 @@ const goEdit = () => {
     params: { id: String(websiteId.value) },
   })
 }
+
+const handleApprove = async () => {
+  if (!websiteId.value || auditSubmitting.value || !canAudit.value) {
+    return
+  }
+
+  auditSubmitting.value = true
+  try {
+    await auditAdminWebsite(websiteId.value, { action: 1 })
+    showToast({ type: 'success', title: '审核通过成功，网站已自动上架' })
+    await loadDetail()
+  } catch (error) {
+    showToast({ type: 'error', title: resolveErrorMessage(error, '网站审核失败') })
+  } finally {
+    auditSubmitting.value = false
+  }
+}
+
+const handleReject = async () => {
+  if (!websiteId.value || auditSubmitting.value || !canAudit.value) {
+    return
+  }
+
+  const remark = window.prompt('请输入驳回原因')
+  if (remark === null) {
+    return
+  }
+
+  const normalizedRemark = remark.trim()
+  if (!normalizedRemark) {
+    showToast({ type: 'warning', title: '驳回原因不能为空' })
+    return
+  }
+
+  auditSubmitting.value = true
+  try {
+    await auditAdminWebsite(websiteId.value, { action: 2, remark: normalizedRemark })
+    showToast({ type: 'success', title: '已完成驳回审核' })
+    await loadDetail()
+  } catch (error) {
+    showToast({ type: 'error', title: resolveErrorMessage(error, '网站审核失败') })
+  } finally {
+    auditSubmitting.value = false
+  }
+}
 </script>
 
 <template>
@@ -248,6 +301,28 @@ const goEdit = () => {
         </button>
 
         <div class="flex flex-wrap items-center gap-3">
+          <button
+            v-if="canAudit"
+            type="button"
+            :disabled="auditSubmitting"
+            class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-sky-700 dark:bg-sky-900/20 dark:text-sky-200 dark:hover:bg-sky-900/35"
+            @click="handleApprove"
+          >
+            <i class="fas fa-circle-check"></i>
+            <span>{{ auditSubmitting ? '处理中...' : '审核通过' }}</span>
+          </button>
+
+          <button
+            v-if="canAudit"
+            type="button"
+            :disabled="auditSubmitting"
+            class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-700 dark:bg-rose-900/20 dark:text-rose-200 dark:hover:bg-rose-900/35"
+            @click="handleReject"
+          >
+            <i class="fas fa-circle-xmark"></i>
+            <span>{{ auditSubmitting ? '处理中...' : '审核驳回' }}</span>
+          </button>
+
           <button
             type="button"
             class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-brand-orange/35 bg-orange-50 px-4 py-2 text-sm font-medium text-brand-orange transition-colors hover:bg-orange-100 dark:border-brand-orange/40 dark:bg-brand-orange/10 dark:text-brand-orange dark:hover:bg-brand-orange/20"

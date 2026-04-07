@@ -45,6 +45,7 @@ const {
   allSelectableSelected,
   updatingWebsiteIds,
   batchStatusUpdating,
+  batchAuditUpdating,
   currentPage,
   totalItems,
   pageSize,
@@ -62,6 +63,7 @@ const {
   clearSelection,
   updateWebsiteStatus,
   batchUpdateWebsiteStatus,
+  batchAuditWebsite,
   deleteWebsite,
 } = useWebsitesData()
 
@@ -150,12 +152,14 @@ const confirmDeleteWebsite = async () => {
               :selectableTotal="selectableTotal"
               :allSelectableSelected="allSelectableSelected"
               :batchStatusUpdating="batchStatusUpdating"
+              :batchAuditUpdating="batchAuditUpdating"
               @update:viewMode="(value) => (viewMode = value)"
               @update:deletedFilter="(value) => (deletedFilter = value)"
               @refresh="reloadData"
               @toggle-select-all="toggleSelectAll"
               @clear-selection="clearSelection"
               @batch-status="batchUpdateWebsiteStatus"
+              @batch-audit="({ action, remark }) => batchAuditWebsite(action, remark)"
             />
 
             <WebsitesSearchArea

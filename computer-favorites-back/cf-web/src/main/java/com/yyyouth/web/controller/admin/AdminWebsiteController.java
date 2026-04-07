@@ -2,11 +2,14 @@ package com.yyyouth.web.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.yyyouth.common.web.HttpResult;
+import com.yyyouth.model.dto.admin.AdminWebsiteAuditDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteBatchAuditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteBatchStatusUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
+import com.yyyouth.model.vo.admin.AdminWebsiteBatchAuditResultVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteCategoryVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteDetailVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteLogoUploadVO;
@@ -228,5 +231,39 @@ public class AdminWebsiteController {
         int updatedCount = adminWebsiteService.batchUpdateWebsiteStatus(updateDTO);
         log.info("管理端批量更新网站状态成功，updatedCount={}, status={}", updatedCount, updateDTO.getStatus());
         return HttpResult.success("批量状态更新成功", updatedCount);
+    }
+
+    /**
+     * 审核网站
+     *
+     * @param id 网站ID
+     * @param auditDTO 审核参数
+     * @return 操作结果
+     */
+    @ApiOperation(value = "审核网站")
+    @PutMapping("/{id}/audit")
+    @SaCheckPermission(value = "admin:website:audit", type = "admin")
+    public HttpResult auditWebsite(@PathVariable("id") @NotNull @Positive Long id,
+                                   @RequestBody @Valid @NotNull AdminWebsiteAuditDTO auditDTO) {
+        log.info("管理端审核网站请求，websiteId={}, action={}", id, auditDTO.getAction());
+        adminWebsiteService.auditWebsite(id, auditDTO);
+        log.info("管理端审核网站成功，websiteId={}, action={}", id, auditDTO.getAction());
+        return HttpResult.success("网站审核成功");
+    }
+
+    /**
+     * 批量审核网站
+     *
+     * @param batchAuditDTO 批量审核参数
+     * @return 批量审核结果
+     */
+    @ApiOperation(value = "批量审核网站")
+    @PutMapping("/audit/batch")
+    @SaCheckPermission(value = "admin:website:audit", type = "admin")
+    public HttpResult batchAuditWebsite(@RequestBody @Valid @NotNull AdminWebsiteBatchAuditDTO batchAuditDTO) {
+        log.info("管理端批量审核网站请求，count={}, action={}", batchAuditDTO.getWebsiteIds().size(), batchAuditDTO.getAction());
+        AdminWebsiteBatchAuditResultVO resultVO = adminWebsiteService.batchAuditWebsite(batchAuditDTO);
+        log.info("管理端批量审核网站完成，successCount={}, failedCount={}", resultVO.getSuccessCount(), resultVO.getFailedCount());
+        return HttpResult.success("批量审核完成", resultVO);
     }
 }

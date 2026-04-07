@@ -10,6 +10,7 @@ import type { UserMessages } from '../../types'
 export const user: UserMessages = {
   profile: {
     title: '个人主页',
+    mySubmissions: '我的投稿网站',
     editProfile: '编辑资料',
     viewProfile: '查看资料',
     basicInfo: '基本信息',

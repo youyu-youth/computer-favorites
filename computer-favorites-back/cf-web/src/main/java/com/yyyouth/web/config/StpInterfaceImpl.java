@@ -30,7 +30,13 @@ public class StpInterfaceImpl implements StpInterface {
     private static final List<String> DEFAULT_USER_PERMISSIONS = List.of(
             "auth:session:renew",
             "auth:session:delete",
-            "auth:session:detail"
+            "auth:session:detail",
+            "user:website:submit",
+            "user:website:list",
+            "user:website:detail",
+            "user:website:edit",
+            "user:website:cancel",
+            "user:website:resubmit"
     );
 
     private static final List<String> DEFAULT_ADMIN_PERMISSIONS = List.of(
@@ -47,6 +53,7 @@ public class StpInterfaceImpl implements StpInterface {
             "admin:website:stats",
             "admin:website:add",
             "admin:website:status",
+            "admin:website:audit",
             "admin:website:delete",
             "admin:tag:list",
             "admin:tag:stats",

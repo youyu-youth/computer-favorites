@@ -10,6 +10,7 @@ import type { UserMessages } from '../../types'
 export const user: UserMessages = {
   profile: {
     title: 'Profile',
+    mySubmissions: 'My Submissions',
     editProfile: 'Edit Profile',
     viewProfile: 'View Profile',
     basicInfo: 'Basic Info',

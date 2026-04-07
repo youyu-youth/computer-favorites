@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import FileUpload from 'primevue/fileupload'
 import type { FileUploadUploaderEvent } from 'primevue/fileupload'
+import AppImageUploadField from '@/components/common/AppImageUploadField.vue'
 import AppWebsiteCategorySelect from '@/components/common/AppWebsiteCategorySelect.vue'
 import UVditor from '@/components/ui-adapter/UVditor.vue'
 import { ref, computed, onMounted } from 'vue'
@@ -99,12 +99,6 @@ const logoFileName = ref('')
 const logoObjectKey = ref('')
 const originalLogoObjectKey = ref('')
 
-const logoChooseButtonProps = {
-  type: 'button',
-  class:
-    'w-full cursor-pointer justify-center rounded-lg border border-dashed border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-brand-orange hover:text-brand-orange dark:border-dark-border dark:bg-dark-card dark:text-gray-200 dark:hover:border-brand-orange dark:hover:text-brand-orange',
-}
-
 const resolveErrorMessage = (error: unknown, fallbackMessage: string) => {
   if (error instanceof Error && error.message) {
     return error.message
@@ -120,7 +114,7 @@ const resolveFileNameFromUrl = (url: string) => {
   const fileName = normalizedUrl.substring(normalizedUrl.lastIndexOf('/') + 1)
   try {
     return decodeURIComponent(fileName)
-  } catch (error) {
+  } catch {
     return fileName
   }
 }
@@ -138,7 +132,7 @@ const extractObjectKeyFromLogoUrl = (url: string) => {
   const objectKey = normalizedUrl.substring(markerIndex)
   try {
     return decodeURIComponent(objectKey)
-  } catch (error) {
+  } catch {
     return objectKey
   }
 }
@@ -202,7 +196,7 @@ const handleCancel = async () => {
     if (logoObjectKey.value && logoObjectKey.value !== originalLogoObjectKey.value) {
       try {
         await deleteLogoByObjectKey(logoObjectKey.value)
-      } catch (error) {
+      } catch {
         showToast({ type: 'warning', title: '临时Logo清理失败，可稍后手动处理' })
       }
     }
@@ -525,67 +519,28 @@ onMounted(async () => {
           </div>
 
           <!-- 网站图标上传 -->
-          <div class="space-y-2 min-w-0">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Logo 上传
-            </label>
-
-            <FileUpload
-              mode="basic"
-              name="websiteLogo"
-              accept="image/*"
-              :maxFileSize="MAX_LOGO_FILE_SIZE"
-              :auto="true"
-              :disabled="isLogoUploading || isLogoDeleting || isSubmitting"
-              customUpload
-              chooseLabel="上传 Logo"
-              chooseIcon="fas fa-cloud-arrow-up"
-              :chooseButtonProps="logoChooseButtonProps"
-              class="cf-logo-upload w-full"
-              @uploader="handleLogoUpload"
-            />
-
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              支持 JPG/PNG/WebP，单文件不超过 1MB。
-              <span v-if="isLogoUploading" class="ml-1 text-brand-orange">上传中...</span>
-              <span v-if="isLogoDeleting" class="ml-1 text-brand-orange">删除中...</span>
-            </p>
-
-            <div
-              v-if="formData.icon"
-              class="rounded-lg border border-gray-200 bg-white p-3 dark:border-dark-border dark:bg-dark-card"
-            >
-              <div class="flex items-start gap-3 min-w-0">
-                <img
-                  :src="formData.icon"
-                  alt="Logo 预览"
-                  class="h-12 w-12 shrink-0 rounded-md border border-gray-200 object-cover dark:border-dark-border"
-                />
-                <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-medium text-gray-700 dark:text-gray-200">
-                    {{ logoFileName || 'logo-preview' }}
-                  </p>
-                  <p class="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
-                    {{ formData.icon }}
-                  </p>
-                  <p
-                    v-if="logoObjectKey"
-                    class="mt-1 truncate text-xs text-gray-400 dark:text-gray-500"
-                  >
-                    {{ logoObjectKey }}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  :disabled="isLogoDeleting || isLogoUploading || isSubmitting"
-                  @click="clearLogo"
-                  class="shrink-0 cursor-pointer rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:border-red-300 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-dark-border dark:text-gray-300 dark:hover:border-red-400 dark:hover:text-red-400"
-                >
-                  清除
-                </button>
-              </div>
-            </div>
-          </div>
+          <AppImageUploadField
+            label="Logo 上传"
+            uploadName="websiteLogo"
+            accept="image/*"
+            :maxFileSize="MAX_LOGO_FILE_SIZE"
+            chooseLabel="上传 Logo"
+            chooseIcon="fas fa-cloud-arrow-up"
+            helperText="支持 JPG/PNG/WebP，单文件不超过 1MB。"
+            uploadingText="上传中..."
+            deletingText="删除中..."
+            clearText="清除"
+            previewFallbackName="logo-preview"
+            previewAlt="Logo 预览"
+            :logoUrl="formData.icon"
+            :fileName="logoFileName"
+            :objectKey="logoObjectKey"
+            :uploading="isLogoUploading"
+            :deleting="isLogoDeleting"
+            :submitting="isSubmitting"
+            @upload="handleLogoUpload"
+            @clear="clearLogo"
+          />
         </div>
 
         <!-- 网站简介 -->
@@ -705,18 +660,3 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
-:deep(.cf-logo-upload button) {
-  width: 100%;
-}
-
-:deep(.cf-logo-upload input[type='file']) {
-  display: none !important;
-}
-
-@media (max-width: 640px) {
-  :deep(.cf-logo-upload button) {
-    min-height: 2.5rem;
-  }
-}
-</style>

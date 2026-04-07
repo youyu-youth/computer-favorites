@@ -2,6 +2,9 @@ import { deleteJson, getJson, postFormData, postJson, putJson } from '@/utils/ht
 import type { ApiResult } from '@/api/types'
 import { buildAdminAuthHeaders } from '@/api/admin-auth-headers'
 import type {
+  AdminWebsiteAuditPayload,
+  AdminWebsiteBatchAuditPayload,
+  AdminWebsiteBatchAuditResult,
   AdminWebsiteBatchStatusUpdatePayload,
   AdminWebsiteCreatePayload,
   AdminWebsiteCategory,
@@ -23,6 +26,10 @@ function buildListQueryString(query: AdminWebsiteListQuery): string {
 
   if (typeof query.categoryId === 'number' && query.categoryId > 0) {
     params.set('categoryId', String(query.categoryId))
+  }
+
+  if (typeof query.auditStatus === 'number') {
+    params.set('auditStatus', String(query.auditStatus))
   }
 
   if (query.keyword && query.keyword.trim()) {
@@ -183,4 +190,35 @@ export async function batchUpdateAdminWebsiteStatus(
     return res.data
   }
   return 0
+}
+
+export async function auditAdminWebsite(
+  websiteId: number,
+  payload: AdminWebsiteAuditPayload,
+): Promise<void> {
+  const res = await putJson<ApiResult<unknown>>(`/api/admin/website/${websiteId}/audit`, payload, {
+    headers: buildAdminAuthHeaders(),
+  })
+  if (res.code !== 200) {
+    throw new Error(res.msg || '网站审核失败')
+  }
+}
+
+export async function batchAuditAdminWebsite(
+  payload: AdminWebsiteBatchAuditPayload,
+): Promise<AdminWebsiteBatchAuditResult> {
+  const res = await putJson<ApiResult<AdminWebsiteBatchAuditResult>>(
+    '/api/admin/website/audit/batch',
+    payload,
+    {
+      headers: buildAdminAuthHeaders(),
+    },
+  )
+  if (res.code !== 200) {
+    throw new Error(res.msg || '批量审核失败')
+  }
+  if (!res.data) {
+    throw new Error('批量审核结果为空')
+  }
+  return res.data
 }

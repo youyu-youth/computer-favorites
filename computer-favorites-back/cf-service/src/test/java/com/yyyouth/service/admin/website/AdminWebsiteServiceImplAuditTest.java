@@ -1,0 +1,190 @@
+package com.yyyouth.service.admin.website;
+
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import com.yyyouth.model.dto.admin.AdminWebsiteAuditDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteBatchAuditDTO;
+import com.yyyouth.model.pojo.system.AuditLog;
+import com.yyyouth.model.pojo.system.SystemMessage;
+import com.yyyouth.model.pojo.website.Website;
+import com.yyyouth.model.pojo.website.WebsiteCategory;
+import com.yyyouth.model.vo.admin.AdminWebsiteBatchAuditResultVO;
+import com.yyyouth.service.admin.website.impl.AdminWebsiteServiceImpl;
+import com.yyyouth.service.file.MinioFileService;
+import com.yyyouth.service.mapper.system.AuditLogMapper;
+import com.yyyouth.service.mapper.system.SystemMessageMapper;
+import com.yyyouth.service.mapper.website.CategoryMapper;
+import com.yyyouth.service.mapper.website.WebsiteMapper;
+import com.yyyouth.service.user.auth.support.StpAdminUtil;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * @author yyyouth zg
+ * @date 2026-04-05
+ *
+ * 管理端网站审核服务测试
+ */
+@ExtendWith(MockitoExtension.class)
+class AdminWebsiteServiceImplAuditTest {
+
+    private static final long ADMIN_ID = 9001L;
+
+    @Mock
+    private WebsiteMapper websiteMapper;
+
+    @Mock
+    private CategoryMapper categoryMapper;
+
+    @Mock
+    private MinioFileService minioFileService;
+
+    @Mock
+    private SystemMessageMapper systemMessageMapper;
+
+    @Mock
+    private AuditLogMapper auditLogMapper;
+
+    @InjectMocks
+    private AdminWebsiteServiceImpl adminWebsiteService;
+
+    /**
+     * 初始化 MyBatis-Plus Lambda 缓存
+     */
+    @BeforeAll
+    static void initMybatisLambdaCache() {
+        MybatisConfiguration configuration = new MybatisConfiguration();
+        MapperBuilderAssistant builderAssistant = new MapperBuilderAssistant(configuration, "");
+        TableInfoHelper.initTableInfo(builderAssistant, Website.class);
+        TableInfoHelper.initTableInfo(builderAssistant, WebsiteCategory.class);
+        TableInfoHelper.initTableInfo(builderAssistant, SystemMessage.class);
+        TableInfoHelper.initTableInfo(builderAssistant, AuditLog.class);
+    }
+
+    /**
+     * 单条通过审核应自动上架并写通知与审计
+     */
+    @Test
+    void shouldApproveSubmissionAndAutoOnline() {
+        Website pendingWebsite = new Website();
+        pendingWebsite.setId(101L);
+        pendingWebsite.setDeleted(0);
+        pendingWebsite.setSource(1);
+        pendingWebsite.setSubmitterId(1001L);
+        pendingWebsite.setAuditStatus(0);
+        pendingWebsite.setStatus(0);
+
+        when(websiteMapper.selectOne(any())).thenReturn(pendingWebsite);
+        when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
+        when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
+        when(auditLogMapper.insert(any(AuditLog.class))).thenReturn(1);
+
+        AdminWebsiteAuditDTO auditDTO = new AdminWebsiteAuditDTO();
+        auditDTO.setAction(1);
+
+        try (MockedStatic<StpAdminUtil> stpAdminUtilMock = org.mockito.Mockito.mockStatic(StpAdminUtil.class)) {
+            stpAdminUtilMock.when(StpAdminUtil::getLoginIdAsLong).thenReturn(ADMIN_ID);
+            adminWebsiteService.auditWebsite(101L, auditDTO);
+        }
+
+        ArgumentCaptor<Website> updateCaptor = ArgumentCaptor.forClass(Website.class);
+        verify(websiteMapper).updateById(updateCaptor.capture());
+
+        Website updateEntity = updateCaptor.getValue();
+        assertThat(updateEntity.getAuditStatus()).isEqualTo(1);
+        assertThat(updateEntity.getStatus()).isEqualTo(1);
+        assertThat(updateEntity.getAuditAdminId()).isEqualTo(Math.toIntExact(ADMIN_ID));
+
+        verify(systemMessageMapper).insert(any(SystemMessage.class));
+        verify(auditLogMapper).insert(any(AuditLog.class));
+    }
+
+    /**
+     * 单条驳回审核应写入驳回原因并保持下架
+     */
+    @Test
+    void shouldRejectSubmissionWithRemark() {
+        Website pendingWebsite = new Website();
+        pendingWebsite.setId(102L);
+        pendingWebsite.setDeleted(0);
+        pendingWebsite.setSource(1);
+        pendingWebsite.setSubmitterId(1002L);
+        pendingWebsite.setAuditStatus(0);
+        pendingWebsite.setStatus(0);
+
+        when(websiteMapper.selectOne(any())).thenReturn(pendingWebsite);
+        when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
+        when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
+        when(auditLogMapper.insert(any(AuditLog.class))).thenReturn(1);
+
+        AdminWebsiteAuditDTO auditDTO = new AdminWebsiteAuditDTO();
+        auditDTO.setAction(2);
+        auditDTO.setRemark("内容质量不符合规范");
+
+        try (MockedStatic<StpAdminUtil> stpAdminUtilMock = org.mockito.Mockito.mockStatic(StpAdminUtil.class)) {
+            stpAdminUtilMock.when(StpAdminUtil::getLoginIdAsLong).thenReturn(ADMIN_ID);
+            adminWebsiteService.auditWebsite(102L, auditDTO);
+        }
+
+        ArgumentCaptor<Website> updateCaptor = ArgumentCaptor.forClass(Website.class);
+        verify(websiteMapper).updateById(updateCaptor.capture());
+
+        Website updateEntity = updateCaptor.getValue();
+        assertThat(updateEntity.getAuditStatus()).isEqualTo(2);
+        assertThat(updateEntity.getStatus()).isEqualTo(0);
+        assertThat(updateEntity.getAuditRemark()).isEqualTo("内容质量不符合规范");
+    }
+
+    /**
+     * 批量审核应返回成功与失败明细
+     */
+    @Test
+    void shouldBatchAuditWithFailedItems() {
+        Website pendingWebsite = new Website();
+        pendingWebsite.setId(201L);
+        pendingWebsite.setDeleted(0);
+        pendingWebsite.setSource(1);
+        pendingWebsite.setSubmitterId(1101L);
+        pendingWebsite.setAuditStatus(0);
+
+        Website approvedWebsite = new Website();
+        approvedWebsite.setId(202L);
+        approvedWebsite.setDeleted(0);
+        approvedWebsite.setSource(1);
+        approvedWebsite.setSubmitterId(1102L);
+        approvedWebsite.setAuditStatus(1);
+
+        when(websiteMapper.selectList(any())).thenReturn(List.of(pendingWebsite, approvedWebsite));
+        when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
+        when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
+        when(auditLogMapper.insert(any(AuditLog.class))).thenReturn(1);
+
+        AdminWebsiteBatchAuditDTO batchAuditDTO = new AdminWebsiteBatchAuditDTO();
+        batchAuditDTO.setWebsiteIds(List.of(201L, 202L, 203L));
+        batchAuditDTO.setAction(1);
+
+        AdminWebsiteBatchAuditResultVO resultVO;
+        try (MockedStatic<StpAdminUtil> stpAdminUtilMock = org.mockito.Mockito.mockStatic(StpAdminUtil.class)) {
+            stpAdminUtilMock.when(StpAdminUtil::getLoginIdAsLong).thenReturn(ADMIN_ID);
+            resultVO = adminWebsiteService.batchAuditWebsite(batchAuditDTO);
+        }
+
+        assertThat(resultVO.getSuccessCount()).isEqualTo(1);
+        assertThat(resultVO.getFailedCount()).isEqualTo(2);
+        assertThat(resultVO.getFailItems()).hasSize(2);
+    }
+}

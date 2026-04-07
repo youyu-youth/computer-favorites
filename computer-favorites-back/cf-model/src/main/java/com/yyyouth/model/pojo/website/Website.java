@@ -171,4 +171,10 @@ public class Website {
      */
     @TableField("is_official")
     private Integer isOfficial;
+
+    /**
+     * Github 地址
+     */
+    @TableField("github_url")
+    private String githubUrl;
 }

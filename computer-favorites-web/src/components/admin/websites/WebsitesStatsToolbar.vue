@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import type { AdminWebsiteStatusValue } from '@/types/admin-website'
+import type { AdminWebsiteAuditActionValue, AdminWebsiteStatusValue } from '@/types/admin-website'
 
 type DeletedFilterValue = -1 | 0 | 1
 
@@ -21,6 +21,7 @@ const props = defineProps<{
   selectableTotal: number
   allSelectableSelected: boolean
   batchStatusUpdating: boolean
+  batchAuditUpdating: boolean
 }>()
 
 const emit = defineEmits<{
@@ -30,6 +31,7 @@ const emit = defineEmits<{
   (e: 'toggle-select-all'): void
   (e: 'clear-selection'): void
   (e: 'batch-status', val: AdminWebsiteStatusValue): void
+  (e: 'batch-audit', payload: { action: AdminWebsiteAuditActionValue; remark?: string }): void
 }>()
 
 const switchView = (mode: string) => {
@@ -43,6 +45,23 @@ const handleDeletedFilterChange = (event: Event) => {
 
 const handleBatchStatus = (status: AdminWebsiteStatusValue) => {
   emit('batch-status', status)
+}
+
+const handleBatchAudit = (action: AdminWebsiteAuditActionValue) => {
+  emit('batch-audit', { action })
+}
+
+const handleBatchReject = () => {
+  const remark = window.prompt('请输入批量驳回原因')
+  if (remark === null) {
+    return
+  }
+
+  const normalizedRemark = remark.trim()
+  if (!normalizedRemark) {
+    return
+  }
+  emit('batch-audit', { action: 2, remark: normalizedRemark })
 }
 </script>
 
@@ -157,7 +176,7 @@ const handleBatchStatus = (status: AdminWebsiteStatusValue) => {
 
           <button
             type="button"
-            :disabled="batchStatusUpdating"
+            :disabled="batchStatusUpdating || batchAuditUpdating"
             @click="handleBatchStatus(1)"
             class="cursor-pointer rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-200 dark:hover:bg-emerald-900/35"
           >
@@ -166,11 +185,29 @@ const handleBatchStatus = (status: AdminWebsiteStatusValue) => {
 
           <button
             type="button"
-            :disabled="batchStatusUpdating"
+            :disabled="batchStatusUpdating || batchAuditUpdating"
             @click="handleBatchStatus(0)"
             class="cursor-pointer rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-[#2d241f] transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-700 dark:bg-amber-900/20 dark:text-[#e95322] dark:hover:bg-amber-900/35"
           >
             批量下架
+          </button>
+
+          <button
+            type="button"
+            :disabled="batchStatusUpdating || batchAuditUpdating"
+            @click="handleBatchAudit(1)"
+            class="cursor-pointer rounded-md border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-sky-700 dark:bg-sky-900/20 dark:text-sky-200 dark:hover:bg-sky-900/35"
+          >
+            批量审核通过
+          </button>
+
+          <button
+            type="button"
+            :disabled="batchStatusUpdating || batchAuditUpdating"
+            @click="handleBatchReject"
+            class="cursor-pointer rounded-md border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-700 dark:bg-rose-900/20 dark:text-rose-200 dark:hover:bg-rose-900/35"
+          >
+            批量驳回
           </button>
         </div>
       </div>

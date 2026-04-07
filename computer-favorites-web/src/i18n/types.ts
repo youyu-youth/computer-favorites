@@ -111,6 +111,7 @@ export interface AuthMessages {
 export interface UserMessages {
   profile: {
     title: string
+    mySubmissions: string
     editProfile: string
     viewProfile: string
     basicInfo: string

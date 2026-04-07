@@ -2,18 +2,25 @@ package com.yyyouth.service.admin.website.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.common.exception.BusinessException;
+import com.yyyouth.model.dto.admin.AdminWebsiteAuditDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteBatchAuditDTO;
 import com.yyyouth.common.utils.SensitiveWordUtils;
 import com.yyyouth.model.dto.admin.AdminWebsiteBatchStatusUpdateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
+import com.yyyouth.model.pojo.system.AuditLog;
+import com.yyyouth.model.pojo.system.SystemMessage;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
+import com.yyyouth.model.vo.admin.AdminWebsiteBatchAuditFailItemVO;
+import com.yyyouth.model.vo.admin.AdminWebsiteBatchAuditResultVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteCategoryVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteDetailVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteListItemVO;
@@ -23,6 +30,8 @@ import com.yyyouth.model.vo.admin.AdminWebsiteStatsVO;
 import com.yyyouth.model.vo.file.MinioUploadVO;
 import com.yyyouth.service.admin.website.AdminWebsiteService;
 import com.yyyouth.service.file.MinioFileService;
+import com.yyyouth.service.mapper.system.AuditLogMapper;
+import com.yyyouth.service.mapper.system.SystemMessageMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
 import com.yyyouth.service.user.auth.support.StpAdminUtil;
@@ -34,6 +43,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -93,11 +103,37 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
 
     private static final int DEFAULT_PAGE_SIZE = 12;
 
+    private static final int AUDIT_APPROVE_ACTION = 1;
+
+    private static final int AUDIT_REJECT_ACTION = 2;
+
+    private static final int DEFAULT_AUDIT_MESSAGE_TYPE = 4;
+
+    private static final int UNREAD_MESSAGE = 0;
+
+    private static final int AUDIT_SUCCESS_RESULT = 1;
+
+    private static final String AUDIT_LOG_USER_TYPE = "admin";
+
+    private static final String AUDIT_LOG_MODULE = "website";
+
+    private static final String AUDIT_LOG_TARGET_TYPE = "website";
+
+    private static final String AUDIT_ACTION_SINGLE = "audit";
+
+    private static final String AUDIT_ACTION_BATCH = "batch-audit";
+
+    private static final String AUDIT_APPROVE_REMARK = "审核通过";
+
     private final WebsiteMapper websiteMapper;
 
     private final CategoryMapper categoryMapper;
 
     private final MinioFileService minioFileService;
+
+    private final SystemMessageMapper systemMessageMapper;
+
+    private final AuditLogMapper auditLogMapper;
 
     /**
      * 查询网站分页列表
@@ -342,6 +378,10 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
     @Transactional(rollbackFor = Exception.class)
     public void updateWebsiteStatus(AdminWebsiteStatusUpdateDTO updateDTO) {
         Website website = queryAvailableWebsiteById(updateDTO.getWebsiteId());
+        if (Objects.equals(updateDTO.getStatus(), ONLINE_STATUS)
+                && !Objects.equals(website.getAuditStatus(), AUDIT_APPROVED_STATUS)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "仅审核通过的网站可上架");
+        }
         if (Objects.equals(website.getStatus(), updateDTO.getStatus())) {
             return;
         }
@@ -379,6 +419,10 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         LocalDateTime operationTime = LocalDateTime.now();
         int updateCount = 0;
         for (Website website : websiteList) {
+            if (Objects.equals(updateDTO.getStatus(), ONLINE_STATUS)
+                    && !Objects.equals(website.getAuditStatus(), AUDIT_APPROVED_STATUS)) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, "存在未审核通过的网站，无法批量上架");
+            }
             if (Objects.equals(website.getStatus(), updateDTO.getStatus())) {
                 continue;
             }
@@ -391,6 +435,100 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
             updateCount++;
         }
         return updateCount;
+    }
+
+    /**
+     * 单条审核网站
+     *
+     * @param websiteId 网站ID
+     * @param auditDTO 审核参数
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void auditWebsite(Long websiteId, AdminWebsiteAuditDTO auditDTO) {
+        Long adminId = StpAdminUtil.getLoginIdAsLong();
+        if (adminId == null || adminId <= 0) {
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "管理员未登录");
+        }
+
+        Website website = queryAvailableWebsiteById(websiteId);
+        if (!Objects.equals(website.getAuditStatus(), AUDIT_PENDING_STATUS)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "仅待审核网站可操作");
+        }
+
+        String normalizedRemark = normalizeAuditRemark(auditDTO.getRemark());
+        validateAuditRequest(auditDTO.getAction(), normalizedRemark);
+
+        LocalDateTime operationTime = LocalDateTime.now();
+        Website updateEntity = buildAuditUpdateEntity(website, auditDTO.getAction(), normalizedRemark, adminId, operationTime);
+
+        int affectedRows = websiteMapper.updateById(updateEntity);
+        if (affectedRows != 1) {
+            throw new BusinessException(HttpStatus.ERROR, "网站审核失败，请稍后重试");
+        }
+
+        insertAuditResultMessage(website, updateEntity, operationTime);
+        insertAuditLog(website, updateEntity, adminId, AUDIT_ACTION_SINGLE, operationTime);
+    }
+
+    /**
+     * 批量审核网站
+     *
+     * @param batchAuditDTO 批量审核参数
+     * @return 审核结果
+     */
+    @Override
+    public AdminWebsiteBatchAuditResultVO batchAuditWebsite(AdminWebsiteBatchAuditDTO batchAuditDTO) {
+        Long adminId = StpAdminUtil.getLoginIdAsLong();
+        if (adminId == null || adminId <= 0) {
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "管理员未登录");
+        }
+
+        List<Long> normalizedWebsiteIds = batchAuditDTO.getWebsiteIds().stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (CollUtil.isEmpty(normalizedWebsiteIds)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "网站ID列表不能为空");
+        }
+
+        String normalizedRemark = normalizeAuditRemark(batchAuditDTO.getRemark());
+        validateAuditRequest(batchAuditDTO.getAction(), normalizedRemark);
+
+        List<Website> websiteList = queryAvailableWebsiteByIds(normalizedWebsiteIds);
+        Map<Long, Website> websiteMap = websiteList.stream().collect(Collectors.toMap(Website::getId, item -> item));
+        List<AdminWebsiteBatchAuditFailItemVO> failItems = new ArrayList<>();
+        LocalDateTime operationTime = LocalDateTime.now();
+        int successCount = 0;
+
+        for (Long websiteId : normalizedWebsiteIds) {
+            Website website = websiteMap.get(websiteId);
+            if (website == null) {
+                failItems.add(buildFailItem(websiteId, "网站不存在或已删除"));
+                continue;
+            }
+            if (!Objects.equals(website.getAuditStatus(), AUDIT_PENDING_STATUS)) {
+                failItems.add(buildFailItem(websiteId, "仅待审核网站可操作"));
+                continue;
+            }
+
+            Website updateEntity = buildAuditUpdateEntity(website, batchAuditDTO.getAction(), normalizedRemark, adminId, operationTime);
+            int affectedRows = websiteMapper.updateById(updateEntity);
+            if (affectedRows != 1) {
+                failItems.add(buildFailItem(websiteId, "网站审核失败，请稍后重试"));
+                continue;
+            }
+
+            insertAuditResultMessage(website, updateEntity, operationTime);
+            insertAuditLog(website, updateEntity, adminId, AUDIT_ACTION_BATCH, operationTime);
+            successCount++;
+        }
+
+        AdminWebsiteBatchAuditResultVO resultVO = new AdminWebsiteBatchAuditResultVO();
+        resultVO.setSuccessCount(successCount);
+        resultVO.setFailedCount(failItems.size());
+        resultVO.setFailItems(failItems);
+        return resultVO;
     }
 
     /**
@@ -409,6 +547,10 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
 
         if (queryDTO.getCategoryId() != null) {
             queryWrapper.eq(Website::getCategoryId, queryDTO.getCategoryId());
+        }
+
+        if (queryDTO.getAuditStatus() != null) {
+            queryWrapper.eq(Website::getAuditStatus, queryDTO.getAuditStatus());
         }
 
         if (StringUtils.hasText(queryDTO.getKeyword())) {
@@ -649,6 +791,162 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
             updateEntity.setTakedownTime(operationTime);
         }
         return updateEntity;
+    }
+
+    /**
+     * 构建审核更新实体
+     *
+     * @param website 原始网站
+     * @param action 审核动作
+     * @param remark 审核备注
+     * @param adminId 管理员ID
+     * @param operationTime 操作时间
+     * @return 更新实体
+     */
+    private Website buildAuditUpdateEntity(Website website, Integer action, String remark, Long adminId, LocalDateTime operationTime) {
+        Website updateEntity = new Website();
+        updateEntity.setId(website.getId());
+        updateEntity.setUpdateTime(operationTime);
+        updateEntity.setAuditAdminId(toIntExactAdminId(adminId));
+
+        if (Objects.equals(action, AUDIT_APPROVE_ACTION)) {
+            updateEntity.setAuditStatus(AUDIT_APPROVED_STATUS);
+            updateEntity.setStatus(ONLINE_STATUS);
+            updateEntity.setAuditRemark(StringUtils.hasText(remark) ? remark : AUDIT_APPROVE_REMARK);
+            updateEntity.setShelfTime(operationTime);
+            return updateEntity;
+        }
+
+        updateEntity.setAuditStatus(AUDIT_REJECTED_STATUS);
+        updateEntity.setStatus(OFFLINE_STATUS);
+        updateEntity.setAuditRemark(remark);
+        updateEntity.setTakedownTime(operationTime);
+        return updateEntity;
+    }
+
+    /**
+     * 校验审核参数
+     *
+     * @param action 审核动作
+     * @param remark 备注
+     */
+    private void validateAuditRequest(Integer action, String remark) {
+        if (!Objects.equals(action, AUDIT_APPROVE_ACTION) && !Objects.equals(action, AUDIT_REJECT_ACTION)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "审核动作不合法");
+        }
+        if (Objects.equals(action, AUDIT_REJECT_ACTION) && !StringUtils.hasText(remark)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "驳回时审核备注不能为空");
+        }
+    }
+
+    /**
+     * 标准化审核备注
+     *
+     * @param remark 原始备注
+     * @return 标准化备注
+     */
+    private String normalizeAuditRemark(String remark) {
+        if (!StringUtils.hasText(remark)) {
+            return "";
+        }
+        return remark.trim();
+    }
+
+    /**
+     * 构建批量失败项
+     *
+     * @param websiteId 网站ID
+     * @param reason 失败原因
+     * @return 失败项
+     */
+    private AdminWebsiteBatchAuditFailItemVO buildFailItem(Long websiteId, String reason) {
+        AdminWebsiteBatchAuditFailItemVO failItemVO = new AdminWebsiteBatchAuditFailItemVO();
+        failItemVO.setWebsiteId(websiteId);
+        failItemVO.setReason(reason);
+        return failItemVO;
+    }
+
+    /**
+     * 写入审核结果站内消息
+     *
+     * @param originWebsite 原始网站
+     * @param updateEntity 更新实体
+     * @param operationTime 操作时间
+     */
+    private void insertAuditResultMessage(Website originWebsite, Website updateEntity, LocalDateTime operationTime) {
+        if (!Objects.equals(originWebsite.getSource(), 1)) {
+            return;
+        }
+        if (originWebsite.getSubmitterId() == null || originWebsite.getSubmitterId() <= 0) {
+            return;
+        }
+
+        SystemMessage message = new SystemMessage();
+        message.setUserId(originWebsite.getSubmitterId());
+        message.setType(DEFAULT_AUDIT_MESSAGE_TYPE);
+        message.setIsRead(UNREAD_MESSAGE);
+        message.setRelatedId(originWebsite.getId());
+        message.setCreateTime(operationTime);
+        message.setTitle("网站投稿审核结果通知");
+
+        if (Objects.equals(updateEntity.getAuditStatus(), AUDIT_APPROVED_STATUS)) {
+            message.setContent("你投稿的网站《" + originWebsite.getName() + "》已审核通过并自动上架。");
+        } else {
+            message.setContent("你投稿的网站《" + originWebsite.getName() + "》未通过审核，原因：" + updateEntity.getAuditRemark());
+        }
+
+        systemMessageMapper.insert(message);
+    }
+
+    /**
+     * 写入审核审计日志
+     *
+     * @param originWebsite 原始网站
+     * @param updateEntity 更新实体
+     * @param adminId 管理员ID
+     * @param action 审核动作
+     * @param operationTime 操作时间
+     */
+    private void insertAuditLog(Website originWebsite, Website updateEntity, Long adminId, String action, LocalDateTime operationTime) {
+        Map<String, Object> beforeData = buildAuditSnapshot(originWebsite);
+        Map<String, Object> afterData = new HashMap<>(beforeData);
+        afterData.put("auditStatus", updateEntity.getAuditStatus());
+        afterData.put("status", updateEntity.getStatus());
+        afterData.put("auditRemark", updateEntity.getAuditRemark());
+        afterData.put("auditAdminId", updateEntity.getAuditAdminId());
+        afterData.put("shelfTime", updateEntity.getShelfTime());
+        afterData.put("takedownTime", updateEntity.getTakedownTime());
+
+        AuditLog auditLog = new AuditLog();
+        auditLog.setUserId(adminId);
+        auditLog.setUserType(AUDIT_LOG_USER_TYPE);
+        auditLog.setModule(AUDIT_LOG_MODULE);
+        auditLog.setAction(action);
+        auditLog.setTargetType(AUDIT_LOG_TARGET_TYPE);
+        auditLog.setTargetId(originWebsite.getId());
+        auditLog.setBeforeData(JSONUtil.toJsonStr(beforeData));
+        auditLog.setAfterData(JSONUtil.toJsonStr(afterData));
+        auditLog.setResult(AUDIT_SUCCESS_RESULT);
+        auditLog.setCreateTime(operationTime);
+
+        auditLogMapper.insert(auditLog);
+    }
+
+    /**
+     * 构建审核快照
+     *
+     * @param website 网站实体
+     * @return 快照数据
+     */
+    private Map<String, Object> buildAuditSnapshot(Website website) {
+        Map<String, Object> snapshot = new HashMap<>(8);
+        snapshot.put("auditStatus", website.getAuditStatus());
+        snapshot.put("status", website.getStatus());
+        snapshot.put("auditRemark", website.getAuditRemark());
+        snapshot.put("auditAdminId", website.getAuditAdminId());
+        snapshot.put("shelfTime", website.getShelfTime());
+        snapshot.put("takedownTime", website.getTakedownTime());
+        return snapshot;
     }
 
     /**

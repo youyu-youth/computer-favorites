@@ -1,4 +1,4 @@
-package com.yyyouth.model.dto.admin;
+package com.yyyouth.model.dto.user;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -7,17 +7,12 @@ import lombok.Data;
 
 /**
  * @author yyyouth zg
- * @date 2026-04-01
+ * @date 2026-04-05
  *
- * 管理端网站列表查询参数
+ * 用户投稿列表查询参数
  */
 @Data
-public class AdminWebsiteQueryDTO {
-
-    /**
-     * 分类ID
-     */
-    private Long categoryId;
+public class UserWebsiteSubmissionQueryDTO {
 
     /**
      * 关键字
@@ -26,18 +21,11 @@ public class AdminWebsiteQueryDTO {
     private String keyword;
 
     /**
-     * 审核状态：0待审核，1已通过，2已拒绝
+     * 审核状态：0待审核，1通过，2拒绝
      */
     @Min(value = 0, message = "审核状态参数不合法")
     @Max(value = 2, message = "审核状态参数不合法")
     private Integer auditStatus;
-
-    /**
-     * 删除筛选：-1全部，0未删除，1已删除
-     */
-    @Min(value = -1, message = "删除筛选参数不合法")
-    @Max(value = 1, message = "删除筛选参数不合法")
-    private Integer deleted = -1;
 
     /**
      * 页码
@@ -46,7 +34,7 @@ public class AdminWebsiteQueryDTO {
     private Integer pageNum = 1;
 
     /**
-     * 每页大小
+     * 每页数量
      */
     @Min(value = 1, message = "每页数量最小为1")
     @Max(value = 100, message = "每页数量最大为100")

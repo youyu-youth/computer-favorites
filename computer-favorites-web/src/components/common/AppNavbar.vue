@@ -8,7 +8,7 @@ import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ChevronDown, IdCard, LogOut, Menu, Settings, User, X } from 'lucide-vue-next'
+import { ChevronDown, FolderOpen, IdCard, LogOut, Menu, Settings, User, X } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -49,6 +49,12 @@ const goToProfile = () => {
   profileMenuOpen.value = false
   mobileMenuOpen.value = false
   router.push({ name: 'profile' })
+}
+
+const goToWebsiteSubmissions = () => {
+  profileMenuOpen.value = false
+  mobileMenuOpen.value = false
+  router.push({ name: 'websiteSubmissions' })
 }
 
 const goToSettings = () => {
@@ -282,6 +288,14 @@ onBeforeUnmount(() => {
                 <button
                   type="button"
                   class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                  @click="goToWebsiteSubmissions"
+                >
+                  <FolderOpen class="size-4" />
+                  {{ t('user.profile.mySubmissions') }}
+                </button>
+                <button
+                  type="button"
+                  class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
                   @click="goToSettings"
                 >
                   <Settings class="size-4" />
@@ -352,6 +366,13 @@ onBeforeUnmount(() => {
           @click="goToProfile"
         >
           {{ t('user.profile.title') }}
+        </PrimeButton>
+        <PrimeButton
+          text
+          class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 dark:!text-gray-300"
+          @click="goToWebsiteSubmissions"
+        >
+          {{ t('user.profile.mySubmissions') }}
         </PrimeButton>
         <PrimeButton
           text
