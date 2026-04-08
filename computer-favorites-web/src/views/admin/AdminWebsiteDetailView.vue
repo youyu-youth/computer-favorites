@@ -1,19 +1,49 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { auditAdminWebsite, getAdminWebsiteDetail } from '@/api/admin-website'
+import {
+  auditAdminWebsite,
+  getAdminWebsiteDetail,
+  getAdminWebsiteStats,
+  updateAdminWebsite,
+} from '@/api/admin-website'
+import UTextarea from '@/components/ui-adapter/UTextarea.vue'
 import { useToast } from '@/composables/useToast'
-import type { AdminWebsiteDetail } from '@/types/admin-website'
+import { useAdminNavStore } from '@/stores/adminNav'
+import type { AdminWebsiteDetail, AdminWebsiteEditPayload } from '@/types/admin-website'
+import {
+  formatDateTime,
+  resolveBooleanFlagText,
+  resolveDeletedText,
+  resolveWebsiteAuditStatusText,
+  resolveWebsiteSourceText,
+  resolveWebsiteStatusText,
+  toDisplayValue,
+} from '@/utils/admin-website-display'
 
 const route = useRoute()
 const router = useRouter()
 const { add: showToast } = useToast()
+const adminNavStore = useAdminNavStore()
 
 const loading = ref(false)
 const auditSubmitting = ref(false)
+const pendingFieldSubmitting = ref(false)
 const errorMessage = ref('')
 const detail = ref<AdminWebsiteDetail | null>(null)
 const iconLoadFailed = ref(false)
+
+const pendingForm = ref({
+  isRecommend: false,
+  isOfficial: false,
+  auditRemark: '',
+})
+
+const pendingSnapshot = ref({
+  isRecommend: false,
+  isOfficial: false,
+  auditRemark: '',
+})
 
 const websiteId = computed<number | null>(() => {
   const parsedId = Number(route.params.id)
@@ -30,96 +60,30 @@ const resolveErrorMessage = (error: unknown, fallbackMessage: string): string =>
   return fallbackMessage
 }
 
-const toDisplayValue = (value: unknown): string => {
-  if (value === null || value === undefined) {
-    return '-'
+const syncPendingFormFromDetail = (record: AdminWebsiteDetail | null) => {
+  if (!record) {
+    pendingForm.value = {
+      isRecommend: false,
+      isOfficial: false,
+      auditRemark: '',
+    }
+    pendingSnapshot.value = {
+      isRecommend: false,
+      isOfficial: false,
+      auditRemark: '',
+    }
+    return
   }
-  const text = String(value).trim()
-  return text ? text : '-'
-}
 
-const formatTime = (value?: string): string => {
-  if (!value) {
-    return '-'
+  const normalizedForm = {
+    isRecommend: record.isRecommend === 1,
+    isOfficial: record.isOfficial === 1,
+    auditRemark: String(record.auditRemark || '').trim(),
   }
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return '-'
-  }
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  const second = String(date.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hour}:${minute}:${second}`
-}
 
-const resolveStatusText = (status?: number): string => {
-  if (status === 1) {
-    return '已上架'
-  }
-  if (status === 0) {
-    return '已下架'
-  }
-  return '-'
+  pendingForm.value = { ...normalizedForm }
+  pendingSnapshot.value = { ...normalizedForm }
 }
-
-const resolveAuditStatusText = (auditStatus?: number): string => {
-  if (auditStatus === 1) {
-    return '已通过'
-  }
-  if (auditStatus === 2) {
-    return '已拒绝'
-  }
-  if (auditStatus === 0) {
-    return '待审核'
-  }
-  return '-'
-}
-
-const resolveSourceText = (source?: number): string => {
-  if (source === 0) {
-    return '管理员录入'
-  }
-  if (source === 1) {
-    return '用户投稿'
-  }
-  return '-'
-}
-
-const resolveDeletedText = (deleted?: number): string => {
-  if (deleted === 1) {
-    return '已删除'
-  }
-  if (deleted === 0) {
-    return '正常'
-  }
-  return '-'
-}
-
-const resolveBoolFlagText = (value?: number): string => {
-  if (value === 1) {
-    return '是'
-  }
-  if (value === 0) {
-    return '否'
-  }
-  return '-'
-}
-
-const parsedTags = computed<string[]>(() => {
-  const rawTags = detail.value?.tags
-  if (!rawTags) {
-    return []
-  }
-  return rawTags
-    .replace(/，/g, ',')
-    .replace(/；/g, ';')
-    .split(/[;,]/)
-    .map((tag) => tag.trim())
-    .filter((tag) => tag.length > 0)
-})
 
 const canAudit = computed(() => {
   if (!detail.value) {
@@ -128,18 +92,31 @@ const canAudit = computed(() => {
   return detail.value.deleted === 0 && detail.value.source === 1 && detail.value.auditStatus === 0
 })
 
-const baseRows = computed(() => {
+const canEditPendingFields = computed(() => {
   if (!detail.value) {
-    return [] as Array<{ label: string; value: string }>
+    return false
   }
-  return [
-    { label: '网站ID', value: toDisplayValue(detail.value.id) },
-    { label: '网站名称', value: toDisplayValue(detail.value.name) },
-    { label: '网站URL', value: toDisplayValue(detail.value.url) },
-    { label: '图标地址', value: toDisplayValue(detail.value.icon) },
-    { label: '分类ID', value: toDisplayValue(detail.value.categoryId) },
-    { label: '分类名称', value: toDisplayValue(detail.value.categoryName) },
-  ]
+  return detail.value.deleted === 0 && detail.value.auditStatus === 0
+})
+
+const hasPendingFieldChanges = computed(() => {
+  if (!canEditPendingFields.value) {
+    return false
+  }
+  return (
+    pendingForm.value.isRecommend !== pendingSnapshot.value.isRecommend ||
+    pendingForm.value.isOfficial !== pendingSnapshot.value.isOfficial ||
+    pendingForm.value.auditRemark.trim() !== pendingSnapshot.value.auditRemark
+  )
+})
+
+const displayTagNames = computed(() => {
+  if (!Array.isArray(detail.value?.tagNameList)) {
+    return [] as string[]
+  }
+  return detail.value.tagNameList
+    .map((tag) => String(tag || '').trim())
+    .filter((tag) => tag.length > 0)
 })
 
 const operationRows = computed(() => {
@@ -147,14 +124,14 @@ const operationRows = computed(() => {
     return [] as Array<{ label: string; value: string }>
   }
   return [
-    { label: '上架状态', value: resolveStatusText(detail.value.status) },
-    { label: '审核状态', value: resolveAuditStatusText(detail.value.auditStatus) },
-    { label: '来源类型', value: resolveSourceText(detail.value.source) },
+    { label: '上架状态', value: resolveWebsiteStatusText(detail.value.status) },
+    { label: '审核状态', value: resolveWebsiteAuditStatusText(detail.value.auditStatus) },
+    { label: '来源类型', value: resolveWebsiteSourceText(detail.value.source) },
     { label: '删除状态', value: resolveDeletedText(detail.value.deleted) },
-    { label: '置顶推荐', value: resolveBoolFlagText(detail.value.isTop) },
-    { label: '编辑精选', value: resolveBoolFlagText(detail.value.isRecommend) },
+    { label: '置顶推荐', value: resolveBooleanFlagText(detail.value.isTop) },
+    { label: '编辑精选', value: resolveBooleanFlagText(detail.value.isRecommend) },
+    { label: '是否官方', value: resolveBooleanFlagText(detail.value.isOfficial) },
     { label: '排序值', value: toDisplayValue(detail.value.sort) },
-    { label: '审核备注', value: toDisplayValue(detail.value.auditRemark) },
   ]
 })
 
@@ -172,17 +149,28 @@ const statsRows = computed(() => {
   ]
 })
 
-const identityRows = computed(() => {
+const timelineRows = computed(() => {
   if (!detail.value) {
     return [] as Array<{ label: string; value: string }>
   }
   return [
-    { label: '提交用户ID', value: toDisplayValue(detail.value.submitterId) },
-    { label: '审核管理员ID', value: toDisplayValue(detail.value.auditAdminId) },
-    { label: '创建时间', value: formatTime(detail.value.createTime) },
-    { label: '更新时间', value: formatTime(detail.value.updateTime) },
-    { label: '上架时间', value: formatTime(detail.value.shelfTime) },
-    { label: '下架时间', value: formatTime(detail.value.takedownTime) },
+    { label: '创建时间', value: formatDateTime(detail.value.createTime) },
+    { label: '更新时间', value: formatDateTime(detail.value.updateTime) },
+    { label: '上架时间', value: formatDateTime(detail.value.shelfTime) },
+    { label: '下架时间', value: formatDateTime(detail.value.takedownTime) },
+  ]
+})
+
+const relationRows = computed(() => {
+  if (!detail.value) {
+    return [] as Array<{ label: string; value: string }>
+  }
+  return [
+    { label: '分类', value: toDisplayValue(detail.value.categoryName) },
+    { label: '提交用户', value: toDisplayValue(detail.value.submitterName) },
+    { label: '审核管理员', value: toDisplayValue(detail.value.auditAdminName) },
+    { label: '审核备注', value: toDisplayValue(detail.value.auditRemark) },
+    { label: 'Github 地址', value: toDisplayValue(detail.value.githubUrl) },
   ]
 })
 
@@ -206,11 +194,28 @@ const loadDetail = async () => {
   }
 }
 
+const syncPendingAuditCount = async () => {
+  try {
+    const pendingStats = await getAdminWebsiteStats(0)
+    adminNavStore.setPendingAuditCount(Number(pendingStats.pendingAudit || 0))
+  } catch {
+    // 角标同步失败不阻断主流程。
+  }
+}
+
 watch(
   () => detail.value?.icon,
   () => {
     iconLoadFailed.value = false
   },
+)
+
+watch(
+  () => detail.value,
+  (record) => {
+    syncPendingFormFromDetail(record)
+  },
+  { immediate: true },
 )
 
 watch(
@@ -249,8 +254,9 @@ const handleApprove = async () => {
   auditSubmitting.value = true
   try {
     await auditAdminWebsite(websiteId.value, { action: 1 })
+    adminNavStore.decreasePendingAuditCount(1)
     showToast({ type: 'success', title: '审核通过成功，网站已自动上架' })
-    await loadDetail()
+    await Promise.all([loadDetail(), syncPendingAuditCount()])
   } catch (error) {
     showToast({ type: 'error', title: resolveErrorMessage(error, '网站审核失败') })
   } finally {
@@ -277,20 +283,67 @@ const handleReject = async () => {
   auditSubmitting.value = true
   try {
     await auditAdminWebsite(websiteId.value, { action: 2, remark: normalizedRemark })
+    adminNavStore.decreasePendingAuditCount(1)
     showToast({ type: 'success', title: '已完成驳回审核' })
-    await loadDetail()
+    await Promise.all([loadDetail(), syncPendingAuditCount()])
   } catch (error) {
     showToast({ type: 'error', title: resolveErrorMessage(error, '网站审核失败') })
   } finally {
     auditSubmitting.value = false
   }
 }
+
+const buildEditPayload = (record: AdminWebsiteDetail): AdminWebsiteEditPayload => {
+  const normalizedName = String(record.name || '').trim()
+  const normalizedUrl = String(record.url || '').trim()
+  if (!normalizedName || !normalizedUrl) {
+    throw new Error('网站基础信息不完整，无法保存待审核配置')
+  }
+
+  const categoryId = Number(record.categoryId)
+  if (!Number.isInteger(categoryId) || categoryId <= 0) {
+    throw new Error('分类信息缺失，无法保存待审核配置')
+  }
+
+  return {
+    name: normalizedName,
+    url: normalizedUrl,
+    icon: String(record.icon || ''),
+    summary: String(record.summary || ''),
+    description: String(record.description || ''),
+    categoryId,
+    tags: String(record.tags || ''),
+    isTop: record.isTop === 1,
+    isRecommend: pendingForm.value.isRecommend,
+    isOfficial: pendingForm.value.isOfficial,
+    auditRemark: pendingForm.value.auditRemark.trim(),
+    sort: Number.isInteger(record.sort) ? record.sort : 0,
+  }
+}
+
+const handleSavePendingFields = async () => {
+  if (!websiteId.value || !detail.value || !canEditPendingFields.value || pendingFieldSubmitting.value) {
+    return
+  }
+
+  pendingFieldSubmitting.value = true
+  try {
+    const payload = buildEditPayload(detail.value)
+    await updateAdminWebsite(websiteId.value, payload)
+    showToast({ type: 'success', title: '待审核配置保存成功' })
+    await Promise.all([loadDetail(), syncPendingAuditCount()])
+  } catch (error) {
+    showToast({ type: 'error', title: resolveErrorMessage(error, '待审核配置保存失败') })
+  } finally {
+    pendingFieldSubmitting.value = false
+  }
+}
 </script>
 
 <template>
-  <main class="flex-grow w-full px-4 sm:px-6 lg:px-8 py-6">
-    <div class="max-w-[1320px] mx-auto min-w-0">
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <main class="flex-grow w-full px-4 py-6 sm:px-6 lg:px-8">
+    <div class="mx-auto w-full max-w-[1320px] min-w-0">
+      <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
           class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-border dark:bg-dark-card dark:text-gray-200 dark:hover:bg-dark-border"
@@ -359,46 +412,15 @@ const handleReject = async () => {
         <p class="mt-3 text-sm">{{ errorMessage }}</p>
       </div>
 
-      <div
-        v-else-if="detail"
-        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-dark-border dark:bg-dark-card"
-      >
-        <div class="flex flex-col lg:flex-row">
-          <aside
-            class="w-full border-b border-gray-800 bg-gray-900 p-6 text-gray-300 lg:w-1/3 lg:border-b-0 lg:border-r md:p-8"
-          >
-            <div class="flex gap-2">
-              <span class="h-3 w-3 rounded-full bg-red-500"></span>
-              <span class="h-3 w-3 rounded-full bg-yellow-500"></span>
-              <span class="h-3 w-3 rounded-full bg-green-500"></span>
-            </div>
-
-            <div class="mt-6">
-              <h1 class="break-all text-xl font-bold text-white">
-                {{ toDisplayValue(detail.name) }}
-              </h1>
-              <p class="mt-2 break-all text-xs text-gray-400">{{ toDisplayValue(detail.url) }}</p>
-            </div>
-
-            <div class="mt-4 flex flex-wrap gap-2">
-              <span
-                class="rounded-full border border-emerald-700 bg-emerald-900/20 px-2.5 py-1 text-xs text-emerald-200"
-                >{{ resolveStatusText(detail.status) }}</span
-              >
-              <span
-                class="rounded-full border border-blue-700 bg-blue-900/20 px-2.5 py-1 text-xs text-blue-200"
-                >{{ resolveAuditStatusText(detail.auditStatus) }}</span
-              >
-              <span
-                class="rounded-full border border-gray-700 bg-gray-800/60 px-2.5 py-1 text-xs text-gray-200"
-                >{{ resolveSourceText(detail.source) }}</span
-              >
-            </div>
-
-            <div class="mt-8">
+      <div v-else-if="detail" class="space-y-5">
+        <section
+          class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-dark-border dark:bg-dark-card"
+        >
+          <div class="flex flex-col gap-5 p-5 md:flex-row md:items-start md:justify-between">
+            <div class="flex min-w-0 flex-1 items-start gap-4">
               <div
                 v-if="detail.icon && !iconLoadFailed"
-                class="inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-gray-700 bg-white"
+                class="inline-flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-dark-border dark:bg-dark-bg"
               >
                 <img
                   :src="detail.icon"
@@ -409,86 +431,201 @@ const handleReject = async () => {
               </div>
               <div
                 v-else
-                class="inline-flex h-16 w-16 items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-xl text-gray-400"
+                class="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 text-xl text-gray-500 dark:border-dark-border dark:bg-dark-bg dark:text-gray-300"
               >
                 <i class="fas fa-globe"></i>
               </div>
-              <p class="mt-2 text-xs text-gray-400">Logo 预览</p>
-            </div>
-          </aside>
 
-          <section class="w-full space-y-6 bg-gray-50 p-6 dark:bg-dark-bg/50 md:p-8 lg:w-2/3">
-            <div
-              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
-            >
+              <div class="min-w-0 flex-1">
+                <h1 class="break-all text-xl font-semibold text-gray-900 dark:text-gray-50">
+                  {{ toDisplayValue(detail.name) }}
+                </h1>
+                <a
+                  :href="detail.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="mt-1 inline-flex cursor-pointer items-center gap-2 break-all text-sm text-cyan-700 underline-offset-2 transition-colors hover:underline dark:text-cyan-300"
+                >
+                  <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+                  <span>{{ toDisplayValue(detail.url) }}</span>
+                </a>
+
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span
+                    class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-900/20 dark:text-emerald-200"
+                  >
+                    {{ resolveWebsiteStatusText(detail.status) }}
+                  </span>
+                  <span
+                    class="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs text-blue-700 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-200"
+                  >
+                    {{ resolveWebsiteAuditStatusText(detail.auditStatus) }}
+                  </span>
+                  <span
+                    class="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-700 dark:border-amber-800/60 dark:bg-amber-900/20 dark:text-amber-200"
+                  >
+                    {{ resolveWebsiteSourceText(detail.source) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 md:min-w-[260px]">
+              <div
+                v-for="item in statsRows.slice(0, 4)"
+                :key="`head-${item.label}`"
+                class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-border dark:bg-dark-bg/50"
+              >
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
+                <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {{ item.value }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="grid grid-cols-1 gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+          <section class="space-y-5">
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
               <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">基础信息</h2>
               <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div
-                  v-for="item in baseRows"
-                  :key="item.label"
-                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
-                >
-                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
+                <div class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">分类名称</p>
                   <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">
-                    {{ item.value }}
+                    {{ toDisplayValue(detail.categoryName) }}
+                  </p>
+                </div>
+                <div class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Github 地址</p>
+                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">
+                    {{ toDisplayValue(detail.githubUrl) }}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div
-              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
-            >
-              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                简介与描述
-              </h2>
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">简介与描述</h2>
               <div class="space-y-4">
-                <div
-                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
-                >
+                <div class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60">
                   <p class="text-xs text-gray-500 dark:text-gray-400">一句话简介</p>
-                  <p
-                    class="mt-1 whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-100"
-                  >
+                  <p class="mt-1 whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-100">
                     {{ toDisplayValue(detail.summary) }}
                   </p>
                 </div>
-                <div
-                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
-                >
+                <div class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60">
                   <p class="text-xs text-gray-500 dark:text-gray-400">详细描述</p>
-                  <p
-                    class="mt-1 whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-100"
-                  >
+                  <p class="mt-1 whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-100">
                     {{ toDisplayValue(detail.description) }}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div
-              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
-            >
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
               <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">标签信息</h2>
-              <div v-if="parsedTags.length > 0" class="flex flex-wrap gap-2">
+              <div v-if="displayTagNames.length > 0" class="flex flex-wrap gap-2">
                 <span
-                  v-for="tag in parsedTags"
+                  v-for="tag in displayTagNames"
                   :key="tag"
                   class="rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs text-gray-700 dark:border-dark-border dark:bg-dark-bg dark:text-gray-300"
                 >
                   {{ tag }}
                 </span>
               </div>
-              <p v-else class="text-sm text-gray-500 dark:text-gray-400">-</p>
+              <p v-else class="text-sm text-gray-500 dark:text-gray-400">暂无可展示标签</p>
             </div>
 
-            <div
-              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
-            >
-              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                运营与审核
-              </h2>
-              <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">审核配置</h2>
+
+              <div
+                v-if="canEditPendingFields"
+                data-testid="admin-detail-pending-form"
+                class="rounded-lg border border-cyan-200 bg-cyan-50/60 p-3 dark:border-cyan-900/40 dark:bg-cyan-900/10"
+              >
+                <p class="text-xs text-cyan-700 dark:text-cyan-200">
+                  当前为待审核网站，可在通过/驳回前先调整推荐、官方标识与审核备注。
+                </p>
+
+                <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div class="rounded-md border border-gray-200 bg-white p-3 dark:border-dark-border dark:bg-dark-bg/60">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">编辑精选</p>
+                    <div class="mt-2 inline-flex overflow-hidden rounded-lg border border-gray-300 dark:border-dark-border">
+                      <button
+                        type="button"
+                        data-testid="admin-detail-recommend-yes"
+                        class="cursor-pointer px-3 py-1.5 text-xs font-medium transition-colors"
+                        :class="pendingForm.isRecommend ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-dark-card dark:text-gray-300 dark:hover:bg-dark-bg'"
+                        @click="pendingForm.isRecommend = true"
+                      >
+                        是
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="admin-detail-recommend-no"
+                        class="cursor-pointer border-l border-gray-300 px-3 py-1.5 text-xs font-medium transition-colors dark:border-dark-border"
+                        :class="!pendingForm.isRecommend ? 'bg-rose-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-dark-card dark:text-gray-300 dark:hover:bg-dark-bg'"
+                        @click="pendingForm.isRecommend = false"
+                      >
+                        否
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="rounded-md border border-gray-200 bg-white p-3 dark:border-dark-border dark:bg-dark-bg/60">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">是否官方</p>
+                    <div class="mt-2 inline-flex overflow-hidden rounded-lg border border-gray-300 dark:border-dark-border">
+                      <button
+                        type="button"
+                        data-testid="admin-detail-official-yes"
+                        class="cursor-pointer px-3 py-1.5 text-xs font-medium transition-colors"
+                        :class="pendingForm.isOfficial ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-dark-card dark:text-gray-300 dark:hover:bg-dark-bg'"
+                        @click="pendingForm.isOfficial = true"
+                      >
+                        是
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="admin-detail-official-no"
+                        class="cursor-pointer border-l border-gray-300 px-3 py-1.5 text-xs font-medium transition-colors dark:border-dark-border"
+                        :class="!pendingForm.isOfficial ? 'bg-rose-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-dark-card dark:text-gray-300 dark:hover:bg-dark-bg'"
+                        @click="pendingForm.isOfficial = false"
+                      >
+                        否
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">审核备注</p>
+                  <UTextarea
+                    v-model="pendingForm.auditRemark"
+                    :rows="4"
+                    placeholder="请输入审核备注（拒绝时建议明确原因）"
+                  />
+                </div>
+
+                <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ hasPendingFieldChanges ? '存在未保存变更' : '当前无待保存变更' }}
+                  </p>
+                  <button
+                    type="button"
+                    data-testid="admin-detail-pending-save"
+                    :disabled="pendingFieldSubmitting || !hasPendingFieldChanges"
+                    class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-cyan-300 bg-cyan-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-cyan-700"
+                    @click="handleSavePendingFields"
+                  >
+                    <i class="fas fa-floppy-disk"></i>
+                    <span>{{ pendingFieldSubmitting ? '保存中...' : '保存待审核配置' }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div
                   v-for="item in operationRows"
                   :key="item.label"
@@ -501,15 +638,15 @@ const handleReject = async () => {
                 </div>
               </div>
             </div>
+          </section>
 
-            <div
-              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
-            >
-              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">统计数据</h2>
-              <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <section class="space-y-5">
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">运营字段</h2>
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div
-                  v-for="item in statsRows"
-                  :key="item.label"
+                  v-for="item in operationRows"
+                  :key="`op-${item.label}`"
                   class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
                 >
                   <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
@@ -520,16 +657,44 @@ const handleReject = async () => {
               </div>
             </div>
 
-            <div
-              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card"
-            >
-              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                时间与身份
-              </h2>
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">统计数据</h2>
               <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div
-                  v-for="item in identityRows"
-                  :key="item.label"
+                  v-for="item in statsRows"
+                  :key="`stats-${item.label}`"
+                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
+                >
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
+                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">
+                    {{ item.value }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">时间轴</h2>
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div
+                  v-for="item in timelineRows"
+                  :key="`timeline-${item.label}`"
+                  class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
+                >
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
+                  <p class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100">
+                    {{ item.value }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">关联信息</h2>
+              <div class="space-y-3">
+                <div
+                  v-for="item in relationRows"
+                  :key="`relation-${item.label}`"
                   class="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-dark-border dark:bg-dark-bg/60"
                 >
                   <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>

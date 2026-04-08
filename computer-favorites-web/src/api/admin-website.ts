@@ -32,6 +32,10 @@ function buildListQueryString(query: AdminWebsiteListQuery): string {
     params.set('auditStatus', String(query.auditStatus))
   }
 
+  if (typeof query.auditBucket === 'number') {
+    params.set('auditBucket', String(query.auditBucket))
+  }
+
   if (query.keyword && query.keyword.trim()) {
     params.set('keyword', query.keyword.trim())
   }

@@ -149,12 +149,16 @@ const mockWebsiteApis = async (page: import('@playwright/test').Page) => {
           score: 5,
           scoreCount: 1,
           tags: 'A',
+          tagNameList: ['工具集'],
           isTop: 0,
           isRecommend: 0,
+          isOfficial: 1,
           status: 1,
           sort: 0,
           source: 0,
+          githubUrl: 'https://github.com/example/project',
           submitterId: 9001,
+          submitterName: '超级管理员',
           auditStatus: 1,
           auditRemark: '',
           createTime: '2026-04-02 10:00:00',
@@ -163,6 +167,7 @@ const mockWebsiteApis = async (page: import('@playwright/test').Page) => {
           shelfTime: '2026-04-02 10:00:00',
           takedownTime: '',
           auditAdminId: 9001,
+          auditAdminName: '超级管理员',
         },
       }),
     })
@@ -225,5 +230,300 @@ test.describe('管理端面包屑替换（PrimeVue）', () => {
 
     await breadcrumb.locator('[data-breadcrumb-key="edit-website"]').click()
     await expect(page).toHaveURL('/computer/admin/websites/12/edit')
+  })
+
+  test('网站管理应树状展示审核子项并显示待审核红点', async ({ page }) => {
+    const requestedAuditBuckets: string[] = []
+
+    await page.route('**/api/admin/website/stats**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '查询成功',
+          data: {
+            total: 5,
+            online: 1,
+            offline: 4,
+            pendingAudit: 5,
+            rejectedAudit: 0,
+            deleted: 0,
+            latestUpdateTime: '2026-04-02 18:00:00',
+          },
+        }),
+      })
+    })
+
+    await page.route('**/api/admin/website/list**', async (route) => {
+      const requestUrl = new URL(route.request().url())
+      const auditBucket = requestUrl.searchParams.get('auditBucket') || ''
+      requestedAuditBuckets.push(auditBucket)
+      const pendingMode = auditBucket !== '1'
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '查询成功',
+          data: {
+            records: [
+              {
+                id: pendingMode ? 13 : 12,
+                name: pendingMode ? 'pending-site' : 'audited-site',
+                url: 'https://example.com',
+                icon: '',
+                summary: 'summary',
+                description: 'desc',
+                categoryId: 1,
+                categoryName: '软件架构',
+                clickCount: 0,
+                likeCount: 0,
+                collectCount: 0,
+                commentCount: 0,
+                score: 5,
+                tags: 'A',
+                isTop: 0,
+                isRecommend: 0,
+                status: 1,
+                source: 1,
+                auditStatus: pendingMode ? 0 : 1,
+                deleted: 0,
+                updateTime: '2026-04-02 18:00:00',
+              },
+            ],
+            total: 1,
+            pageNum: 1,
+            pageSize: 12,
+            totalPages: 1,
+          },
+        }),
+      })
+    })
+
+    await page.goto('/computer/admin/websites')
+    await expect(page).toHaveURL('/computer/admin/websites')
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.getByTestId('admin-menu-websites-pending-badge')).toHaveText('5')
+    await expect(page.getByTestId('admin-audit-tab-pending-badge')).toHaveText('5')
+    await expect(page.getByTestId('admin-audit-tab-pending')).toBeVisible()
+    await expect(page.getByTestId('admin-audit-tab-audited')).toBeVisible()
+    await expect(page.getByTestId('admin-website-category-0')).toHaveCount(0)
+
+    expect(requestedAuditBuckets).toContain('0')
+
+    await page.getByTestId('admin-audit-tab-pending').click()
+    await expect(page.getByTestId('admin-website-category-0')).toBeVisible()
+
+    await page.getByRole('button', { name: '返回审核菜单' }).click()
+    await expect(page.getByTestId('admin-audit-tab-audited')).toBeVisible()
+
+    await page.getByTestId('admin-audit-tab-audited').click()
+
+    await expect(page.getByTestId('admin-website-category-0')).toBeVisible()
+
+    await expect.poll(() => requestedAuditBuckets.includes('1')).toBeTruthy()
+  })
+
+  test('待审核数量为零时不显示红点', async ({ page }) => {
+    await page.goto('/computer/admin/websites')
+    await expect(page).toHaveURL('/computer/admin/websites')
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.getByTestId('admin-menu-websites-pending-badge')).toHaveCount(0)
+    await expect(page.getByTestId('admin-audit-tab-pending-badge')).toHaveCount(0)
+  })
+
+  test('网站管理三角图标应支持展开和收起子菜单', async ({ page }) => {
+    await page.goto('/computer/admin/websites')
+    await expect(page).toHaveURL('/computer/admin/websites')
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.getByTestId('admin-audit-tab-pending')).toBeVisible()
+
+    await page.getByTestId('admin-menu-websites-toggle').click()
+    await expect(page.getByTestId('admin-audit-tab-pending')).toHaveCount(0)
+    await expect(page.getByTestId('admin-audit-tab-audited')).toHaveCount(0)
+
+    await page.getByTestId('admin-menu-websites-toggle').click()
+    await expect(page.getByTestId('admin-audit-tab-pending')).toBeVisible()
+    await expect(page.getByTestId('admin-audit-tab-audited')).toBeVisible()
+  })
+
+  test('待审核详情应支持保存推荐官方与备注', async ({ page }) => {
+    const capturedUpdatePayloads: unknown[] = []
+
+    await page.route('**/api/admin/website/12', async (route) => {
+      if (route.request().method().toUpperCase() === 'PUT') {
+        capturedUpdatePayloads.push(route.request().postDataJSON())
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ code: 200, msg: '更新成功', data: true }),
+        })
+        return
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '查询成功',
+          data: {
+            id: 12,
+            name: '待审核站点',
+            url: 'https://example.com',
+            icon: '',
+            summary: 'summary',
+            description: 'desc',
+            categoryId: 1,
+            categoryName: '软件架构',
+            clickCount: 0,
+            likeCount: 0,
+            collectCount: 0,
+            commentCount: 0,
+            score: 5,
+            scoreCount: 1,
+            tags: '1,2',
+            tagNameList: ['开发工具', '效率提升'],
+            isTop: 0,
+            isRecommend: 0,
+            isOfficial: 0,
+            status: 0,
+            sort: 0,
+            source: 1,
+            githubUrl: 'https://github.com/example/project',
+            submitterId: 2001,
+            submitterName: '投稿用户A',
+            auditStatus: 0,
+            auditRemark: '',
+            createTime: '2026-04-02 10:00:00',
+            updateTime: '2026-04-02 18:00:00',
+            deleted: 0,
+            shelfTime: '',
+            takedownTime: '',
+            auditAdminId: 9001,
+            auditAdminName: '超级管理员',
+          },
+        }),
+      })
+    })
+
+    await page.goto('/computer/admin/websites/12')
+    await expect(page).toHaveURL('/computer/admin/websites/12')
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.getByTestId('admin-detail-pending-form')).toBeVisible()
+
+    await page.getByTestId('admin-detail-recommend-yes').click()
+    await page.getByTestId('admin-detail-official-yes').click()
+    await page.getByTestId('admin-detail-pending-form').locator('textarea').fill('补充审核说明')
+    await page.getByTestId('admin-detail-pending-save').click()
+
+    await expect.poll(() => capturedUpdatePayloads.length).toBeGreaterThan(0)
+
+    const latestPayload = capturedUpdatePayloads[capturedUpdatePayloads.length - 1] as {
+      isRecommend?: boolean
+      isOfficial?: boolean
+      auditRemark?: string
+    }
+    expect(latestPayload.isRecommend).toBeTruthy()
+    expect(latestPayload.isOfficial).toBeTruthy()
+    expect(latestPayload.auditRemark).toBe('补充审核说明')
+  })
+
+  test('详情页审核通过后红点应递减', async ({ page }) => {
+    let pendingAuditCount = 2
+    let detailAuditStatus = 0
+
+    await page.route('**/api/admin/website/stats**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '查询成功',
+          data: {
+            total: pendingAuditCount,
+            online: 0,
+            offline: pendingAuditCount,
+            pendingAudit: pendingAuditCount,
+            rejectedAudit: 0,
+            deleted: 0,
+            latestUpdateTime: '2026-04-02 18:00:00',
+          },
+        }),
+      })
+    })
+
+    await page.route('**/api/admin/website/12', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          msg: '查询成功',
+          data: {
+            id: 12,
+            name: '待审核站点',
+            url: 'https://example.com',
+            icon: '',
+            summary: 'summary',
+            description: 'desc',
+            categoryId: 1,
+            categoryName: '软件架构',
+            clickCount: 0,
+            likeCount: 0,
+            collectCount: 0,
+            commentCount: 0,
+            score: 5,
+            scoreCount: 1,
+            tags: 'A',
+            tagNameList: ['工具集'],
+            isTop: 0,
+            isRecommend: 0,
+            isOfficial: 0,
+            status: 0,
+            sort: 0,
+            source: 1,
+            githubUrl: 'https://github.com/example/project',
+            submitterId: 2001,
+            submitterName: '投稿用户A',
+            auditStatus: detailAuditStatus,
+            auditRemark: '',
+            createTime: '2026-04-02 10:00:00',
+            updateTime: '2026-04-02 18:00:00',
+            deleted: 0,
+            shelfTime: '',
+            takedownTime: '',
+            auditAdminId: 9001,
+            auditAdminName: '超级管理员',
+          },
+        }),
+      })
+    })
+
+    await page.route('**/api/admin/website/12/audit', async (route) => {
+      pendingAuditCount = Math.max(0, pendingAuditCount - 1)
+      detailAuditStatus = 1
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 200, msg: '操作成功', data: true }),
+      })
+    })
+
+    await page.goto('/computer/admin/websites/12')
+    await expect(page).toHaveURL('/computer/admin/websites/12')
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.getByTestId('admin-menu-websites-pending-badge')).toHaveText('2')
+
+    await page.getByRole('button', { name: '审核通过' }).click()
+
+    await expect(page.getByTestId('admin-menu-websites-pending-badge')).toHaveText('1')
   })
 })

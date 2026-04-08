@@ -3,6 +3,8 @@ import { computed, reactive, shallowRef } from 'vue'
 
 export type AdminMenuKey = 'websites' | 'tags' | 'dashboard' | 'users' | 'comments'
 
+export type WebsiteAuditTabKey = 'pending' | 'audited'
+
 export type WebsiteCategoryNavItem = {
   id: number
   name: string
@@ -55,6 +57,8 @@ const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
 
 export const useAdminNavStore = defineStore('adminNav', () => {
   const activeMenu = shallowRef<AdminMenuKey>('websites')
+  const selectedWebsiteAuditTab = shallowRef<WebsiteAuditTabKey>('pending')
+  const pendingAuditCount = shallowRef(0)
   const websiteCategories = shallowRef<WebsiteCategoryNavItem[]>([])
   const selectedCategoryId = shallowRef<number>(ALL_CATEGORY_ID)
   const mobileSidebarOpen = shallowRef(false)
@@ -76,7 +80,17 @@ export const useAdminNavStore = defineStore('adminNav', () => {
     return websiteCategories.value.find((item) => item.id === selectedCategoryId.value) ?? null
   })
 
+  const selectedAuditTabLabel = computed(() => {
+    if (selectedWebsiteAuditTab.value === 'pending') {
+      return '待审核网站'
+    }
+    return '已审核网站'
+  })
+
   const selectedCategoryLabel = computed(() => {
+    if (activeMenu.value === 'websites') {
+      return selectedAuditTabLabel.value
+    }
     if (!selectedCategory.value) {
       return '全部分类'
     }
@@ -85,7 +99,7 @@ export const useAdminNavStore = defineStore('adminNav', () => {
 
   const selectedTreeKey = computed(() => {
     if (activeMenu.value === 'websites') {
-      return `category:${selectedCategoryId.value}`
+      return `audit:${selectedWebsiteAuditTab.value}`
     }
     return `menu:${activeMenu.value}`
   })
@@ -109,6 +123,23 @@ export const useAdminNavStore = defineStore('adminNav', () => {
     selectedCategoryId.value = categoryId
     activeMenu.value = 'websites'
     expandedKeys['menu:websites'] = true
+  }
+
+  const setSelectedWebsiteAuditTab = (auditTab: WebsiteAuditTabKey): void => {
+    selectedWebsiteAuditTab.value = auditTab
+    activeMenu.value = 'websites'
+    expandedKeys['menu:websites'] = true
+  }
+
+  const setPendingAuditCount = (count: number): void => {
+    pendingAuditCount.value = Math.max(0, Math.trunc(count))
+  }
+
+  const decreasePendingAuditCount = (count = 1): void => {
+    if (count <= 0) {
+      return
+    }
+    pendingAuditCount.value = Math.max(0, pendingAuditCount.value - Math.trunc(count))
   }
 
   const setMobileSidebarOpen = (open: boolean): void => {
@@ -154,11 +185,21 @@ export const useAdminNavStore = defineStore('adminNav', () => {
       if (!Number.isNaN(rawCategory)) {
         setSelectedCategoryId(rawCategory)
       }
+      return
+    }
+
+    if (treeKey.startsWith('audit:')) {
+      const rawAuditTab = treeKey.replace('audit:', '')
+      if (rawAuditTab === 'pending' || rawAuditTab === 'audited') {
+        setSelectedWebsiteAuditTab(rawAuditTab)
+      }
     }
   }
 
   return {
     activeMenu,
+    selectedWebsiteAuditTab,
+    pendingAuditCount,
     websiteCategories,
     selectedCategoryId,
     mobileSidebarOpen,
@@ -168,11 +209,15 @@ export const useAdminNavStore = defineStore('adminNav', () => {
     activeMenuLabel,
     isWebsiteMenuActive,
     selectedCategory,
+    selectedAuditTabLabel,
     selectedCategoryLabel,
     selectedTreeKey,
     setActiveMenu,
     setWebsiteCategories,
     setSelectedCategoryId,
+    setSelectedWebsiteAuditTab,
+    setPendingAuditCount,
+    decreasePendingAuditCount,
     setMobileSidebarOpen,
     toggleMobileSidebar,
     closeMobileSidebar,

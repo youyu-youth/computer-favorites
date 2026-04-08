@@ -33,6 +33,13 @@ public class AdminWebsiteQueryDTO {
     private Integer auditStatus;
 
     /**
+     * 审核分组：0待审核，1已审核（已通过+已拒绝）
+     */
+    @Min(value = 0, message = "审核分组参数不合法")
+    @Max(value = 1, message = "审核分组参数不合法")
+    private Integer auditBucket;
+
+    /**
      * 删除筛选：-1全部，0未删除，1已删除
      */
     @Min(value = -1, message = "删除筛选参数不合法")

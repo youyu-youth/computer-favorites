@@ -20,7 +20,7 @@ const adminNavStore = useAdminNavStore()
 const router = useRouter()
 const route = useRoute()
 
-const { menuItems, activeMenu, activeMenuLabel, isWebsiteMenuActive, selectedCategoryLabel } =
+const { menuItems, activeMenu, activeMenuLabel, isWebsiteMenuActive, selectedAuditTabLabel } =
   storeToRefs(adminNavStore)
 
 type BreadcrumbItem = {
@@ -34,6 +34,7 @@ type BreadcrumbItem = {
 
 const goWebsites = async () => {
   adminNavStore.setActiveMenu('websites')
+  adminNavStore.setSelectedWebsiteAuditTab('pending')
   adminNavStore.setSelectedCategoryId(0)
   emit('go-websites-root')
   if (route.name === 'adminWebsites') {
@@ -93,8 +94,8 @@ const breadcrumbItems = computed(() => {
       })
     } else {
       items.push({
-        key: `category-${selectedCategoryLabel.value}`,
-        label: selectedCategoryLabel.value,
+        key: `audit-tab-${selectedAuditTabLabel.value}`,
+        label: selectedAuditTabLabel.value,
         level: 3,
         current: true,
         clickable: true,

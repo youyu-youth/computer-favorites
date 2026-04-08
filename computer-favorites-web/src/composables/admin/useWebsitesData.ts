@@ -139,7 +139,7 @@ function mapRecordToCard(record: AdminWebsiteListItem): WebsiteCardItem {
 export function useWebsitesData() {
   const adminNavStore = useAdminNavStore()
   const { add: showToast } = useToast()
-  const { selectedCategoryId, activeMenu } = storeToRefs(adminNavStore)
+  const { selectedCategoryId, selectedWebsiteAuditTab, activeMenu } = storeToRefs(adminNavStore)
 
   const viewMode = ref('grid')
   const searchQuery = ref('')
@@ -264,6 +264,15 @@ export function useWebsitesData() {
     stats.value = await getAdminWebsiteStats(deletedFilter.value)
   }
 
+  const syncPendingAuditBadgeCount = async () => {
+    try {
+      const pendingStats = await getAdminWebsiteStats(0)
+      adminNavStore.setPendingAuditCount(Number(pendingStats.pendingAudit || 0))
+    } catch {
+      // 静默失败，避免因角标同步失败影响主列表加载。
+    }
+  }
+
   const loadWebsitePage = async (options?: LoadWebsitePageOptions) => {
     if (activeMenu.value !== 'websites') {
       return
@@ -284,6 +293,7 @@ export function useWebsitesData() {
         deleted: deletedFilter.value,
         categoryId:
           selectedCategoryId.value === ALL_CATEGORY_ID ? undefined : selectedCategoryId.value,
+        auditBucket: selectedWebsiteAuditTab.value === 'pending' ? 0 : 1,
         keyword: searchQuery.value,
       })
 
@@ -357,7 +367,7 @@ export function useWebsitesData() {
       errorMessage.value = ''
     }
     try {
-      await Promise.all([loadCategories(), loadStats()])
+      await Promise.all([loadCategories(), loadStats(), syncPendingAuditBadgeCount()])
       await loadWebsitePage({ silent: silentListLoading })
     } catch (error) {
       if (!silentListLoading) {
@@ -470,6 +480,10 @@ export function useWebsitesData() {
       const result = await batchAuditAdminWebsite({ websiteIds, action, remark })
       clearSelection()
 
+      if (result.successCount > 0) {
+        adminNavStore.decreasePendingAuditCount(result.successCount)
+      }
+
       if (result.failedCount > 0) {
         const failedPreview = result.failItems
           .slice(0, 3)
@@ -535,6 +549,19 @@ export function useWebsitesData() {
     if (activeMenu.value !== 'websites') {
       return
     }
+    currentPage.value = 1
+    clearSelection()
+    await loadWebsitePage()
+  })
+
+  watch(selectedWebsiteAuditTab, async (nextValue, previousValue) => {
+    if (nextValue === previousValue) {
+      return
+    }
+    if (activeMenu.value !== 'websites') {
+      return
+    }
+
     currentPage.value = 1
     clearSelection()
     await loadWebsitePage()

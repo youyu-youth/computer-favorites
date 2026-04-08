@@ -15,8 +15,11 @@ import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
+import com.yyyouth.model.pojo.admin.AdminAccount;
+import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.system.AuditLog;
 import com.yyyouth.model.pojo.system.SystemMessage;
+import com.yyyouth.model.pojo.website.Tag;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
 import com.yyyouth.model.vo.admin.AdminWebsiteBatchAuditFailItemVO;
@@ -30,12 +33,16 @@ import com.yyyouth.model.vo.admin.AdminWebsiteStatsVO;
 import com.yyyouth.model.vo.file.MinioUploadVO;
 import com.yyyouth.service.admin.website.AdminWebsiteService;
 import com.yyyouth.service.file.MinioFileService;
+import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.mapper.system.AuditLogMapper;
 import com.yyyouth.service.mapper.system.SystemMessageMapper;
+import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
+import com.yyyouth.service.mapper.website.TagMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
 import com.yyyouth.service.user.auth.support.StpAdminUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -63,6 +70,7 @@ import java.util.stream.Collectors;
 @Service
 @Validated
 @RequiredArgsConstructor
+@Slf4j
 public class AdminWebsiteServiceImpl implements AdminWebsiteService {
 
     private static final int ALL_DELETED_FLAG = -1;
@@ -80,6 +88,10 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
     private static final int AUDIT_APPROVED_STATUS = 1;
 
     private static final int AUDIT_REJECTED_STATUS = 2;
+
+    private static final int AUDIT_BUCKET_PENDING = 0;
+
+    private static final int AUDIT_BUCKET_AUDITED = 1;
 
     private static final int CATEGORY_ENABLED_STATUS = 1;
 
@@ -134,6 +146,12 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
     private final SystemMessageMapper systemMessageMapper;
 
     private final AuditLogMapper auditLogMapper;
+
+    private final TagMapper tagMapper;
+
+    private final UserAccountMapper userAccountMapper;
+
+    private final AdminAccountMapper adminAccountMapper;
 
     /**
      * 查询网站分页列表
@@ -196,6 +214,9 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
 
         AdminWebsiteDetailVO detailVO = BeanUtil.copyProperties(website, AdminWebsiteDetailVO.class);
         detailVO.setCategoryName(resolveCategoryName(website.getCategoryId()));
+        detailVO.setTagNameList(resolveTagNameList(website.getTags()));
+        detailVO.setSubmitterName(resolveSubmitterName(website.getSubmitterId()));
+        detailVO.setAuditAdminName(resolveAuditAdminName(website.getAuditAdminId()));
         return detailVO;
     }
 
@@ -319,17 +340,21 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void editWebsite(Long websiteId, AdminWebsiteEditDTO editDTO) {
-        queryAvailableWebsiteById(websiteId);
+        Website website = queryAvailableWebsiteById(websiteId);
+        String normalizedIcon = normalizeOptionalText(editDTO.getIcon());
+        String originalIcon = normalizeOptionalText(website.getIcon());
 
         validateCategoryForCreate(editDTO.getCategoryId());
         validateSensitiveFields(editDTO);
-        validateIconValue(editDTO.getIcon());
+        if (!Objects.equals(normalizedIcon, originalIcon)) {
+            validateIconValue(editDTO.getIcon());
+        }
 
         Website updateEntity = new Website();
         updateEntity.setId(websiteId);
         updateEntity.setName(normalizeRequiredText(editDTO.getName()));
         updateEntity.setUrl(normalizeUrl(editDTO.getUrl()));
-        updateEntity.setIcon(normalizeOptionalText(editDTO.getIcon()));
+        updateEntity.setIcon(normalizedIcon);
         updateEntity.setSummary(normalizeOptionalText(editDTO.getSummary()));
         updateEntity.setDescription(normalizeOptionalText(editDTO.getDescription()));
         updateEntity.setCategoryId(editDTO.getCategoryId());
@@ -337,6 +362,19 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         updateEntity.setSort(editDTO.getSort() == null ? DEFAULT_SORT : editDTO.getSort());
         updateEntity.setIsTop(Boolean.TRUE.equals(editDTO.getIsTop()) ? 1 : 0);
         updateEntity.setIsRecommend(Boolean.TRUE.equals(editDTO.getIsRecommend()) ? 1 : 0);
+
+        boolean hasAuditFieldChange = editDTO.getIsOfficial() != null || editDTO.getAuditRemark() != null;
+        if (Objects.equals(website.getAuditStatus(), AUDIT_PENDING_STATUS)) {
+            if (editDTO.getIsOfficial() != null) {
+                updateEntity.setIsOfficial(Boolean.TRUE.equals(editDTO.getIsOfficial()) ? 1 : 0);
+            }
+            if (editDTO.getAuditRemark() != null) {
+                updateEntity.setAuditRemark(normalizeAuditRemark(editDTO.getAuditRemark()));
+            }
+        } else if (hasAuditFieldChange) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "仅待审核网站允许修改审核备注与官方标识");
+        }
+
         updateEntity.setUpdateTime(LocalDateTime.now());
 
         int affectedRows = websiteMapper.updateById(updateEntity);
@@ -551,6 +589,8 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
 
         if (queryDTO.getAuditStatus() != null) {
             queryWrapper.eq(Website::getAuditStatus, queryDTO.getAuditStatus());
+        } else if (queryDTO.getAuditBucket() != null) {
+            appendAuditBucketCondition(queryWrapper, queryDTO.getAuditBucket());
         }
 
         if (StringUtils.hasText(queryDTO.getKeyword())) {
@@ -565,6 +605,24 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
                     .like(Website::getDescription, normalizedKeyword));
         }
         return queryWrapper;
+    }
+
+    /**
+     * 应用审核分组筛选条件
+     *
+     * @param queryWrapper 查询条件
+     * @param auditBucket 审核分组
+     */
+    private void appendAuditBucketCondition(LambdaQueryWrapper<Website> queryWrapper, Integer auditBucket) {
+        if (Objects.equals(auditBucket, AUDIT_BUCKET_PENDING)) {
+            queryWrapper.eq(Website::getAuditStatus, AUDIT_PENDING_STATUS);
+            return;
+        }
+        if (Objects.equals(auditBucket, AUDIT_BUCKET_AUDITED)) {
+            queryWrapper.in(Website::getAuditStatus, Arrays.asList(AUDIT_APPROVED_STATUS, AUDIT_REJECTED_STATUS));
+            return;
+        }
+        throw new BusinessException(HttpStatus.BAD_REQUEST, "审核分组参数不合法");
     }
 
     /**
@@ -612,6 +670,120 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
             return "";
         }
         return category.getName();
+    }
+
+    /**
+     * 查询提交用户名称
+     *
+     * @param submitterId 提交用户ID
+     * @return 提交用户名称
+     */
+    private String resolveSubmitterName(Long submitterId) {
+        if (submitterId == null || submitterId <= 0) {
+            return "";
+        }
+        UserAccount userAccount = userAccountMapper.selectById(submitterId);
+        if (userAccount == null) {
+            return "";
+        }
+        return resolveDisplayName(userAccount.getNickname(), userAccount.getUsername());
+    }
+
+    /**
+     * 查询审核管理员名称
+     *
+     * @param auditAdminId 审核管理员ID
+     * @return 审核管理员名称
+     */
+    private String resolveAuditAdminName(Integer auditAdminId) {
+        if (auditAdminId == null || auditAdminId <= 0) {
+            return "";
+        }
+        AdminAccount adminAccount = adminAccountMapper.selectById(Long.valueOf(auditAdminId));
+        if (adminAccount == null) {
+            return "";
+        }
+        return resolveDisplayName(adminAccount.getNickname(), adminAccount.getUsername());
+    }
+
+    /**
+     * 解析标签名称列表
+     *
+     * @param tagsRaw 原始标签文本
+     * @return 标签名称列表
+     */
+    private List<String> resolveTagNameList(String tagsRaw) {
+        List<Long> tagIds = parseTagIds(tagsRaw);
+        if (CollUtil.isEmpty(tagIds)) {
+            return Collections.emptyList();
+        }
+
+        List<Tag> tagList = tagMapper.selectList(new LambdaQueryWrapper<Tag>()
+                .in(Tag::getId, tagIds)
+                .eq(Tag::getDeleted, NOT_DELETED));
+        if (CollUtil.isEmpty(tagList)) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, String> tagNameMap = tagList.stream()
+                .filter(tag -> tag.getId() != null && StringUtils.hasText(tag.getName()))
+                .collect(Collectors.toMap(Tag::getId, Tag::getName, (left, right) -> left));
+
+        return tagIds.stream()
+                .map(tagNameMap::get)
+                .filter(StringUtils::hasText)
+                .toList();
+    }
+
+    /**
+     * 解析标签ID列表
+     *
+     * @param tagsRaw 原始标签文本
+     * @return 标签ID列表
+     */
+    private List<Long> parseTagIds(String tagsRaw) {
+        if (!StringUtils.hasText(tagsRaw)) {
+            return Collections.emptyList();
+        }
+
+        return Arrays.stream(tagsRaw.replace('，', ',').split(","))
+                .map(tag -> tag.replaceAll("\\s+", ""))
+                .filter(StringUtils::hasText)
+                .map(this::parseLongSafely)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
+    /**
+     * 安全解析 Long
+     *
+     * @param value 原始值
+     * @return Long 结果
+     */
+    private Long parseLongSafely(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    /**
+     * 解析展示名称
+     *
+     * @param nickname 昵称
+     * @param username 用户名
+     * @return 展示名称
+     */
+    private String resolveDisplayName(String nickname, String username) {
+        if (StringUtils.hasText(nickname)) {
+            return nickname.trim();
+        }
+        if (StringUtils.hasText(username)) {
+            return username.trim();
+        }
+        return "";
     }
 
     /**
@@ -929,7 +1101,12 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         auditLog.setResult(AUDIT_SUCCESS_RESULT);
         auditLog.setCreateTime(operationTime);
 
-        auditLogMapper.insert(auditLog);
+        try {
+            auditLogMapper.insert(auditLog);
+        } catch (Exception ex) {
+            log.error("写入网站审核审计日志失败，websiteId={}, action={}, adminId={}",
+                    originWebsite.getId(), action, adminId, ex);
+        }
     }
 
     /**
@@ -989,6 +1166,7 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         checkSensitiveField("一句话简介", normalizeOptionalText(editDTO.getSummary()));
         checkSensitiveField("详细描述", normalizeOptionalText(editDTO.getDescription()));
         checkSensitiveField("标签", normalizeTags(editDTO.getTags()));
+        checkSensitiveField("审核备注", normalizeAuditRemark(editDTO.getAuditRemark()));
     }
 
     /**

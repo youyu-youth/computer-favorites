@@ -4,6 +4,8 @@ export type AdminWebsiteStatusValue = 0 | 1
 
 export type AdminWebsiteAuditStatusValue = 0 | 1 | 2
 
+export type AdminWebsiteAuditBucketValue = 0 | 1
+
 export type AdminWebsiteAuditActionValue = 1 | 2
 
 export interface AdminWebsiteListQuery {
@@ -12,6 +14,7 @@ export interface AdminWebsiteListQuery {
   deleted: DeletedFilterValue
   categoryId?: number
   auditStatus?: AdminWebsiteAuditStatusValue
+  auditBucket?: AdminWebsiteAuditBucketValue
   keyword?: string
 }
 
@@ -55,12 +58,16 @@ export interface AdminWebsiteDetail {
   score: number
   scoreCount: number
   tags?: string
+  tagNameList?: string[]
   isTop: number
   isRecommend: number
+  isOfficial: number
   status: AdminWebsiteStatusValue
   sort: number
   source: number
+  githubUrl?: string
   submitterId?: number
+  submitterName?: string
   auditStatus: number
   auditRemark?: string
   createTime?: string
@@ -69,6 +76,7 @@ export interface AdminWebsiteDetail {
   shelfTime?: string
   takedownTime?: string
   auditAdminId?: number
+  auditAdminName?: string
 }
 
 export interface AdminWebsitePage {
@@ -123,6 +131,8 @@ export interface AdminWebsiteEditPayload {
   tags?: string
   isTop: boolean
   isRecommend: boolean
+  isOfficial?: boolean
+  auditRemark?: string
   sort: number
 }
 

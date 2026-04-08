@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * @author yyyouth zg
@@ -90,6 +91,11 @@ public class AdminWebsiteDetailVO {
     private String tags;
 
     /**
+     * 标签名称列表
+     */
+    private List<String> tagNameList;
+
+    /**
      * 是否置顶
      */
     private Integer isTop;
@@ -130,6 +136,16 @@ public class AdminWebsiteDetailVO {
     private String auditRemark;
 
     /**
+     * 是否官方
+     */
+    private Integer isOfficial;
+
+    /**
+     * Github 地址
+     */
+    private String githubUrl;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
@@ -158,4 +174,14 @@ public class AdminWebsiteDetailVO {
      * 审核管理员ID
      */
     private Integer auditAdminId;
+
+    /**
+     * 提交用户名称
+     */
+    private String submitterName;
+
+    /**
+     * 审核管理员名称
+     */
+    private String auditAdminName;
 }

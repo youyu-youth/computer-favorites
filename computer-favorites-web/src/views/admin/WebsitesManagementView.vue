@@ -92,6 +92,7 @@ const handleEditWebsite = (websiteId: number) => {
 
 const handleGoWebsitesRoot = () => {
   viewMode.value = 'grid'
+  adminNavStore.setSelectedWebsiteAuditTab('pending')
   adminNavStore.setSelectedCategoryId(0)
 }
 

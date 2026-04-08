@@ -76,6 +76,17 @@ public class AdminWebsiteEditDTO {
     private Boolean isRecommend = Boolean.FALSE;
 
     /**
+     * 是否官方
+     */
+    private Boolean isOfficial;
+
+    /**
+     * 审核备注（仅待审核网站可更新）
+     */
+    @Size(max = 500, message = "审核备注长度不能超过500")
+    private String auditRemark;
+
+    /**
      * 排序值
      */
     @NotNull(message = "排序值不能为空")

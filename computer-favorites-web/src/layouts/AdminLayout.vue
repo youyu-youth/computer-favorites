@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminHeader from '@/components/admin/layout/AdminHeader.vue'

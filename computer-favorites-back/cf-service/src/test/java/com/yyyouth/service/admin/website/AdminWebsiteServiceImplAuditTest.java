@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yyyouth.model.dto.admin.AdminWebsiteAuditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteBatchAuditDTO;
+import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
 import com.yyyouth.model.pojo.system.AuditLog;
 import com.yyyouth.model.pojo.system.SystemMessage;
 import com.yyyouth.model.pojo.website.Website;
@@ -13,7 +14,10 @@ import com.yyyouth.service.admin.website.impl.AdminWebsiteServiceImpl;
 import com.yyyouth.service.file.MinioFileService;
 import com.yyyouth.service.mapper.system.AuditLogMapper;
 import com.yyyouth.service.mapper.system.SystemMessageMapper;
+import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
+import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
+import com.yyyouth.service.mapper.website.TagMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
 import com.yyyouth.service.user.auth.support.StpAdminUtil;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
@@ -29,6 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,6 +63,15 @@ class AdminWebsiteServiceImplAuditTest {
 
     @Mock
     private AuditLogMapper auditLogMapper;
+
+    @Mock
+    private TagMapper tagMapper;
+
+    @Mock
+    private UserAccountMapper userAccountMapper;
+
+    @Mock
+    private AdminAccountMapper adminAccountMapper;
 
     @InjectMocks
     private AdminWebsiteServiceImpl adminWebsiteService;
@@ -186,5 +200,76 @@ class AdminWebsiteServiceImplAuditTest {
         assertThat(resultVO.getSuccessCount()).isEqualTo(1);
         assertThat(resultVO.getFailedCount()).isEqualTo(2);
         assertThat(resultVO.getFailItems()).hasSize(2);
+    }
+
+    /**
+     * 审核通过时审计日志写入失败不应影响主流程
+     */
+    @Test
+    void shouldApproveSubmissionWhenAuditLogInsertFails() {
+        Website pendingWebsite = new Website();
+        pendingWebsite.setId(302L);
+        pendingWebsite.setDeleted(0);
+        pendingWebsite.setSource(1);
+        pendingWebsite.setSubmitterId(1201L);
+        pendingWebsite.setAuditStatus(0);
+        pendingWebsite.setStatus(0);
+
+        when(websiteMapper.selectOne(any())).thenReturn(pendingWebsite);
+        when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
+        when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
+        when(auditLogMapper.insert(any(AuditLog.class))).thenThrow(new RuntimeException("missing audit table"));
+
+        AdminWebsiteAuditDTO auditDTO = new AdminWebsiteAuditDTO();
+        auditDTO.setAction(1);
+
+        try (MockedStatic<StpAdminUtil> stpAdminUtilMock = org.mockito.Mockito.mockStatic(StpAdminUtil.class)) {
+            stpAdminUtilMock.when(StpAdminUtil::getLoginIdAsLong).thenReturn(ADMIN_ID);
+            assertThatCode(() -> adminWebsiteService.auditWebsite(302L, auditDTO))
+                    .doesNotThrowAnyException();
+        }
+
+        verify(websiteMapper).updateById(any(Website.class));
+        verify(systemMessageMapper).insert(any(SystemMessage.class));
+        verify(auditLogMapper).insert(any(AuditLog.class));
+    }
+
+    /**
+     * 待审核配置保存时沿用原 Logo 地址不应触发 Logo 前缀校验
+     */
+    @Test
+    void shouldEditPendingFieldsWithExternalIconWhenIconUnchanged() {
+        Website pendingWebsite = new Website();
+        pendingWebsite.setId(301L);
+        pendingWebsite.setDeleted(0);
+        pendingWebsite.setAuditStatus(0);
+        pendingWebsite.setIcon("https://cdn.example.com/logo.png");
+
+        WebsiteCategory enabledCategory = new WebsiteCategory();
+        enabledCategory.setId(11L);
+        enabledCategory.setStatus(1);
+
+        when(websiteMapper.selectOne(any())).thenReturn(pendingWebsite);
+        when(categoryMapper.selectOne(any())).thenReturn(enabledCategory);
+        when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
+
+        AdminWebsiteEditDTO editDTO = new AdminWebsiteEditDTO();
+        editDTO.setName("示例站点");
+        editDTO.setUrl("https://example.com");
+        editDTO.setIcon("https://cdn.example.com/logo.png");
+        editDTO.setSummary("摘要");
+        editDTO.setDescription("描述");
+        editDTO.setCategoryId(11L);
+        editDTO.setTags("1,2");
+        editDTO.setIsTop(Boolean.FALSE);
+        editDTO.setIsRecommend(Boolean.TRUE);
+        editDTO.setIsOfficial(Boolean.TRUE);
+        editDTO.setAuditRemark("待审核备注");
+        editDTO.setSort(10);
+
+        assertThatCode(() -> adminWebsiteService.editWebsite(301L, editDTO))
+                .doesNotThrowAnyException();
+
+        verify(websiteMapper).updateById(any(Website.class));
     }
 }
