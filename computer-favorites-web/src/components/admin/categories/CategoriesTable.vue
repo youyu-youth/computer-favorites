@@ -54,16 +54,16 @@ const handleSort = (event: DataTableSortEvent): void => {
 
 const selectionCheckboxPt = {
   pcHeaderCheckbox: {
-    root: { class: 'cf-tag-table-checkbox-root' },
-    input: { class: 'cf-tag-table-checkbox-input' },
-    box: { class: 'cf-tag-table-checkbox-box' },
-    icon: { class: 'cf-tag-table-checkbox-icon' },
+    root: { class: 'relative inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center align-bottom' },
+    input: { class: 'absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0' },
+    box: { class: 'flex h-4 w-4 items-center justify-center rounded border border-gray-300 bg-white transition-colors dark:border-dark-border dark:bg-dark-bg [&[data-p-checked=true]]:border-blue-600 [&[data-p-checked=true]]:bg-blue-600 [&[data-p-checked=true]]:dark:border-blue-500 [&[data-p-checked=true]]:dark:bg-blue-500' },
+    icon: { class: 'h-2.5 w-2.5 text-white transition-opacity' },
   },
   pcRowCheckbox: {
-    root: { class: 'cf-tag-table-checkbox-root' },
-    input: { class: 'cf-tag-table-checkbox-input' },
-    box: { class: 'cf-tag-table-checkbox-box' },
-    icon: { class: 'cf-tag-table-checkbox-icon' },
+    root: { class: 'relative inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center align-bottom' },
+    input: { class: 'absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0' },
+    box: { class: 'flex h-4 w-4 items-center justify-center rounded border border-gray-300 bg-white transition-colors dark:border-dark-border dark:bg-dark-bg [&[data-p-checked=true]]:border-blue-600 [&[data-p-checked=true]]:bg-blue-600 [&[data-p-checked=true]]:dark:border-blue-500 [&[data-p-checked=true]]:dark:bg-blue-500' },
+    icon: { class: 'h-2.5 w-2.5 text-white transition-opacity' },
   },
 } as const
 </script>
@@ -219,21 +219,3 @@ const selectionCheckboxPt = {
     </div>
   </section>
 </template>
-
-<style scoped>
-:deep(.cf-tag-table-checkbox-root) {
-  @apply relative inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center align-bottom;
-}
-:deep(.cf-tag-table-checkbox-input) {
-  @apply absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0;
-}
-:deep(.cf-tag-table-checkbox-box) {
-  @apply flex h-4 w-4 items-center justify-center rounded border border-gray-300 bg-white transition-colors dark:border-dark-border dark:bg-dark-bg;
-}
-:deep(.cf-tag-table-checkbox-box[data-p-checked='true']) {
-  @apply border-blue-600 bg-blue-600 dark:border-blue-500 dark:bg-blue-500;
-}
-:deep(.cf-tag-table-checkbox-icon) {
-  @apply h-2.5 w-2.5 text-white transition-opacity;
-}
-</style>
