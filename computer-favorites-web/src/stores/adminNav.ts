@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowRef } from 'vue'
 
-export type AdminMenuKey = 'websites' | 'tags' | 'dashboard' | 'users' | 'comments'
+export type AdminMenuKey = 'websites' | 'tags' | 'categories' | 'dashboard' | 'users' | 'comments'
 
 export type WebsiteAuditTabKey = 'pending' | 'audited'
 
@@ -33,6 +33,12 @@ const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
     key: 'tags',
     label: '标签管理',
     icon: 'fas fa-tags',
+    mockOnly: false,
+  },
+  {
+    key: 'categories',
+    label: '分类管理',
+    icon: 'fas fa-folder-tree',
     mockOnly: false,
   },
   {
@@ -171,11 +177,12 @@ export const useAdminNavStore = defineStore('adminNav', () => {
       if (
         rawMenu === 'websites' ||
         rawMenu === 'tags' ||
+        rawMenu === 'categories' ||
         rawMenu === 'dashboard' ||
         rawMenu === 'users' ||
         rawMenu === 'comments'
       ) {
-        setActiveMenu(rawMenu)
+        setActiveMenu(rawMenu as AdminMenuKey)
       }
       return
     }

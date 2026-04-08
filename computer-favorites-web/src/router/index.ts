@@ -30,7 +30,13 @@ const router = createRouter({
           path: 'tags',
           name: 'adminTags',
           component: () => import('@/views/admin/TagManagementView.vue'),
-          meta: { requiresAdminAuth: true, title: '分类标签' },
+          meta: { requiresAdminAuth: true, title: '标签管理' },
+        },
+        {
+          path: 'categories',
+          name: 'adminCategories',
+          component: () => import('@/views/admin/CategoryManagementView.vue'),
+          meta: { requiresAdminAuth: true, title: '分类管理' },
         },
         {
           path: 'websites',
@@ -233,6 +239,11 @@ router.afterEach((to) => {
 
   if (to.name === 'adminTags') {
     useAdminNavStore().setActiveMenu('tags')
+    return
+  }
+
+  if (to.name === 'adminCategories') {
+    useAdminNavStore().setActiveMenu('categories')
     return
   }
 
