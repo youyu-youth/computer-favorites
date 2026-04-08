@@ -95,6 +95,19 @@ coverage
 
 .eslintcache
 
+# Runtime environment files
+.env*
+
+# Java build outputs
+*.class
+*.jar
+.gradle/
+
+# Universal OS/temp artifacts
+Thumbs.db
+*.tmp
+*.swp
+
 # Cypress
 /cypress/videos/
 /cypress/screenshots/

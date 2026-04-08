@@ -129,6 +129,18 @@ const router = createRouter({
           component: () => import('@/views/user/UploadListView.vue'),
           meta: { requiresAuth: true },
         },
+        {
+          path: 'notifications',
+          name: 'notifications',
+          redirect: '/computer/settings',
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'message-center',
+          name: 'messageCenter',
+          component: () => import('@/views/user/MessageCenterView.vue'),
+          meta: { requiresAuth: true },
+        },
       ],
     },
   ],

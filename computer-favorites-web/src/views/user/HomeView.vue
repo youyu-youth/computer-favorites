@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
 import Drawer from 'primevue/drawer'
 import AppPagination from '@/components/common/AppPagination.vue'
@@ -48,7 +48,7 @@ const loadError = ref('')
 const searchQuery = ref('')
 const activeCategoryId = ref(0)
 const mobileCategoryDrawerOpen = ref(false)
-const categories = ref<CategoryItem[]>([{ id: 0, name: 'All', count: 0 }])
+const categories = ref<CategoryItem[]>([{ id: 0, name: '全部', count: 0 }])
 const resources = ref<ResourceItem[]>([])
 const websiteTags = ref<PublicWebsiteTagItem[]>([])
 const selectedTagIds = ref<number[]>([])
@@ -93,11 +93,11 @@ const mapWebsiteToResource = (item: PublicWebsiteListItem): ResourceItem => {
   return {
     id: item.id,
     name: item.name,
-    desc: item.summary?.trim() || item.description?.trim() || 'No description available.',
+    desc: item.summary?.trim() || item.description?.trim() || '暂无描述。',
     downloads: formatMetricCount(item.clickCount),
     stars: formatMetricCount(item.likeCount),
     collections: formatMetricCount(item.collectCount),
-    category: item.categoryName?.trim() || 'Uncategorized',
+    category: item.categoryName?.trim() || '未分类',
     categoryId: item.categoryId ?? 0,
     url: item.url,
     icon: item.icon || '',
@@ -118,12 +118,27 @@ const mapWebsiteToResource = (item: PublicWebsiteListItem): ResourceItem => {
   }
 }
 
+const referencedWebsiteTags = computed(() => {
+  return websiteTags.value.filter((tag) => Number(tag.useCount || 0) > 0)
+})
+
+const normalizeSelectedTagIds = () => {
+  if (selectedTagIds.value.length === 0) {
+    return
+  }
+
+  const visibleTagIdSet = new Set(referencedWebsiteTags.value.map((tag) => tag.id))
+  selectedTagIds.value = selectedTagIds.value.filter((tagId) => visibleTagIdSet.has(tagId))
+}
+
 const loadWebsiteTags = async () => {
   isTagLoading.value = true
   try {
     websiteTags.value = await getWebsiteTags()
+    normalizeSelectedTagIds()
   } catch {
     websiteTags.value = []
+    selectedTagIds.value = []
   } finally {
     isTagLoading.value = false
   }
@@ -137,7 +152,7 @@ const loadWebsiteCategories = async () => {
     count: Number(category.count || 0),
   }))
   const allCount = mappedCategories.reduce((sum, item) => sum + item.count, 0)
-  categories.value = [{ id: 0, name: 'All', count: allCount }, ...mappedCategories]
+  categories.value = [{ id: 0, name: '全部', count: allCount }, ...mappedCategories]
 }
 
 const loadWebsiteData = async () => {
@@ -168,7 +183,7 @@ const loadWebsiteData = async () => {
     if (requestId === latestRequestId) {
       resources.value = []
       totalPages.value = 1
-      loadError.value = resolveErrorMessage(error, 'Failed to load website resources.')
+      loadError.value = resolveErrorMessage(error, '加载网站资源失败，请稍后重试。')
     }
   } finally {
     if (requestId === latestRequestId) {
@@ -228,8 +243,8 @@ onMounted(() => {
     try {
       await loadWebsiteCategories()
     } catch (error) {
-      categories.value = [{ id: 0, name: 'All', count: 0 }]
-      loadError.value = resolveErrorMessage(error, 'Failed to load website categories.')
+      categories.value = [{ id: 0, name: '全部', count: 0 }]
+      loadError.value = resolveErrorMessage(error, '加载网站分类失败，请稍后重试。')
     }
     await loadWebsiteTags()
     await loadWebsiteData()
@@ -262,9 +277,13 @@ onUnmounted(() => {
       <HomeIntegrationsBar />
 
       <main class="flex-1 flex flex-col p-6 lg:p-10">
-        <h2 class="text-2xl font-bold text-primary-500 mb-8 font-mono">Find Skills</h2>
+        <h2 class="text-2xl font-bold text-primary-500 mb-8 font-mono">发现优质网站</h2>
 
-        <HomeTagFilterBar v-model="selectedTagIds" :tags="websiteTags" :loading="isTagLoading" />
+        <HomeTagFilterBar
+          v-model="selectedTagIds"
+          :tags="referencedWebsiteTags"
+          :loading="isTagLoading"
+        />
 
         <div class="flex flex-col lg:flex-row gap-10 lg:gap-16">
           <aside class="w-full lg:w-64 flex-shrink-0 font-mono text-sm">
@@ -318,7 +337,7 @@ onUnmounted(() => {
               >
                 <template #header>
                   <span class="text-base font-bold text-gray-900 dark:text-gray-100 font-mono"
-                    >Category Filter</span
+                    >分类筛选</span
                   >
                 </template>
                 <ul class="flex flex-col py-2">
@@ -387,7 +406,7 @@ onUnmounted(() => {
                 </svg>
                 <InputText
                   v-model="searchQuery"
-                  placeholder="Search all skills"
+                  placeholder="搜索网站名称、描述或标签"
                   class="bg-transparent border-none outline-none w-full text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:ring-0"
                 />
               </div>
@@ -395,12 +414,12 @@ onUnmounted(() => {
                 <button
                   class="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-1 text-gray-900 dark:text-white"
                 >
-                  DOWNLOADS ↓
+                  点击量 ↓
                 </button>
                 <button
                   class="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
-                  STARS
+                  收藏量
                 </button>
               </div>
             </div>
@@ -409,7 +428,7 @@ onUnmounted(() => {
               v-if="isLoading"
               class="py-20 text-center font-mono text-gray-500 dark:text-gray-400"
             >
-              <p>Loading website resources...</p>
+              <p>正在加载网站资源...</p>
             </div>
 
             <div
@@ -431,7 +450,7 @@ onUnmounted(() => {
             </div>
 
             <div v-else class="py-20 text-center font-mono text-gray-500 dark:text-gray-400">
-              <p>No website resources found matching your criteria.</p>
+              <p>未找到符合条件的网站资源。</p>
             </div>
 
             <div v-if="!isLoading && !loadError">

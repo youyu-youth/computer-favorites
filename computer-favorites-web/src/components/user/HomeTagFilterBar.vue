@@ -20,7 +20,14 @@ const selectedTagIds = computed<number[]>({
   },
 })
 
-const selectedCount = computed(() => selectedTagIds.value.length)
+const visibleTags = computed(() => {
+  return props.tags.filter((tag) => Number(tag.useCount || 0) > 0)
+})
+
+const selectedCount = computed(() => {
+  const visibleTagIdSet = new Set(visibleTags.value.map((tag) => tag.id))
+  return selectedTagIds.value.filter((tagId) => visibleTagIdSet.has(tagId)).length
+})
 
 const isTagSelected = (tagId: number) => {
   return selectedTagIds.value.includes(tagId)
@@ -45,8 +52,8 @@ const clearSelectedTags = () => {
   >
     <div class="flex items-center justify-between gap-3 mb-3">
       <div class="flex items-center gap-2">
-        <h3 class="font-mono text-sm font-bold text-gray-900 dark:text-gray-100">Tag Filter</h3>
-        <span class="text-xs text-gray-500 dark:text-gray-400">{{ selectedCount }} selected</span>
+        <h3 class="font-mono text-sm font-bold text-gray-900 dark:text-gray-100">标签筛选</h3>
+        <span class="text-xs text-gray-500 dark:text-gray-400">已选 {{ selectedCount }} 个</span>
       </div>
       <button
         v-if="selectedCount > 0"
@@ -54,25 +61,25 @@ const clearSelectedTags = () => {
         class="cursor-pointer text-xs font-mono px-2.5 py-1 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
         @click="clearSelectedTags"
       >
-        Clear
+        清空
       </button>
     </div>
 
     <div v-if="loading" class="font-mono text-xs text-gray-500 dark:text-gray-400 py-2">
-      Loading tags...
+      正在加载标签...
     </div>
 
     <div
-      v-else-if="tags.length === 0"
+      v-else-if="visibleTags.length === 0"
       class="font-mono text-xs text-gray-500 dark:text-gray-400 py-2"
     >
-      No tags available.
+      暂无可用标签。
     </div>
 
     <div v-else class="w-full overflow-x-auto pb-1">
       <div class="flex sm:flex-wrap gap-2 min-w-max sm:min-w-0">
         <button
-          v-for="tag in tags"
+          v-for="tag in visibleTags"
           :key="tag.id"
           type="button"
           class="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 border text-xs font-mono transition-colors whitespace-nowrap"
