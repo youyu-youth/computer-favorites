@@ -6,7 +6,7 @@ import TagsStatsCards from '@/components/admin/tags/TagsStatsCards.vue'
 import TagsToolbar from '@/components/admin/tags/TagsToolbar.vue'
 import TagsTable from '@/components/admin/tags/TagsTable.vue'
 import TagEditorModal from '@/components/admin/tags/TagEditorModal.vue'
-import WebsitesPagination from '@/components/admin/websites/WebsitesPagination.vue'
+import AdminPagination from '@/components/admin/common/AdminPagination.vue'
 import { useTagsData } from '@/composables/admin/useTagsData'
 import { useAdminNavStore } from '@/stores/adminNav'
 import type {
@@ -139,7 +139,7 @@ onMounted(() => {
           @delete="handleDeleteTag"
         />
 
-        <WebsitesPagination
+        <AdminPagination
           v-if="totalItems > 0"
           :currentPage="currentPage"
           :totalPages="totalPages"

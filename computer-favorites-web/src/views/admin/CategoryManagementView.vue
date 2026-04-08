@@ -4,6 +4,7 @@ import Dialog from 'primevue/dialog'
 import CategoriesBreadcrumbs from '@/components/admin/categories/CategoriesBreadcrumbs.vue'
 import CategoriesToolbar from '@/components/admin/categories/CategoriesToolbar.vue'
 import CategoriesTable from '@/components/admin/categories/CategoriesTable.vue'
+import AdminPagination from '@/components/admin/common/AdminPagination.vue'
 import CategoryEditorModal from '@/components/admin/categories/CategoryEditorModal.vue'
 import { useCategories } from '@/composables/admin/useCategories'
 import { useAdminNavStore } from '@/stores/adminNav'
@@ -13,6 +14,11 @@ const adminNavStore = useAdminNavStore()
 
 const {
   categories,
+  currentPage,
+  pageSize,
+  totalItems,
+  totalPages,
+  visiblePages,
   searchKeyword,
   sortField,
   sortOrder,
@@ -27,6 +33,7 @@ const {
   selectedCategoryIds,
   stats,
   allCategories,
+  refreshCategories,
 
   setSearchKeyword,
   setSort,
@@ -38,6 +45,9 @@ const {
   closeDeleteDialog,
   confirmDeleteCategory,
   setSelectedCategoryIds,
+  prevPage,
+  nextPage,
+  goToPage,
 } = useCategories()
 
 const updateFormModel = (nextValue: AdminCategoryFormModel): void => {
@@ -67,7 +77,7 @@ const handleDeleteModalOpenChange = (value: boolean): void => {
 }
 
 const refreshData = () => {
-  // mock reload
+  void refreshCategories()
 }
 
 const deleteDialogPt = {
@@ -160,6 +170,18 @@ onMounted(() => {
           @sort-change="handleSortChange"
           @edit="handleEditCategory"
           @delete="handleDeleteCategory"
+        />
+
+        <AdminPagination
+          v-if="totalItems > 0"
+          :currentPage="currentPage"
+          :totalPages="totalPages"
+          :visiblePages="visiblePages"
+          :total="totalItems"
+          :pageSize="pageSize"
+          @prev="prevPage"
+          @next="nextPage"
+          @goto="goToPage"
         />
       </section>
     </div>

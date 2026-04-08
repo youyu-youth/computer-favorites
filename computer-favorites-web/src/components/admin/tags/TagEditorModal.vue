@@ -121,6 +121,13 @@ const updateName = (value: string): void => {
   })
 }
 
+const handleClose = (): void => {
+  if (props.submitting) {
+    return
+  }
+  emit('update:open', false)
+}
+
 const handleOpenChange = (value: boolean): void => {
   emit('update:open', value)
 }
@@ -130,15 +137,26 @@ const handleOpenChange = (value: boolean): void => {
   <Dialog
     :visible="open"
     modal
+    :closable="false"
     :dismissableMask="true"
     :draggable="false"
     :pt="dialogPt"
     @update:visible="handleOpenChange"
   >
     <template #header>
-      <div class="space-y-1">
-        <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ title }}</h3>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ description }}</p>
+      <div class="flex w-full items-start justify-between gap-3">
+        <div class="space-y-1">
+          <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ title }}</h3>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ description }}</p>
+        </div>
+        <button
+          type="button"
+          class="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-none border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#e95322] dark:border-dark-border dark:bg-dark-bg dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+          :disabled="submitting"
+          @click="handleClose"
+        >
+          <i class="fas fa-times text-sm"></i>
+        </button>
       </div>
     </template>
 
@@ -195,7 +213,7 @@ const handleOpenChange = (value: boolean): void => {
         color="neutral"
         variant="soft"
         :disabled="submitting"
-        @click="emit('update:open', false)"
+        @click="handleClose"
       >
         取消
       </UButton>

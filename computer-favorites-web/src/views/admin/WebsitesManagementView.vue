@@ -7,7 +7,7 @@ import WebsitesStatsToolbar from '@/components/admin/websites/WebsitesStatsToolb
 import WebsitesSearchArea from '@/components/admin/websites/WebsitesSearchArea.vue'
 import WebsitesMiniCards from '@/components/admin/websites/WebsitesMiniCards.vue'
 import WebsitesList from '@/components/admin/websites/WebsitesList.vue'
-import WebsitesPagination from '@/components/admin/websites/WebsitesPagination.vue'
+import AdminPagination from '@/components/admin/common/AdminPagination.vue'
 import AdminAddWebsite from '@/components/admin/websites/AdminAddWebsite.vue'
 import UModal from '@/components/ui-adapter/UModal.vue'
 import UButton from '@/components/ui-adapter/UButton.vue'
@@ -222,7 +222,7 @@ const confirmDeleteWebsite = async () => {
                 <p>No servers found matching "{{ searchQuery }}"</p>
               </div>
 
-              <WebsitesPagination
+              <AdminPagination
                 v-if="!loading && !errorMessage && filteredServers.length > 0"
                 :currentPage="currentPage"
                 :totalPages="totalPages"

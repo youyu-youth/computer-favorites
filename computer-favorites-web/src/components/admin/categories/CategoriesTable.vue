@@ -124,7 +124,10 @@ const selectionCheckboxPt = {
           bodyClass="px-4 py-3"
         >
           <template #body="{ data }">
-            <div class="flex items-center gap-2" :class="{ 'pl-6': data.parentId }">
+            <div
+              class="flex items-center gap-2"
+              :style="{ paddingLeft: `${Math.max(0, (data.depth || 0) * 20)}px` }"
+            >
               <i v-if="data.icon" :class="[data.icon, 'text-gray-500']"></i>
               <i v-else class="fas fa-folder text-gray-400"></i>
               <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ data.name }}</span>
