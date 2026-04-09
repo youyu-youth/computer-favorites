@@ -39,6 +39,12 @@ const router = createRouter({
           meta: { requiresAdminAuth: true, title: '分类管理' },
         },
         {
+          path: 'users',
+          name: 'adminUsers',
+          component: () => import('@/views/admin/UserManagementView.vue'),
+          meta: { requiresAdminAuth: true, title: '用户管理' },
+        },
+        {
           path: 'websites',
           name: 'adminWebsites',
           component: WebsitesManagementView,
@@ -244,6 +250,11 @@ router.afterEach((to) => {
 
   if (to.name === 'adminCategories') {
     useAdminNavStore().setActiveMenu('categories')
+    return
+  }
+
+  if (to.name === 'adminUsers') {
+    useAdminNavStore().setActiveMenu('users')
     return
   }
 

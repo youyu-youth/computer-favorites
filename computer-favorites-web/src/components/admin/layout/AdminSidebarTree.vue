@@ -77,6 +77,10 @@ const navigateByMenu = async (menuKey: AdminMenuKey): Promise<void> => {
   if (menuKey === 'categories' && route.name !== 'adminCategories') {
     await router.push({ name: 'adminCategories' })
   }
+
+  if (menuKey === 'users' && route.name !== 'adminUsers') {
+    await router.push({ name: 'adminUsers' })
+  }
 }
 
 const goWebsitesRoot = async (): Promise<void> => {

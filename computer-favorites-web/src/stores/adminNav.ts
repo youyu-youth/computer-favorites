@@ -51,7 +51,7 @@ const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
     key: 'users',
     label: '用户管理',
     icon: 'fas fa-users',
-    mockOnly: true,
+    mockOnly: false,
   },
   {
     key: 'comments',

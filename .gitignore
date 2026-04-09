@@ -64,6 +64,9 @@ context7.json
 .augment
 .augment/
 
+
+.mcp.json
+
 ### 前端规范
 # Logs
 logs
