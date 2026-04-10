@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import UsersBreadcrumbs from '@/components/admin/users/UsersBreadcrumbs.vue'
 import UsersToolbar from '@/components/admin/users/UsersToolbar.vue'
@@ -8,214 +8,32 @@ import AdminPagination from '@/components/admin/common/AdminPagination.vue'
 import UserEditorModal from '@/components/admin/users/UserEditorModal.vue'
 import UserDetailModal from '@/components/admin/users/UserDetailModal.vue'
 import { useAdminNavStore } from '@/stores/adminNav'
-import type { AdminUserItem, AdminUserFormModel } from '@/types/user'
+import type { AdminUserItem, AdminUserFormModel, AdminUserStats } from '@/types/user'
+import {
+  getAdminUserPage,
+  getAdminUserStats,
+  updateAdminUserStatus,
+  resetAdminUserPassword,
+  kickAdminUserSessions,
+} from '@/api/admin-user'
 
 const adminNavStore = useAdminNavStore()
 
-/* ---- 假数据 ---- */
-const MOCK_USERS: AdminUserItem[] = [
-  {
-    id: 1,
-    username: 'admin_zhang',
-    email: 'zhang@example.com',
-    phone: '13800138001',
-    nickname: '张三',
-    avatar: null,
-    status: 1,
-    emailVerified: 1,
-    phoneVerified: 1,
-    lastLoginTime: '2025-04-08 09:32:10',
-    lastLoginIp: '192.168.1.100',
-    createTime: '2024-01-10 08:00:00',
-    updateTime: '2025-04-08 09:32:10',
-    deleted: 0,
-  },
-  {
-    id: 2,
-    username: 'li_si_dev',
-    email: 'lisi@tech.io',
-    phone: null,
-    nickname: '李四',
-    avatar: null,
-    status: 1,
-    emailVerified: 1,
-    phoneVerified: 0,
-    lastLoginTime: '2025-04-07 15:20:00',
-    lastLoginIp: '10.0.0.55',
-    createTime: '2024-02-14 12:30:00',
-    updateTime: '2025-04-07 15:20:00',
-    deleted: 0,
-  },
-  {
-    id: 3,
-    username: 'wang_wu',
-    email: 'wangwu@mail.com',
-    phone: '13900139003',
-    nickname: '王五',
-    avatar: null,
-    status: 0,
-    emailVerified: 0,
-    phoneVerified: 0,
-    lastLoginTime: '2025-03-01 11:00:00',
-    lastLoginIp: '172.16.0.22',
-    createTime: '2024-03-20 09:15:00',
-    updateTime: '2025-03-01 11:00:00',
-    deleted: 0,
-  },
-  {
-    id: 4,
-    username: 'zhao_liu',
-    email: 'zhaoliu@cs.edu',
-    phone: '13700137004',
-    nickname: '赵六',
-    avatar: null,
-    status: 1,
-    emailVerified: 1,
-    phoneVerified: 1,
-    lastLoginTime: '2025-04-09 08:50:00',
-    lastLoginIp: '192.168.0.10',
-    createTime: '2024-05-01 07:00:00',
-    updateTime: '2025-04-09 08:50:00',
-    deleted: 0,
-  },
-  {
-    id: 5,
-    username: 'sun_qi_cs',
-    email: 'sunqi@code.cn',
-    phone: null,
-    nickname: '孙七',
-    avatar: null,
-    status: 1,
-    emailVerified: 1,
-    phoneVerified: 0,
-    lastLoginTime: '2025-04-06 20:10:00',
-    lastLoginIp: '10.10.1.88',
-    createTime: '2024-06-15 16:00:00',
-    updateTime: '2025-04-06 20:10:00',
-    deleted: 0,
-  },
-  {
-    id: 6,
-    username: 'zhou_ba',
-    email: 'zhouba@dev.org',
-    phone: '15600156006',
-    nickname: null,
-    avatar: null,
-    status: 0,
-    emailVerified: 1,
-    phoneVerified: 0,
-    lastLoginTime: '2025-02-20 14:00:00',
-    lastLoginIp: '203.0.113.45',
-    createTime: '2024-07-22 11:45:00',
-    updateTime: '2025-02-20 14:00:00',
-    deleted: 0,
-  },
-  {
-    id: 7,
-    username: 'wu_jiu_pro',
-    email: 'wujiu@pro.net',
-    phone: '13500135007',
-    nickname: '吴九',
-    avatar: null,
-    status: 1,
-    emailVerified: 0,
-    phoneVerified: 1,
-    lastLoginTime: '2025-04-08 17:30:00',
-    lastLoginIp: '192.0.2.100',
-    createTime: '2024-08-10 09:00:00',
-    updateTime: '2025-04-08 17:30:00',
-    deleted: 0,
-  },
-  {
-    id: 8,
-    username: 'zheng_shi',
-    email: 'zhengshi@web.cc',
-    phone: '18900189008',
-    nickname: '郑十',
-    avatar: null,
-    status: 1,
-    emailVerified: 1,
-    phoneVerified: 1,
-    lastLoginTime: '2025-04-09 10:05:00',
-    lastLoginIp: '10.0.2.15',
-    createTime: '2024-09-03 14:20:00',
-    updateTime: '2025-04-09 10:05:00',
-    deleted: 0,
-  },
-  {
-    id: 9,
-    username: 'chen_yan',
-    email: 'chenyan@algo.ai',
-    phone: null,
-    nickname: '陈燕',
-    avatar: null,
-    status: 1,
-    emailVerified: 1,
-    phoneVerified: 0,
-    lastLoginTime: '2025-04-05 12:00:00',
-    lastLoginIp: '172.31.0.50',
-    createTime: '2024-10-18 10:10:00',
-    updateTime: '2025-04-05 12:00:00',
-    deleted: 0,
-  },
-  {
-    id: 10,
-    username: 'lin_kai',
-    email: 'linkai@startup.io',
-    phone: '17600176010',
-    nickname: '林凯',
-    avatar: null,
-    status: 0,
-    emailVerified: 0,
-    phoneVerified: 0,
-    lastLoginTime: null,
-    lastLoginIp: null,
-    createTime: '2024-11-25 08:30:00',
-    updateTime: '2024-11-25 08:30:00',
-    deleted: 0,
-  },
-  {
-    id: 11,
-    username: 'fang_lei',
-    email: 'fanglei@sys.tech',
-    phone: '13200132011',
-    nickname: '方雷',
-    avatar: null,
-    status: 1,
-    emailVerified: 1,
-    phoneVerified: 1,
-    lastLoginTime: '2025-04-08 23:45:00',
-    lastLoginIp: '192.168.100.200',
-    createTime: '2024-12-01 11:00:00',
-    updateTime: '2025-04-08 23:45:00',
-    deleted: 0,
-  },
-  {
-    id: 12,
-    username: 'xiao_ming_cs',
-    email: 'xiaoming@campus.edu',
-    phone: null,
-    nickname: '小明',
-    avatar: null,
-    status: 1,
-    emailVerified: 1,
-    phoneVerified: 0,
-    lastLoginTime: '2025-04-09 07:00:00',
-    lastLoginIp: '10.20.30.40',
-    createTime: '2025-01-05 09:00:00',
-    updateTime: '2025-04-09 07:00:00',
-    deleted: 0,
-  },
-]
-
-/* ---- 状态 ---- */
-const allUsers = ref<AdminUserItem[]>(JSON.parse(JSON.stringify(MOCK_USERS)))
+/* ---- 列表状态 ---- */
+const pagedUsers = ref<AdminUserItem[]>([])
 const loading = ref(false)
 const searchKeyword = ref('')
 const statusFilter = ref('')
 const selectedUserIds = ref<number[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
+const totalItems = ref(0)
+const totalPagesCount = ref(1)
+
+/* ---- 统计数据 ---- */
+const statsData = ref<AdminUserStats>({ total: 0, normal: 0, disabled: 0, emailVerified: 0 })
+
+const stats = computed(() => statsData.value)
 
 /* ---- 编辑器状态 ---- */
 const editorOpen = ref(false)
@@ -239,39 +57,13 @@ const formErrors = reactive<Record<string, string>>({})
 const detailOpen = ref(false)
 const detailUser = ref<AdminUserItem | null>(null)
 
-/* ---- 删除确认 ---- */
-const deleteDialogOpen = ref(false)
-const deletingUser = ref<AdminUserItem | null>(null)
-const deleteSubmitting = ref(false)
+/* ---- 踢下线确认 ---- */
+const kickDialogOpen = ref(false)
+const kickingUser = ref<AdminUserItem | null>(null)
+const kickSubmitting = ref(false)
 
-/* ---- 计算属性 ---- */
-const filteredUsers = computed(() => {
-  let list = allUsers.value.filter((u) => u.deleted === 0)
-
-  if (statusFilter.value !== '') {
-    list = list.filter((u) => String(u.status) === statusFilter.value)
-  }
-
-  if (searchKeyword.value.trim()) {
-    const q = searchKeyword.value.trim().toLowerCase()
-    list = list.filter(
-      (u) =>
-        u.username.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        (u.nickname && u.nickname.toLowerCase().includes(q)),
-    )
-  }
-
-  return list
-})
-
-const totalItems = computed(() => filteredUsers.value.length)
-const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / pageSize.value)))
-
-const pagedUsers = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredUsers.value.slice(start, start + pageSize.value)
-})
+/* ---- 分页计算 ---- */
+const totalPages = computed(() => totalPagesCount.value)
 
 const visiblePages = computed<Array<number | string>>(() => {
   const total = totalPages.value
@@ -285,14 +77,42 @@ const visiblePages = computed<Array<number | string>>(() => {
   return pages
 })
 
-const stats = computed(() => {
-  const active = allUsers.value.filter((u) => u.deleted === 0)
-  return {
-    total: active.length,
-    normal: active.filter((u) => u.status === 1).length,
-    disabled: active.filter((u) => u.status === 0).length,
-    emailVerified: active.filter((u) => u.emailVerified === 1).length,
+/* ---- 数据加载 ---- */
+async function loadUsers() {
+  loading.value = true
+  try {
+    const result = await getAdminUserPage({
+      keyword: searchKeyword.value || undefined,
+      status: statusFilter.value !== '' ? (Number(statusFilter.value) as 0 | 1) : undefined,
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
+    })
+    pagedUsers.value = result.records
+    totalItems.value = Number(result.total)
+    totalPagesCount.value = Number(result.totalPages) || 1
+  } catch (e) {
+    console.error('加载用户列表失败', e)
+  } finally {
+    loading.value = false
   }
+}
+
+async function loadStats() {
+  try {
+    statsData.value = await getAdminUserStats()
+  } catch (e) {
+    console.error('加载用户统计失败', e)
+  }
+}
+
+/* ---- 搜索/筛选触发重新加载 ---- */
+watch([searchKeyword, statusFilter], () => {
+  currentPage.value = 1
+  loadUsers()
+})
+
+watch(currentPage, () => {
+  loadUsers()
 })
 
 /* ---- 分页操作 ---- */
@@ -309,22 +129,18 @@ const goToPage = (page: number | string) => {
   }
 }
 
-/* ---- 搜索 / 筛选重置分页 ---- */
+/* ---- 搜索/筛选 ---- */
 const setSearchKeyword = (kw: string) => {
   searchKeyword.value = kw
-  currentPage.value = 1
 }
 const setStatusFilter = (val: string) => {
   statusFilter.value = val
-  currentPage.value = 1
 }
 
 /* ---- 刷新 ---- */
 const refreshData = () => {
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-  }, 600)
+  loadUsers()
+  loadStats()
 }
 
 /* ---- 选择 ---- */
@@ -369,95 +185,93 @@ const closeEditor = () => {
 
 const validateForm = (): boolean => {
   Object.keys(formErrors).forEach((k) => delete formErrors[k])
-  if (!formModel.username.trim()) formErrors.username = '用户名不能为空'
-  if (!formModel.email.trim()) formErrors.email = '邮箱不能为空'
-  if (editorMode.value === 'create' && !formModel.password.trim()) {
-    formErrors.password = '密码不能为空'
+  if (editorMode.value === 'create') {
+    if (!formModel.username.trim()) formErrors.username = '用户名不能为空'
+    if (!formModel.email.trim()) formErrors.email = '邮箱不能为空'
+    if (!formModel.password.trim()) formErrors.password = '密码不能为空'
+  } else {
+    if (formModel.password.trim() && formModel.password.trim().length < 6) {
+      formErrors.password = '密码长度不能少于6位'
+    }
   }
   return Object.keys(formErrors).length === 0
 }
 
-const saveUser = () => {
+const saveUser = async () => {
   if (!validateForm()) return
   editorSubmitting.value = true
 
-  setTimeout(() => {
+  try {
     if (editorMode.value === 'create') {
-      const newId = Math.max(...allUsers.value.map((u) => u.id)) + 1
-      allUsers.value.push({
-        id: newId,
-        username: formModel.username.trim(),
-        email: formModel.email.trim(),
-        phone: formModel.phone.trim() || null,
-        nickname: formModel.nickname.trim() || null,
-        avatar: null,
-        status: formModel.status,
-        emailVerified: 0,
-        phoneVerified: 0,
-        lastLoginTime: null,
-        lastLoginIp: null,
-        createTime: new Date().toISOString(),
-        updateTime: new Date().toISOString(),
-        deleted: 0,
-      })
-    } else if (editingUser.value) {
-      const idx = allUsers.value.findIndex((u) => u.id === editingUser.value!.id)
-      if (idx !== -1) {
-        allUsers.value[idx] = {
-          ...allUsers.value[idx],
-          email: formModel.email.trim(),
-          phone: formModel.phone.trim() || null,
-          nickname: formModel.nickname.trim() || null,
-          status: formModel.status,
-          updateTime: new Date().toISOString(),
-        }
-      }
+      // 创建用户暂未开放
+      alert('创建用户功能暂未开放，请联系系统管理员')
+      editorOpen.value = false
+      return
     }
 
+    if (editorMode.value === 'edit' && editingUser.value) {
+      const userId = editingUser.value.id
+
+      // 若填写了新密码则重置密码
+      if (formModel.password.trim()) {
+        await resetAdminUserPassword(userId, formModel.password.trim())
+      }
+
+      // 若状态有变化则更新状态
+      if (formModel.status !== editingUser.value.status) {
+        await updateAdminUserStatus(userId, formModel.status)
+      }
+
+      editorOpen.value = false
+      loadUsers()
+      loadStats()
+    }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '操作失败'
+    formErrors.password = msg
+  } finally {
     editorSubmitting.value = false
-    editorOpen.value = false
-  }, 500)
+  }
 }
 
 /* ---- 切换状态 ---- */
-const toggleUserStatus = (user: AdminUserItem) => {
-  const idx = allUsers.value.findIndex((u) => u.id === user.id)
-  if (idx !== -1) {
-    allUsers.value[idx] = {
-      ...allUsers.value[idx],
-      status: allUsers.value[idx].status === 1 ? 0 : 1,
-      updateTime: new Date().toISOString(),
-    }
+const toggleUserStatus = async (user: AdminUserItem) => {
+  const newStatus: 0 | 1 = user.status === 1 ? 0 : 1
+  try {
+    await updateAdminUserStatus(user.id, newStatus)
+    loadUsers()
+    loadStats()
+  } catch (e) {
+    console.error('切换用户状态失败', e)
   }
 }
 
-/* ---- 删除 ---- */
+/* ---- 踢下线（替代删除操作） ---- */
 const requestDelete = (user: AdminUserItem) => {
-  deletingUser.value = user
-  deleteDialogOpen.value = true
+  kickingUser.value = user
+  kickDialogOpen.value = true
 }
 
-const closeDeleteDialog = () => {
-  if (!deleteSubmitting.value) {
-    deleteDialogOpen.value = false
-    deletingUser.value = null
+const closeKickDialog = () => {
+  if (!kickSubmitting.value) {
+    kickDialogOpen.value = false
+    kickingUser.value = null
   }
 }
 
-const confirmDelete = () => {
-  if (!deletingUser.value || deleteSubmitting.value) return
-  deleteSubmitting.value = true
-  const targetId = deletingUser.value.id
-
-  setTimeout(() => {
-    const idx = allUsers.value.findIndex((u) => u.id === targetId)
-    if (idx !== -1) {
-      allUsers.value[idx] = { ...allUsers.value[idx], deleted: 1 }
-    }
-    deleteSubmitting.value = false
-    deleteDialogOpen.value = false
-    deletingUser.value = null
-  }, 400)
+const confirmKick = async () => {
+  if (!kickingUser.value || kickSubmitting.value) return
+  kickSubmitting.value = true
+  try {
+    await kickAdminUserSessions(kickingUser.value.id)
+    kickDialogOpen.value = false
+    kickingUser.value = null
+    loadUsers()
+  } catch (e) {
+    console.error('踢出会话失败', e)
+  } finally {
+    kickSubmitting.value = false
+  }
 }
 
 /* ---- 更新表单 ---- */
@@ -465,7 +279,7 @@ const updateFormModel = (nextValue: AdminUserFormModel) => {
   Object.assign(formModel, nextValue)
 }
 
-const deleteDialogPt = {
+const kickDialogPt = {
   mask: { class: 'bg-black/45 backdrop-blur-[1px] z-[120]' },
   root: {
     class:
@@ -480,6 +294,8 @@ const deleteDialogPt = {
 
 onMounted(() => {
   adminNavStore.setActiveMenu('users')
+  loadUsers()
+  loadStats()
 })
 </script>
 
@@ -620,49 +436,49 @@ onMounted(() => {
       @edit="openEditEditor"
     />
 
-    <!-- 删除确认 -->
+    <!-- 踢下线确认 -->
     <Dialog
-      :visible="deleteDialogOpen"
+      :visible="kickDialogOpen"
       modal
       :dismissableMask="true"
       :draggable="false"
-      :pt="deleteDialogPt"
-      @update:visible="(val) => { if (!val) closeDeleteDialog() }"
+      :pt="kickDialogPt"
+      @update:visible="(val) => { if (!val) closeKickDialog() }"
     >
       <template #header>
         <div class="space-y-1">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">确认删除用户</h3>
+          <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">确认踢出会话</h3>
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-            删除后数据将被软删除，不可恢复，请谨慎操作。
+            此操作将强制该用户下线，用户需重新登录才能继续使用。
           </p>
         </div>
       </template>
 
       <div
-        class="rounded-md border border-red-200 bg-red-50/70 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/15 dark:text-red-200"
+        class="rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/15 dark:text-amber-200"
       >
-        即将删除用户：
-        <span class="font-semibold">{{ deletingUser?.nickname || deletingUser?.username || '-' }}</span>
-        <span class="ml-1 text-xs opacity-70">(@{{ deletingUser?.username }})</span>
+        即将踢出用户：
+        <span class="font-semibold">{{ kickingUser?.nickname || kickingUser?.username || '-' }}</span>
+        <span class="ml-1 text-xs opacity-70">(@{{ kickingUser?.username }})</span>
       </div>
 
       <template #footer>
         <button
           type="button"
           class="inline-flex h-9 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-border dark:bg-dark-card dark:text-gray-300 dark:hover:bg-dark-bg"
-          :disabled="deleteSubmitting"
-          @click="closeDeleteDialog"
+          :disabled="kickSubmitting"
+          @click="closeKickDialog"
         >
           取消
         </button>
         <button
           type="button"
-          class="inline-flex h-9 cursor-pointer items-center justify-center rounded-md border border-transparent bg-red-600 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-offset-gray-900"
-          :disabled="deleteSubmitting"
-          @click="confirmDelete"
+          class="inline-flex h-9 cursor-pointer items-center justify-center rounded-md border border-transparent bg-amber-600 px-4 text-sm font-medium text-white shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-500 dark:hover:bg-amber-600 dark:focus:ring-offset-gray-900"
+          :disabled="kickSubmitting"
+          @click="confirmKick"
         >
-          <i v-if="deleteSubmitting" class="fas fa-spinner fa-spin mr-2"></i>
-          <span>确认删除</span>
+          <i v-if="kickSubmitting" class="fas fa-spinner fa-spin mr-2"></i>
+          <span>确认踢出</span>
         </button>
       </template>
     </Dialog>

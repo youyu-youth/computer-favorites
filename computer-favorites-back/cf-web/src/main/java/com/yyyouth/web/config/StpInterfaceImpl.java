@@ -63,7 +63,13 @@ public class StpInterfaceImpl implements StpInterface {
             "admin:tag:stats",
             "admin:tag:add",
             "admin:tag:edit",
-            "admin:tag:delete"
+            "admin:tag:delete",
+            "admin:user:list",
+            "admin:user:stats",
+            "admin:user:detail",
+            "admin:user:status",
+            "admin:user:password",
+            "admin:user:kick"
     );
 
     private static final List<String> DEFAULT_USER_ROLES = List.of("user");

@@ -35,6 +35,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Locale;
@@ -379,6 +383,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         LocalDateTime expireTime = calculateExpireTime(timeoutSeconds, now);
 
         saveUserSession(userAccount, tokenValue, deviceType, now, expireTime, operationSource);
+        updateLastLoginInfo(userAccount.getId(), now);
 
         AuthUserVO authUserVO = BeanUtil.copyProperties(userAccount, AuthUserVO.class);
         authUserVO.setUserId(userAccount.getId());
@@ -425,6 +430,51 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .set(UserSession::getUpdateBy, String.valueOf(userAccount.getId()))
                 .set(UserSession::getUpdateTime, now)
                 .set(UserSession::getOperationSource, operationSource));
+    }
+
+    /**
+     * 更新用户最后登录时间和IP
+     *
+     * @param userId 用户ID
+     * @param loginTime 登录时间
+     */
+    private void updateLastLoginInfo(Long userId, LocalDateTime loginTime) {
+        String clientIp = resolveClientIp();
+        LambdaUpdateWrapper<UserAccount> update = new LambdaUpdateWrapper<UserAccount>()
+                .eq(UserAccount::getId, userId)
+                .set(UserAccount::getLastLoginTime, loginTime)
+                .set(UserAccount::getUpdateTime, loginTime);
+        if (StringUtils.hasText(clientIp)) {
+            update.set(UserAccount::getLastLoginIp, clientIp);
+        }
+        userAccountMapper.update(null, update);
+    }
+
+    /**
+     * 从当前请求上下文解析客户端IP（支持反向代理）
+     *
+     * @return 客户端IP，无法获取时返回null
+     */
+    private String resolveClientIp() {
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs == null) {
+                return null;
+            }
+            HttpServletRequest request = attrs.getRequest();
+            String ip = request.getHeader("X-Forwarded-For");
+            if (StringUtils.hasText(ip) && !"unknown".equalsIgnoreCase(ip)) {
+                return ip.split(",")[0].trim();
+            }
+            ip = request.getHeader("X-Real-IP");
+            if (StringUtils.hasText(ip) && !"unknown".equalsIgnoreCase(ip)) {
+                return ip;
+            }
+            return request.getRemoteAddr();
+        } catch (Exception e) {
+            log.warn("解析客户端IP失败: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**

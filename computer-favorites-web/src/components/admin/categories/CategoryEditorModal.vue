@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AdminCategoryFormModel, AdminCategoryItem, AdminCategoryStatus } from '@/types/category'
+import FontIconPicker from '@/components/common/FontIconPicker.vue'
 
 const props = defineProps<{
   open: boolean
@@ -51,7 +52,7 @@ const statusOptions: Array<{ label: string; value: AdminCategoryStatus }> = [
   { label: '禁用', value: 'DISABLED' },
 ]
 
-const handleInput = (field: 'name' | 'description' | 'icon', event: Event): void => {
+const handleInput = (field: 'name' | 'description', event: Event): void => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement
   updateField(field, target.value)
 }
@@ -156,28 +157,15 @@ const handleStatusChange = (event: Event): void => {
           </div>
 
           <div>
-            <label
-              for="category-icon"
-              class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              图标类名
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              图标
             </label>
-            <div class="relative">
-              <div v-if="modelValue.icon" class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <i :class="modelValue.icon" class="text-gray-500 dark:text-gray-400"></i>
-              </div>
-              <input
-                id="category-icon"
-                :value="modelValue.icon"
-                type="text"
-                placeholder="例如：fas fa-code"
-                class="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-dark-border dark:bg-dark-bg dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-blue-400"
-                :class="modelValue.icon ? 'pl-10' : ''"
-                :disabled="submitting"
-                @input="(event) => handleInput('icon', event)"
-              />
-            </div>
-            <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">支持 FontAwesome 图标类名</p>
+            <FontIconPicker
+              :model-value="modelValue.icon"
+              placeholder="点击选择图标（可选）"
+              :disabled="submitting"
+              @update:model-value="(val) => updateField('icon', val)"
+            />
           </div>
 
           <div>

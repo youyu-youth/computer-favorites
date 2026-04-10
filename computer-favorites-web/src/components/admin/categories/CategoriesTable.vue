@@ -52,6 +52,16 @@ const handleSort = (event: DataTableSortEvent): void => {
   emit('sort-change', { field, order })
 }
 
+// 表头内容对齐（unstyled 模式下 headerContent 无默认 flex）
+const sortableColPt = {
+  headerContent: { class: 'flex items-center gap-1.5 select-none' },
+  sortIcon: { class: 'text-gray-400 dark:text-gray-500 text-xs' },
+} as const
+
+const normalColPt = {
+  headerContent: { class: 'flex items-center' },
+} as const
+
 const selectionCheckboxPt = {
   pcHeaderCheckbox: {
     root: { class: 'relative inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center align-bottom' },
@@ -103,7 +113,7 @@ const selectionCheckboxPt = {
 
         <Column
           selectionMode="multiple"
-          :pt="selectionCheckboxPt"
+          :pt="{ ...selectionCheckboxPt, ...normalColPt }"
           headerClass="px-3 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
           bodyClass="px-3 py-3"
         />
@@ -112,6 +122,7 @@ const selectionCheckboxPt = {
           field="id"
           header="ID"
           sortable
+          :pt="sortableColPt"
           headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
           bodyClass="px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
         />
@@ -120,6 +131,7 @@ const selectionCheckboxPt = {
           field="name"
           header="名称"
           sortable
+          :pt="sortableColPt"
           headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
           bodyClass="px-4 py-3"
         >
@@ -138,6 +150,7 @@ const selectionCheckboxPt = {
         <Column
           field="description"
           header="描述"
+          :pt="normalColPt"
           headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
           bodyClass="px-4 py-3"
         >
@@ -152,6 +165,7 @@ const selectionCheckboxPt = {
           field="sort"
           header="排序"
           sortable
+          :pt="sortableColPt"
           headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
           bodyClass="px-4 py-3"
         >
@@ -165,6 +179,7 @@ const selectionCheckboxPt = {
         <Column
           field="status"
           header="状态"
+          :pt="normalColPt"
           headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
           bodyClass="px-4 py-3"
         >
@@ -186,6 +201,7 @@ const selectionCheckboxPt = {
           field="createdAt"
           header="创建时间"
           sortable
+          :pt="sortableColPt"
           headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
           bodyClass="px-4 py-3 text-sm text-gray-600 dark:text-gray-300"
         >
@@ -196,6 +212,7 @@ const selectionCheckboxPt = {
 
         <Column
           header="操作"
+          :pt="{ headerContent: { class: 'flex items-center justify-end' } }"
           headerClass="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
           bodyClass="px-4 py-3 text-right whitespace-nowrap"
         >
