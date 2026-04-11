@@ -20,7 +20,9 @@ import { getWebsiteDetail } from '@/api/website'
 import recommendIcon from '@/assets/icons/svg/tuijian.svg'
 import MarkdownViewer from '@/components/user/MarkdownViewer.vue'
 import StarRating from '@/components/common/StarRating.vue'
+import ReportDialog from '@/components/user/ReportDialog.vue'
 import type { PublicWebsiteTagRef, PublicWebsiteDetail } from '@/types/public-website'
+import type { ReportFormData } from '@/types/report'
 import { buildTagColorStyle, normalizeTagColor } from '@/utils/tag-color'
 
 const route = useRoute()
@@ -158,7 +160,18 @@ const shelfTimeText = computed(() => {
 
 const updateTimeText = computed(() => formatDate(detail.value?.updateTime))
 
+const showReportDialog = ref(false)
 
+const handleReportClick = () => {
+  showReportDialog.value = true
+}
+
+const handleReportSubmit = (data: ReportFormData) => {
+  console.log('举报数据:', data)
+  // TODO: 调用后端API提交举报
+  // 这里暂时只是打印数据
+  alert('举报提交成功！我们会尽快处理您的举报。')
+}
 
 const resolveErrorMessage = (error: unknown, fallbackMessage: string): string => {
   if (error instanceof Error && error.message.trim()) {
@@ -301,6 +314,7 @@ watch(
             </div>
             <button
               class="flex items-center gap-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+              @click="handleReportClick"
             >
               <Flag class="h-4 w-4" /> 举报
             </button>
@@ -461,6 +475,14 @@ watch(
         </div>
       </template>
   </main>
+
+  <!-- Report Dialog -->
+  <ReportDialog
+    v-model:visible="showReportDialog"
+    :website-id="websiteId"
+    :website-name="websiteName"
+    @submit="handleReportSubmit"
+  />
 </div>
 </template>
 
