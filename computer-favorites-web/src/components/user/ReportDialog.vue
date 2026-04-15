@@ -3,6 +3,10 @@ import { ref, computed, watch } from 'vue'
 import { X, AlertTriangle, ImagePlus, Trash2 } from 'lucide-vue-next'
 import type { ReportFormData, ReportReasonOption } from '@/types/report'
 import { ReportType } from '@/types/report'
+import { submitReport } from '@/api/user-report'
+import { useToast } from '@/utils/toast'
+
+const toast = useToast()
 
 interface ReportDialogProps {
   visible: boolean
@@ -73,24 +77,34 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true
 
-  // Simulate API call
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+  try {
+    const formData: ReportFormData = {
+      type: ReportType.WEBSITE,
+      targetId: props.websiteId,
+      reason: `${reportReasons.find((r) => r.value === selectedReason.value)?.label}: ${reasonDetail.value}`,
+      images: uploadedImages.value,
+    }
 
-  const formData: ReportFormData = {
-    type: ReportType.WEBSITE,
-    targetId: props.websiteId,
-    reason: `${reportReasons.find((r) => r.value === selectedReason.value)?.label}: ${reasonDetail.value}`,
-    images: uploadedImages.value,
+    const response = await submitReport(formData)
+
+    if (response.code === 200) {
+      toast.success('举报提交成功，我们会尽快处理')
+      emit('submit', formData)
+
+      // Reset form
+      selectedReason.value = null
+      reasonDetail.value = ''
+      uploadedImages.value = []
+      closeDialog()
+    } else {
+      toast.error(response.msg || '举报提交失败，请稍后重试')
+    }
+  } catch (error: any) {
+    console.error('举报提交失败:', error)
+    toast.error(error.msg || error.message || '举报提交失败，请稍后重试')
+  } finally {
+    isSubmitting.value = false
   }
-
-  emit('submit', formData)
-  isSubmitting.value = false
-
-  // Reset form
-  selectedReason.value = null
-  reasonDetail.value = ''
-  uploadedImages.value = []
-  closeDialog()
 }
 
 // Reset form when dialog closes

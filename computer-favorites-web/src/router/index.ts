@@ -45,6 +45,12 @@ const router = createRouter({
           meta: { requiresAdminAuth: true, title: '用户管理' },
         },
         {
+          path: 'reports',
+          name: 'adminReports',
+          component: () => import('@/views/admin/AdminReportManagementView.vue'),
+          meta: { requiresAdminAuth: true, title: '举报处置' },
+        },
+        {
           path: 'websites',
           name: 'adminWebsites',
           component: WebsitesManagementView,
@@ -255,6 +261,11 @@ router.afterEach((to) => {
 
   if (to.name === 'adminUsers') {
     useAdminNavStore().setActiveMenu('users')
+    return
+  }
+
+  if (to.name === 'adminReports') {
+    useAdminNavStore().setActiveMenu('reports')
     return
   }
 

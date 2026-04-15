@@ -42,8 +42,11 @@ const getAvatarBg = (userId: number): string => {
     'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
     'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
     'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
-  ]
-  return colors[userId % colors.length]
+  ] as const
+  return (
+    colors[userId % colors.length] ??
+    'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300'
+  )
 }
 </script>
 

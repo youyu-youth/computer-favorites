@@ -12,12 +12,10 @@ export class HttpError extends Error {
 
 const AUTH_UNAUTHORIZED_CODE = 100202
 
-const SKIP_DEFAULT_AUTH_HEADER = 'X-CF-Skip-Auth'
-
-// type ApiErrorBody = {
-//   code?: number
-//   msg?: string
-// }
+type ApiErrorBody = {
+  code?: number
+  msg?: string
+}
 
 type UnauthorizedHandler = (error: HttpError) => Promise<void> | void
 
@@ -79,17 +77,12 @@ const getAuthHeaders = () => {
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
-  const shouldSkipDefaultAuth = headers.get(SKIP_DEFAULT_AUTH_HEADER) === '1'
-  headers.delete(SKIP_DEFAULT_AUTH_HEADER)
-
-  if (!shouldSkipDefaultAuth) {
-    const authHeaders = getAuthHeaders()
-    authHeaders.forEach((value, key) => {
-      if (!headers.has(key)) {
-        headers.set(key, value)
-      }
-    })
-  }
+  const authHeaders = getAuthHeaders()
+  authHeaders.forEach((value, key) => {
+    if (!headers.has(key)) {
+      headers.set(key, value)
+    }
+  })
 
   const res = await fetch(url, {
     ...init,
@@ -138,13 +131,9 @@ export async function postJson<T>(url: string, data: unknown, init?: RequestInit
 }
 
 export async function postFormData<T>(url: string, data: FormData, init?: RequestInit): Promise<T> {
-  const headers = new Headers(init?.headers)
-  headers.delete('Content-Type')
-
   return requestJson<T>(url, {
     method: 'POST',
     ...init,
-    headers,
     body: data,
   })
 }
