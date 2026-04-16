@@ -11,7 +11,6 @@ import com.yyyouth.model.enums.ReportType;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.report.Report;
-import com.yyyouth.model.pojo.system.AuditLog;
 import com.yyyouth.model.pojo.website.Comment;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.vo.admin.AdminReportBatchHandleResultVO;
@@ -21,7 +20,6 @@ import com.yyyouth.model.vo.admin.AdminReportPageVO;
 import com.yyyouth.service.admin.report.impl.AdminReportServiceImpl;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.mapper.report.ReportMapper;
-import com.yyyouth.service.mapper.system.AuditLogMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CommentMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
@@ -75,9 +73,6 @@ class AdminReportServiceImplTest {
     private AdminAccountMapper adminAccountMapper;
 
     @Mock
-    private AuditLogMapper auditLogMapper;
-
-    @Mock
     private TransactionTemplate transactionTemplate;
 
     @InjectMocks
@@ -95,7 +90,6 @@ class AdminReportServiceImplTest {
         TableInfoHelper.initTableInfo(builderAssistant, Comment.class);
         TableInfoHelper.initTableInfo(builderAssistant, UserAccount.class);
         TableInfoHelper.initTableInfo(builderAssistant, AdminAccount.class);
-        TableInfoHelper.initTableInfo(builderAssistant, AuditLog.class);
     }
 
     /**
@@ -262,8 +256,6 @@ class AdminReportServiceImplTest {
         when(reportMapper.update(any(Report.class), any())).thenReturn(1);
         when(websiteMapper.selectById(303L)).thenReturn(website);
         when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
-        when(auditLogMapper.insert(any(AuditLog.class))).thenReturn(1);
-
         AdminReportHandleDTO handleDTO = new AdminReportHandleDTO();
         handleDTO.setAction("pass");
         handleDTO.setHandleResult("已确认违规内容，执行下架处理");
@@ -340,7 +332,6 @@ class AdminReportServiceImplTest {
         when(reportMapper.selectById(105L)).thenReturn(processedReport);
         when(reportMapper.selectById(106L)).thenReturn(null);
         when(reportMapper.update(any(Report.class), any())).thenReturn(1);
-        when(auditLogMapper.insert(any(AuditLog.class))).thenReturn(1);
         when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
             TransactionCallback<?> callback = invocation.getArgument(0);
             return callback.doInTransaction(org.mockito.Mockito.mock(TransactionStatus.class));

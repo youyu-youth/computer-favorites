@@ -16,6 +16,7 @@ import com.yyyouth.model.vo.admin.AdminWebsiteLogoUploadVO;
 import com.yyyouth.model.vo.admin.AdminWebsitePageVO;
 import com.yyyouth.model.vo.admin.AdminWebsiteStatsVO;
 import com.yyyouth.service.admin.website.AdminWebsiteService;
+import com.yyyouth.service.audit.annotation.AuditLog;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
@@ -50,6 +51,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/website")
+@AuditLog(module = "admin-website")
 public class AdminWebsiteController {
 
     private final AdminWebsiteService adminWebsiteService;
@@ -243,6 +245,7 @@ public class AdminWebsiteController {
     @ApiOperation(value = "审核网站")
     @PutMapping("/{id}/audit")
     @SaCheckPermission(value = "admin:website:audit", type = "admin")
+    @AuditLog(action = "audit", description = "审核网站，websiteId=#{#id}，action=#{#auditDTO.action}")
     public HttpResult auditWebsite(@PathVariable("id") @NotNull @Positive Long id,
                                    @RequestBody @Valid @NotNull AdminWebsiteAuditDTO auditDTO) {
         log.info("管理端审核网站请求，websiteId={}, action={}", id, auditDTO.getAction());
@@ -260,6 +263,7 @@ public class AdminWebsiteController {
     @ApiOperation(value = "批量审核网站")
     @PutMapping("/audit/batch")
     @SaCheckPermission(value = "admin:website:audit", type = "admin")
+    @AuditLog(action = "batch-audit", description = "批量审核网站，count=#{#batchAuditDTO.websiteIds.size()}，action=#{#batchAuditDTO.action}")
     public HttpResult batchAuditWebsite(@RequestBody @Valid @NotNull AdminWebsiteBatchAuditDTO batchAuditDTO) {
         log.info("管理端批量审核网站请求，count={}, action={}", batchAuditDTO.getWebsiteIds().size(), batchAuditDTO.getAction());
         AdminWebsiteBatchAuditResultVO resultVO = adminWebsiteService.batchAuditWebsite(batchAuditDTO);

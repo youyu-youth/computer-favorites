@@ -13,7 +13,6 @@ import com.yyyouth.model.enums.ReportType;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.report.Report;
-import com.yyyouth.model.pojo.system.AuditLog;
 import com.yyyouth.model.pojo.website.Comment;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.vo.admin.AdminReportBatchHandleResultItemVO;
@@ -27,7 +26,6 @@ import com.yyyouth.model.vo.admin.AdminReportStatisticsVO;
 import com.yyyouth.service.admin.report.AdminReportService;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.mapper.report.ReportMapper;
-import com.yyyouth.service.mapper.system.AuditLogMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CommentMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
@@ -67,14 +65,6 @@ public class AdminReportServiceImpl implements AdminReportService {
 
     private static final int NOT_DELETED = 0;
 
-    private static final String ADMIN_USER_TYPE = "admin";
-
-    private static final String REPORT_MODULE = "report";
-
-    private static final String REPORT_TARGET_TYPE = "report";
-
-    private static final int AUDIT_SUCCESS = 1;
-
     private static final String ACTION_PASS = "pass";
 
     private static final String ACTION_REJECT = "reject";
@@ -104,8 +94,6 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final UserAccountMapper userAccountMapper;
 
     private final AdminAccountMapper adminAccountMapper;
-
-    private final AuditLogMapper auditLogMapper;
 
     private final TransactionTemplate transactionTemplate;
 
@@ -223,8 +211,6 @@ public class AdminReportServiceImpl implements AdminReportService {
                 throw new BusinessException(40403, "目标联动处置失败");
             }
         }
-
-        recordAuditLog(report, updateEntity, handleDTO.getAction(), actionExecuted);
 
         AdminReportHandleResultVO resultVO = new AdminReportHandleResultVO();
         resultVO.setReportId(reportId);
@@ -575,62 +561,6 @@ public class AdminReportServiceImpl implements AdminReportService {
             return commentMapper.updateById(updateComment) > 0;
         }
         return false;
-    }
-
-    /**
-     * 记录审计日志
-     *
-     * @param original 原举报数据
-     * @param updated 更新后的举报数据
-     * @param action 处置动作
-     * @param actionExecuted 是否执行联动动作
-     */
-    private void recordAuditLog(Report original, Report updated, String action, boolean actionExecuted) {
-        try {
-            AuditLog auditLog = new AuditLog();
-            auditLog.setUserId(updated.getHandlerId());
-            auditLog.setUserType(ADMIN_USER_TYPE);
-            auditLog.setModule(REPORT_MODULE);
-            auditLog.setAction(action);
-            auditLog.setTargetType(REPORT_TARGET_TYPE);
-            auditLog.setTargetId(original.getId());
-            auditLog.setResult(AUDIT_SUCCESS);
-            auditLogMapper.insert(auditLog);
-        } catch (Exception ex) {
-            log.warn("记录举报审计日志失败，reportId={}", original.getId(), ex);
-        }
-    }
-
-    /**
-     * 构建审计前置数据
-     *
-     * @param report 原举报记录
-     * @return JSON字符串
-     */
-    private String buildBeforeData(Report report) {
-        Map<String, Object> beforeData = new HashMap<>();
-        beforeData.put("status", report.getStatus());
-        beforeData.put("handleResult", report.getHandleResult());
-        beforeData.put("handlerId", report.getHandlerId());
-        beforeData.put("handleTime", formatTime(report.getHandleTime()));
-        return JSONUtil.toJsonStr(beforeData);
-    }
-
-    /**
-     * 构建审计后置数据
-     *
-     * @param report 更新后的举报记录
-     * @param actionExecuted 是否执行联动动作
-     * @return JSON字符串
-     */
-    private String buildAfterData(Report report, boolean actionExecuted) {
-        Map<String, Object> afterData = new HashMap<>();
-        afterData.put("status", report.getStatus());
-        afterData.put("handleResult", report.getHandleResult());
-        afterData.put("handlerId", report.getHandlerId());
-        afterData.put("handleTime", formatTime(report.getHandleTime()));
-        afterData.put("actionExecuted", actionExecuted);
-        return JSONUtil.toJsonStr(afterData);
     }
 
     /**

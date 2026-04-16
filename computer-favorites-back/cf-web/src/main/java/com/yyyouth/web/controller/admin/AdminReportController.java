@@ -11,6 +11,7 @@ import com.yyyouth.model.vo.admin.AdminReportHandleResultVO;
 import com.yyyouth.model.vo.admin.AdminReportPageVO;
 import com.yyyouth.model.vo.admin.AdminReportStatisticsVO;
 import com.yyyouth.service.admin.report.AdminReportService;
+import com.yyyouth.service.audit.annotation.AuditLog;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/report")
+@AuditLog(module = "admin-report")
 public class AdminReportController {
 
     private final AdminReportService adminReportService;
@@ -86,6 +88,7 @@ public class AdminReportController {
     @ApiOperation(value = "单条处置举报")
     @PutMapping("/{id}/handle")
     @SaCheckPermission(value = "admin:report:handle", type = "admin")
+    @AuditLog(action = "handle", description = "处置举报，reportId=#{#id}，action=#{#handleDTO.action}")
     public HttpResult handle(@PathVariable("id") @NotNull @Positive Long id,
                              @RequestBody @Valid @NotNull AdminReportHandleDTO handleDTO) {
         log.info("管理端处置举报请求，id={}, action={}, executeAction={}", id, handleDTO.getAction(), handleDTO.getExecuteAction());
@@ -103,6 +106,7 @@ public class AdminReportController {
     @ApiOperation(value = "批量处置举报")
     @PutMapping("/handle/batch")
     @SaCheckPermission(value = "admin:report:handle", type = "admin")
+    @AuditLog(action = "batch-handle", description = "批量处置举报，count=#{#batchHandleDTO.reportIds.size()}，action=#{#batchHandleDTO.action}")
     public HttpResult batchHandle(@RequestBody @Valid @NotNull AdminReportBatchHandleDTO batchHandleDTO) {
         log.info("管理端批量处置举报请求，count={}, action={}", batchHandleDTO.getReportIds().size(), batchHandleDTO.getAction());
         AdminReportBatchHandleResultVO resultVO = adminReportService.batchHandleReports(batchHandleDTO);

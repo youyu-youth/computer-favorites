@@ -5,14 +5,12 @@ import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yyyouth.model.dto.admin.AdminWebsiteAuditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteBatchAuditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
-import com.yyyouth.model.pojo.system.AuditLog;
 import com.yyyouth.model.pojo.system.SystemMessage;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
 import com.yyyouth.model.vo.admin.AdminWebsiteBatchAuditResultVO;
 import com.yyyouth.service.admin.website.impl.AdminWebsiteServiceImpl;
 import com.yyyouth.service.file.MinioFileService;
-import com.yyyouth.service.mapper.system.AuditLogMapper;
 import com.yyyouth.service.mapper.system.SystemMessageMapper;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
@@ -62,9 +60,6 @@ class AdminWebsiteServiceImplAuditTest {
     private SystemMessageMapper systemMessageMapper;
 
     @Mock
-    private AuditLogMapper auditLogMapper;
-
-    @Mock
     private TagMapper tagMapper;
 
     @Mock
@@ -86,7 +81,6 @@ class AdminWebsiteServiceImplAuditTest {
         TableInfoHelper.initTableInfo(builderAssistant, Website.class);
         TableInfoHelper.initTableInfo(builderAssistant, WebsiteCategory.class);
         TableInfoHelper.initTableInfo(builderAssistant, SystemMessage.class);
-        TableInfoHelper.initTableInfo(builderAssistant, AuditLog.class);
     }
 
     /**
@@ -105,8 +99,6 @@ class AdminWebsiteServiceImplAuditTest {
         when(websiteMapper.selectOne(any())).thenReturn(pendingWebsite);
         when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
         when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
-        when(auditLogMapper.insert(any(AuditLog.class))).thenReturn(1);
-
         AdminWebsiteAuditDTO auditDTO = new AdminWebsiteAuditDTO();
         auditDTO.setAction(1);
 
@@ -124,7 +116,6 @@ class AdminWebsiteServiceImplAuditTest {
         assertThat(updateEntity.getAuditAdminId()).isEqualTo(Math.toIntExact(ADMIN_ID));
 
         verify(systemMessageMapper).insert(any(SystemMessage.class));
-        verify(auditLogMapper).insert(any(AuditLog.class));
     }
 
     /**
@@ -143,8 +134,6 @@ class AdminWebsiteServiceImplAuditTest {
         when(websiteMapper.selectOne(any())).thenReturn(pendingWebsite);
         when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
         when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
-        when(auditLogMapper.insert(any(AuditLog.class))).thenReturn(1);
-
         AdminWebsiteAuditDTO auditDTO = new AdminWebsiteAuditDTO();
         auditDTO.setAction(2);
         auditDTO.setRemark("内容质量不符合规范");
@@ -185,8 +174,6 @@ class AdminWebsiteServiceImplAuditTest {
         when(websiteMapper.selectList(any())).thenReturn(List.of(pendingWebsite, approvedWebsite));
         when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
         when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
-        when(auditLogMapper.insert(any(AuditLog.class))).thenReturn(1);
-
         AdminWebsiteBatchAuditDTO batchAuditDTO = new AdminWebsiteBatchAuditDTO();
         batchAuditDTO.setWebsiteIds(List.of(201L, 202L, 203L));
         batchAuditDTO.setAction(1);
@@ -200,38 +187,6 @@ class AdminWebsiteServiceImplAuditTest {
         assertThat(resultVO.getSuccessCount()).isEqualTo(1);
         assertThat(resultVO.getFailedCount()).isEqualTo(2);
         assertThat(resultVO.getFailItems()).hasSize(2);
-    }
-
-    /**
-     * 审核通过时审计日志写入失败不应影响主流程
-     */
-    @Test
-    void shouldApproveSubmissionWhenAuditLogInsertFails() {
-        Website pendingWebsite = new Website();
-        pendingWebsite.setId(302L);
-        pendingWebsite.setDeleted(0);
-        pendingWebsite.setSource(1);
-        pendingWebsite.setSubmitterId(1201L);
-        pendingWebsite.setAuditStatus(0);
-        pendingWebsite.setStatus(0);
-
-        when(websiteMapper.selectOne(any())).thenReturn(pendingWebsite);
-        when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
-        when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
-        when(auditLogMapper.insert(any(AuditLog.class))).thenThrow(new RuntimeException("missing audit table"));
-
-        AdminWebsiteAuditDTO auditDTO = new AdminWebsiteAuditDTO();
-        auditDTO.setAction(1);
-
-        try (MockedStatic<StpAdminUtil> stpAdminUtilMock = org.mockito.Mockito.mockStatic(StpAdminUtil.class)) {
-            stpAdminUtilMock.when(StpAdminUtil::getLoginIdAsLong).thenReturn(ADMIN_ID);
-            assertThatCode(() -> adminWebsiteService.auditWebsite(302L, auditDTO))
-                    .doesNotThrowAnyException();
-        }
-
-        verify(websiteMapper).updateById(any(Website.class));
-        verify(systemMessageMapper).insert(any(SystemMessage.class));
-        verify(auditLogMapper).insert(any(AuditLog.class));
     }
 
     /**

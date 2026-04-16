@@ -24,6 +24,10 @@ logging:
   level:
     com.yyyouth: INFO
 
+audit:
+  log:
+    enabled: ${CF_AUDIT_LOG_ENABLED:true}
+
 cf:
   auth:
     enable: true

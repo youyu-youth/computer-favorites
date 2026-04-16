@@ -2,7 +2,6 @@ package com.yyyouth.service.admin.website.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yyyouth.common.constants.HttpStatus;
@@ -17,7 +16,6 @@ import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
-import com.yyyouth.model.pojo.system.AuditLog;
 import com.yyyouth.model.pojo.system.SystemMessage;
 import com.yyyouth.model.pojo.website.Tag;
 import com.yyyouth.model.pojo.website.Website;
@@ -34,7 +32,6 @@ import com.yyyouth.model.vo.file.MinioUploadVO;
 import com.yyyouth.service.admin.website.AdminWebsiteService;
 import com.yyyouth.service.file.MinioFileService;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
-import com.yyyouth.service.mapper.system.AuditLogMapper;
 import com.yyyouth.service.mapper.system.SystemMessageMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
@@ -123,14 +120,6 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
 
     private static final int UNREAD_MESSAGE = 0;
 
-    private static final int AUDIT_SUCCESS_RESULT = 1;
-
-    private static final String AUDIT_LOG_USER_TYPE = "admin";
-
-    private static final String AUDIT_LOG_MODULE = "website";
-
-    private static final String AUDIT_LOG_TARGET_TYPE = "website";
-
     private static final String AUDIT_ACTION_SINGLE = "audit";
 
     private static final String AUDIT_ACTION_BATCH = "batch-audit";
@@ -144,8 +133,6 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
     private final MinioFileService minioFileService;
 
     private final SystemMessageMapper systemMessageMapper;
-
-    private final AuditLogMapper auditLogMapper;
 
     private final TagMapper tagMapper;
 
@@ -506,7 +493,6 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         }
 
         insertAuditResultMessage(website, updateEntity, operationTime);
-        insertAuditLog(website, updateEntity, adminId, AUDIT_ACTION_SINGLE, operationTime);
     }
 
     /**
@@ -558,7 +544,6 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
             }
 
             insertAuditResultMessage(website, updateEntity, operationTime);
-            insertAuditLog(website, updateEntity, adminId, AUDIT_ACTION_BATCH, operationTime);
             successCount++;
         }
 
@@ -1068,60 +1053,6 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         }
 
         systemMessageMapper.insert(message);
-    }
-
-    /**
-     * 写入审核审计日志
-     *
-     * @param originWebsite 原始网站
-     * @param updateEntity 更新实体
-     * @param adminId 管理员ID
-     * @param action 审核动作
-     * @param operationTime 操作时间
-     */
-    private void insertAuditLog(Website originWebsite, Website updateEntity, Long adminId, String action, LocalDateTime operationTime) {
-        Map<String, Object> beforeData = buildAuditSnapshot(originWebsite);
-        Map<String, Object> afterData = new HashMap<>(beforeData);
-        afterData.put("auditStatus", updateEntity.getAuditStatus());
-        afterData.put("status", updateEntity.getStatus());
-        afterData.put("auditRemark", updateEntity.getAuditRemark());
-        afterData.put("auditAdminId", updateEntity.getAuditAdminId());
-        afterData.put("shelfTime", updateEntity.getShelfTime());
-        afterData.put("takedownTime", updateEntity.getTakedownTime());
-
-        AuditLog auditLog = new AuditLog();
-        auditLog.setUserId(adminId);
-        auditLog.setUserType(AUDIT_LOG_USER_TYPE);
-        auditLog.setModule(AUDIT_LOG_MODULE);
-        auditLog.setAction(action);
-        auditLog.setTargetType(AUDIT_LOG_TARGET_TYPE);
-        auditLog.setTargetId(originWebsite.getId());
-        auditLog.setResult(AUDIT_SUCCESS_RESULT);
-        auditLog.setCreateTime(operationTime);
-
-        try {
-            auditLogMapper.insert(auditLog);
-        } catch (Exception ex) {
-            log.error("写入网站审核审计日志失败，websiteId={}, action={}, adminId={}",
-                    originWebsite.getId(), action, adminId, ex);
-        }
-    }
-
-    /**
-     * 构建审核快照
-     *
-     * @param website 网站实体
-     * @return 快照数据
-     */
-    private Map<String, Object> buildAuditSnapshot(Website website) {
-        Map<String, Object> snapshot = new HashMap<>(8);
-        snapshot.put("auditStatus", website.getAuditStatus());
-        snapshot.put("status", website.getStatus());
-        snapshot.put("auditRemark", website.getAuditRemark());
-        snapshot.put("auditAdminId", website.getAuditAdminId());
-        snapshot.put("shelfTime", website.getShelfTime());
-        snapshot.put("takedownTime", website.getTakedownTime());
-        return snapshot;
     }
 
     /**
