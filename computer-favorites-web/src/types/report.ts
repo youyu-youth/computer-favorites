@@ -122,6 +122,17 @@ export interface AdminReportStatistics {
 }
 
 /**
+ * 管理端举报分页结果
+ */
+export interface AdminReportPage {
+  records: AdminReportListItem[]
+  total: number
+  pageNum: number
+  pageSize: number
+  totalPages: number
+}
+
+/**
  * 管理端举报查询条件
  */
 export interface AdminReportQuery {
@@ -140,6 +151,36 @@ export interface AdminReportHandleForm {
   action: AdminReportHandleAction
   handleResult: string
   executeAction: boolean
+}
+
+/**
+ * 管理端单条举报处置结果
+ */
+export interface AdminReportHandleResult {
+  reportId: number
+  status: ReportStatus
+  handleResult: string
+  handleTime: string
+  actionExecuted: boolean
+}
+
+/**
+ * 管理端批量处置结果明细
+ */
+export interface AdminReportBatchHandleResultItem {
+  reportId: number
+  success: boolean
+  message: string
+}
+
+/**
+ * 管理端批量举报处置结果
+ */
+export interface AdminReportBatchHandleResult {
+  total: number
+  success: number
+  failed: number
+  results: AdminReportBatchHandleResultItem[]
 }
 
 /**
@@ -204,7 +245,7 @@ export const REPORT_HANDLE_ACTION_OPTIONS: Array<{
   {
     value: 'pass',
     label: '通过举报',
-    description: '确认举报有效，标记为已处理。',
+    description: '确认举报有效，标记为已处理，并可联动执行下架或隐藏动作。',
   },
   {
     value: 'reject',

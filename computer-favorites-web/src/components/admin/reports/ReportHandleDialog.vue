@@ -26,8 +26,8 @@ const dialogTitle = computed(() =>
 
 const dialogDescription = computed(() =>
   props.mode === 'batch'
-    ? `本次将对 ${props.selectedCount} 条待处理举报批量执行 mock 处置，请确认说明文案准确。`
-    : '请填写处理说明，并决定是否执行 mock 联动治理动作。',
+    ? `本次将对 ${props.selectedCount} 条待处理举报批量执行处置，请确认说明文案准确。`
+    : '请填写处理说明，并决定是否执行联动治理动作。',
 )
 
 const actionCardClass = (value: AdminReportHandleAction) => {
@@ -118,9 +118,9 @@ const dialogUi = {
           class="flex items-start justify-between gap-4 rounded-2xl border border-gray-200 bg-gray-50/90 px-4 py-4 dark:border-dark-border dark:bg-dark-bg"
         >
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-gray-900 dark:text-white">执行 mock 联动动作</p>
+            <p class="text-sm font-semibold text-gray-900 dark:text-white">执行联动动作</p>
             <p class="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-300">
-              开启后会在处理结果中附加“已执行 mock 联动治理动作”的说明，用于模拟后续真实下架或隐藏流程。
+              开启后会在通过举报时同步触发治理动作，用于真实执行网站下架或评论隐藏流程。
             </p>
           </div>
           <USwitch

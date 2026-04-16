@@ -110,7 +110,7 @@ const selectionCheckboxPt = {
               <i class="fas fa-flag text-xl"></i>
             </div>
             <p class="mt-4 text-sm font-medium text-gray-700 dark:text-gray-200">当前筛选下暂无举报记录</p>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">可以尝试清空筛选条件或刷新本地 mock 数据。</p>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">可以尝试清空筛选条件或重新拉取最新举报数据。</p>
           </div>
         </template>
 
@@ -128,12 +128,11 @@ const selectionCheckboxPt = {
           bodyClass="px-4 py-3"
         >
           <template #body="{ data }">
-            <div class="space-y-1">
+            <div>
               <UBadge
                 :color="getReportStatusMeta(data.status).color"
                 :value="getReportStatusMeta(data.status).label"
               />
-              <p class="text-[11px] text-gray-400 dark:text-gray-500">#{{ data.id }}</p>
             </div>
           </template>
         </Column>
@@ -145,8 +144,10 @@ const selectionCheckboxPt = {
           bodyClass="px-4 py-3"
         >
           <template #body="{ data }">
-            <div class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-white/10 dark:text-slate-200">
-              <i :class="[getReportTypeMeta(data.type).icon, 'text-[11px]']"></i>
+            <div
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 text-xs font-medium leading-none text-slate-700 dark:bg-white/10 dark:text-slate-200"
+            >
+              <i :class="[getReportTypeMeta(data.type).icon, 'text-[11px] leading-none']"></i>
               {{ getReportTypeMeta(data.type).shortLabel }}
             </div>
           </template>

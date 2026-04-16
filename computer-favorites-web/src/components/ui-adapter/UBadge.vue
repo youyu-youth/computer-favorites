@@ -28,7 +28,7 @@ const severity = computed(() => {
 })
 
 const mergedClass = computed(() => [
-  'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium leading-none',
   attrs.class,
 ])
 </script>

@@ -27,14 +27,14 @@ const reportStatusMeta = computed(() =>
 const detailModalUi = {
   overlay: 'bg-black/40 backdrop-blur-[2px] z-[120]',
   content:
-    'w-[min(96vw,1080px)] rounded-[24px] border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card shadow-[0_24px_60px_rgba(15,23,42,0.24)] dark:shadow-[0_28px_60px_rgba(2,6,23,0.6)] overflow-hidden',
+    'flex max-h-[min(82vh,720px)] w-[min(94vw,820px)] flex-col rounded-[20px] sm:rounded-[22px] border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card shadow-[0_18px_42px_rgba(15,23,42,0.24)] dark:shadow-[0_24px_52px_rgba(2,6,23,0.58)] overflow-hidden',
   header:
-    'border-b border-gray-200 dark:border-dark-border bg-[linear-gradient(180deg,rgba(248,250,252,0.92),rgba(255,255,255,0.96))] dark:bg-[linear-gradient(180deg,rgba(15,19,23,0.96),rgba(22,29,34,0.96))] px-6 py-5',
+    'border-b border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg px-4 py-4 sm:px-5 sm:py-4',
   title: 'text-lg font-semibold tracking-tight text-gray-950 dark:text-white',
   description: 'mt-1 text-sm text-gray-500 dark:text-gray-400',
-  body: 'px-6 py-6',
+  body: 'flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5',
   footer:
-    'border-t border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg px-6 py-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between sm:items-center',
+    'border-t border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg px-4 py-3 sm:px-5 sm:py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
 } as const
 </script>
 
@@ -42,15 +42,15 @@ const detailModalUi = {
   <UModal
     :open="open"
     title="举报详情"
-    description="查看完整举报上下文、证据截图与 mock 处置轨迹。"
+    description="查看完整举报上下文、证据截图与真实处置轨迹。"
     :ui="detailModalUi"
     @update:open="(value) => emit('update:open', value)"
   >
     <template #body>
-      <div v-if="report" class="space-y-6">
-        <section class="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+      <div v-if="report" class="space-y-4">
+        <section class="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
           <article
-            class="overflow-hidden rounded-2xl border border-amber-200/70 bg-[linear-gradient(135deg,rgba(255,251,235,0.92),rgba(255,255,255,0.98))] p-5 dark:border-amber-400/20 dark:bg-[linear-gradient(135deg,rgba(40,28,14,0.92),rgba(22,29,34,0.98))]"
+            class="overflow-hidden rounded-2xl border border-amber-200/70 bg-amber-50/70 p-4 sm:p-5 dark:border-amber-400/20 dark:bg-amber-500/8"
           >
             <div class="flex flex-wrap items-center gap-2">
               <UBadge
@@ -75,22 +75,22 @@ const detailModalUi = {
               {{ report.reason }}
             </p>
 
-            <div class="mt-5 grid gap-3 sm:grid-cols-3">
-              <div class="rounded-2xl bg-white/75 p-3 shadow-sm dark:bg-white/5">
+            <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div class="rounded-2xl bg-white/90 p-3 shadow-sm dark:bg-white/5">
                 <p class="text-[11px] uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">举报人</p>
                 <p class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">{{ report.userName }}</p>
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ report.userEmail }}</p>
               </div>
-              <div class="rounded-2xl bg-white/75 p-3 shadow-sm dark:bg-white/5">
+              <div class="rounded-2xl bg-white/90 p-3 shadow-sm dark:bg-white/5">
                 <p class="text-[11px] uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">目标状态</p>
                 <p class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
                   {{ report.targetStatusLabel }}
                 </p>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1 break-all text-xs text-gray-500 dark:text-gray-400">
                   {{ report.targetUrl || '评论类目标无外链地址' }}
                 </p>
               </div>
-              <div class="rounded-2xl bg-white/75 p-3 shadow-sm dark:bg-white/5">
+              <div class="rounded-2xl bg-white/90 p-3 shadow-sm dark:bg-white/5 sm:col-span-2 lg:col-span-1">
                 <p class="text-[11px] uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">证据摘要</p>
                 <p class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
                   {{ report.images.length }} 张截图
@@ -100,7 +100,7 @@ const detailModalUi = {
             </div>
           </article>
 
-          <article class="rounded-2xl border border-gray-200 bg-gray-50/80 p-5 dark:border-dark-border dark:bg-dark-bg">
+          <article class="rounded-2xl border border-gray-200 bg-gray-50/80 p-4 sm:p-5 dark:border-dark-border dark:bg-dark-bg">
             <div class="flex items-center justify-between gap-3">
               <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">案件轨迹</p>
@@ -113,7 +113,7 @@ const detailModalUi = {
               </div>
             </div>
 
-            <ol class="mt-4 space-y-4">
+            <ol class="mt-4 space-y-3">
               <li
                 v-for="item in report.timeline"
                 :key="item.id"
@@ -128,14 +128,14 @@ const detailModalUi = {
                   "
                 ></span>
                 <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ item.title }}</p>
-                <p class="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-300">{{ item.description }}</p>
+                <p class="mt-1 text-sm leading-5 text-gray-600 dark:text-gray-300">{{ item.description }}</p>
                 <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ item.time }}</p>
               </li>
             </ol>
           </article>
         </section>
 
-        <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <section class="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
           <article>
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
@@ -145,15 +145,15 @@ const detailModalUi = {
               <p class="text-xs text-gray-500 dark:text-gray-400">{{ report.images.length }} 张可查看</p>
             </div>
 
-            <div v-if="report.images.length > 0" class="grid gap-3 sm:grid-cols-2">
+            <div v-if="report.images.length > 0" class="grid gap-3 grid-cols-1 sm:grid-cols-2">
               <button
                 v-for="(image, index) in report.images"
                 :key="image"
                 type="button"
-                class="group overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 text-left shadow-sm transition-transform hover:-translate-y-0.5 dark:border-dark-border dark:bg-dark-bg"
+                class="group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 text-left shadow-sm transition-transform hover:-translate-y-0.5 dark:border-dark-border dark:bg-dark-bg"
                 @click="emit('preview-image', { url: image, title: `${report.targetName} - 证据 ${index + 1}` })"
               >
-                <div class="relative aspect-[16/10] overflow-hidden">
+                <div class="relative aspect-[16/9] overflow-hidden">
                   <img
                     :src="image"
                     :alt="`${report.targetName} 证据 ${index + 1}`"
@@ -174,7 +174,7 @@ const detailModalUi = {
             </div>
           </article>
 
-          <article class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-dark-border dark:bg-dark-card">
+          <article class="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-dark-border dark:bg-dark-card">
             <div class="flex items-center justify-between gap-3">
               <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Review</p>
@@ -201,7 +201,7 @@ const detailModalUi = {
               <div class="rounded-2xl bg-gray-50 px-4 py-4 dark:bg-dark-bg">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">处理记录</p>
                 <p class="mt-2 text-sm text-gray-700 dark:text-gray-200">
-                  {{ report.handleResult || '当前尚未处理，可在右下角直接发起 mock 处置。' }}
+                  {{ report.handleResult || '当前尚未处理，可在右下角直接发起审核处置。' }}
                 </p>
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                   {{ report.handleTime ? `${report.handlerName || '管理员'} 于 ${report.handleTime} 完成处置` : `创建时间：${report.createTime}` }}
@@ -214,17 +214,18 @@ const detailModalUi = {
     </template>
 
     <template #footer>
-      <div class="text-xs text-gray-500 dark:text-gray-400">
+      <div class="order-2 text-xs text-gray-500 dark:text-gray-400 sm:order-1">
         {{ report ? `最后更新时间：${report.updateTime}` : '' }}
       </div>
 
-      <div class="flex flex-col-reverse gap-2 sm:flex-row">
-        <UButton color="neutral" variant="soft" @click="emit('update:open', false)">
+      <div class="order-1 flex w-full flex-col-reverse gap-2 sm:order-2 sm:w-auto sm:flex-row">
+        <UButton color="neutral" variant="soft" class="w-full sm:w-auto" @click="emit('update:open', false)">
           关闭详情
         </UButton>
         <UButton
           color="red"
           variant="soft"
+          class="w-full sm:w-auto"
           :disabled="!report || !isPending"
           @click="report && emit('reject', report.id)"
         >
@@ -234,6 +235,7 @@ const detailModalUi = {
         <UButton
           color="success"
           variant="soft"
+          class="w-full sm:w-auto"
           :disabled="!report || !isPending"
           @click="report && emit('pass', report.id)"
         >

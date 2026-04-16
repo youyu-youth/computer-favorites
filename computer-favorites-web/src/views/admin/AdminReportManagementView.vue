@@ -8,7 +8,7 @@ import ReportsOverviewCards from '@/components/admin/reports/ReportsOverviewCard
 import ReportsTable from '@/components/admin/reports/ReportsTable.vue'
 import ReportsToolbar from '@/components/admin/reports/ReportsToolbar.vue'
 import UModal from '@/components/ui-adapter/UModal.vue'
-import { useAdminReportManagementMock } from '@/composables/admin/useAdminReportManagementMock'
+import { useAdminReportManagement } from '@/composables/admin/useAdminReportManagement'
 import { useAdminNavStore } from '@/stores/adminNav'
 
 type FeedbackState = {
@@ -56,7 +56,7 @@ const {
   closeHandleDialog,
   updateHandleForm,
   submitHandleAction,
-} = useAdminReportManagementMock()
+} = useAdminReportManagement()
 
 const handleDialogForm = computed(() => ({
   action: handleDialog.action,
@@ -64,16 +64,16 @@ const handleDialogForm = computed(() => ({
   executeAction: handleDialog.executeAction,
 }))
 
-const handleRefresh = () => {
-  refreshData()
+const handleRefresh = async () => {
+  const result = await refreshData()
   feedback.value = {
-    tone: 'success',
-    text: '本地 mock 数据已重新排序刷新。',
+    tone: result.ok ? 'success' : 'error',
+    text: result.ok ? '举报数据已刷新。' : result.message || '举报数据刷新失败。',
   }
 }
 
-const handleSubmitAction = () => {
-  const result = submitHandleAction()
+const handleSubmitAction = async () => {
+  const result = await submitHandleAction()
   feedback.value = {
     tone: result.ok ? 'success' : 'error',
     text: result.message,
@@ -174,7 +174,7 @@ onMounted(() => {
     <UModal
       :open="imagePreviewOpen"
       :title="imagePreviewTitle"
-      description="截图预览仅作为 mock 证据展示，不代表真实接口返回。"
+      description="截图预览用于辅助核验举报证据。"
       :ui="{
         overlay: 'bg-black/55 backdrop-blur-sm z-[130]',
         content:

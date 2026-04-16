@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import AdminSelect from '@/components/admin/common/AdminSelect.vue'
 import UButton from '@/components/ui-adapter/UButton.vue'
 import UInput from '@/components/ui-adapter/UInput.vue'
 import USwitch from '@/components/ui-adapter/USwitch.vue'
@@ -47,16 +48,16 @@ const onKeywordInput = () => {
 }
 
 const statusOptions = computed(() => [
-  { label: '全部状态', value: '' },
-  { label: '待处理', value: '0' },
-  { label: '已处理', value: '1' },
-  { label: '已驳回', value: '2' },
+  { label: '全部状态', value: null },
+  { label: '待处理', value: 0 },
+  { label: '已处理', value: 1 },
+  { label: '已驳回', value: 2 },
 ])
 
 const typeOptions = computed(() => [
-  { label: '全部类型', value: '' },
-  { label: '网站举报', value: '1' },
-  { label: '评论举报', value: '2' },
+  { label: '全部类型', value: null },
+  { label: '网站举报', value: 1 },
+  { label: '评论举报', value: 2 },
 ])
 </script>
 
@@ -99,45 +100,19 @@ const typeOptions = computed(() => [
           </div>
 
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div class="relative">
-              <select
-                :value="status ?? ''"
-                class="h-10 w-full cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white pl-3 pr-9 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-dark-border dark:bg-dark-bg dark:text-gray-100"
-                @change="
-                  emit(
-                    'update:status',
-                    ($event.target as HTMLSelectElement).value === ''
-                      ? null
-                      : (Number(($event.target as HTMLSelectElement).value) as ReportStatus),
-                  )
-                "
-              >
-                <option v-for="option in statusOptions" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-              <i class="fas fa-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400"></i>
-            </div>
+            <AdminSelect
+              :modelValue="status"
+              :options="statusOptions"
+              placeholder="全部状态"
+              @update:modelValue="(value) => emit('update:status', value as ReportStatus | null)"
+            />
 
-            <div class="relative">
-              <select
-                :value="type ?? ''"
-                class="h-10 w-full cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white pl-3 pr-9 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-dark-border dark:bg-dark-bg dark:text-gray-100"
-                @change="
-                  emit(
-                    'update:type',
-                    ($event.target as HTMLSelectElement).value === ''
-                      ? null
-                      : (Number(($event.target as HTMLSelectElement).value) as ReportType),
-                  )
-                "
-              >
-                <option v-for="option in typeOptions" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-              <i class="fas fa-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400"></i>
-            </div>
+            <AdminSelect
+              :modelValue="type"
+              :options="typeOptions"
+              placeholder="全部类型"
+              @update:modelValue="(value) => emit('update:type', value as ReportType | null)"
+            />
 
             <div
               class="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 dark:border-dark-border dark:bg-dark-bg"

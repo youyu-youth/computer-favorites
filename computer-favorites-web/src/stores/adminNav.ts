@@ -64,7 +64,7 @@ const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
     key: 'reports',
     label: '举报处置',
     icon: 'fas fa-flag',
-    mockOnly: true,
+    mockOnly: false,
   },
   {
     key: 'comments',

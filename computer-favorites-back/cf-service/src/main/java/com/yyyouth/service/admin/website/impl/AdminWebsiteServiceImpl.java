@@ -1096,8 +1096,6 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         auditLog.setAction(action);
         auditLog.setTargetType(AUDIT_LOG_TARGET_TYPE);
         auditLog.setTargetId(originWebsite.getId());
-        auditLog.setBeforeData(JSONUtil.toJsonStr(beforeData));
-        auditLog.setAfterData(JSONUtil.toJsonStr(afterData));
         auditLog.setResult(AUDIT_SUCCESS_RESULT);
         auditLog.setCreateTime(operationTime);
 

@@ -58,17 +58,6 @@ public class AuditLog {
     @TableField("target_id")
     private Long targetId;
 
-    /**
-     * 变更前数据
-     */
-    @TableField("before_data")
-    private String beforeData;
-
-    /**
-     * 变更后数据
-     */
-    @TableField("after_data")
-    private String afterData;
 
     /**
      * 执行结果
@@ -87,12 +76,6 @@ public class AuditLog {
     private String ip;
 
     /**
-     * 用户代理
-     */
-    @TableField("user_agent")
-    private String userAgent;
-
-    /**
      * 请求URL
      */
     @TableField("request_url")
@@ -104,11 +87,6 @@ public class AuditLog {
     @TableField("request_method")
     private String requestMethod;
 
-    /**
-     * 执行耗时
-     */
-    @TableField("execution_time")
-    private Integer executionTime;
 
     /**
      * 创建时间
