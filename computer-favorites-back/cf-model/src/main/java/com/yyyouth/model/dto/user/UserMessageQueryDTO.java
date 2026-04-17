@@ -35,8 +35,9 @@ public class UserMessageQueryDTO {
     private Integer isRead;
 
     /**
-     * 消息类型
+     * 消息类型：1系统通知，2评论回复，3收藏提醒，4审核结果，5举报反馈
      */
     @Positive(message = "消息类型必须为正数")
+    @Max(value = 5, message = "消息类型不合法")
     private Integer type;
 }

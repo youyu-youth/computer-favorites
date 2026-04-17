@@ -106,6 +106,47 @@ class UserMessageControllerIntegrationTest {
     }
 
     /**
+     * 查询举报反馈消息分页应返回对应类型结果
+     *
+     * @throws Exception 执行异常
+     */
+    @Test
+    void shouldQueryReportFeedbackMessagePageSuccessfully() throws Exception {
+        UserMessageItemVO itemVO = new UserMessageItemVO();
+        itemVO.setId(201L);
+        itemVO.setTitle("举报处理结果通知");
+        itemVO.setContent("你提交的举报已审核完成，当前未采纳。");
+        itemVO.setType(5);
+        itemVO.setRelatedId(3001L);
+        itemVO.setIsRead(0);
+        itemVO.setCreateTime(LocalDateTime.of(2026, 4, 16, 11, 0, 0));
+
+        UserMessagePageVO pageVO = new UserMessagePageVO();
+        pageVO.setList(List.of(itemVO));
+        pageVO.setTotal(1L);
+        pageVO.setPageNum(1);
+        pageVO.setPageSize(10);
+        pageVO.setUnreadCount(1L);
+
+        when(userMessageService.queryMessagePage(any())).thenReturn(pageVO);
+
+        mockMvc.perform(get("/api/user/messages")
+                        .param("pageNum", "1")
+                        .param("pageSize", "10")
+                        .param("isRead", "0")
+                        .param("type", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.SUCCESS))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.unreadCount").value(1))
+                .andExpect(jsonPath("$.data.list[0].id").value(201))
+                .andExpect(jsonPath("$.data.list[0].type").value(5))
+                .andExpect(jsonPath("$.data.list[0].title").value("举报处理结果通知"));
+
+        verify(userMessageService).queryMessagePage(any());
+    }
+
+    /**
      * 标记单条消息已读应返回成功
      *
      * @throws Exception 执行异常

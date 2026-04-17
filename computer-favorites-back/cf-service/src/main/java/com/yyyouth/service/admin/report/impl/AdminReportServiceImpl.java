@@ -10,9 +10,11 @@ import com.yyyouth.model.dto.admin.AdminReportHandleDTO;
 import com.yyyouth.model.dto.admin.AdminReportQueryDTO;
 import com.yyyouth.model.enums.ReportStatus;
 import com.yyyouth.model.enums.ReportType;
+import com.yyyouth.model.enums.UserMessageType;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.report.Report;
+import com.yyyouth.model.pojo.system.SystemMessage;
 import com.yyyouth.model.pojo.website.Comment;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.vo.admin.AdminReportBatchHandleResultItemVO;
@@ -26,6 +28,7 @@ import com.yyyouth.model.vo.admin.AdminReportStatisticsVO;
 import com.yyyouth.service.admin.report.AdminReportService;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.mapper.report.ReportMapper;
+import com.yyyouth.service.mapper.system.SystemMessageMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CommentMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
@@ -65,9 +68,15 @@ public class AdminReportServiceImpl implements AdminReportService {
 
     private static final int NOT_DELETED = 0;
 
+    private static final int UNREAD_MESSAGE = 0;
+
+    private static final int REPORT_FEEDBACK_MESSAGE_TYPE = UserMessageType.REPORT_FEEDBACK.getCode();
+
     private static final String ACTION_PASS = "pass";
 
     private static final String ACTION_REJECT = "reject";
+
+    private static final String REPORT_FEEDBACK_MESSAGE_TITLE = "举报处理结果通知";
 
     private static final String TIMELINE_DONE = "done";
 
@@ -90,6 +99,8 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final WebsiteMapper websiteMapper;
 
     private final CommentMapper commentMapper;
+
+    private final SystemMessageMapper systemMessageMapper;
 
     private final UserAccountMapper userAccountMapper;
 
@@ -211,6 +222,8 @@ public class AdminReportServiceImpl implements AdminReportService {
                 throw new BusinessException(40403, "目标联动处置失败");
             }
         }
+
+        insertReportFeedbackMessage(report, handleDTO, nextStatus, actionExecuted, now);
 
         AdminReportHandleResultVO resultVO = new AdminReportHandleResultVO();
         resultVO.setReportId(reportId);
@@ -561,6 +574,59 @@ public class AdminReportServiceImpl implements AdminReportService {
             return commentMapper.updateById(updateComment) > 0;
         }
         return false;
+    }
+
+    /**
+     * 写入举报反馈站内消息
+     *
+     * @param report 举报记录
+     * @param handleDTO 处置参数
+     * @param nextStatus 最新状态
+     * @param actionExecuted 是否已执行联动治理
+     * @param operationTime 操作时间
+     */
+    private void insertReportFeedbackMessage(Report report,
+                                             AdminReportHandleDTO handleDTO,
+                                             Integer nextStatus,
+                                             boolean actionExecuted,
+                                             LocalDateTime operationTime) {
+        if (report.getUserId() == null || report.getUserId() <= 0) {
+            return;
+        }
+
+        TargetContext targetContext = resolveTargetContext(report);
+        SystemMessage message = new SystemMessage();
+        message.setUserId(report.getUserId());
+        message.setType(REPORT_FEEDBACK_MESSAGE_TYPE);
+        message.setIsRead(UNREAD_MESSAGE);
+        message.setRelatedId(report.getId());
+        message.setCreateTime(operationTime);
+        message.setTitle(REPORT_FEEDBACK_MESSAGE_TITLE);
+        message.setContent(buildReportFeedbackMessageContent(targetContext, handleDTO, nextStatus, actionExecuted));
+        systemMessageMapper.insert(message);
+    }
+
+    /**
+     * 构建举报反馈消息内容
+     *
+     * @param targetContext 目标上下文
+     * @param handleDTO 处置参数
+     * @param nextStatus 最新状态
+     * @param actionExecuted 是否已执行联动治理
+     * @return 消息内容
+     */
+    private String buildReportFeedbackMessageContent(TargetContext targetContext,
+                                                     AdminReportHandleDTO handleDTO,
+                                                     Integer nextStatus,
+                                                     boolean actionExecuted) {
+        String targetName = StringUtils.hasText(targetContext.targetName()) ? targetContext.targetName() : "目标内容";
+        if (Objects.equals(nextStatus, ReportStatus.PROCESSED.getCode())) {
+            if (actionExecuted) {
+                return "你提交的关于《" + targetName + "》的举报已审核通过，管理员已执行联动处置。处理说明：" + handleDTO.getHandleResult();
+            }
+            return "你提交的关于《" + targetName + "》的举报已审核通过。处理说明：" + handleDTO.getHandleResult();
+        }
+        return "你提交的关于《" + targetName + "》的举报已审核完成，当前未采纳。处理说明：" + handleDTO.getHandleResult();
     }
 
     /**

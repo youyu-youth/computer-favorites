@@ -41,7 +41,7 @@ public class SystemMessage {
     private String content;
 
     /**
-     * 消息类型
+     * 消息类型：1系统通知，2评论回复，3收藏提醒，4审核结果，5举报反馈
      */
     private Integer type;
 

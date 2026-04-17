@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Check, Heart, Info, MessageSquareText, ShieldCheck } from 'lucide-vue-next'
+import { Check, Heart, Info, MessageSquareText, ShieldAlert, ShieldCheck } from 'lucide-vue-next'
 
 export interface MessageProps {
   id: number
-  type: 'system' | 'comment' | 'favorite' | 'audit' | string
+  type: 'system' | 'comment' | 'favorite' | 'audit' | 'report' | string
   title: string
   content: string
   time: string
@@ -30,6 +30,7 @@ const iconBgClass = computed(() => {
     comment: 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400',
     favorite: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400',
     audit: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400',
+    report: 'bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400',
     default: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
   }
   return classes[props.message.type] || classes.default
@@ -41,6 +42,7 @@ const IconComponent = computed(() => {
     comment: MessageSquareText,
     favorite: Heart,
     audit: ShieldCheck,
+    report: ShieldAlert,
   }
   return icons[props.message.type] || Info
 })

@@ -14,6 +14,7 @@ import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
+import com.yyyouth.model.enums.UserMessageType;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.system.SystemMessage;
@@ -116,7 +117,7 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
 
     private static final int AUDIT_REJECT_ACTION = 2;
 
-    private static final int DEFAULT_AUDIT_MESSAGE_TYPE = 4;
+    private static final int DEFAULT_AUDIT_MESSAGE_TYPE = UserMessageType.AUDIT_RESULT.getCode();
 
     private static final int UNREAD_MESSAGE = 0;
 

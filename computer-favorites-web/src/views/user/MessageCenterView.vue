@@ -3,19 +3,24 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { Bell, Inbox } from 'lucide-vue-next'
 import AppPagination from '@/components/common/AppPagination.vue'
 import MessageItem, { type MessageProps } from '@/components/user/message/MessageItem.vue'
+import UserSelect from '@/components/user/UserSelect.vue'
 import { batchReadUserMessages, getUserMessagePage, markUserMessageRead } from '@/api/user-notification'
 import { useUserMessageUnread } from '@/composables/useUserMessageUnread'
 import { useToast } from '@/composables/useToast'
+import {
+  USER_MESSAGE_TYPE_OPTIONS,
+  resolveUserMessageViewType,
+  type UserMessageFilterValue,
+} from '@/constants/user-message'
 import type { UserMessageItem, UserMessageQuery } from '@/types/notification'
 
 type TabValue = 'all' | 'unread' | 'read'
-type TypeFilterValue = 'all' | 1 | 2 | 3 | 4
 
 const { add: showToast } = useToast()
 const { setUnreadCount: setGlobalUnreadCount } = useUserMessageUnread()
 
 const currentTab = ref<TabValue>('all')
-const currentType = ref<TypeFilterValue>('all')
+const currentType = ref<UserMessageFilterValue>('all')
 const pageNum = ref(1)
 const pageSize = ref(12)
 const total = ref(0)
@@ -34,14 +39,6 @@ const tabs: Array<{ label: string; value: TabValue }> = [
   { label: '全部消息', value: 'all' },
   { label: '未读', value: 'unread' },
   { label: '已读', value: 'read' },
-]
-
-const typeOptions: Array<{ label: string; value: TypeFilterValue }> = [
-  { label: '所有类型', value: 'all' },
-  { label: '系统通知', value: 1 },
-  { label: '评论回复', value: 2 },
-  { label: '收藏提醒', value: 3 },
-  { label: '审核结果', value: 4 },
 ]
 
 const totalPages = computed(() => {
@@ -138,20 +135,10 @@ const formatMessageTime = (value: string): string => {
   return `${year}-${month}-${day} ${hours}:${minutes}`
 }
 
-const resolveMessageType = (typeValue: number): MessageProps['type'] => {
-  const typeMap: Record<number, MessageProps['type']> = {
-    1: 'system',
-    2: 'comment',
-    3: 'favorite',
-    4: 'audit',
-  }
-  return typeMap[typeValue] || 'system'
-}
-
 const toMessageView = (item: UserMessageItem): MessageProps => {
   return {
     id: Number(item.id),
-    type: resolveMessageType(Number(item.type)),
+    type: resolveUserMessageViewType(Number(item.type)),
     title: item.title || '系统通知',
     content: item.content || '',
     time: formatMessageTime(item.createTime),
@@ -440,27 +427,14 @@ onMounted(() => {
         </div>
 
         <div class="flex w-full items-center gap-3 sm:w-auto">
-          <div class="relative w-full sm:w-40">
-            <select
-              v-model="currentType"
-              class="block w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2 pr-8 text-sm leading-tight text-gray-700 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-white/10 dark:bg-black dark:text-gray-200"
-            >
-              <option
-                v-for="option in typeOptions"
-                :key="option.label"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </option>
-            </select>
-            <div
-              class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400"
-            >
-              <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-              </svg>
-            </div>
-          </div>
+          <UserSelect
+            v-model="currentType"
+            :options="USER_MESSAGE_TYPE_OPTIONS"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="消息类型"
+            minWidth="160px"
+          />
 
           <button
             @click="markAllAsRead"

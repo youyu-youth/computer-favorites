@@ -86,6 +86,50 @@ class UserMessageServiceImplTest {
     }
 
     /**
+     * 查询举报反馈消息时应返回对应类型数据
+     */
+    @Test
+    void shouldQueryReportFeedbackMessagePageSuccessfully() {
+        UserMessageQueryDTO queryDTO = new UserMessageQueryDTO();
+        queryDTO.setPageNum(1);
+        queryDTO.setPageSize(10);
+        queryDTO.setIsRead(0);
+        queryDTO.setType(5);
+
+        SystemMessage message = new SystemMessage();
+        message.setId(201L);
+        message.setUserId(1001L);
+        message.setTitle("举报处理结果通知");
+        message.setContent("你提交的举报已审核通过，管理员已执行联动处置。");
+        message.setType(5);
+        message.setRelatedId(3001L);
+        message.setIsRead(0);
+        message.setCreateTime(LocalDateTime.of(2026, 4, 16, 9, 30, 0));
+
+        when(systemMessageMapper.countUserMessages(1001L, 0, 5)).thenReturn(1L);
+        when(systemMessageMapper.selectUserMessagePage(1001L, 0, 5, 0, 10)).thenReturn(List.of(message));
+        when(systemMessageMapper.countUnreadMessages(1001L)).thenReturn(2L);
+
+        try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
+            stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
+            stpUtilMock.when(StpUtil::getLoginIdAsLong).thenReturn(1001L);
+
+            UserMessagePageVO pageVO = userMessageService.queryMessagePage(queryDTO);
+
+            assertThat(pageVO.getTotal()).isEqualTo(1L);
+            assertThat(pageVO.getUnreadCount()).isEqualTo(2L);
+            assertThat(pageVO.getList()).hasSize(1);
+            assertThat(pageVO.getList().get(0).getType()).isEqualTo(5);
+            assertThat(pageVO.getList().get(0).getTitle()).isEqualTo("举报处理结果通知");
+            assertThat(pageVO.getList().get(0).getContent()).contains("举报");
+        }
+
+        verify(systemMessageMapper).countUserMessages(1001L, 0, 5);
+        verify(systemMessageMapper).selectUserMessagePage(1001L, 0, 5, 0, 10);
+        verify(systemMessageMapper).countUnreadMessages(1001L);
+    }
+
+    /**
      * 标记单条消息已读应更新成功
      */
     @Test
