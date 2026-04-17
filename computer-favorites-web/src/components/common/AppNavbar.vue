@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import PrimeButton from 'primevue/button'
 import Avatar from 'primevue/avatar'
+import FeedbackDialog from '@/components/user/FeedbackDialog.vue'
 import { logout as logoutApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
@@ -21,6 +22,7 @@ const profileMenuRef = ref<HTMLElement | null>(null)
 const profileMenuOpen = ref(false)
 const logoutLoading = ref(false)
 const mobileMenuOpen = ref(false)
+const feedbackDialogOpen = ref(false)
 const {
   unreadMessageCount,
   hasUnreadMessage,
@@ -80,6 +82,12 @@ const goToAccount = () => {
   profileMenuOpen.value = false
   mobileMenuOpen.value = false
   router.push({ name: 'account' })
+}
+
+const openFeedbackDialog = () => {
+  profileMenuOpen.value = false
+  mobileMenuOpen.value = false
+  feedbackDialogOpen.value = true
 }
 
 const toggleProfileMenu = () => {
@@ -248,6 +256,22 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3 justify-self-end">
+          <button
+            type="button"
+            class="hidden cursor-pointer items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-primary-400 hover:text-primary-500 dark:border-dark-border dark:text-gray-300 dark:hover:border-primary-500 dark:hover:text-primary-400 md:inline-flex"
+            @click="openFeedbackDialog"
+          >
+            <i class="fas fa-comment-dots text-xs"></i>
+            {{ t('user.home.feedback.navButton') }}
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-gray-200 text-gray-600 transition-colors hover:border-primary-400 hover:text-primary-500 dark:border-dark-border dark:text-gray-300 dark:hover:border-primary-500 dark:hover:text-primary-400 md:hidden"
+            :aria-label="t('user.home.feedback.navButton')"
+            @click="openFeedbackDialog"
+          >
+            <i class="fas fa-comment-dots text-sm"></i>
+          </button>
           <button
             @click="appStore.toggleTheme"
             class="cursor-pointer rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -449,6 +473,16 @@ onBeforeUnmount(() => {
         <PrimeButton
           text
           class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 dark:!text-gray-300"
+          @click="openFeedbackDialog"
+        >
+          <div class="flex items-center gap-2">
+            <i class="fas fa-comment-dots text-xs"></i>
+            {{ t('user.home.feedback.navButton') }}
+          </div>
+        </PrimeButton>
+        <PrimeButton
+          text
+          class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 dark:!text-gray-300"
           @click="handlePendingFeature"
         >
           {{ t('user.home.hero.uploadButton') }}
@@ -463,6 +497,7 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
   </header>
+  <FeedbackDialog v-model:open="feedbackDialogOpen" />
 </template>
 
 <style scoped>

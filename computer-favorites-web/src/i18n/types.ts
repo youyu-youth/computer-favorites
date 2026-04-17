@@ -146,6 +146,28 @@ export interface UserMessages {
       uploadButton: string
       browseButton: string
     }
+    feedback: {
+      navButton: string
+      dialogTitle: string
+      dialogDescription: string
+      typeLabel: string
+      typeSuggestion: string
+      typeBug: string
+      typeComplaint: string
+      typeExperience: string
+      contentLabel: string
+      contentPlaceholder: string
+      contentCount: string
+      contactLabel: string
+      contactPlaceholder: string
+      imagesLabel: string
+      uploadAction: string
+      imageAlt: string
+      removeImage: string
+      submitAction: string
+      submitSuccess: string
+      submitFailed: string
+    }
     filter: {
       search: string
       searchPlaceholder: string
