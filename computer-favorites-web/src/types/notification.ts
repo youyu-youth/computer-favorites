@@ -36,6 +36,11 @@ export interface UserFeedbackCreateRequest {
   images?: string[]
 }
 
+export interface UserFeedbackImageUploadResult {
+  objectKey: string
+  imageUrl: string
+}
+
 export interface UserFeedbackQuery {
   pageNum?: number
   pageSize?: number

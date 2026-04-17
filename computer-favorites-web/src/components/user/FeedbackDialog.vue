@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import UModal from '@/components/ui-adapter/UModal.vue'
+import {
+  createUserFeedback,
+  deleteUserFeedbackImage,
+  uploadUserFeedbackImage,
+} from '@/api/user-notification'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from 'vue-i18n'
-import type { UserFeedbackCreateRequest } from '@/types/notification'
+import type { UserFeedbackCreateRequest, UserFeedbackImageUploadResult } from '@/types/notification'
 
 interface Props {
   open: boolean
@@ -19,6 +24,8 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const toast = useToast()
 
+type FeedbackUploadItem = UserFeedbackImageUploadResult
+
 const feedbackTypeOptions: Array<{ value: 1 | 2 | 3 | 4; labelKey: string }> = [
   { value: 1, labelKey: 'user.home.feedback.typeSuggestion' },
   { value: 2, labelKey: 'user.home.feedback.typeBug' },
@@ -29,8 +36,9 @@ const feedbackTypeOptions: Array<{ value: 1 | 2 | 3 | 4; labelKey: string }> = [
 const selectedType = ref<1 | 2 | 3 | 4>(1)
 const feedbackContent = ref('')
 const contact = ref('')
-const imageUrls = ref<string[]>([])
+const uploadedImages = ref<FeedbackUploadItem[]>([])
 const isSubmitting = ref(false)
+const uploadPendingCount = ref(0)
 const contentMaxLength = 500
 const contentMinLength = 10
 const contactMaxLength = 100
@@ -38,25 +46,58 @@ const maxImageCount = 5
 let previousScrollY = 0
 
 const contentLength = computed(() => feedbackContent.value.trim().length)
+const isBusy = computed(() => isSubmitting.value || uploadPendingCount.value > 0)
 const canSubmit = computed(() => {
   return (
-    !isSubmitting.value &&
+    !isBusy.value &&
     contentLength.value >= contentMinLength &&
     contentLength.value <= contentMaxLength &&
     contact.value.trim().length <= contactMaxLength
   )
 })
 
-const resetForm = () => {
+const cleanupUploadedImages = async (images: FeedbackUploadItem[]) => {
+  await Promise.allSettled(
+    images.map(async (image) => {
+      try {
+        await deleteUserFeedbackImage(image.objectKey)
+      } catch (error) {
+        console.error('清理反馈图片失败', error)
+      }
+    }),
+  )
+}
+
+const resetForm = async (options: { cleanupRemote?: boolean } = {}) => {
+  const { cleanupRemote = true } = options
+  const imagesToCleanup = [...uploadedImages.value]
   selectedType.value = 1
   feedbackContent.value = ''
   contact.value = ''
-  imageUrls.value.forEach((url) => URL.revokeObjectURL(url))
-  imageUrls.value = []
+  uploadedImages.value = []
+
+  if (cleanupRemote && imagesToCleanup.length > 0) {
+    await cleanupUploadedImages(imagesToCleanup)
+  }
+}
+
+const setDialogOpen = (value: boolean) => {
+  emit('update:open', value)
 }
 
 const closeDialog = () => {
-  emit('update:open', false)
+  if (isBusy.value) {
+    return
+  }
+  setDialogOpen(false)
+}
+
+const handleDialogOpenChange = (value: boolean) => {
+  if (value) {
+    setDialogOpen(true)
+    return
+  }
+  closeDialog()
 }
 
 const lockPageScroll = () => {
@@ -80,30 +121,58 @@ const unlockPageScroll = () => {
   window.scrollTo({ top: previousScrollY, left: 0, behavior: 'auto' })
 }
 
-const handleImageUpload = (event: Event) => {
+const handleImageUpload = async (event: Event) => {
+  if (isBusy.value) {
+    return
+  }
+
   const input = event.target as HTMLInputElement
   const files = input.files
   if (!files || files.length === 0) {
     return
   }
 
-  const remainingCount = Math.max(0, maxImageCount - imageUrls.value.length)
+  const remainingCount = Math.max(0, maxImageCount - uploadedImages.value.length)
   const selectedFiles = Array.from(files).slice(0, remainingCount)
-  selectedFiles.forEach((file) => {
-    const objectUrl = URL.createObjectURL(file)
-    imageUrls.value.push(objectUrl)
-  })
-
   input.value = ''
+
+  for (const file of selectedFiles) {
+    uploadPendingCount.value += 1
+    try {
+      const uploadResult = await uploadUserFeedbackImage(file)
+      uploadedImages.value.push(uploadResult)
+    } catch (error) {
+      toast.add({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : '反馈图片上传失败，请稍后重试',
+        type: 'error',
+      })
+    } finally {
+      uploadPendingCount.value -= 1
+    }
+  }
 }
 
-const removeImage = (index: number) => {
-  const removed = imageUrls.value.splice(index, 1)
-  removed.forEach((url) => URL.revokeObjectURL(url))
-}
+const removeImage = async (index: number) => {
+  if (isBusy.value) {
+    return
+  }
 
-const submitFeedbackMock = async (): Promise<void> => {
-  await new Promise((resolve) => window.setTimeout(resolve, 600))
+  const image = uploadedImages.value[index]
+  if (!image) {
+    return
+  }
+
+  try {
+    await deleteUserFeedbackImage(image.objectKey)
+    uploadedImages.value.splice(index, 1)
+  } catch (error) {
+    toast.add({
+      title: t('common.error'),
+      description: error instanceof Error ? error.message : '反馈图片删除失败，请稍后重试',
+      type: 'error',
+    })
+  }
 }
 
 const handleSubmit = async () => {
@@ -115,24 +184,25 @@ const handleSubmit = async () => {
     type: selectedType.value,
     content: feedbackContent.value.trim(),
     contact: contact.value.trim() || undefined,
-    images: imageUrls.value.length > 0 ? [...imageUrls.value] : undefined,
+    images: uploadedImages.value.length > 0 ? uploadedImages.value.map((item) => item.imageUrl) : undefined,
   }
 
   isSubmitting.value = true
   try {
-    await submitFeedbackMock()
+    await createUserFeedback(payload)
     toast.add({
       title: t('common.success'),
       description: t('user.home.feedback.submitSuccess'),
       type: 'success',
     })
     emit('submitted', payload)
-    resetForm()
-    closeDialog()
-  } catch {
+    await resetForm({ cleanupRemote: false })
+    setDialogOpen(false)
+  } catch (error) {
     toast.add({
       title: t('common.error'),
-      description: t('user.home.feedback.submitFailed'),
+      description:
+        error instanceof Error ? error.message : t('user.home.feedback.submitFailed'),
       type: 'error',
     })
   } finally {
@@ -148,14 +218,13 @@ watch(
       return
     }
     unlockPageScroll()
-    if (!open) {
-      resetForm()
-    }
+    void resetForm()
   },
   { immediate: true },
 )
 
 onBeforeUnmount(() => {
+  void resetForm()
   unlockPageScroll()
 })
 
@@ -182,7 +251,7 @@ defineOptions({
       footer:
         'feedback-modal-footer mt-auto px-4 pb-4 pt-2 sm:px-8 sm:pb-6 bg-[#fffdf7] dark:bg-black',
     }"
-    @update:open="emit('update:open', $event)"
+    @update:open="handleDialogOpenChange"
   >
     <template #header>
       <div class="flex w-full items-center justify-between gap-3">
@@ -191,8 +260,9 @@ defineOptions({
         </h2>
         <button
           type="button"
-          class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#8b5b10] transition-colors hover:bg-[#f59e0b]/12 hover:text-[#7a4b00] dark:text-[#d6ad59] dark:hover:bg-[#111] dark:hover:text-[#ffd37f]"
+          class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#8b5b10] transition-colors hover:bg-[#f59e0b]/12 hover:text-[#7a4b00] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#d6ad59] dark:hover:bg-[#111] dark:hover:text-[#ffd37f]"
           :aria-label="t('common.close')"
+          :disabled="isBusy"
           @click="closeDialog"
         >
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -309,12 +379,12 @@ defineOptions({
           </p>
           <div class="flex flex-wrap gap-2">
             <div
-              v-for="(url, index) in imageUrls"
-              :key="url"
+              v-for="(image, index) in uploadedImages"
+              :key="image.objectKey"
               class="group relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-xl border border-[#f59e0b]/30 dark:border-[#2c2c2c]"
             >
               <img
-                :src="url"
+                :src="image.imageUrl"
                 :alt="t('user.home.feedback.imageAlt', { index: index + 1 })"
                 class="h-full w-full object-cover"
               />
@@ -322,17 +392,26 @@ defineOptions({
                 type="button"
                 :aria-label="t('user.home.feedback.removeImage', { index: index + 1 })"
                 class="absolute right-1 top-1 hidden h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/75 text-[10px] text-white group-hover:flex group-focus-within:flex"
+                :disabled="isBusy"
                 @click="removeImage(index)"
               >
                 x
               </button>
             </div>
             <label
-              v-if="imageUrls.length < maxImageCount"
-              class="flex h-[4.5rem] w-[4.5rem] cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#f59e0b]/35 text-center text-xs font-medium text-[#a06d1c] transition-colors hover:border-[#f59e0b] hover:bg-[#f59e0b]/10 dark:border-[#3a2d13] dark:text-[#b38d4a] dark:hover:border-[#f59e0b]/55 dark:hover:bg-[#111]"
+              v-if="uploadedImages.length < maxImageCount"
+              class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-xl border border-dashed border-[#f59e0b]/35 text-center text-xs font-medium text-[#a06d1c] transition-colors hover:border-[#f59e0b] hover:bg-[#f59e0b]/10 dark:border-[#3a2d13] dark:text-[#b38d4a] dark:hover:border-[#f59e0b]/55 dark:hover:bg-[#111]"
+              :class="isBusy ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'"
             >
               <span>{{ t('user.home.feedback.uploadAction') }}</span>
-              <input type="file" accept="image/*" multiple class="hidden" @change="handleImageUpload" />
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                class="hidden"
+                :disabled="isBusy"
+                @change="handleImageUpload"
+              />
             </label>
           </div>
         </div>
@@ -344,7 +423,7 @@ defineOptions({
         <button
           type="button"
           class="rounded-xl border border-[#f59e0b]/24 bg-transparent px-6 py-2.5 text-sm font-medium text-[#8a5a10] transition-colors hover:bg-[#f59e0b]/8 dark:border-[#2c2c2c] dark:text-[#b8924d] dark:hover:bg-[#101010]"
-          :disabled="isSubmitting"
+          :disabled="isBusy"
           @click="closeDialog"
         >
           {{ t('common.cancel') }}
@@ -355,7 +434,7 @@ defineOptions({
           :disabled="!canSubmit"
           @click="handleSubmit"
         >
-          {{ isSubmitting ? t('common.loading') : t('user.home.feedback.submitAction') }}
+          {{ isBusy ? t('common.loading') : t('user.home.feedback.submitAction') }}
         </button>
       </div>
     </template>

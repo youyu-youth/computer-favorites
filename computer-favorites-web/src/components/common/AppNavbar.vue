@@ -84,9 +84,27 @@ const goToAccount = () => {
   router.push({ name: 'account' })
 }
 
-const openFeedbackDialog = () => {
+const openFeedbackDialog = async () => {
   profileMenuOpen.value = false
   mobileMenuOpen.value = false
+
+  if (!authStore.isAuthed) {
+    await router.push({
+      name: 'login',
+      query: { redirect: route.fullPath },
+    })
+    return
+  }
+
+  const valid = await authStore.ensureSession()
+  if (!valid) {
+    await router.push({
+      name: 'login',
+      query: { redirect: route.fullPath },
+    })
+    return
+  }
+
   feedbackDialogOpen.value = true
 }
 

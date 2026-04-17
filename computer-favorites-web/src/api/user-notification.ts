@@ -1,10 +1,11 @@
-import { getJson, postJson, putJson } from '@/utils/http'
+import { deleteJson, getJson, postFormData, postJson, putJson } from '@/utils/http'
 import type { ApiResult } from '@/api/types'
 import type {
   UserAnnouncementDetail,
   UserAnnouncementPage,
   UserAnnouncementQuery,
   UserFeedbackCreateRequest,
+  UserFeedbackImageUploadResult,
   UserFeedbackPage,
   UserFeedbackQuery,
   UserMessageBatchReadResult,
@@ -101,6 +102,26 @@ export async function createUserFeedback(payload: UserFeedbackCreateRequest): Pr
   const response = await postJson<ApiResult<null>>('/api/user/feedbacks', payload)
   if (response.code !== 200) {
     throw new Error(response.msg || '提交反馈失败')
+  }
+}
+
+export async function uploadUserFeedbackImage(file: File): Promise<UserFeedbackImageUploadResult> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await postFormData<ApiResult<UserFeedbackImageUploadResult>>(
+    '/api/user/feedbacks/images',
+    formData,
+  )
+  return assertSuccess(response, '反馈图片上传失败')
+}
+
+export async function deleteUserFeedbackImage(objectKey: string): Promise<void> {
+  const response = await deleteJson<ApiResult<null>>(
+    `/api/user/feedbacks/images?objectKey=${encodeURIComponent(objectKey)}`,
+  )
+  if (response.code !== 200) {
+    throw new Error(response.msg || '反馈图片删除失败')
   }
 }
 
