@@ -41,8 +41,6 @@ export interface AdminFeedbackListItem {
   content: string
   images: string[]
   status: FeedbackStatus
-  reply: string | null
-  replyTime: string | null
   createTime: string
   updateTime: string
 }
@@ -62,6 +60,8 @@ export interface AdminFeedbackTimelineItem {
  * 管理端反馈详情
  */
 export interface AdminFeedbackDetail extends AdminFeedbackListItem {
+  reply: string | null
+  replyTime: string | null
   summaryText: string
   timeline: AdminFeedbackTimelineItem[]
 }
@@ -90,6 +90,7 @@ export interface AdminFeedbackPage {
   pageNum: number
   pageSize: number
   totalPages: number
+  statistics: AdminFeedbackStatistics
 }
 
 /**
@@ -121,6 +122,7 @@ export interface AdminFeedbackHandleResult {
   status: FeedbackStatus
   reply: string | null
   replyTime: string | null
+  updateTime: string
 }
 
 /**
@@ -160,24 +162,32 @@ export const FEEDBACK_TYPE_META = {
     shortLabel: '建议',
     icon: 'fas fa-lightbulb',
     helper: '产品体验与功能建议',
+    toneClass:
+      'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200',
   },
   [FeedbackType.BUG]: {
     label: 'Bug 反馈',
     shortLabel: 'Bug',
     icon: 'fas fa-bug',
     helper: '功能异常、报错或兼容问题',
+    toneClass:
+      'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-200',
   },
   [FeedbackType.COMPLAINT]: {
     label: '投诉',
     shortLabel: '投诉',
     icon: 'fas fa-triangle-exclamation',
     helper: '对服务流程或内容生态不满',
+    toneClass:
+      'bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-200',
   },
   [FeedbackType.EXPERIENCE]: {
     label: '使用感受',
     shortLabel: '感受',
     icon: 'fas fa-face-smile',
     helper: '对当前版本的体验评价',
+    toneClass:
+      'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200',
   },
 } as const satisfies Record<
   FeedbackType,
@@ -186,6 +196,7 @@ export const FEEDBACK_TYPE_META = {
     shortLabel: string
     icon: string
     helper: string
+    toneClass: string
   }
 >
 

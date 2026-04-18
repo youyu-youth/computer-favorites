@@ -3,11 +3,13 @@ import { computed } from 'vue'
 import UBadge from '@/components/ui-adapter/UBadge.vue'
 import UButton from '@/components/ui-adapter/UButton.vue'
 import UModal from '@/components/ui-adapter/UModal.vue'
+import USkeleton from '@/components/ui-adapter/USkeleton.vue'
 import type { AdminFeedbackDetail } from '@/types/feedback'
 import { FeedbackStatus, getFeedbackStatusMeta, getFeedbackTypeMeta } from '@/types/feedback'
 
 const props = defineProps<{
   open: boolean
+  loading: boolean
   feedback: AdminFeedbackDetail | null
 }>()
 
@@ -61,7 +63,107 @@ const formatDateTime = (value: string | null) => {
     @update:open="(value) => emit('update:open', value)"
   >
     <template #body>
-      <div v-if="feedback" class="space-y-4">
+      <div v-if="loading" class="space-y-4">
+        <section class="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
+          <article class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card sm:p-5">
+            <div class="flex flex-wrap items-center gap-2">
+              <USkeleton width="4.5rem" height="1.75rem" borderRadius="999px" />
+              <USkeleton width="5.5rem" height="1.75rem" borderRadius="999px" />
+              <USkeleton width="6rem" height="1rem" />
+            </div>
+            <div class="mt-4 flex items-start gap-4">
+              <USkeleton size="3.5rem" borderRadius="1rem" />
+              <div class="flex-1 space-y-2">
+                <USkeleton width="8rem" height="1.5rem" />
+                <USkeleton width="12rem" height="1rem" />
+                <USkeleton width="10rem" height="1rem" />
+              </div>
+            </div>
+            <div class="mt-5 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-4 dark:border-blue-400/20 dark:bg-blue-500/10">
+              <USkeleton width="4rem" height="0.85rem" />
+              <div class="mt-3 space-y-2">
+                <USkeleton width="100%" height="1rem" />
+                <USkeleton width="92%" height="1rem" />
+              </div>
+            </div>
+            <div class="mt-5 space-y-3">
+              <USkeleton width="4rem" height="0.85rem" />
+              <USkeleton width="100%" height="1rem" />
+              <USkeleton width="96%" height="1rem" />
+              <USkeleton width="90%" height="1rem" />
+            </div>
+          </article>
+
+          <article class="rounded-2xl border border-gray-200 bg-gray-50/80 p-4 dark:border-dark-border dark:bg-dark-bg sm:p-5">
+            <div class="flex items-center justify-between gap-3">
+              <div class="space-y-2">
+                <USkeleton width="3rem" height="0.85rem" />
+                <USkeleton width="5rem" height="1.25rem" />
+              </div>
+              <USkeleton size="2.5rem" borderRadius="1rem" />
+            </div>
+            <div class="mt-4 space-y-4">
+              <div v-for="index in 3" :key="index" class="relative pl-6">
+                <span class="absolute left-0 top-1.5 h-3 w-3 rounded-full bg-gray-200 dark:bg-white/10"></span>
+                <USkeleton width="5rem" height="1rem" />
+                <div class="mt-2 space-y-2">
+                  <USkeleton width="100%" height="0.95rem" />
+                  <USkeleton width="78%" height="0.95rem" />
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+          <article>
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <div class="space-y-2">
+                <USkeleton width="4rem" height="0.85rem" />
+                <USkeleton width="5rem" height="1.25rem" />
+              </div>
+              <USkeleton width="4rem" height="1rem" />
+            </div>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <USkeleton
+                v-for="index in 2"
+                :key="`image-skeleton-${index}`"
+                width="100%"
+                height="12rem"
+                borderRadius="1rem"
+              />
+            </div>
+          </article>
+
+          <article class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card sm:p-5">
+            <div class="flex items-center justify-between gap-3">
+              <div class="space-y-2">
+                <USkeleton width="3rem" height="0.85rem" />
+                <USkeleton width="5rem" height="1.25rem" />
+              </div>
+              <USkeleton size="2.5rem" borderRadius="1rem" />
+            </div>
+            <div class="mt-4 space-y-4">
+              <div class="rounded-2xl bg-gray-50 px-4 py-4 dark:bg-dark-bg">
+                <USkeleton width="4rem" height="0.85rem" />
+                <div class="mt-3 space-y-2">
+                  <USkeleton width="5rem" height="1rem" />
+                  <USkeleton width="9rem" height="1rem" />
+                </div>
+              </div>
+              <div class="rounded-2xl bg-gray-50 px-4 py-4 dark:bg-dark-bg">
+                <USkeleton width="4rem" height="0.85rem" />
+                <div class="mt-3 space-y-2">
+                  <USkeleton width="100%" height="1rem" />
+                  <USkeleton width="88%" height="1rem" />
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+      </div>
+
+      <div v-else-if="feedback" class="space-y-4">
         <section class="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
           <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card sm:p-5">
             <div class="flex flex-wrap items-center gap-2">

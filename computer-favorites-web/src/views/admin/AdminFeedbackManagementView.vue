@@ -21,6 +21,7 @@ const feedback = shallowRef<FeedbackState | null>(null)
 
 const {
   loading,
+  detailLoading,
   query,
   pagedFeedbacks,
   totalItems,
@@ -144,6 +145,7 @@ onMounted(() => {
 
     <FeedbackDetailPanel
       :open="detailOpen"
+      :loading="detailLoading"
       :feedback="detailRecord"
       @update:open="(value) => { if (!value) closeDetail() }"
       @preview-image="(payload) => openImagePreview(payload.url, payload.title)"

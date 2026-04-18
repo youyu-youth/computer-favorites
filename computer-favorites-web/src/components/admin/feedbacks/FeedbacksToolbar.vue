@@ -117,7 +117,7 @@ const typeOptions = computed(() => [
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
                   Images
                 </p>
-                <p class="truncate text-sm font-medium text-gray-800 dark:text-gray-100">仅看带图</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">仅看带图</p>
               </div>
               <USwitch
                 :modelValue="hasImages"
@@ -132,7 +132,7 @@ const typeOptions = computed(() => [
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
                   Contact
                 </p>
-                <p class="truncate text-sm font-medium text-gray-800 dark:text-gray-100">仅看可回访</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">仅看可回访</p>
               </div>
               <USwitch
                 :modelValue="hasContact"

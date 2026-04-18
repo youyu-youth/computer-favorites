@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onBeforeUnmount, ref } from 'vue'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
 import UBadge from '@/components/ui-adapter/UBadge.vue'
@@ -20,6 +21,15 @@ const emit = defineEmits<{
   (e: 'close', feedbackId: number): void
 }>()
 
+const SUMMARY_PREVIEW_LENGTH = 15
+
+const tooltipVisibleId = ref<number | null>(null)
+const tooltipContent = ref('')
+const tooltipStyle = ref<Record<string, string>>({})
+
+let tooltipShowTimer: number | null = null
+let tooltipHideTimer: number | null = null
+
 const formatDateTime = (value: string | null) => {
   if (!value) {
     return '-'
@@ -30,17 +40,68 @@ const formatDateTime = (value: string | null) => {
     return value
   }
 
-  return date.toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}/${month}/${day}`
 }
 
+const shouldShowSummaryTooltip = (content: string) => content.length > SUMMARY_PREVIEW_LENGTH
+
 const resolveContentExcerpt = (content: string) => {
-  return content.length > 60 ? `${content.slice(0, 60)}...` : content
+  return shouldShowSummaryTooltip(content) ? `${content.slice(0, SUMMARY_PREVIEW_LENGTH)}…` : content
 }
+
+const clearTooltipTimers = () => {
+  if (tooltipShowTimer) {
+    window.clearTimeout(tooltipShowTimer)
+    tooltipShowTimer = null
+  }
+
+  if (tooltipHideTimer) {
+    window.clearTimeout(tooltipHideTimer)
+    tooltipHideTimer = null
+  }
+}
+
+const updateTooltipPosition = (event: MouseEvent | FocusEvent) => {
+  const currentTarget = event.currentTarget
+  if (!(currentTarget instanceof HTMLElement)) {
+    return
+  }
+
+  const rect = currentTarget.getBoundingClientRect()
+  tooltipStyle.value = {
+    top: `${rect.bottom + 8}px`,
+    left: `${Math.max(12, rect.left)}px`,
+  }
+}
+
+const scheduleShowTooltip = (feedbackId: number, content: string, event: MouseEvent | FocusEvent) => {
+  if (!shouldShowSummaryTooltip(content)) {
+    return
+  }
+
+  clearTooltipTimers()
+  updateTooltipPosition(event)
+
+  tooltipShowTimer = window.setTimeout(() => {
+    tooltipVisibleId.value = feedbackId
+    tooltipContent.value = content
+  }, 200)
+}
+
+const scheduleHideTooltip = () => {
+  clearTooltipTimers()
+  tooltipHideTimer = window.setTimeout(() => {
+    tooltipVisibleId.value = null
+    tooltipContent.value = ''
+  }, 100)
+}
+
+onBeforeUnmount(() => {
+  clearTooltipTimers()
+})
 </script>
 
 <template>
@@ -96,7 +157,8 @@ const resolveContentExcerpt = (content: string) => {
         >
           <template #body="{ data }">
             <div
-              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 text-xs font-medium leading-none text-slate-700 dark:bg-white/10 dark:text-slate-200"
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium leading-none"
+              :class="getFeedbackTypeMeta(data.type).toneClass"
             >
               <i :class="[getFeedbackTypeMeta(data.type).icon, 'text-[11px] leading-none']"></i>
               {{ getFeedbackTypeMeta(data.type).shortLabel }}
@@ -112,23 +174,27 @@ const resolveContentExcerpt = (content: string) => {
         >
           <template #body="{ data }">
             <div class="max-w-[360px]">
-              <div class="flex items-center gap-2">
-                <span
-                  class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200"
+              <span
+                v-if="data.images.length > 0"
+                class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600 dark:bg-white/10 dark:text-gray-300"
+              >
+                <i class="fas fa-camera text-[10px]"></i>
+                {{ data.images.length }}
+              </span>
+              <div
+                class="relative mt-2 inline-flex max-w-full"
+                @mouseenter="scheduleShowTooltip(data.id, data.content, $event)"
+                @mouseleave="scheduleHideTooltip()"
+                @focusin="scheduleShowTooltip(data.id, data.content, $event)"
+                @focusout="scheduleHideTooltip()"
+              >
+                <button
+                  type="button"
+                  class="cursor-help text-left text-sm font-medium leading-6 text-gray-900 outline-none dark:text-gray-100"
                 >
-                  #{{ data.id }}
-                </span>
-                <span
-                  v-if="data.images.length > 0"
-                  class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600 dark:bg-white/10 dark:text-gray-300"
-                >
-                  <i class="fas fa-camera text-[10px]"></i>
-                  {{ data.images.length }}
-                </span>
+                  {{ resolveContentExcerpt(data.content) }}
+                </button>
               </div>
-              <p class="mt-2 text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
-                {{ resolveContentExcerpt(data.content) }}
-              </p>
             </div>
           </template>
         </Column>
@@ -173,27 +239,6 @@ const resolveContentExcerpt = (content: string) => {
         >
           <template #body="{ data }">
             {{ formatDateTime(data.createTime) }}
-          </template>
-        </Column>
-
-        <Column
-          field="replyTime"
-          header="处理信息"
-          headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-          bodyClass="px-4 py-3"
-        >
-          <template #body="{ data }">
-            <div v-if="data.status === FeedbackStatus.PENDING" class="text-sm text-gray-500 dark:text-gray-400">
-              等待管理员处理
-            </div>
-            <div v-else class="max-w-[220px]">
-              <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {{ data.reply || '工单已关闭，当前无公开回复内容' }}
-              </p>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {{ data.replyTime ? formatDateTime(data.replyTime) : formatDateTime(data.updateTime) }}
-              </p>
-            </div>
           </template>
         </Column>
 
@@ -264,7 +309,8 @@ const resolveContentExcerpt = (content: string) => {
             <div class="flex flex-wrap items-center gap-2">
               <UBadge :color="getFeedbackStatusMeta(item.status).color" :value="getFeedbackStatusMeta(item.status).label" />
               <span
-                class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-white/10 dark:text-slate-200"
+                class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+                :class="getFeedbackTypeMeta(item.type).toneClass"
               >
                 <i :class="[getFeedbackTypeMeta(item.type).icon, 'text-[11px]']"></i>
                 {{ getFeedbackTypeMeta(item.type).shortLabel }}
@@ -274,12 +320,6 @@ const resolveContentExcerpt = (content: string) => {
               {{ resolveContentExcerpt(item.content) }}
             </p>
           </div>
-
-          <span
-            class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200"
-          >
-            #{{ item.id }}
-          </span>
         </div>
 
         <div class="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-gray-50 px-3 py-3 text-sm dark:bg-dark-bg">
@@ -342,4 +382,20 @@ const resolveContentExcerpt = (content: string) => {
       </article>
     </div>
   </section>
+
+  <Teleport to="body">
+    <div
+      v-if="tooltipVisibleId !== null && tooltipContent"
+      class="pointer-events-none fixed z-[160] rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm leading-6 text-gray-700 shadow-[0_14px_30px_rgba(15,23,42,0.18)] dark:border-dark-border dark:bg-dark-card dark:text-gray-100"
+      :style="{
+        ...tooltipStyle,
+        width: 'max-content',
+        maxWidth: 'min(32rem, calc(100vw - 2rem))',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
+      }"
+    >
+      {{ tooltipContent }}
+    </div>
+  </Teleport>
 </template>
