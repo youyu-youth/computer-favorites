@@ -165,6 +165,12 @@ const router = createRouter({
           component: () => import('@/views/user/MessageCenterView.vue'),
           meta: { requiresAuth: true },
         },
+        {
+          path: 'announcement',
+          name: 'announcement',
+          component: () => import('@/views/user/AnnouncementView.vue'),
+          meta: { requiresAuth: false },
+        },
       ],
     },
   ],

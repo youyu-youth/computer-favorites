@@ -271,6 +271,12 @@ onBeforeUnmount(() => {
           >
             {{ t('user.home.hero.uploadButton') }}
           </button>
+          <RouterLink
+            :to="{ name: 'announcement' }"
+            class="text-sm font-medium text-gray-600 transition-colors hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400"
+          >
+            平台公告
+          </RouterLink>
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3 justify-self-end">
@@ -505,6 +511,13 @@ onBeforeUnmount(() => {
         >
           {{ t('user.home.hero.uploadButton') }}
         </PrimeButton>
+        <RouterLink
+          :to="{ name: 'announcement' }"
+          class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 transition-colors hover:!text-primary-500 dark:!text-gray-300 dark:hover:!text-primary-400"
+          @click="mobileMenuOpen = false"
+        >
+          平台公告
+        </RouterLink>
         <PrimeButton
           v-if="!authStore.isSessionValid"
           class="!mt-2 !flex !w-full !cursor-pointer !justify-center !rounded-lg !bg-primary-500 !px-3 !py-2 !text-sm !font-medium !text-white hover:!bg-primary-600"

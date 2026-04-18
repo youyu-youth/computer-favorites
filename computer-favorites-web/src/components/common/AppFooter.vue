@@ -33,6 +33,11 @@ const currentYear = new Date().getFullYear()
           class="cursor-pointer transition-colors hover:text-slate-700 dark:hover:text-slate-200"
           >{{ t('settings.message.push.update') }}</a
         >
+        <RouterLink
+          to="/computer/announcement"
+          class="cursor-pointer transition-colors hover:text-slate-700 dark:hover:text-slate-200"
+          >平台公告</RouterLink
+        >
       </div>
     </div>
   </footer>
