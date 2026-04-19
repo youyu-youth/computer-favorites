@@ -159,42 +159,40 @@ const handleBatchCancelTop = () => {
         @batch-cancel-top="handleBatchCancelTop"
       />
 
-      <div class="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.95fr)]">
-        <section class="min-w-0">
-          <AnnouncementsTable
-            :rows="pagedAnnouncements"
-            :selectedIds="selectedIds"
-            :loading="loading"
-            @selection-change="setSelectedIds"
-            @view="openDetail"
-            @edit="openEditDialog"
-            @toggle-status="handleToggleStatus"
-            @toggle-top="handleToggleTop"
-          />
-
-          <AdminPagination
-            v-if="totalItems > 0"
-            :currentPage="query.pageNum"
-            :totalPages="totalPages"
-            :visiblePages="visiblePages"
-            :total="totalItems"
-            :pageSize="query.pageSize"
-            @prev="prevPage"
-            @next="nextPage"
-            @goto="goToPage"
-          />
-        </section>
-
-        <AnnouncementDetailPanel
-          :open="detailOpen"
-          :announcement="detailRecord"
-          @update:open="(value) => { if (!value) closeDetail() }"
+      <section class="min-w-0">
+        <AnnouncementsTable
+          :rows="pagedAnnouncements"
+          :selectedIds="selectedIds"
+          :loading="loading"
+          @selection-change="setSelectedIds"
+          @view="openDetail"
           @edit="openEditDialog"
           @toggle-status="handleToggleStatus"
           @toggle-top="handleToggleTop"
         />
-      </div>
+
+        <AdminPagination
+          v-if="totalItems > 0"
+          :currentPage="query.pageNum"
+          :totalPages="totalPages"
+          :visiblePages="visiblePages"
+          :total="totalItems"
+          :pageSize="query.pageSize"
+          @prev="prevPage"
+          @next="nextPage"
+          @goto="goToPage"
+        />
+      </section>
     </div>
+
+    <AnnouncementDetailPanel
+      :open="detailOpen"
+      :announcement="detailRecord"
+      @update:open="(value) => { if (!value) closeDetail() }"
+      @edit="openEditDialog"
+      @toggle-status="handleToggleStatus"
+      @toggle-top="handleToggleTop"
+    />
 
     <AnnouncementFormDialog
       :open="formDialog.open"

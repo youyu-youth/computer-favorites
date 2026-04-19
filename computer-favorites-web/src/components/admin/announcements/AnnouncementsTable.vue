@@ -91,21 +91,28 @@ const resolveStatusTone = (status: number) => {
         <table class="min-w-[980px] table-fixed">
           <thead>
             <tr class="border-b border-gray-100 text-left text-xs uppercase tracking-[0.18em] text-gray-400 dark:border-dark-border/70 dark:text-gray-500">
-              <th class="w-14 px-4 py-3">
-                <input
-                  type="checkbox"
-                  class="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  :checked="allChecked"
-                  @change="handleToggleAll"
-                />
+              <th class="w-14 px-4 py-2">
+                <label class="inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    class="peer sr-only"
+                    :checked="allChecked"
+                    @change="handleToggleAll"
+                  />
+                  <span
+                    class="inline-flex h-4 w-4 items-center justify-center rounded border border-slate-300 bg-white text-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 peer-focus-visible:ring-offset-2 peer-checked:border-blue-600 peer-checked:bg-blue-600 dark:border-slate-500 dark:bg-slate-900 dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-500 dark:peer-focus-visible:ring-offset-slate-900"
+                  >
+                    <i class="fas fa-check text-[9px] opacity-0 transition-opacity peer-checked:opacity-100"></i>
+                  </span>
+                </label>
               </th>
-              <th class="px-4 py-3">公告标题</th>
-              <th class="w-32 px-4 py-3">类型</th>
-              <th class="w-28 px-4 py-3">状态</th>
-              <th class="w-28 px-4 py-3">置顶</th>
-              <th class="w-40 px-4 py-3">发布时间</th>
-              <th class="w-40 px-4 py-3">更新时间</th>
-              <th class="w-48 px-4 py-3">操作</th>
+              <th class="px-4 py-2">公告标题</th>
+              <th class="w-32 px-4 py-2">类型</th>
+              <th class="w-28 px-4 py-2">状态</th>
+              <th class="w-28 px-4 py-2">置顶</th>
+              <th class="w-40 px-4 py-2">发布时间</th>
+              <th class="w-40 px-4 py-2">更新时间</th>
+              <th class="w-48 px-4 py-2">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -114,15 +121,22 @@ const resolveStatusTone = (status: number) => {
               :key="row.id"
               class="border-b border-gray-100 align-top transition-colors hover:bg-gray-50/80 dark:border-dark-border/60 dark:hover:bg-dark-bg/60"
             >
-              <td class="px-4 py-4">
-                <input
-                  type="checkbox"
-                  class="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  :checked="selectedSet.has(row.id)"
-                  @change="handleToggleOne(row.id, $event)"
-                />
+              <td class="px-4 py-2">
+                <label class="inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    class="peer sr-only"
+                    :checked="selectedSet.has(row.id)"
+                    @change="handleToggleOne(row.id, $event)"
+                  />
+                  <span
+                    class="inline-flex h-4 w-4 items-center justify-center rounded border border-slate-300 bg-white text-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 peer-focus-visible:ring-offset-2 peer-checked:border-blue-600 peer-checked:bg-blue-600 dark:border-slate-500 dark:bg-slate-900 dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-500 dark:peer-focus-visible:ring-offset-slate-900"
+                  >
+                    <i class="fas fa-check text-[9px] opacity-0 transition-opacity peer-checked:opacity-100"></i>
+                  </span>
+                </label>
               </td>
-              <td class="px-4 py-4">
+              <td class="px-4 py-2">
                 <button
                   type="button"
                   class="cursor-pointer text-left"
@@ -131,22 +145,22 @@ const resolveStatusTone = (status: number) => {
                   <p class="line-clamp-2 text-sm font-semibold text-gray-950 transition-colors hover:text-blue-600 dark:text-white dark:hover:text-blue-300">
                     {{ row.title }}
                   </p>
-                  <p class="mt-2 line-clamp-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                  <p class="mt-1 line-clamp-2 text-sm leading-5 text-gray-500 dark:text-gray-400">
                     {{ row.contentPreview }}
                   </p>
                 </button>
               </td>
-              <td class="px-4 py-4">
+              <td class="px-4 py-2">
                 <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" :class="resolveTypeTone(row.type)">
                   {{ row.typeLabel }}
                 </span>
               </td>
-              <td class="px-4 py-4">
+              <td class="px-4 py-2">
                 <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" :class="resolveStatusTone(row.status)">
                   {{ row.statusLabel }}
                 </span>
               </td>
-              <td class="px-4 py-4">
+              <td class="px-4 py-2">
                 <span
                   class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold"
                   :class="
@@ -158,10 +172,10 @@ const resolveStatusTone = (status: number) => {
                   {{ row.topLabel }}
                 </span>
               </td>
-              <td class="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{{ row.publishTimeText }}</td>
-              <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{{ row.updateTime }}</td>
-              <td class="px-4 py-4">
-                <div class="flex flex-wrap items-center gap-2">
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">{{ row.publishTimeText }}</td>
+              <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ row.updateTime }}</td>
+              <td class="px-4 py-2">
+                <div class="flex flex-wrap items-center gap-1.5">
                   <UButton size="sm" variant="soft" color="neutral" @click="emit('view', row.id)">
                     查看
                   </UButton>
@@ -184,12 +198,19 @@ const resolveStatusTone = (status: number) => {
       <div class="divide-y divide-gray-100 md:hidden dark:divide-dark-border/70">
         <article v-for="row in rows" :key="row.id" class="px-4 py-4">
           <div class="flex items-start gap-3">
-            <input
-              type="checkbox"
-              class="mt-1 h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              :checked="selectedSet.has(row.id)"
-              @change="handleToggleOne(row.id, $event)"
-            />
+            <label class="mt-0.5 inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                class="peer sr-only"
+                :checked="selectedSet.has(row.id)"
+                @change="handleToggleOne(row.id, $event)"
+              />
+              <span
+                class="inline-flex h-4 w-4 items-center justify-center rounded border border-slate-300 bg-white text-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 peer-focus-visible:ring-offset-2 peer-checked:border-blue-600 peer-checked:bg-blue-600 dark:border-slate-500 dark:bg-slate-900 dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-500 dark:peer-focus-visible:ring-offset-slate-900"
+              >
+                <i class="fas fa-check text-[9px] opacity-0 transition-opacity peer-checked:opacity-100"></i>
+              </span>
+            </label>
 
             <div class="min-w-0 flex-1">
               <button type="button" class="w-full cursor-pointer text-left" @click="emit('view', row.id)">
