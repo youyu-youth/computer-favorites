@@ -10,6 +10,7 @@ export type AdminMenuKey =
   | 'comments'
   | 'reports'
   | 'feedbacks'
+  | 'announcements'
 
 export type WebsiteAuditTabKey = 'pending' | 'audited'
 
@@ -71,6 +72,12 @@ const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
     key: 'feedbacks',
     label: '反馈处理',
     icon: 'fas fa-headset',
+    mockOnly: false,
+  },
+  {
+    key: 'announcements',
+    label: '公告管理',
+    icon: 'fas fa-bullhorn',
     mockOnly: false,
   },
   {
@@ -202,7 +209,8 @@ export const useAdminNavStore = defineStore('adminNav', () => {
         rawMenu === 'users' ||
         rawMenu === 'comments' ||
         rawMenu === 'reports' ||
-        rawMenu === 'feedbacks'
+        rawMenu === 'feedbacks' ||
+        rawMenu === 'announcements'
       ) {
         setActiveMenu(rawMenu as AdminMenuKey)
       }

@@ -41,6 +41,8 @@ build/
 #my
 *-dev.yaml
 *-dev.yml
+*-local.yaml
+*-local.yml
 .claude
 .claude/
 docs
