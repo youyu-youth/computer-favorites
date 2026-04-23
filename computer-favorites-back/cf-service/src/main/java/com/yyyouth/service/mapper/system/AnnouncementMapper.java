@@ -1,5 +1,7 @@
 package com.yyyouth.service.mapper.system;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.yyyouth.model.pojo.system.Announcement;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -9,5 +11,5 @@ import org.apache.ibatis.annotations.Mapper;
  * 公告 Mapper
  */
 @Mapper
-public interface AnnouncementMapper {
+public interface AnnouncementMapper extends BaseMapper<Announcement> {
 }

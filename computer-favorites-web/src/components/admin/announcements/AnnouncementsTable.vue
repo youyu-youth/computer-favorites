@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import UButton from '@/components/ui-adapter/UButton.vue'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
 import type { AdminAnnouncementViewItem } from '@/types/admin-announcement'
 
 const props = defineProps<{
@@ -17,18 +18,15 @@ const emit = defineEmits<{
   (e: 'toggle-top', id: number): void
 }>()
 
-const selectedSet = computed(() => new Set(props.selectedIds))
-const allChecked = computed(() => props.rows.length > 0 && props.rows.every((item) => selectedSet.value.has(item.id)))
+const selectedRows = computed<AdminAnnouncementViewItem[]>(() => {
+  return props.rows.filter((item) => props.selectedIds.includes(item.id))
+})
 
-const toggleAll = (checked: boolean) => {
-  if (!checked) {
-    emit('selection-change', [])
-    return
-  }
-  emit(
-    'selection-change',
-    props.rows.map((item) => item.id),
-  )
+const selectedSet = computed(() => new Set(props.selectedIds))
+
+const handleSelectionUpdate = (value: AdminAnnouncementViewItem[] | AdminAnnouncementViewItem | null | undefined): void => {
+  const rows = Array.isArray(value) ? value : value ? [value] : []
+  emit('selection-change', rows.map((item) => item.id))
 }
 
 const toggleOne = (announcementId: number, checked: boolean) => {
@@ -38,15 +36,35 @@ const toggleOne = (announcementId: number, checked: boolean) => {
   emit('selection-change', [...new Set(nextIds)])
 }
 
-const handleToggleAll = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  toggleAll(target.checked)
-}
-
 const handleToggleOne = (announcementId: number, event: Event) => {
   const target = event.target as HTMLInputElement
   toggleOne(announcementId, target.checked)
 }
+
+const formatDate = (value: string | null): string => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const selectionCheckboxPt = {
+  pcHeaderCheckbox: {
+    root: { class: 'relative inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center align-bottom' },
+    input: { class: 'absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0' },
+    box: { class: 'flex h-4 w-4 items-center justify-center rounded border border-gray-300 bg-white transition-colors dark:border-dark-border dark:bg-dark-bg [&[data-p-checked=true]]:border-[#e95322] [&[data-p-checked=true]]:bg-[#e95322] [&[data-p-checked=true]]:dark:border-[#e95322] [&[data-p-checked=true]]:dark:bg-[#e95322]' },
+    icon: { class: 'h-2.5 w-2.5 text-white transition-opacity' },
+  },
+  pcRowCheckbox: {
+    root: { class: 'relative inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center align-bottom' },
+    input: { class: 'absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0' },
+    box: { class: 'flex h-4 w-4 items-center justify-center rounded border border-gray-300 bg-white transition-colors dark:border-dark-border dark:bg-dark-bg [&[data-p-checked=true]]:border-[#e95322] [&[data-p-checked=true]]:bg-[#e95322] [&[data-p-checked=true]]:dark:border-[#e95322] [&[data-p-checked=true]]:dark:bg-[#e95322]' },
+    icon: { class: 'h-2.5 w-2.5 text-white transition-opacity' },
+  },
+} as const
 
 const resolveTypeTone = (type: number) => {
   if (type === 1) {
@@ -87,114 +105,166 @@ const resolveStatusTone = (status: number) => {
     </div>
 
     <template v-else>
+      <!-- 桌面端 DataTable -->
       <div class="hidden overflow-x-auto md:block">
-        <table class="min-w-[980px] table-fixed">
-          <thead>
-            <tr class="border-b border-gray-100 text-left text-xs uppercase tracking-[0.18em] text-gray-400 dark:border-dark-border/70 dark:text-gray-500">
-              <th class="w-14 px-4 py-2">
-                <label class="inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    class="peer sr-only"
-                    :checked="allChecked"
-                    @change="handleToggleAll"
-                  />
-                  <span
-                    class="inline-flex h-4 w-4 items-center justify-center rounded border border-slate-300 bg-white text-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 peer-focus-visible:ring-offset-2 peer-checked:border-blue-600 peer-checked:bg-blue-600 dark:border-slate-500 dark:bg-slate-900 dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-500 dark:peer-focus-visible:ring-offset-slate-900"
-                  >
-                    <i class="fas fa-check text-[9px] opacity-0 transition-opacity peer-checked:opacity-100"></i>
-                  </span>
-                </label>
-              </th>
-              <th class="px-4 py-2">公告标题</th>
-              <th class="w-32 px-4 py-2">类型</th>
-              <th class="w-28 px-4 py-2">状态</th>
-              <th class="w-28 px-4 py-2">置顶</th>
-              <th class="w-40 px-4 py-2">发布时间</th>
-              <th class="w-40 px-4 py-2">更新时间</th>
-              <th class="w-48 px-4 py-2">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="row in rows"
-              :key="row.id"
-              class="border-b border-gray-100 align-top transition-colors hover:bg-gray-50/80 dark:border-dark-border/60 dark:hover:bg-dark-bg/60"
-            >
-              <td class="px-4 py-2">
-                <label class="inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    class="peer sr-only"
-                    :checked="selectedSet.has(row.id)"
-                    @change="handleToggleOne(row.id, $event)"
-                  />
-                  <span
-                    class="inline-flex h-4 w-4 items-center justify-center rounded border border-slate-300 bg-white text-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 peer-focus-visible:ring-offset-2 peer-checked:border-blue-600 peer-checked:bg-blue-600 dark:border-slate-500 dark:bg-slate-900 dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-500 dark:peer-focus-visible:ring-offset-slate-900"
-                  >
-                    <i class="fas fa-check text-[9px] opacity-0 transition-opacity peer-checked:opacity-100"></i>
-                  </span>
-                </label>
-              </td>
-              <td class="px-4 py-2">
+        <DataTable
+          :value="rows"
+          :selection="selectedRows"
+          :loading="loading"
+          dataKey="id"
+          class="min-w-[980px]"
+          :pt="{
+            table: { class: 'w-full border-separate border-spacing-0' },
+            thead: { class: 'bg-gray-50 dark:bg-dark-bg/60' },
+            headerRow: { class: 'border-b border-gray-200 dark:border-dark-border' },
+            bodyRow: {
+              class: 'border-b border-gray-100 align-top transition-colors hover:bg-gray-50/80 dark:border-dark-border/60 dark:hover:bg-dark-bg/60',
+            },
+            emptyMessage: { class: 'px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400' },
+            loadingOverlay: { class: 'bg-white/70 dark:bg-dark-card/70' },
+          }"
+          @update:selection="handleSelectionUpdate"
+        >
+          <Column
+            selectionMode="multiple"
+            :pt="selectionCheckboxPt"
+            headerClass="px-3 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            bodyClass="px-3 py-3"
+          />
+
+          <Column
+            field="title"
+            header="公告标题"
+            headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            bodyClass="px-4 py-3"
+          >
+            <template #body="{ data }">
+              <button
+                type="button"
+                class="cursor-pointer text-left"
+                @click="emit('view', data.id)"
+              >
+                <p class="line-clamp-2 text-sm font-semibold text-gray-950 transition-colors hover:text-[#e95322] dark:text-white dark:hover:text-[#ff7043]">
+                  {{ data.title }}
+                </p>
+              </button>
+            </template>
+          </Column>
+
+          <Column
+            field="typeLabel"
+            header="类型"
+            headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            bodyClass="px-4 py-3"
+          >
+            <template #body="{ data }">
+              <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" :class="resolveTypeTone(data.type)">
+                {{ data.typeLabel }}
+              </span>
+            </template>
+          </Column>
+
+          <Column
+            field="statusLabel"
+            header="状态"
+            headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            bodyClass="px-4 py-3"
+          >
+            <template #body="{ data }">
+              <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" :class="resolveStatusTone(data.status)">
+                {{ data.statusLabel }}
+              </span>
+            </template>
+          </Column>
+
+          <Column
+            field="topLabel"
+            header="置顶"
+            headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            bodyClass="px-4 py-3"
+          >
+            <template #body="{ data }">
+              <span
+                class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold"
+                :class="
+                  data.isTop === 1
+                    ? 'border-amber-100 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200'
+                "
+              >
+                {{ data.topLabel }}
+              </span>
+            </template>
+          </Column>
+
+          <Column
+            field="publishTimeText"
+            header="发布时间"
+            headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            bodyClass="px-4 py-3 text-sm text-gray-600 dark:text-gray-300"
+          >
+            <template #body="{ data }">
+              {{ formatDate(data.publishTimeText) }}
+            </template>
+          </Column>
+
+          <Column
+            field="updateTime"
+            header="更新时间"
+            headerClass="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            bodyClass="px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
+          >
+            <template #body="{ data }">
+              {{ formatDate(data.updateTime) }}
+            </template>
+          </Column>
+
+          <Column
+            header="操作"
+            headerClass="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            bodyClass="px-4 py-3 text-right whitespace-nowrap"
+          >
+            <template #body="{ data }">
+              <div class="flex flex-wrap items-center justify-end gap-1.5">
                 <button
                   type="button"
-                  class="cursor-pointer text-left"
-                  @click="emit('view', row.id)"
+                  @click.stop="emit('view', data.id)"
+                  class="cursor-pointer inline-flex h-8 items-center rounded bg-gray-50 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:bg-gray-700"
+                  title="查看"
                 >
-                  <p class="line-clamp-2 text-sm font-semibold text-gray-950 transition-colors hover:text-blue-600 dark:text-white dark:hover:text-blue-300">
-                    {{ row.title }}
-                  </p>
-                  <p class="mt-1 line-clamp-2 text-sm leading-5 text-gray-500 dark:text-gray-400">
-                    {{ row.contentPreview }}
-                  </p>
+                  查看
                 </button>
-              </td>
-              <td class="px-4 py-2">
-                <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" :class="resolveTypeTone(row.type)">
-                  {{ row.typeLabel }}
-                </span>
-              </td>
-              <td class="px-4 py-2">
-                <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" :class="resolveStatusTone(row.status)">
-                  {{ row.statusLabel }}
-                </span>
-              </td>
-              <td class="px-4 py-2">
-                <span
-                  class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold"
-                  :class="
-                    row.isTop === 1
-                      ? 'border-amber-100 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200'
-                      : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200'
-                  "
+                <button
+                  type="button"
+                  @click.stop="emit('edit', data.id)"
+                  class="cursor-pointer inline-flex h-8 items-center rounded bg-[#e95322]/10 px-2.5 text-xs font-medium text-[#e95322] hover:bg-[#e95322]/20 dark:bg-[#e95322]/20 dark:text-[#ff7043] dark:hover:bg-[#e95322]/30"
+                  title="编辑"
                 >
-                  {{ row.topLabel }}
-                </span>
-              </td>
-              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">{{ row.publishTimeText }}</td>
-              <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ row.updateTime }}</td>
-              <td class="px-4 py-2">
-                <div class="flex flex-wrap items-center gap-1.5">
-                  <UButton size="sm" variant="soft" color="neutral" @click="emit('view', row.id)">
-                    查看
-                  </UButton>
-                  <UButton size="sm" variant="soft" @click="emit('edit', row.id)">
-                    编辑
-                  </UButton>
-                  <UButton size="sm" variant="soft" color="neutral" @click="emit('toggle-status', row.id)">
-                    {{ row.status === 1 ? '隐藏' : '显示' }}
-                  </UButton>
-                  <UButton size="sm" variant="soft" color="warning" @click="emit('toggle-top', row.id)">
-                    {{ row.isTop === 1 ? '取消置顶' : '置顶' }}
-                  </UButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                  编辑
+                </button>
+                <button
+                  type="button"
+                  @click.stop="emit('toggle-status', data.id)"
+                  class="cursor-pointer inline-flex h-8 items-center rounded bg-gray-50 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:bg-gray-700"
+                  :title="data.status === 1 ? '隐藏' : '显示'"
+                >
+                  {{ data.status === 1 ? '隐藏' : '显示' }}
+                </button>
+                <button
+                  type="button"
+                  @click.stop="emit('toggle-top', data.id)"
+                  class="cursor-pointer inline-flex h-8 items-center rounded bg-amber-50 px-2.5 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:hover:bg-amber-900/40"
+                  :title="data.isTop === 1 ? '取消置顶' : '置顶'"
+                >
+                  {{ data.isTop === 1 ? '取消置顶' : '置顶' }}
+                </button>
+              </div>
+            </template>
+          </Column>
+        </DataTable>
       </div>
 
+      <!-- 移动端卡片视图 -->
       <div class="divide-y divide-gray-100 md:hidden dark:divide-dark-border/70">
         <article v-for="row in rows" :key="row.id" class="px-4 py-4">
           <div class="flex items-start gap-3">
@@ -206,7 +276,7 @@ const resolveStatusTone = (status: number) => {
                 @change="handleToggleOne(row.id, $event)"
               />
               <span
-                class="inline-flex h-4 w-4 items-center justify-center rounded border border-slate-300 bg-white text-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 peer-focus-visible:ring-offset-2 peer-checked:border-blue-600 peer-checked:bg-blue-600 dark:border-slate-500 dark:bg-slate-900 dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-500 dark:peer-focus-visible:ring-offset-slate-900"
+                class="inline-flex h-4 w-4 items-center justify-center rounded border border-slate-300 bg-white text-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#e95322] peer-focus-visible:ring-offset-2 peer-checked:border-[#e95322] peer-checked:bg-[#e95322] dark:border-slate-500 dark:bg-slate-900 dark:peer-checked:border-[#e95322] dark:peer-checked:bg-[#e95322] dark:peer-focus-visible:ring-offset-slate-900"
               >
                 <i class="fas fa-check text-[9px] opacity-0 transition-opacity peer-checked:opacity-100"></i>
               </span>
@@ -233,20 +303,35 @@ const resolveStatusTone = (status: number) => {
                   </span>
                 </div>
                 <h4 class="mt-3 text-sm font-semibold leading-6 text-gray-950 dark:text-white">{{ row.title }}</h4>
-                <p class="mt-2 line-clamp-3 text-sm leading-6 text-gray-500 dark:text-gray-400">{{ row.contentPreview }}</p>
               </button>
 
               <div class="mt-3 grid grid-cols-1 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                <p>发布时间：{{ row.publishTimeText }}</p>
-                <p>最近更新：{{ row.updateTime }}</p>
+                <p>发布时间：{{ formatDate(row.publishTimeText) }}</p>
+                <p>最近更新：{{ formatDate(row.updateTime) }}</p>
               </div>
 
               <div class="mt-4 flex flex-wrap gap-2">
-                <UButton size="sm" variant="soft" color="neutral" @click="emit('view', row.id)">查看</UButton>
-                <UButton size="sm" variant="soft" @click="emit('edit', row.id)">编辑</UButton>
-                <UButton size="sm" variant="soft" color="neutral" @click="emit('toggle-status', row.id)">
+                <button
+                  type="button"
+                  @click="emit('view', row.id)"
+                  class="cursor-pointer inline-flex h-8 items-center rounded bg-gray-50 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  查看
+                </button>
+                <button
+                  type="button"
+                  @click="emit('edit', row.id)"
+                  class="cursor-pointer inline-flex h-8 items-center rounded bg-[#e95322]/10 px-2.5 text-xs font-medium text-[#e95322] hover:bg-[#e95322]/20 dark:bg-[#e95322]/20 dark:text-[#ff7043] dark:hover:bg-[#e95322]/30"
+                >
+                  编辑
+                </button>
+                <button
+                  type="button"
+                  @click="emit('toggle-status', row.id)"
+                  class="cursor-pointer inline-flex h-8 items-center rounded bg-gray-50 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
                   {{ row.status === 1 ? '隐藏' : '显示' }}
-                </UButton>
+                </button>
               </div>
             </div>
           </div>

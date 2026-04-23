@@ -56,6 +56,7 @@ const {
 
 onMounted(() => {
   adminNavStore.setActiveMenu('announcements')
+  refreshData()
 })
 
 const handleRefresh = async () => {
@@ -70,47 +71,47 @@ const handleSubmitForm = async () => {
   const result = await submitForm()
   feedback.value = {
     tone: result.ok ? 'success' : 'error',
-    text: result.message,
+    text: result.message ?? '操作完成。',
   }
 }
 
-const handleToggleStatus = (announcementId: number) => {
-  const result = toggleAnnouncementStatus(announcementId)
+const handleToggleStatus = async (announcementId: number) => {
+  const result = await toggleAnnouncementStatus(announcementId)
   feedback.value = {
     tone: result.ok ? 'success' : 'error',
-    text: result.message,
+    text: result.message ?? '操作完成。',
   }
 }
 
-const handleToggleTop = (announcementId: number) => {
-  const result = toggleAnnouncementTop(announcementId)
+const handleToggleTop = async (announcementId: number) => {
+  const result = await toggleAnnouncementTop(announcementId)
   feedback.value = {
     tone: result.ok ? 'success' : 'error',
-    text: result.message,
+    text: result.message ?? '操作完成。',
   }
 }
 
-const handleBatchShow = () => {
-  const result = batchShow()
+const handleBatchShow = async () => {
+  const result = await batchShow()
   feedback.value = {
     tone: result.ok ? 'success' : 'error',
-    text: result.message,
+    text: result.message ?? '操作完成。',
   }
 }
 
-const handleBatchHide = () => {
-  const result = batchHide()
+const handleBatchHide = async () => {
+  const result = await batchHide()
   feedback.value = {
     tone: result.ok ? 'success' : 'error',
-    text: result.message,
+    text: result.message ?? '操作完成。',
   }
 }
 
-const handleBatchCancelTop = () => {
-  const result = batchCancelTop()
+const handleBatchCancelTop = async () => {
+  const result = await batchCancelTop()
   feedback.value = {
     tone: result.ok ? 'success' : 'error',
-    text: result.message,
+    text: result.message ?? '操作完成。',
   }
 }
 </script>

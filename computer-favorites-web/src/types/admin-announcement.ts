@@ -128,3 +128,38 @@ export function mapAdminAnnouncementViewItem(
     contentPreview: resolveAnnouncementContentPreview(item.content),
   }
 }
+
+// ========== API 请求/响应类型 ==========
+
+export interface AdminAnnouncementPageQuery {
+  pageNum: number
+  pageSize: number
+  keyword?: string
+  status?: number
+  type?: number
+  isTop?: number
+}
+
+export interface AdminAnnouncementCreatePayload {
+  title: string
+  content: string
+  type: AdminAnnouncementType
+  isTop: 0 | 1
+  status: AdminAnnouncementStatus
+  publishTime: string
+}
+
+export interface AdminAnnouncementEditPayload extends AdminAnnouncementCreatePayload {}
+
+export interface AdminAnnouncementStatusPayload {
+  status: AdminAnnouncementStatus
+}
+
+export interface AdminAnnouncementPage {
+  records: AdminAnnouncementRecord[]
+  total: number
+  pageNum: number
+  pageSize: number
+  totalPages: number
+  stats: AdminAnnouncementStatistics
+}

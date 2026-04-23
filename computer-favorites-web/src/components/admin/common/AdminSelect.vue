@@ -34,7 +34,7 @@ const selectedValue = computed<AdminSelectValue>({
 const selectPt = computed(() => ({
   root: ({ state }: any) => ({
     class: [
-      'relative flex h-10 w-full min-w-0 items-center rounded-xl border bg-white pl-3 pr-10 text-sm text-gray-700 transition-colors dark:bg-dark-bg dark:text-gray-100',
+      'relative flex h-10 w-full min-w-0 items-center rounded-xl border bg-white pl-3 pr-12 text-sm text-gray-700 transition-colors dark:bg-dark-bg dark:text-gray-100',
       state.focused
         ? 'border-[rgb(var(--cf-color-primary-500-rgb)/1)] ring-2 ring-[rgb(var(--cf-color-primary-500-rgb)/0.16)]'
         : 'border-gray-200 dark:border-dark-border',
@@ -52,7 +52,7 @@ const selectPt = computed(() => ({
   },
   clearIcon: {
     class:
-      'absolute right-8 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300',
+      'absolute right-9 top-1/2 -translate-y-1/2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-xs text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-slate-700 dark:hover:text-gray-300',
   },
   overlay: {
     class:
