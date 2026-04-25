@@ -154,6 +154,12 @@ const router = createRouter({
           meta: { requiresAuth: true },
         },
         {
+          path: 'collection',
+          name: 'collection',
+          component: () => import('@/views/user/CollectionView.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
           path: 'website/upload',
           name: 'uploadWebsite',
           component: () => import('@/views/user/UploadWebsiteView.vue'),

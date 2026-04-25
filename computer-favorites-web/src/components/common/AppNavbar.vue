@@ -10,7 +10,8 @@ import { useToast } from '@/composables/useToast'
 import { useUserMessageUnread } from '@/composables/useUserMessageUnread'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Bell, FolderOpen, IdCard, LogOut, Menu, Settings, User, X } from 'lucide-vue-next'
+import { Bell, FolderOpen, FolderPlus, IdCard, LogOut, Menu, Settings, User, X } from 'lucide-vue-next'
+import CreateFolderDialog from '@/components/user/CreateFolderDialog.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -23,6 +24,7 @@ const profileMenuOpen = ref(false)
 const logoutLoading = ref(false)
 const mobileMenuOpen = ref(false)
 const feedbackDialogOpen = ref(false)
+const createFolderDialogOpen = ref(false)
 const {
   unreadMessageCount,
   hasUnreadMessage,
@@ -58,6 +60,12 @@ const goToProfile = () => {
   profileMenuOpen.value = false
   mobileMenuOpen.value = false
   router.push({ name: 'profile' })
+}
+
+const openCreateFolderDialog = () => {
+  profileMenuOpen.value = false
+  mobileMenuOpen.value = false
+  createFolderDialogOpen.value = true
 }
 
 const goToWebsiteSubmissions = () => {
@@ -110,6 +118,16 @@ const openFeedbackDialog = async () => {
 
 const toggleProfileMenu = () => {
   profileMenuOpen.value = !profileMenuOpen.value
+}
+
+const handleFolderCreate = () => {
+  mobileMenuOpen.value = false
+  profileMenuOpen.value = false
+  toast.add({
+    title: t('common.success'),
+    description: '收藏夹已创建',
+    type: 'success',
+  })
 }
 
 const handlePendingFeature = () => {
@@ -387,6 +405,14 @@ onBeforeUnmount(() => {
                 <button
                   type="button"
                   class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                  @click="openCreateFolderDialog"
+                >
+                  <FolderPlus class="size-4" />
+                  创建收藏夹
+                </button>
+                <button
+                  type="button"
+                  class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
                   @click="goToMessageCenter"
                 >
                   <Bell class="size-4" />
@@ -482,6 +508,16 @@ onBeforeUnmount(() => {
         <PrimeButton
           text
           class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 dark:!text-gray-300"
+          @click="openCreateFolderDialog"
+        >
+          <div class="flex items-center gap-2">
+            <FolderPlus class="size-4" />
+            创建收藏夹
+          </div>
+        </PrimeButton>
+        <PrimeButton
+          text
+          class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 dark:!text-gray-300"
           @click="goToMessageCenter"
         >
           <div class="flex w-full items-center justify-between">
@@ -529,6 +565,7 @@ onBeforeUnmount(() => {
     </Transition>
   </header>
   <FeedbackDialog v-model:open="feedbackDialogOpen" />
+  <CreateFolderDialog v-model:open="createFolderDialogOpen" @submit="handleFolderCreate" />
 </template>
 
 <style scoped>

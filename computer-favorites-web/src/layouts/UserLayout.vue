@@ -7,6 +7,7 @@ import AppFooter from '@/components/common/AppFooter.vue'
 
 const route = useRoute()
 const isHomeRoute = computed(() => route.name === 'home' || route.path === '/computer/home')
+const hideFab = computed(() => route.name === 'collection')
 </script>
 
 <template>
@@ -17,13 +18,12 @@ const isHomeRoute = computed(() => route.name === 'home' || route.path === '/com
     >
       <AppNavbar />
       <main class="flex min-h-0 flex-1 flex-col pt-16">
-        <!-- 路由容器使用纵向弹性布局，确保子页面可撑满主内容区并贴合页脚 -->
         <div class="flex h-full min-h-0 flex-1 flex-col">
           <RouterView />
         </div>
       </main>
       <AppFooter />
     </div>
-    <FloatingActionButton />
+    <FloatingActionButton v-if="!hideFab" />
   </div>
 </template>
