@@ -74,6 +74,12 @@ function buildAnnouncementQueryString(query: UserAnnouncementQuery): string {
   if (typeof query.pageSize === 'number' && query.pageSize > 0) {
     params.set('pageSize', String(query.pageSize))
   }
+  if (typeof query.type === 'number') {
+    params.set('type', String(query.type))
+  }
+  if (query.isTop === 0 || query.isTop === 1) {
+    params.set('isTop', String(query.isTop))
+  }
 
   return params.toString()
 }
@@ -135,11 +141,11 @@ export async function getAnnouncementPage(
   query: UserAnnouncementQuery,
 ): Promise<UserAnnouncementPage> {
   const queryString = buildAnnouncementQueryString(query)
-  const response = await getJson<ApiResult<UserAnnouncementPage>>(appendQuery('/api/announcements', queryString))
+  const response = await getJson<ApiResult<UserAnnouncementPage>>(appendQuery('/api/user/announcements', queryString))
   return assertSuccess(response, '查询公告列表失败')
 }
 
 export async function getAnnouncementDetail(id: number): Promise<UserAnnouncementDetail> {
-  const response = await getJson<ApiResult<UserAnnouncementDetail>>(`/api/announcements/${id}`)
+  const response = await getJson<ApiResult<UserAnnouncementDetail>>(`/api/user/announcements/${id}`)
   return assertSuccess(response, '查询公告详情失败')
 }

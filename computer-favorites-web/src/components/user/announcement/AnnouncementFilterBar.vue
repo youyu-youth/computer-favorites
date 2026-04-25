@@ -4,7 +4,7 @@ import { Sparkles } from 'lucide-vue-next'
 import type {
   AnnouncementFilterOption,
   AnnouncementFilterValue,
-} from '@/components/user/announcement/announcement.mock'
+} from '@/types/user-announcement'
 
 const activeType = defineModel<AnnouncementFilterValue>({ required: true })
 

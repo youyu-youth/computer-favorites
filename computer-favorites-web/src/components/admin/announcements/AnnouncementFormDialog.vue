@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import DatePicker from 'primevue/datepicker'
 import AdminSelect from '@/components/admin/common/AdminSelect.vue'
 import UButton from '@/components/ui-adapter/UButton.vue'
+import UDateTimePicker from '@/components/ui-adapter/UDateTimePicker.vue'
 import UInput from '@/components/ui-adapter/UInput.vue'
 import USwitch from '@/components/ui-adapter/USwitch.vue'
 import UTextarea from '@/components/ui-adapter/UTextarea.vue'
@@ -66,104 +66,6 @@ const publishTimeValue = computed<Date | null>({
     }
   },
 })
-
-const datePickerPt = computed(() => ({
-  root: ({ state }: any) => ({
-    class: [
-      'relative flex h-10 w-full min-w-0 items-center rounded-xl border bg-white pl-3 pr-10 text-sm text-gray-700 transition-colors dark:bg-dark-bg dark:text-gray-100',
-      state.focused
-        ? 'border-[rgb(var(--cf-color-primary-500-rgb)/1)] ring-2 ring-[rgb(var(--cf-color-primary-500-rgb)/0.16)]'
-        : 'border-gray-200 dark:border-dark-border',
-    ],
-  }),
-  input: {
-    class: 'w-full border-0 bg-transparent p-0 text-sm text-gray-700 outline-none dark:text-gray-100',
-  },
-  dropdown: {
-    class: 'absolute right-3 top-1/2 flex -translate-y-1/2 cursor-pointer items-center justify-center text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300',
-  },
-  panel: {
-    class:
-      'z-[140] mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.12)] dark:border-dark-border dark:bg-dark-card',
-  },
-  header: {
-    class: 'flex items-center justify-between px-3 py-2',
-  },
-  title: {
-    class: 'text-sm font-medium text-gray-800 dark:text-gray-100',
-  },
-  previousButton: {
-    class: 'inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-gray-200',
-  },
-  nextButton: {
-    class: 'inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-gray-200',
-  },
-  calendar: {
-    class: 'px-3 pb-3',
-  },
-  weekday: {
-    class: 'text-xs font-medium text-gray-500 dark:text-gray-400',
-  },
-  day: ({ context }: any) => ({
-    class: [
-      'cursor-pointer rounded-lg text-sm transition-colors',
-      context.selected
-        ? 'bg-[rgb(var(--cf-color-primary-500-rgb)/1)] text-white font-medium'
-        : context.date.today
-          ? 'font-medium text-[rgb(var(--cf-color-primary-600-rgb)/1)] dark:text-[rgb(var(--cf-color-primary-100-rgb)/1)]'
-          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800',
-    ],
-  }),
-  month: ({ context }: any) => ({
-    class: [
-      'cursor-pointer rounded-lg px-3 py-2 text-sm transition-colors',
-      context.selected
-        ? 'bg-[rgb(var(--cf-color-primary-500-rgb)/1)] text-white font-medium'
-        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800',
-    ],
-  }),
-  year: ({ context }: any) => ({
-    class: [
-      'cursor-pointer rounded-lg px-3 py-2 text-sm transition-colors',
-      context.selected
-        ? 'bg-[rgb(var(--cf-color-primary-500-rgb)/1)] text-white font-medium'
-        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800',
-    ],
-  }),
-  timePicker: {
-    class: 'flex items-center justify-center gap-1 border-t border-gray-200 px-3 py-2 dark:border-dark-border',
-  },
-  separatorContainer: {
-    class: 'flex items-center px-1',
-  },
-  separator: {
-    class: 'text-sm text-gray-500 dark:text-gray-400',
-  },
-  hourPicker: {
-    class: 'flex flex-col items-center',
-  },
-  minutePicker: {
-    class: 'flex flex-col items-center',
-  },
-  secondPicker: {
-    class: 'flex flex-col items-center',
-  },
-  incrementButton: {
-    class: 'inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-slate-800',
-  },
-  decrementButton: {
-    class: 'inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-slate-800',
-  },
-  buttonbar: {
-    class: 'flex items-center justify-between border-t border-gray-200 px-3 py-2 dark:border-dark-border',
-  },
-  todayButton: {
-    class: 'cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium text-[rgb(var(--cf-color-primary-600-rgb)/1)] transition-colors hover:bg-[rgb(var(--cf-color-primary-50-rgb)/1)] dark:text-[rgb(var(--cf-color-primary-100-rgb)/1)] dark:hover:bg-[rgb(var(--cf-color-primary-500-rgb)/0.18)]',
-  },
-  clearButton: {
-    class: 'cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-gray-200',
-  },
-}))
 </script>
 
 <template>
@@ -265,18 +167,10 @@ const datePickerPt = computed(() => ({
                 <label for="announcement-publish-time" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   发布时间
                 </label>
-                <DatePicker
+                <UDateTimePicker
                   id="announcement-publish-time"
                   v-model="publishTimeValue"
-                  showTime
-                  hourFormat="24"
-                  dateFormat="yy-mm-dd"
-                  :showSeconds="true"
                   :disabled="submitting"
-                  showButtonBar
-                  placeholder="选择发布日期与时间"
-                  :pt="datePickerPt"
-                  class="w-full"
                 />
                 <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">可为空，当前阶段仅作为前端展示字段预留。</p>
               </div>

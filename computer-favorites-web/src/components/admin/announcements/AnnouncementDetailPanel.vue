@@ -30,6 +30,16 @@ const resolveStatusTone = (status: number) => {
     ? 'border-emerald-100 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200'
     : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200'
 }
+
+const formatDate = (value: string | null | undefined): string => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 </script>
 
 <template>
@@ -82,15 +92,15 @@ const resolveStatusTone = (status: number) => {
           </div>
           <div class="flex items-start justify-between gap-3">
             <dt class="text-sm text-gray-500 dark:text-gray-400">发布时间</dt>
-            <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ announcement.publishTimeText }}</dd>
+            <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ formatDate(announcement.publishTimeText) }}</dd>
           </div>
           <div class="flex items-start justify-between gap-3">
             <dt class="text-sm text-gray-500 dark:text-gray-400">最近更新</dt>
-            <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ announcement.updateTime }}</dd>
+            <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ formatDate(announcement.updateTime) }}</dd>
           </div>
           <div class="flex items-start justify-between gap-3">
             <dt class="text-sm text-gray-500 dark:text-gray-400">创建时间</dt>
-            <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ announcement.createTime }}</dd>
+            <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ formatDate(announcement.createTime) }}</dd>
           </div>
         </dl>
       </div>

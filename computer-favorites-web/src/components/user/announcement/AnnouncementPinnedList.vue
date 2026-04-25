@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Pin } from 'lucide-vue-next'
 import AnnouncementTimelineItem from '@/components/user/announcement/AnnouncementTimelineItem.vue'
-import type { AnnouncementViewItem } from '@/components/user/announcement/announcement.mock'
+import type { AnnouncementViewItem } from '@/types/user-announcement'
 
 defineProps<{
   items: AnnouncementViewItem[]

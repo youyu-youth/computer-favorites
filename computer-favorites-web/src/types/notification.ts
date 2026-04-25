@@ -68,11 +68,14 @@ export interface UserFeedbackPage {
 export interface UserAnnouncementQuery {
   pageNum?: number
   pageSize?: number
+  type?: number
+  isTop?: 0 | 1
 }
 
 export interface UserAnnouncementItem {
   id: number
   title: string
+  content: string
   type: number
   isTop: 0 | 1
   publishTime: string
@@ -83,6 +86,7 @@ export interface UserAnnouncementPage {
   total: number
   pageNum: number
   pageSize: number
+  totalPages: number
 }
 
 export interface UserAnnouncementDetail {

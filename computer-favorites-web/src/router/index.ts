@@ -63,6 +63,12 @@ const router = createRouter({
           meta: { requiresAdminAuth: true, title: '公告管理' },
         },
         {
+          path: 'audit-logs',
+          name: 'adminAuditLogs',
+          component: () => import('@/views/admin/AuditLogManagementView.vue'),
+          meta: { requiresAdminAuth: true, title: '审计日志' },
+        },
+        {
           path: 'websites',
           name: 'adminWebsites',
           component: WebsitesManagementView,
@@ -294,6 +300,11 @@ router.afterEach((to) => {
 
   if (to.name === 'adminAnnouncements') {
     useAdminNavStore().setActiveMenu('announcements')
+    return
+  }
+
+  if (to.name === 'adminAuditLogs') {
+    useAdminNavStore().setActiveMenu('auditLogs')
     return
   }
 

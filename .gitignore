@@ -66,6 +66,8 @@ context7.json
 .augment
 .augment/
 
+.opencode
+
 
 .mcp.json
 
@@ -122,4 +124,3 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
-

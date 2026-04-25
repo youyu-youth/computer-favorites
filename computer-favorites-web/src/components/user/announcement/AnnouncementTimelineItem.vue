@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { CornerDownRight, Pin } from 'lucide-vue-next'
-import type { AnnouncementViewItem } from '@/components/user/announcement/announcement.mock'
+import type { AnnouncementViewItem } from '@/types/user-announcement'
 
 const props = withDefaults(
   defineProps<{
