@@ -10,7 +10,7 @@ import { useToast } from '@/composables/useToast'
 import { useUserMessageUnread } from '@/composables/useUserMessageUnread'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Bell, FolderOpen, FolderPlus, IdCard, LogOut, Menu, Settings, User, X } from 'lucide-vue-next'
+import { Bell, Bookmark, FolderOpen, FolderPlus, IdCard, LogOut, Menu, Settings, User, X } from 'lucide-vue-next'
 import CreateFolderDialog from '@/components/user/CreateFolderDialog.vue'
 
 const { t } = useI18n()
@@ -72,6 +72,12 @@ const goToWebsiteSubmissions = () => {
   profileMenuOpen.value = false
   mobileMenuOpen.value = false
   router.push({ name: 'websiteSubmissions' })
+}
+
+const goToCollection = () => {
+  profileMenuOpen.value = false
+  mobileMenuOpen.value = false
+  router.push({ name: 'collection' })
 }
 
 const goToMessageCenter = () => {
@@ -405,6 +411,14 @@ onBeforeUnmount(() => {
                 <button
                   type="button"
                   class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                  @click="goToCollection"
+                >
+                  <Bookmark class="size-4" />
+                  我的收藏夹
+                </button>
+                <button
+                  type="button"
+                  class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
                   @click="openCreateFolderDialog"
                 >
                   <FolderPlus class="size-4" />
@@ -504,6 +518,16 @@ onBeforeUnmount(() => {
           @click="goToWebsiteSubmissions"
         >
           {{ t('user.profile.mySubmissions') }}
+        </PrimeButton>
+        <PrimeButton
+          text
+          class="!mb-1 !flex !w-full !cursor-pointer !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 dark:!text-gray-300"
+          @click="goToCollection"
+        >
+          <div class="flex items-center gap-2">
+            <Bookmark class="size-4" />
+            我的收藏夹
+          </div>
         </PrimeButton>
         <PrimeButton
           text

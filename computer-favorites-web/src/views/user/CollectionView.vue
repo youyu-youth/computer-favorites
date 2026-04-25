@@ -186,29 +186,10 @@ onUnmounted(() => {
         <div class="flex-1 overflow-auto flex">
           <!-- 网站卡片列表 -->
           <main class="flex-1 p-6 overflow-y-auto">
-            <!-- 区域标题 -->
-            <div class="flex items-center justify-between mb-6">
-              <div>
-                <h1 class="text-xl font-bold flex items-center text-gray-900 dark:text-gray-100">
-                  <i class="fas fa-star text-yellow-400 mr-2 text-[18px]"></i>
-                  {{
-                    activeQuickAccess
-                      ? quickAccessList.find((q) => q.key === activeQuickAccess)?.label || '收藏资源'
-                      : activeCategoryId
-                        ? categories.find((c) => c.id === activeCategoryId)?.name || '收藏资源'
-                        : '收藏资源'
-                  }}
-                </h1>
-                <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                  精心收集的高质量网站和工具
-                </p>
-              </div>
-            </div>
-
             <!-- 卡片网格/列表 -->
             <div
               v-if="filteredResources.length > 0"
-              class="grid gap-6"
+              class="grid gap-3"
               :class="gridColsClass"
               :style="viewMode === 'grid' ? { transform: `scale(${cardScale})`, transformOrigin: 'top left' } : {}"
             >

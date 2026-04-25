@@ -37,7 +37,7 @@ const emit = defineEmits<{
         >
           <i class="fas fa-folder-special text-sm"></i>
         </div>
-        <span class="font-bold text-lg text-gray-900 dark:text-gray-100">ResourceHub</span>
+        <span class="font-bold text-lg text-gray-900 dark:text-gray-100">我的收藏夹</span>
       </div>
     </div>
 
