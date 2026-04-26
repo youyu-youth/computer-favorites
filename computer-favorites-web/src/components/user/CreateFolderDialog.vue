@@ -237,25 +237,25 @@ defineOptions({
         >
           <section
             v-if="open"
-            class="folder-dialog-panel relative z-[1] flex w-full flex-col overflow-hidden rounded-xl border bg-white sm:w-[min(92vw,28rem)]"
+            class="folder-dialog-panel relative z-[1] flex w-full flex-col overflow-hidden rounded-xl border bg-white sm:w-[min(92vw,30rem)]"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-folder-title"
             @click.stop
           >
-            <header class="flex shrink-0 items-center justify-between border-b px-5 py-4">
+            <header class="folder-dialog-header flex shrink-0 items-center justify-between border-b px-5 py-4">
               <div class="flex items-center gap-3">
                 <div class="folder-icon-box flex h-9 w-9 items-center justify-center rounded-lg border">
                   <FolderPlus class="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 id="create-folder-title" class="text-base font-semibold">创建收藏夹</h2>
-                  <p class="folder-subtitle mt-0.5 text-xs">新建一个文件夹来整理你的收藏</p>
+                  <h2 id="create-folder-title" class="folder-dialog-title text-base font-semibold">创建收藏夹</h2>
+                  <p class="folder-dialog-subtitle mt-0.5 text-xs">新建一个文件夹来整理你的收藏</p>
                 </div>
               </div>
               <button
                 type="button"
-                class="close-btn flex h-8 w-8 cursor-pointer items-center justify-center rounded-md transition-colors"
+                class="folder-dialog-close flex h-8 w-8 cursor-pointer items-center justify-center rounded-md transition-colors"
                 aria-label="关闭对话框"
                 :disabled="isBusy"
                 @click="closeDialog"
@@ -490,370 +490,247 @@ defineOptions({
 </template>
 
 <style scoped>
-/* 对话框面板 */
+/* ========== Light Mode ========== */
+
 .folder-dialog-panel {
-  border-color: rgb(229 231 235 / 0.8);
-  box-shadow: 0 20px 50px rgb(245 158 11 / 0.1), 0 4px 16px rgb(0 0 0 / 0.06);
+  border: 1px solid rgb(229 231 235 / 0.8);
+  box-shadow:
+    0 20px 50px rgb(245 158 11 / 0.08),
+    0 4px 16px rgb(0 0 0 / 0.06);
 }
 
-:root.dark .folder-dialog-panel {
-  border-color: rgb(45 45 45);
-  box-shadow: 0 24px 56px rgb(0 0 0 / 0.7);
-  background-color: rgb(28 28 30);
+.folder-dialog-header {
+  border-bottom: 1px solid rgb(229 231 235);
+  background-color: rgb(255 251 235 / 0.5);
 }
 
-/* 头部图标容器 */
 .folder-icon-box {
-  border-color: rgb(245 158 11 / 0.2);
+  border: 1px solid rgb(245 158 11 / 0.2);
   background-color: rgb(255 251 235);
   color: rgb(217 119 6);
 }
 
-:root.dark .folder-icon-box {
-  border-color: rgb(245 158 11 / 0.25);
-  background-color: rgb(245 158 11 / 0.1);
-  color: rgb(251 191 36);
-}
+.folder-dialog-title { color: rgb(17 24 39); }
+.folder-dialog-subtitle { color: rgb(107 114 128); }
 
-/* 头部边框 */
-.folder-dialog-panel > header {
-  border-color: rgb(229 231 235);
-}
+.folder-dialog-close { color: rgb(156 163 175); }
+.folder-dialog-close:hover { background-color: rgb(243 244 246); color: rgb(75 85 99); }
+.folder-dialog-close:disabled { cursor: not-allowed; opacity: 0.5; }
 
-:root.dark .folder-dialog-panel > header {
-  border-color: rgb(45 45 45);
-}
+.label-text { color: rgb(55 65 81); }
 
-/* 副标题 */
-.folder-subtitle {
-  color: rgb(107 114 128);
-}
-
-:root.dark .folder-subtitle {
-  color: rgb(156 163 175);
-}
-
-/* 标题文字 */
-.folder-dialog-panel h2 {
-  color: rgb(17 24 39);
-}
-
-:root.dark .folder-dialog-panel h2 {
-  color: rgb(243 244 246);
-}
-
-/* 关闭按钮 */
-.close-btn {
-  color: rgb(156 163 175);
-}
-
-.close-btn:hover {
-  background-color: rgb(243 244 246);
-  color: rgb(75 85 99);
-}
-
-:root.dark .close-btn {
-  color: rgb(107 114 128);
-}
-
-:root.dark .close-btn:hover {
-  background-color: rgb(45 45 45);
-  color: rgb(209 213 219);
-}
-
-.close-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* 标签文字 */
-.label-text {
-  color: rgb(55 65 81);
-}
-
-:root.dark .label-text {
-  color: rgb(209 213 219);
-}
-
-/* 表单输入框 */
 .form-input {
-  border-color: rgb(229 231 235);
+  border: 1px solid rgb(229 231 235);
   background-color: rgb(255 255 255);
   color: rgb(17 24 39);
 }
-
-.form-input::placeholder {
-  color: rgb(156 163 175);
-}
-
+.form-input::placeholder { color: rgb(156 163 175); }
 .form-input:focus {
   border-color: rgb(245 158 11);
   box-shadow: 0 0 0 3px rgb(245 158 11 / 0.12);
 }
 
-:root.dark .form-input {
-  border-color: rgb(45 45 45);
-  background-color: rgb(18 18 18);
-  color: rgb(243 244 246);
-}
+.count-text { color: rgb(156 163 175); }
 
-:root.dark .form-input::placeholder {
-  color: rgb(107 114 128);
-}
+.color-swatch[style] { border-color: transparent; }
+.color-swatch.scale-110 { border-color: rgb(17 24 39); }
+.color-swatch:hover { border-color: rgb(209 213 219); }
 
-:root.dark .form-input:focus {
-  border-color: rgb(245 158 11);
-  box-shadow: 0 0 0 3px rgb(245 158 11 / 0.15);
-}
+.custom-color-btn { color: rgb(75 85 99); }
+.custom-color-btn:hover { background-color: rgb(243 244 246); }
+.custom-color-btn .border { border-color: rgb(209 213 219); }
 
-/* 字符计数 */
-.count-text {
-  color: rgb(156 163 175);
-}
-
-:root.dark .count-text {
-  color: rgb(107 114 128);
-}
-
-/* 颜色色块选中态 */
-.color-swatch[style] {
-  border-color: transparent;
-}
-
-.color-swatch.scale-110 {
-  border-color: rgb(17 24 39);
-}
-
-:root.dark .color-swatch.scale-110 {
-  border-color: rgb(243 244 246);
-}
-
-.color-swatch:hover {
-  border-color: rgb(209 213 219);
-}
-
-:root.dark .color-swatch:hover {
-  border-color: rgb(75 85 99);
-}
-
-/* 自定义颜色按钮 */
-.custom-color-btn {
-  color: rgb(75 85 99);
-}
-
-.custom-color-btn:hover {
-  background-color: rgb(243 244 246);
-}
-
-:root.dark .custom-color-btn {
-  color: rgb(156 163 175);
-}
-
-:root.dark .custom-color-btn:hover {
-  background-color: rgb(45 45 45);
-}
-
-.custom-color-btn .border {
-  border-color: rgb(209 213 219);
-}
-
-:root.dark .custom-color-btn .border {
-  border-color: rgb(75 85 99);
-}
-
-/* 颜色预览 */
 .color-preview {
-  border-color: rgb(243 244 246);
+  border: 1px solid rgb(243 244 246);
   background-color: rgb(249 250 251);
 }
+.color-preview span { color: rgb(107 114 128); }
 
-.color-preview span {
-  color: rgb(107 114 128);
-}
+.hash-prefix { color: rgb(156 163 175); }
 
-:root.dark .color-preview {
-  border-color: rgb(45 45 45);
-  background-color: rgb(18 18 18);
-}
-
-:root.dark .color-preview span {
-  color: rgb(156 163 175);
-}
-
-/* # 前缀 */
-.hash-prefix {
-  color: rgb(156 163 175);
-}
-
-:root.dark .hash-prefix {
-  color: rgb(107 114 128);
-}
-
-/* 应用颜色按钮 */
 .apply-color-btn {
-  border-color: rgb(245 158 11 / 0.3);
+  border: 1px solid rgb(245 158 11 / 0.3);
   background-color: rgb(255 251 235);
   color: rgb(217 119 6);
 }
+.apply-color-btn:hover { background-color: rgb(254 243 199); }
 
-.apply-color-btn:hover {
-  background-color: rgb(254 243 199);
-}
-
-:root.dark .apply-color-btn {
-  border-color: rgb(245 158 11 / 0.25);
-  background-color: rgb(245 158 11 / 0.1);
-  color: rgb(251 191 36);
-}
-
-:root.dark .apply-color-btn:hover {
-  background-color: rgb(245 158 11 / 0.2);
-}
-
-/* 父级下拉面板 */
 .parent-dropdown {
-  border-color: rgb(229 231 235);
+  border: 1px solid rgb(229 231 235);
   background-color: rgb(255 255 255);
 }
 
-:root.dark .parent-dropdown {
-  border-color: rgb(45 45 45);
-  background-color: rgb(28 28 30);
-}
-
-/* 下拉项 */
-.dropdown-item {
-  color: rgb(55 65 81);
-}
-
-.dropdown-item:hover {
-  background-color: rgb(249 250 251);
-}
-
+.dropdown-item { color: rgb(55 65 81); }
+.dropdown-item:hover { background-color: rgb(249 250 251); }
 .dropdown-item.active {
   background-color: rgb(255 251 235);
   color: rgb(217 119 6);
   font-weight: 500;
 }
 
-:root.dark .dropdown-item {
-  color: rgb(209 213 219);
-}
-
-:root.dark .dropdown-item:hover {
-  background-color: rgb(45 45 45);
-}
-
-:root.dark .dropdown-item.active {
-  background-color: rgb(245 158 11 / 0.1);
-  color: rgb(251 191 36);
-}
-
-/* 预览区域 */
 .folder-preview {
-  border-color: rgb(229 231 235);
+  border: 1px solid rgb(229 231 235);
   background-color: rgb(249 250 251);
 }
+.preview-label { color: rgb(156 163 175); }
+.preview-sub { color: rgb(107 114 128); }
+.preview-sort { color: rgb(156 163 175); }
 
-:root.dark .folder-preview {
-  border-color: rgb(45 45 45);
-  background-color: rgb(18 18 18);
-}
-
-.preview-label {
-  color: rgb(156 163 175);
-}
-
-:root.dark .preview-label {
-  color: rgb(107 114 128);
-}
-
-.preview-sub {
-  color: rgb(107 114 128);
-}
-
-:root.dark .preview-sub {
-  color: rgb(156 163 175);
-}
-
-.preview-sort {
-  color: rgb(156 163 175);
-}
-
-:root.dark .preview-sort {
-  color: rgb(107 114 128);
-}
-
-/* 底部边框 */
 .folder-dialog-panel > footer {
-  border-color: rgb(229 231 235);
+  border-top: 1px solid rgb(229 231 235);
 }
 
-:root.dark .folder-dialog-panel > footer {
-  border-color: rgb(45 45 45);
-}
-
-/* 取消按钮 */
 .cancel-btn {
-  border-color: rgb(229 231 235);
+  border: 1px solid rgb(229 231 235);
   background-color: rgb(255 255 255);
   color: rgb(55 65 81);
 }
+.cancel-btn:hover { background-color: rgb(249 250 251); }
+.cancel-btn:disabled { cursor: not-allowed; opacity: 0.5; }
 
-.cancel-btn:hover {
-  background-color: rgb(249 250 251);
-}
-
-:root.dark .cancel-btn {
-  border-color: rgb(45 45 45);
-  background-color: rgb(28 28 30);
-  color: rgb(209 213 219);
-}
-
-:root.dark .cancel-btn:hover {
-  background-color: rgb(45 45 45);
-}
-
-.cancel-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* 提交按钮 */
 .submit-btn {
   background-color: rgb(245 158 11);
   color: rgb(255 255 255);
 }
-
 .submit-btn:hover:not(:disabled) {
   background-color: rgb(217 119 6);
   transform: translateY(-1px);
 }
-
 .submit-btn:disabled {
   background-color: rgb(245 158 11 / 0.4);
   color: rgb(255 255 255 / 0.6);
+}
+
+/* ========== Dark Mode ========== */
+
+:root.dark .folder-dialog-panel {
+  background-color: #0a0a0e;
+  border: 1px solid rgba(255 255 255 / 0.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255 255 255 / 0.04),
+    0 24px 60px rgba(0 0 0 / 0.65),
+    0 0 0 1px rgba(255 255 255 / 0.02);
+}
+
+:root.dark .folder-dialog-header {
+  background:
+    linear-gradient(180deg, rgba(255 255 255 / 0.025) 0%, rgba(255 255 255 / 0) 100%),
+    #0a0a0e;
+  border-bottom: 1px solid rgba(255 255 255 / 0.05);
+}
+
+:root.dark .folder-icon-box {
+  border: 1px solid rgba(245 158 11 / 0.2);
+  background-color: rgba(245 158 11 / 0.08);
+  color: rgb(251 191 36);
+}
+
+:root.dark .folder-dialog-title { color: rgb(240 240 244); }
+:root.dark .folder-dialog-subtitle { color: rgb(140 145 158); }
+
+:root.dark .folder-dialog-close { color: rgb(120 125 140); }
+:root.dark .folder-dialog-close:hover {
+  background-color: rgba(255 255 255 / 0.06);
+  color: rgb(200 205 218);
+}
+
+:root.dark .label-text { color: rgb(180 185 200); }
+
+:root.dark .form-input {
+  background-color: #0e0e13;
+  border: 1px solid rgba(255 255 255 / 0.06);
+  color: rgb(230 230 238);
+  box-shadow: inset 0 1px 2px rgba(0 0 0 / 0.3);
+}
+:root.dark .form-input::placeholder { color: rgb(90 95 110); }
+:root.dark .form-input:focus {
+  border-color: rgba(245 158 11 / 0.5);
+  box-shadow:
+    0 0 0 3px rgba(245 158 11 / 0.12),
+    inset 0 1px 2px rgba(0 0 0 / 0.2);
+}
+
+:root.dark .count-text { color: rgb(100 105 120); }
+
+:root.dark .color-swatch.scale-110 { border-color: rgb(240 240 244); }
+:root.dark .color-swatch:hover { border-color: rgba(255 255 255 / 0.15); }
+
+:root.dark .custom-color-btn { color: rgb(140 145 158); }
+:root.dark .custom-color-btn:hover { background-color: rgba(255 255 255 / 0.05); }
+:root.dark .custom-color-btn .border { border-color: rgba(255 255 255 / 0.1); }
+
+:root.dark .color-preview {
+  border: 1px solid rgba(255 255 255 / 0.06);
+  background-color: #0e0e13;
+}
+:root.dark .color-preview span { color: rgb(140 145 158); }
+
+:root.dark .hash-prefix { color: rgb(100 105 120); }
+
+:root.dark .apply-color-btn {
+  border: 1px solid rgba(245 158 11 / 0.25);
+  background-color: rgba(245 158 11 / 0.08);
+  color: rgb(251 191 36);
+}
+:root.dark .apply-color-btn:hover { background-color: rgba(245 158 11 / 0.15); }
+
+:root.dark .parent-dropdown {
+  border: 1px solid rgba(255 255 255 / 0.06);
+  background-color: #0a0a0e;
+  box-shadow: 0 12px 32px rgba(0 0 0 / 0.5), 0 0 0 1px rgba(255 255 255 / 0.02);
+}
+
+:root.dark .dropdown-item { color: rgb(190 195 210); }
+:root.dark .dropdown-item:hover { background-color: rgba(255 255 255 / 0.04); }
+:root.dark .dropdown-item.active {
+  background-color: rgba(245 158 11 / 0.1);
+  color: rgb(251 191 36);
+}
+
+:root.dark .folder-preview {
+  border: 1px solid rgba(255 255 255 / 0.06);
+  background-color: #0e0e13;
+  box-shadow: inset 0 1px 2px rgba(0 0 0 / 0.3);
+}
+:root.dark .preview-label { color: rgb(100 105 120); }
+:root.dark .preview-sub { color: rgb(140 145 158); }
+:root.dark .preview-sort { color: rgb(100 105 120); }
+
+:root.dark .folder-dialog-panel > footer {
+  border-top: 1px solid rgba(255 255 255 / 0.05);
+}
+
+:root.dark .cancel-btn {
+  border: 1px solid rgba(255 255 255 / 0.08);
+  background-color: transparent;
+  color: rgb(180 185 200);
+}
+:root.dark .cancel-btn:hover {
+  background-color: rgba(255 255 255 / 0.05);
+  border-color: rgba(255 255 255 / 0.12);
+}
+:root.dark .cancel-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 :root.dark .submit-btn {
   background-color: rgb(245 158 11);
   color: rgb(17 24 39);
 }
-
 :root.dark .submit-btn:hover:not(:disabled) {
   background-color: rgb(251 191 36);
+  transform: translateY(-1px);
 }
-
 :root.dark .submit-btn:disabled {
-  background-color: rgb(245 158 11 / 0.3);
-  color: rgb(17 24 39 / 0.5);
+  background-color: rgb(245 158 11 / 0.25);
+  color: rgb(17 24 39 / 0.4);
 }
 
 /* 滚动锁定 */
 :global(html.folder-modal-scroll-lock) {
   overflow: hidden;
 }
-
 :global(body.folder-modal-scroll-lock) {
   position: fixed;
   top: calc(var(--folder-modal-scroll-y, 0px) * -1);

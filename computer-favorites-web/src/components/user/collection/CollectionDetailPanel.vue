@@ -15,7 +15,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'toggle-star', id: number): void
+  (e: 'cancel-collect', websiteId: number): void
   (e: 'visit', url: string): void
 }>()
 
@@ -25,6 +25,11 @@ const extractDomain = (url: string): string => {
   } catch {
     return url
   }
+}
+
+const parseTags = (tags: string | null | undefined): string[] => {
+  if (!tags) return []
+  return tags.split(',').map((t) => t.trim()).filter(Boolean)
 }
 </script>
 
@@ -40,9 +45,9 @@ const extractDomain = (url: string): string => {
             class="w-16 h-16 bg-gray-100 dark:bg-white/[0.04] rounded-xl flex items-center justify-center mr-4 shrink-0 border border-gray-200 dark:border-white/[0.06] overflow-hidden"
           >
             <img
-              v-if="website.icon"
-              :src="website.icon"
-              :alt="website.name"
+              v-if="website.websiteIcon"
+              :src="website.websiteIcon"
+              :alt="website.websiteName"
               class="w-10 h-10 object-contain"
             />
             <i v-else class="fas fa-globe text-2xl text-gray-400 dark:text-gray-600"></i>
@@ -50,7 +55,7 @@ const extractDomain = (url: string): string => {
           <div class="min-w-0 flex-1">
             <div class="flex items-start justify-between">
               <h2 class="text-xl font-bold mb-1 text-gray-900 dark:text-gray-100">
-                {{ website.name }}
+                {{ website.websiteName }}
               </h2>
               <button
                 type="button"
@@ -62,7 +67,7 @@ const extractDomain = (url: string): string => {
               </button>
             </div>
             <span class="text-sm text-gray-500 dark:text-gray-600 break-all">
-              {{ extractDomain(website.url) }}
+              {{ extractDomain(website.websiteUrl) }}
             </span>
           </div>
         </div>
@@ -71,7 +76,7 @@ const extractDomain = (url: string): string => {
         <button
           type="button"
           class="w-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center mb-4 transition-all duration-200 cursor-pointer active:scale-[0.97] shadow-sm dark:shadow-[0_2px_8px_rgba(59,130,246,0.2)]"
-          @click="emit('visit', website.url)"
+          @click="emit('visit', website.websiteUrl)"
         >
           访问网站
           <i class="fas fa-external-link-alt text-[13px] ml-2"></i>
@@ -81,11 +86,10 @@ const extractDomain = (url: string): string => {
         <div class="grid grid-cols-3 gap-2 mb-6 border-b border-[#e5e7eb] dark:border-white/[0.06] pb-6">
           <button
             type="button"
-            class="flex items-center justify-center py-2.5 border border-[#e5e7eb] dark:border-white/[0.06] rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.04] cursor-pointer transition-all duration-200 active:scale-[0.95]"
-            :class="website.isStarred ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-600'"
-            @click="emit('toggle-star', website.id)"
+            class="flex items-center justify-center py-2.5 border border-[#e5e7eb] dark:border-white/[0.06] rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-red-500 dark:text-red-400 cursor-pointer transition-all duration-200 active:scale-[0.95]"
+            @click="emit('cancel-collect', website.websiteId)"
           >
-            <i :class="website.isStarred ? 'fas fa-heart' : 'far fa-heart'" class="text-[18px]"></i>
+            <i class="fas fa-heart-broken text-[18px]"></i>
           </button>
           <button
             type="button"
@@ -104,11 +108,11 @@ const extractDomain = (url: string): string => {
         <!-- 详细信息 -->
         <div class="space-y-4 text-sm">
           <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
-            {{ website.description }}
+            {{ website.websiteSummary }}
           </p>
 
           <!-- 标签 -->
-          <div>
+          <div v-if="parseTags(website.websiteTags).length > 0">
             <h4
               class="text-gray-400 dark:text-gray-600 mb-2 text-xs font-medium uppercase tracking-wider"
             >
@@ -116,7 +120,7 @@ const extractDomain = (url: string): string => {
             </h4>
             <div class="flex flex-wrap gap-2">
               <span
-                v-for="tag in website.tags"
+                v-for="tag in parseTags(website.websiteTags)"
                 :key="tag"
                 class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/[0.08] dark:text-blue-400/80 dark:shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]"
               >
@@ -125,34 +129,24 @@ const extractDomain = (url: string): string => {
             </div>
           </div>
 
-          <!-- 分类 -->
-          <div>
+          <!-- 所属收藏夹 -->
+          <div v-if="website.folderName">
             <h4
               class="text-gray-400 dark:text-gray-600 mb-1 text-xs font-medium uppercase tracking-wider"
             >
-              分类
+              收藏夹
             </h4>
-            <p class="text-gray-900 dark:text-gray-300">{{ website.category }}</p>
+            <p class="text-gray-900 dark:text-gray-300">{{ website.folderName }}</p>
           </div>
 
           <!-- 收藏日期 -->
-          <div>
+          <div v-if="website.collectTime">
             <h4
               class="text-gray-400 dark:text-gray-600 mb-1 text-xs font-medium uppercase tracking-wider"
             >
               收藏日期
             </h4>
-            <p class="text-gray-900 dark:text-gray-300 tabular-nums">{{ website.dateAdded }}</p>
-          </div>
-
-          <!-- 最后访问 -->
-          <div>
-            <h4
-              class="text-gray-400 dark:text-gray-600 mb-1 text-xs font-medium uppercase tracking-wider"
-            >
-              最后访问
-            </h4>
-            <p class="text-gray-900 dark:text-gray-300">{{ website.lastVisited }}</p>
+            <p class="text-gray-900 dark:text-gray-300 tabular-nums">{{ website.collectTime }}</p>
           </div>
 
           <!-- 热度 -->
@@ -177,9 +171,9 @@ const extractDomain = (url: string): string => {
             class="h-32 bg-gray-200 dark:bg-white/[0.03] flex items-center justify-center text-gray-400 dark:text-gray-600 text-xs relative"
           >
             <img
-              v-if="website.icon"
-              :src="website.icon"
-              :alt="`${website.name} 预览`"
+              v-if="website.websiteIcon"
+              :src="website.websiteIcon"
+              :alt="`${website.websiteName} 预览`"
               class="absolute inset-0 w-full h-full object-cover opacity-30 dark:opacity-20"
             />
             <span

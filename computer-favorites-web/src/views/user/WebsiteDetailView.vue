@@ -21,6 +21,7 @@ import recommendIcon from '@/assets/icons/svg/tuijian.svg'
 import MarkdownViewer from '@/components/user/MarkdownViewer.vue'
 import StarRating from '@/components/common/StarRating.vue'
 import ReportDialog from '@/components/user/ReportDialog.vue'
+import CollectFolderDialog from '@/components/user/CollectFolderDialog.vue'
 import type { PublicWebsiteTagRef, PublicWebsiteDetail } from '@/types/public-website'
 import type { ReportFormData } from '@/types/report'
 import { buildTagColorStyle, normalizeTagColor } from '@/utils/tag-color'
@@ -162,6 +163,16 @@ const updateTimeText = computed(() => formatDate(detail.value?.updateTime))
 
 const showReportDialog = ref(false)
 
+const showCollectDialog = ref(false)
+
+const handleCollectClick = () => {
+  showCollectDialog.value = true
+}
+
+const handleCollectConfirm = (_folderId: number, wid: number) => {
+  console.log('收藏到文件夹成功:', wid)
+}
+
 const handleReportClick = () => {
   showReportDialog.value = true
 }
@@ -264,6 +275,7 @@ watch(
                 </span>
                 <button
                   class="flex items-center gap-1.5 rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-200 hover:border-primary-500 hover:text-primary-500 transition-colors cursor-pointer"
+                  @click="handleCollectClick"
                 >
                   <Heart class="h-4 w-4" />
                   收藏 {{ formatCount(detail.collectCount) }}
@@ -482,6 +494,14 @@ watch(
     :website-id="websiteId"
     :website-name="websiteName"
     @submit="handleReportSubmit"
+  />
+
+  <!-- Collect Folder Dialog -->
+  <CollectFolderDialog
+    v-model:visible="showCollectDialog"
+    :website-id="websiteId"
+    :website-name="websiteName"
+    @confirm="handleCollectConfirm"
   />
 </div>
 </template>

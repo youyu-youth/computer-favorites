@@ -64,7 +64,7 @@ const emit = defineEmits<{
             :model-value="searchQuery"
             placeholder="搜索资源..."
             class="block w-full pl-10 pr-12 py-2 border border-[#e5e7eb] dark:border-white/[0.08] dark:bg-white/[0.03] rounded-lg leading-5 bg-white text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 sm:text-sm transition-colors"
-            @update:model-value="emit('update:searchQuery', $event)"
+            @update:model-value="emit('update:searchQuery', $event ?? '')"
           />
           <div
             class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"

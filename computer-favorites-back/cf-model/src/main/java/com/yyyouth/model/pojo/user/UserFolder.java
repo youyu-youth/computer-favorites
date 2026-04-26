@@ -48,6 +48,9 @@ public class UserFolder {
     @TableField("website_count")
     private Integer websiteCount;
 
+    @TableField("is_hide")
+    private Integer isHide;
+
     @TableField("is_default")
     private Integer isDefault;
 

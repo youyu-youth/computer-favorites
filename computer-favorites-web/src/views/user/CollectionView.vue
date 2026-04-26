@@ -3,7 +3,7 @@
  * @author yyyouth zg
  * @date 2026-04-25
  *
- * 收藏夹页面 — 响应式布局，暗黑模式支持
+ * 收藏夹页面 — 响应式布局，暗黑模式支持，对接真实后端API
  */
 import { onMounted, onUnmounted, ref, computed } from 'vue'
 import Drawer from 'primevue/drawer'
@@ -26,6 +26,7 @@ const toast = useToast()
 
 const {
   categories,
+  visibleCategories,
   quickAccessList,
   activeQuickAccess,
   activeCategoryId,
@@ -40,9 +41,11 @@ const {
   totalCount,
   selectedCount,
   storagePercent,
-  storageUsed,
-  storageTotal,
   breadcrumbPath,
+  collectStats,
+  folderOptions,
+  collectLimit,
+  isLoading,
 
   setActiveQuickAccess,
   setActiveCategory,
@@ -51,7 +54,14 @@ const {
   closeDetailPanel,
   setViewMode,
   setZoomLevel,
-  toggleStar,
+  handleCancelCollect,
+  handleRenameCategory: apiRenameCategory,
+  handleDeleteFolder,
+  handleHideFolder,
+  handleShowHiddenFolders,
+  handleVerifyPassword,
+  handleFolderCreated,
+  loadFolderOptions,
 } = useCollectionManagement()
 
 const isDark = ref(false)
@@ -139,34 +149,48 @@ const openPasswordDialog = (title: string, description: string, onConfirm: (pwd:
   passwordDialogVisible.value = true
 }
 
-const handlePasswordConfirm = (pwd: string) => {
+const handlePasswordConfirm = async (pwd: string) => {
   passwordDialogLoading.value = true
-  setTimeout(() => {
-    passwordDialogLoading.value = false
+  const matched = await handleVerifyPassword(pwd)
+  passwordDialogLoading.value = false
+
+  if (matched) {
     passwordConfirmCallback?.(pwd)
     passwordConfirmCallback = null
-  }, 400)
+    passwordDialogVisible.value = false
+  } else {
+    toast.add({
+      title: '密码错误',
+      description: '密码不正确，请重试',
+      type: 'error',
+    })
+  }
 }
 
-/* ========== 隐藏/删除状态 ========== */
-const hiddenCategoryIds = ref<Set<number>>(new Set())
+/* ========== 编辑状态 ========== */
 const editingCategoryId = ref<number | null>(null)
 
 /* ========== 新建收藏夹对话框 ========== */
 const createFolderDialogVisible = ref(false)
 const createFolderParentId = ref(0)
 
-const openCreateFolder = (parentId: number) => {
+const openCreateFolder = async (parentId: number) => {
   createFolderParentId.value = parentId
+  await loadFolderOptions()
   createFolderDialogVisible.value = true
 }
 
-const handleFolderCreated = () => {
-  toast.add({
-    title: '创建成功',
-    description: '收藏夹已创建',
-    type: 'success',
-  })
+/* ========== 收藏夹隐藏ID追踪 ========== */
+const getHiddenCategoryIds = (): number[] => {
+  const result: number[] = []
+  const collect = (cats: CollectionCategory[]) => {
+    for (const cat of cats) {
+      if (cat.isHide) result.push(cat.id)
+      if (cat.children) collect(cat.children)
+    }
+  }
+  collect(categories.value)
+  return result
 }
 
 /* ========== 菜单构建 ========== */
@@ -182,33 +206,20 @@ const buildFolderMenuItems = (category: CollectionCategory): MenuItem[] => [
     onClick: () => { editingCategoryId.value = category.id },
   },
   {
-    label: '隐藏',
-    icon: 'eye-off',
+    label: category.isHide ? '显示' : '隐藏',
+    icon: category.isHide ? 'eye' : 'eye-off',
     onClick: () => {
-      openPasswordDialog(
-        '隐藏收藏夹',
-        `请输入隐藏密码以隐藏「${category.name}」及其内容`,
-        (pwd) => {
-          if (pwd === '123456') {
-            hiddenCategoryIds.value.add(category.id)
-            if (activeCategoryId.value === category.id) {
-              setActiveCategory(null)
-            }
-            toast.add({
-              title: '已隐藏',
-              description: `「${category.name}」及其内容已隐藏`,
-              type: 'success',
-            })
-            passwordDialogVisible.value = false
-          } else {
-            toast.add({
-              title: '密码错误',
-              description: '隐藏密码不正确，请重试',
-              type: 'error',
-            })
-          }
-        },
-      )
+      if (category.isHide) {
+        handleShowHiddenFolders([category.id])
+      } else {
+        openPasswordDialog(
+          '隐藏收藏夹',
+          `请输入登录密码以隐藏「${category.name}」及其内容`,
+          () => {
+            handleHideFolder(category.id)
+          },
+        )
+      }
     },
   },
   {
@@ -219,76 +230,42 @@ const buildFolderMenuItems = (category: CollectionCategory): MenuItem[] => [
       openPasswordDialog(
         '删除收藏夹',
         `请输入登录密码以删除「${category.name}」`,
-        (pwd) => {
-          if (pwd === '123456') {
-            const idx = categories.value.findIndex((c) => c.id === category.id)
-            if (idx !== -1) {
-              categories.value.splice(idx, 1)
-            }
-            if (activeCategoryId.value === category.id) {
-              setActiveCategory(null)
-            }
-            toast.add({
-              title: '已删除',
-              description: `「${category.name}」已删除`,
-              type: 'success',
-            })
-            passwordDialogVisible.value = false
-          } else {
-            toast.add({
-              title: '密码错误',
-              description: '登录密码不正确，请重试',
-              type: 'error',
-            })
-          }
+        () => {
+          handleDeleteFolder(category.id)
         },
       )
     },
   },
 ]
 
-const buildEmptyMenuItems = (): MenuItem[] => [
-  {
-    label: '新建收藏夹',
-    icon: 'folder-plus',
-    onClick: () => openCreateFolder(0),
-  },
-  {
-    label: '显示隐藏收藏夹',
-    icon: 'eye',
-    onClick: () => {
-      if (hiddenCategoryIds.value.size === 0) {
-        toast.add({
-          title: '提示',
-          description: '当前没有隐藏的收藏夹',
-          type: 'info',
-        })
-        return
-      }
-      openPasswordDialog(
-        '显示隐藏收藏夹',
-        '请输入隐藏密码以恢复所有隐藏的收藏夹',
-        (pwd) => {
-          if (pwd === '123456') {
-            hiddenCategoryIds.value.clear()
-            toast.add({
-              title: '已恢复',
-              description: '所有隐藏的收藏夹已恢复显示',
-              type: 'success',
-            })
-            passwordDialogVisible.value = false
-          } else {
-            toast.add({
-              title: '密码错误',
-              description: '隐藏密码不正确，请重试',
-              type: 'error',
-            })
-          }
-        },
-      )
+const buildEmptyMenuItems = (): MenuItem[] => {
+  const items: MenuItem[] = [
+    {
+      label: '新建收藏夹',
+      icon: 'folder-plus',
+      onClick: () => openCreateFolder(0),
     },
-  },
-]
+  ]
+
+  const hiddenIds = getHiddenCategoryIds()
+  if (hiddenIds.length > 0) {
+    items.push({
+      label: '显示隐藏收藏夹',
+      icon: 'eye',
+      onClick: () => {
+        openPasswordDialog(
+          '显示隐藏收藏夹',
+          '请输入登录密码以恢复所有隐藏的收藏夹',
+          () => {
+            handleShowHiddenFolders(hiddenIds)
+          },
+        )
+      },
+    })
+  }
+
+  return items
+}
 
 /* ========== 菜单事件处理 ========== */
 const handleContextMenuFolder = (event: MouseEvent | TouchEvent, category: CollectionCategory) => {
@@ -322,15 +299,7 @@ const handleContextMenuEmpty = (event: MouseEvent | TouchEvent) => {
 }
 
 const handleRenameCategory = (id: number, newName: string) => {
-  const cat = categories.value.find((c) => c.id === id)
-  if (cat) {
-    cat.name = newName
-    toast.add({
-      title: '重命名成功',
-      description: `收藏夹已更名为「${newName}」`,
-      type: 'success',
-    })
-  }
+  apiRenameCategory(id, newName)
   editingCategoryId.value = null
 }
 
@@ -366,18 +335,19 @@ const drawerSidebarEvents: Record<string, any> = {
         <CollectionSidebar
           :quick-access-list="quickAccessList"
           :categories="categories"
+          :visible-categories="visibleCategories"
           :active-quick-access="activeQuickAccess"
           :active-category-id="activeCategoryId"
-          :storage-used="storageUsed"
-          :storage-total="storageTotal"
+          :collect-count="collectStats.collectCount"
+          :collect-limit="collectLimit"
           :storage-percent="storagePercent"
           :editing-category-id="editingCategoryId"
-          :hidden-category-ids="hiddenCategoryIds"
+          :is-loading="isLoading"
           @select-quick-access="setActiveQuickAccess"
           @select-category="setActiveCategory"
           @context-menu-folder="handleContextMenuFolder"
           @context-menu-empty="handleContextMenuEmpty"
-          @rename-category="handleRenameCategory"
+          @rename-category="(id: number, name: string) => handleRenameCategory(id, name)"
           @rename-cancel="handleRenameCancel"
         />
       </div>
@@ -415,13 +385,14 @@ const drawerSidebarEvents: Record<string, any> = {
         <CollectionSidebar
           :quick-access-list="quickAccessList"
           :categories="categories"
+          :visible-categories="visibleCategories"
           :active-quick-access="activeQuickAccess"
           :active-category-id="activeCategoryId"
-          :storage-used="storageUsed"
-          :storage-total="storageTotal"
+          :collect-count="collectStats.collectCount"
+          :collect-limit="collectLimit"
           :storage-percent="storagePercent"
           :editing-category-id="editingCategoryId"
-          :hidden-category-ids="hiddenCategoryIds"
+          :is-loading="isLoading"
           v-on="drawerSidebarEvents"
         />
       </Drawer>
@@ -441,9 +412,18 @@ const drawerSidebarEvents: Record<string, any> = {
         <div class="flex-1 overflow-auto flex">
           <!-- 网站卡片列表 -->
           <main class="flex-1 p-6 overflow-y-auto">
+            <!-- 加载状态 -->
+            <div
+              v-if="isLoading && filteredResources.length === 0"
+              class="py-20 text-center text-[#9ca3af] dark:text-[#4b5563]"
+            >
+              <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
+              <p>加载中...</p>
+            </div>
+
             <!-- 卡片网格/列表 -->
             <div
-              v-if="filteredResources.length > 0"
+              v-else-if="filteredResources.length > 0"
               class="grid gap-3"
               :class="gridColsClass"
               :style="viewMode === 'grid' ? { transform: `scale(${cardScale})`, transformOrigin: 'top left' } : {}"
@@ -455,7 +435,7 @@ const drawerSidebarEvents: Record<string, any> = {
                 :view-mode="viewMode"
                 :is-selected="selectedWebsite?.id === item.id"
                 @select="handleSelectWebsite"
-                @toggle-star="toggleStar"
+                @cancel-collect="handleCancelCollect"
               />
             </div>
 
@@ -474,7 +454,7 @@ const drawerSidebarEvents: Record<string, any> = {
             <CollectionDetailPanel
               :website="selectedWebsite"
               @close="closeDetailPanel"
-              @toggle-star="toggleStar"
+              @cancel-collect="handleCancelCollect"
               @visit="handleVisit"
             />
           </div>
@@ -506,7 +486,7 @@ const drawerSidebarEvents: Record<string, any> = {
         <CollectionDetailPanel
           :website="selectedWebsite"
           @close="mobileDetailOpen = false"
-          @toggle-star="toggleStar"
+          @cancel-collect="handleCancelCollect"
           @visit="handleVisit"
         />
       </Drawer>
@@ -543,6 +523,7 @@ const drawerSidebarEvents: Record<string, any> = {
     <CreateFolderDialog
       v-model:open="createFolderDialogVisible"
       :parent-id="createFolderParentId"
+      :parent-options="folderOptions"
       @submit="handleFolderCreated"
     />
   </div>

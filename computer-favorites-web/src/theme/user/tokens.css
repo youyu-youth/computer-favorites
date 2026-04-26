@@ -10,6 +10,14 @@
   --cf-color-dark-card-rgb: 28 28 30;
   --cf-color-dark-border-rgb: 45 45 45;
 
+  /* 深色模式对话框/卡片层级色 — 消除塑料感 */
+  --cf-color-void-rgb: 5 5 7;
+  --cf-color-deep-rgb: 10 10 13;
+  --cf-color-sunken-rgb: 14 14 18;
+  --cf-color-raised-rgb: 20 20 26;
+  --cf-color-border-hairline: rgba(255 255 255 / 0.05);
+  --cf-color-border-ghost: rgba(255 255 255 / 0.08);
+
   --cf-color-success-rgb: 16 185 129;
   --cf-color-error-rgb: 244 63 94;
   --cf-color-warning-rgb: 245 158 11;
@@ -43,12 +51,22 @@
 
 :root.dark,
 :root.dark[data-cf-theme='user'] {
-  --cf-color-surface-page-rgb: 18 18 18;
-  --cf-color-surface-card-rgb: 28 28 30;
-  --cf-color-text-primary-rgb: 243 244 246;
-  --cf-color-text-secondary-rgb: 156 163 175;
+  --cf-color-surface-page-rgb: 5 5 7;
+  --cf-color-surface-card-rgb: 12 12 14;
+  --cf-color-text-primary-rgb: 240 240 244;
+  --cf-color-text-secondary-rgb: 140 145 158;
   --cf-color-border-default-rgb: 45 45 45;
-  --cf-color-border-muted-rgb: 51 65 85;
+  --cf-color-border-muted-rgb: 55 55 65;
   --cf-color-border-overlay-rgb: 255 255 255;
-  --cf-color-modal-header-rgb: 31 41 55;
+  --cf-color-modal-header-rgb: 16 16 22;
+
+  /* 深色模式对话框专用层级 */
+  --cf-dialog-void: #050507;
+  --cf-dialog-deep: #0a0a0e;
+  --cf-dialog-sunken: #0e0e13;
+  --cf-dialog-raised: #13131a;
+  --cf-dialog-hairline: rgba(255 255 255 / 0.05);
+  --cf-dialog-ghost: rgba(255 255 255 / 0.09);
+  --cf-dialog-inset-highlight: inset 0 1px 0 rgba(255 255 255 / 0.04);
+  --cf-dialog-ambient-shadow: 0 24px 60px rgba(0 0 0 / 0.6), 0 0 0 1px rgba(255 255 255 / 0.04);
 }

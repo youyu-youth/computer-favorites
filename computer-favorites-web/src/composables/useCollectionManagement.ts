@@ -2,226 +2,69 @@
  * @author yyyouth zg
  * @date 2026-04-25
  *
- * 收藏夹页面状态管理 composable
+ * 收藏夹页面状态管理 composable — 对接真实后端 API
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type {
   CollectionWebsite,
   CollectionCategory,
   CollectionQuickAccess,
+  CollectStats,
   ViewMode,
 } from '@/types/collection'
+import type { FolderOption } from '@/types/folder'
+import { getFolderTree, getFolderOptions, updateFolder, deleteFolder, toggleFolderHide } from '@/api/user-folder'
+import { getCollectPage, getCollectStats, cancelCollect } from '@/api/user-collect'
+import { verifyPassword } from '@/api/user-password'
+import { useToast } from '@/composables/useToast'
 
-/** 快捷访问配置 */
+const COLLECT_LIMIT = 500
+
 const QUICK_ACCESS_LIST: CollectionQuickAccess[] = [
   { key: 'recent', label: '最近访问', icon: 'fas fa-clock' },
-  { key: 'favorites', label: '星标收藏', icon: 'fas fa-star' },
-  { key: 'readlater', label: '稍后阅读', icon: 'fas fa-bookmark' },
-]
-
-/** 分类配置 */
-const CATEGORY_LIST: CollectionCategory[] = [
-  { id: 1, name: '推荐', icon: 'fas fa-thumbs-up', count: 12 },
-  { id: 2, name: '前端', icon: 'fas fa-code', count: 18 },
-  { id: 3, name: '后端', icon: 'fas fa-terminal', count: 9 },
-  { id: 4, name: 'AI 工具', icon: 'fas fa-robot', count: 15 },
-  { id: 5, name: '开发工具', icon: 'fas fa-wrench', count: 22 },
-  { id: 6, name: '设计', icon: 'fas fa-paintbrush', count: 7 },
-]
-
-/** Mock 网站数据 */
-const MOCK_WEBSITES: CollectionWebsite[] = [
-  {
-    id: 1,
-    name: 'Notion',
-    description: 'All-in-one workspace for notes, tasks, wikis, and databases.',
-    url: 'https://notion.so',
-    icon: 'https://www.notion.so/images/meta/default.png',
-    tags: ['效率', '笔记'],
-    category: '推荐',
-    isStarred: true,
-    likeCount: 12400,
-    dateAdded: '2024-05-20 14:30',
-    lastVisited: '今天 10:24',
-  },
-  {
-    id: 2,
-    name: 'Vercel',
-    description: 'Frontend development and deployment platform.',
-    url: 'https://vercel.com',
-    icon: '',
-    tags: ['开发工具', '部署'],
-    category: '开发工具',
-    isStarred: true,
-    likeCount: 9800,
-    dateAdded: '2024-06-10 09:15',
-    lastVisited: '昨天 16:42',
-  },
-  {
-    id: 3,
-    name: 'Supabase',
-    description: 'The open source Firebase alternative.',
-    url: 'https://supabase.com',
-    icon: '',
-    tags: ['后端', '数据库'],
-    category: '后端',
-    isStarred: false,
-    likeCount: 8600,
-    dateAdded: '2024-07-03 11:20',
-    lastVisited: '3天前',
-  },
-  {
-    id: 4,
-    name: 'Tailwind CSS',
-    description: 'Utility-first CSS framework.',
-    url: 'https://tailwindcss.com',
-    icon: '',
-    tags: ['前端', 'CSS'],
-    category: '前端',
-    isStarred: false,
-    likeCount: 16700,
-    dateAdded: '2024-04-15 08:00',
-    lastVisited: '今天 09:10',
-  },
-  {
-    id: 5,
-    name: 'GitHub',
-    description: '全球最大的开源代码托管平台，开发者发现、分享和构建优秀软件的首选。',
-    url: 'https://github.com',
-    icon: '',
-    tags: ['开发工具', '开源'],
-    category: '开发工具',
-    isStarred: true,
-    likeCount: 45000,
-    dateAdded: '2024-01-05 10:00',
-    lastVisited: '今天 08:30',
-  },
-  {
-    id: 6,
-    name: 'ChatGPT',
-    description: 'OpenAI 训练的大型语言模型，能够理解和生成自然语言文本。',
-    url: 'https://chat.openai.com',
-    icon: '',
-    tags: ['AI 工具', '对话'],
-    category: 'AI 工具',
-    isStarred: true,
-    likeCount: 120000,
-    dateAdded: '2024-02-20 14:00',
-    lastVisited: '今天 11:05',
-  },
-  {
-    id: 7,
-    name: 'Figma',
-    description: '基于浏览器的协作式 UI 设计工具，实时协作提升设计效率。',
-    url: 'https://figma.com',
-    icon: '',
-    tags: ['设计', 'UI'],
-    category: '设计',
-    isStarred: false,
-    likeCount: 35000,
-    dateAdded: '2024-03-08 16:30',
-    lastVisited: '上周',
-  },
-  {
-    id: 8,
-    name: 'Vue.js',
-    description: '渐进式 JavaScript 框架，易学易用，性能出色。',
-    url: 'https://vuejs.org',
-    icon: '',
-    tags: ['前端', '框架'],
-    category: '前端',
-    isStarred: false,
-    likeCount: 52000,
-    dateAdded: '2024-01-10 09:00',
-    lastVisited: '2天前',
-  },
+  { key: 'favorites', label: '稍后阅读', icon: 'fas fa-bookmark' },
 ]
 
 export function useCollectionManagement() {
-  /** 分类列表 */
-  const categories = ref<CollectionCategory[]>(CATEGORY_LIST)
+  const toast = useToast()
 
-  /** 快捷访问列表 */
+  const categories = ref<CollectionCategory[]>([])
   const quickAccessList = ref<CollectionQuickAccess[]>(QUICK_ACCESS_LIST)
-
-  /** 当前激活的快捷访问 key */
   const activeQuickAccess = ref<string | null>(null)
-
-  /** 当前激活的分类 ID */
-  const activeCategoryId = ref<number | null>(1)
-
-  /** 网站列表 */
-  const resources = ref<CollectionWebsite[]>(MOCK_WEBSITES)
-
-  /** 搜索关键词 */
+  const activeCategoryId = ref<number | null>(null)
+  const resources = ref<CollectionWebsite[]>([])
   const searchQuery = ref('')
-
-  /** 当前选中的网站 */
   const selectedWebsite = ref<CollectionWebsite | null>(null)
-
-  /** 详情面板是否打开 */
   const detailPanelOpen = ref(true)
-
-  /** 视图模式 */
   const viewMode = ref<ViewMode>('grid')
-
-  /** 缩放级别 50-150 */
   const zoomLevel = ref(100)
-
-  /** 移动端侧边栏是否打开 */
   const mobileSidebarOpen = ref(false)
-
-  /** 移动端详情面板是否打开 */
   const mobileDetailOpen = ref(false)
-
-  /** 加载状态 */
   const isLoading = ref(false)
+  const collectStats = ref<CollectStats>({ collectCount: 0, folderCount: 0 })
+  const folderOptions = ref<FolderOption[]>([])
+  const currentPage = ref(1)
+  const pageSize = ref(20)
+  const totalPages = ref(1)
+  const totalCollectCount = ref(0)
+  const hasMore = ref(true)
 
-  /** 存储用量（GB） */
-  const storageUsed = ref(2.45)
-  const storageTotal = ref(10)
-
-  /** 根据筛选条件过滤后的网站列表 */
   const filteredResources = computed(() => {
-    let result = resources.value
-
-    if (activeQuickAccess.value === 'favorites') {
-      result = result.filter((w) => w.isStarred)
-    } else if (activeQuickAccess.value === 'recent') {
-      result = [...result].sort((a, b) => b.likeCount - a.likeCount)
-    }
-
-    if (activeCategoryId.value !== null) {
-      const activeCategory = categories.value.find((c) => c.id === activeCategoryId.value)
-      if (activeCategory) {
-        result = result.filter((w) => w.category === activeCategory.name)
-      }
-    }
-
-    if (searchQuery.value.trim()) {
-      const keyword = searchQuery.value.trim().toLowerCase()
-      result = result.filter(
-        (w) =>
-          w.name.toLowerCase().includes(keyword) ||
-          w.description.toLowerCase().includes(keyword) ||
-          w.tags.some((t) => t.toLowerCase().includes(keyword)),
-      )
-    }
-
-    return result
+    if (!searchQuery.value.trim()) return resources.value
+    const keyword = searchQuery.value.trim().toLowerCase()
+    return resources.value.filter(
+      (w) =>
+        w.websiteName.toLowerCase().includes(keyword) ||
+        (w.websiteSummary && w.websiteSummary.toLowerCase().includes(keyword)) ||
+        (w.websiteTags && w.websiteTags.toLowerCase().includes(keyword)),
+    )
   })
 
-  /** 总资源数 */
-  const totalCount = computed(() => resources.value.length)
-
-  /** 选中数量 */
+  const totalCount = computed(() => totalCollectCount.value)
   const selectedCount = computed(() => (selectedWebsite.value ? 1 : 0))
+  const storagePercent = computed(() => Math.min(100, Math.round((collectStats.value.collectCount / COLLECT_LIMIT) * 100)))
 
-  /** 存储使用百分比 */
-  const storagePercent = computed(() => Math.round((storageUsed.value / storageTotal.value) * 100))
-
-  /** 当前面包屑路径 */
   const breadcrumbPath = computed(() => {
     const parts = ['Home']
     if (activeQuickAccess.value) {
@@ -232,7 +75,7 @@ export function useCollectionManagement() {
       }
     }
     if (activeCategoryId.value !== null) {
-      const cat = categories.value.find((c) => c.id === activeCategoryId.value)
+      const cat = findCategoryById(categories.value, activeCategoryId.value)
       if (cat) {
         parts.push(cat.name)
       }
@@ -240,54 +83,201 @@ export function useCollectionManagement() {
     return parts
   })
 
-  /** 设置激活的快捷访问 */
+  const findCategoryById = (cats: CollectionCategory[], id: number): CollectionCategory | undefined => {
+    for (const cat of cats) {
+      if (cat.id === id) return cat
+      const found = findCategoryById(cat.children || [], id)
+      if (found) return found
+    }
+    return undefined
+  }
+
+  const visibleCategories = computed(() => {
+    const filterHidden = (cats: CollectionCategory[]): CollectionCategory[] => {
+      return cats
+        .filter((c) => !c.isHide)
+        .map((c) => ({
+          ...c,
+          children: c.children ? filterHidden(c.children) : [],
+        }))
+    }
+    return filterHidden(categories.value)
+  })
+
+  const loadFolderTree = async () => {
+    try {
+      categories.value = await getFolderTree()
+    } catch {
+      toast.add({ title: '加载失败', description: '文件夹加载失败，请刷新重试', type: 'error' })
+    }
+  }
+
+  const loadFolderOptions = async () => {
+    try {
+      folderOptions.value = await getFolderOptions()
+    } catch {
+      folderOptions.value = []
+    }
+  }
+
+  const loadCollectPage = async (reset = true) => {
+    if (isLoading.value) return
+    isLoading.value = true
+    try {
+      let queryFolderId: number | undefined
+      if (activeCategoryId.value !== null) {
+        queryFolderId = activeCategoryId.value
+      }
+
+      const result = await getCollectPage({
+        folderId: queryFolderId,
+        pageNum: currentPage.value,
+        pageSize: pageSize.value,
+      })
+
+      if (reset) {
+        resources.value = result.records
+      } else {
+        resources.value = [...resources.value, ...result.records]
+      }
+      totalCollectCount.value = result.total
+      totalPages.value = result.totalPages
+      hasMore.value = currentPage.value < result.totalPages
+    } catch {
+      toast.add({ title: '加载失败', description: '收藏列表加载失败', type: 'error' })
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const loadCollectStats = async () => {
+    try {
+      collectStats.value = await getCollectStats()
+    } catch {
+      collectStats.value = { collectCount: 0, folderCount: 0 }
+    }
+  }
+
+  const refreshAll = async () => {
+    await Promise.all([loadFolderTree(), loadFolderOptions(), loadCollectStats()])
+    currentPage.value = 1
+    await loadCollectPage(true)
+  }
+
   const setActiveQuickAccess = (key: string | null) => {
     activeQuickAccess.value = key
     activeCategoryId.value = null
+    currentPage.value = 1
+    loadCollectPage(true)
   }
 
-  /** 设置激活的分类 */
   const setActiveCategory = (id: number | null) => {
     activeCategoryId.value = id
     activeQuickAccess.value = null
+    currentPage.value = 1
+    loadCollectPage(true)
   }
 
-  /** 选中一个网站 */
   const selectWebsite = (website: CollectionWebsite) => {
     selectedWebsite.value = website
     detailPanelOpen.value = true
   }
 
-  /** 切换详情面板 */
   const toggleDetailPanel = () => {
     detailPanelOpen.value = !detailPanelOpen.value
   }
 
-  /** 关闭详情面板 */
   const closeDetailPanel = () => {
     detailPanelOpen.value = false
   }
 
-  /** 切换视图模式 */
   const setViewMode = (mode: ViewMode) => {
     viewMode.value = mode
   }
 
-  /** 设置缩放级别 */
   const setZoomLevel = (level: number) => {
     zoomLevel.value = Math.min(150, Math.max(50, level))
   }
 
-  /** 切换星标 */
-  const toggleStar = (websiteId: number) => {
-    const target = resources.value.find((w) => w.id === websiteId)
-    if (target) {
-      target.isStarred = !target.isStarred
+  const handleCancelCollect = async (websiteId: number) => {
+    try {
+      await cancelCollect(websiteId)
+      toast.add({ title: '取消收藏', description: '已取消收藏', type: 'success' })
+      refreshAll()
+    } catch (e) {
+      toast.add({ title: '操作失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
     }
   }
 
+  const handleRenameCategory = async (id: number, newName: string) => {
+    try {
+      await updateFolder(id, { name: newName })
+      toast.add({ title: '重命名成功', description: `收藏夹已更名为「${newName}」`, type: 'success' })
+      await loadFolderTree()
+    } catch (e) {
+      toast.add({ title: '重命名失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
+    }
+  }
+
+  const handleDeleteFolder = async (id: number) => {
+    try {
+      await deleteFolder(id)
+      toast.add({ title: '已删除', description: '收藏夹已删除', type: 'success' })
+      if (activeCategoryId.value === id) {
+        setActiveCategory(null)
+      }
+      await loadFolderTree()
+      await loadCollectStats()
+    } catch (e) {
+      toast.add({ title: '删除失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
+    }
+  }
+
+  const handleHideFolder = async (id: number) => {
+    try {
+      await toggleFolderHide(id, true)
+      toast.add({ title: '已隐藏', description: '收藏夹及其内容已隐藏', type: 'success' })
+      if (activeCategoryId.value === id) {
+        setActiveCategory(null)
+      }
+      await loadFolderTree()
+    } catch (e) {
+      toast.add({ title: '操作失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
+    }
+  }
+
+  const handleShowHiddenFolders = async (hiddenIds: number[]) => {
+    try {
+      await Promise.all(hiddenIds.map((id) => toggleFolderHide(id, false)))
+      toast.add({ title: '已恢复', description: '所有隐藏的收藏夹已恢复显示', type: 'success' })
+      await loadFolderTree()
+    } catch (e) {
+      toast.add({ title: '操作失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
+    }
+  }
+
+  const handleVerifyPassword = async (password: string): Promise<boolean> => {
+    try {
+      return await verifyPassword(password)
+    } catch {
+      return false
+    }
+  }
+
+  const handleFolderCreated = async () => {
+    toast.add({ title: '创建成功', description: '收藏夹已创建', type: 'success' })
+    await loadFolderTree()
+    await loadFolderOptions()
+    await loadCollectStats()
+  }
+
+  onMounted(() => {
+    refreshAll()
+  })
+
   return {
     categories,
+    visibleCategories,
     quickAccessList,
     activeQuickAccess,
     activeCategoryId,
@@ -301,12 +291,13 @@ export function useCollectionManagement() {
     mobileSidebarOpen,
     mobileDetailOpen,
     isLoading,
-    storageUsed,
-    storageTotal,
+    collectStats,
+    folderOptions,
     totalCount,
     selectedCount,
     storagePercent,
     breadcrumbPath,
+    collectLimit: COLLECT_LIMIT,
 
     setActiveQuickAccess,
     setActiveCategory,
@@ -315,6 +306,14 @@ export function useCollectionManagement() {
     closeDetailPanel,
     setViewMode,
     setZoomLevel,
-    toggleStar,
+    handleCancelCollect,
+    handleRenameCategory,
+    handleDeleteFolder,
+    handleHideFolder,
+    handleShowHiddenFolders,
+    handleVerifyPassword,
+    handleFolderCreated,
+    refreshAll,
+    loadFolderOptions,
   }
 }

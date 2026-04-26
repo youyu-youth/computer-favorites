@@ -16,6 +16,14 @@ export interface FolderFormData {
   sort: number
 }
 
+/** 文件夹更新数据 */
+export interface FolderUpdateData {
+  name?: string
+  icon?: string
+  color?: string
+  sort?: number
+}
+
 /** 父文件夹选项（简化版，用于下拉选择） */
 export interface FolderOption {
   id: number

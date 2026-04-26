@@ -1,13 +1,8 @@
-import { postJson } from '@/utils/http'
+import { deleteJson, getJson, postJson, putJson } from '@/utils/http'
 import type { ApiResult } from '@/api/types'
-import type { FolderFormData, UserFolderCreateResult } from '@/types/folder'
+import type { FolderFormData, FolderUpdateData, FolderOption, UserFolderCreateResult } from '@/types/folder'
+import type { CollectionCategory } from '@/types/collection'
 
-/**
- * 创建收藏文件夹
- *
- * @param payload 文件夹表单数据
- * @returns 创建结果
- */
 export async function createUserFolder(payload: FolderFormData): Promise<UserFolderCreateResult> {
   const res = await postJson<ApiResult<UserFolderCreateResult>>('/api/user/folder', payload)
   if (res.code !== 200) {
@@ -17,4 +12,41 @@ export async function createUserFolder(payload: FolderFormData): Promise<UserFol
     throw new Error('创建收藏夹返回数据异常')
   }
   return res.data
+}
+
+export async function getFolderTree(): Promise<CollectionCategory[]> {
+  const res = await getJson<ApiResult<CollectionCategory[]>>('/api/user/folder/tree')
+  if (res.code !== 200) {
+    throw new Error(res.msg || '查询文件夹树失败')
+  }
+  return res.data || []
+}
+
+export async function updateFolder(id: number, data: FolderUpdateData): Promise<void> {
+  const res = await putJson<ApiResult<null>>(`/api/user/folder/${id}`, data)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '更新收藏夹失败')
+  }
+}
+
+export async function deleteFolder(id: number): Promise<void> {
+  const res = await deleteJson<ApiResult<null>>(`/api/user/folder/${id}`)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '删除收藏夹失败')
+  }
+}
+
+export async function toggleFolderHide(id: number, isHide: boolean): Promise<void> {
+  const res = await putJson<ApiResult<null>>(`/api/user/folder/${id}/hide?isHide=${isHide}`)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '操作失败')
+  }
+}
+
+export async function getFolderOptions(): Promise<FolderOption[]> {
+  const res = await getJson<ApiResult<FolderOption[]>>('/api/user/folder/options')
+  if (res.code !== 200) {
+    throw new Error(res.msg || '查询文件夹选项失败')
+  }
+  return res.data || []
 }

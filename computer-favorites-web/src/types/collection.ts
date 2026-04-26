@@ -5,63 +5,56 @@
  * 用户收藏夹页面相关类型定义
  */
 
-/** 收藏夹网站条目 */
+/** 收藏的网站条目（对齐后端 UserCollectItemVO） */
 export interface CollectionWebsite {
-  /** 网站ID */
   id: number
-  /** 网站名称 */
-  name: string
-  /** 网站描述 */
-  description: string
-  /** 网站URL */
-  url: string
-  /** 网站图标URL */
-  icon: string
-  /** 标签列表 */
-  tags: string[]
-  /** 所属分类名称 */
-  category: string
-  /** 是否星标收藏 */
-  isStarred: boolean
-  /** 点赞数 */
+  websiteId: number
+  websiteName: string
+  websiteUrl: string
+  websiteIcon: string
+  websiteSummary: string
+  websiteTags: string
   likeCount: number
-  /** 收藏日期 */
-  dateAdded: string
-  /** 最后访问时间 */
-  lastVisited: string
+  collectTime: string
+  folderId: number
+  folderName: string
 }
 
-/** 快捷访问项 */
-export interface CollectionQuickAccess {
-  /** 唯一标识 */
-  key: string
-  /** 显示名称 */
-  label: string
-  /** FontAwesome 图标类名 */
-  icon: string
-}
-
-/** 收藏分类项 */
+/** 收藏文件夹树节点（对齐后端 UserFolderTreeVO） */
 export interface CollectionCategory {
-  /** 分类ID */
   id: number
-  /** 分类名称 */
   name: string
-  /** FontAwesome 图标类名 */
   icon: string
-  /** 该分类下的网站数量 */
-  count: number
+  color: string
+  parentId: number
+  sort: number
+  websiteCount: number
+  isHide: number
+  isDefault: number
+  children: CollectionCategory[]
+}
+
+/** 快捷访问项（前端配置，不依赖后端） */
+export interface CollectionQuickAccess {
+  key: string
+  label: string
+  icon: string
+}
+
+/** 收藏列表分页结果（对齐后端 UserCollectPageVO） */
+export interface CollectPageResult {
+  records: CollectionWebsite[]
+  total: number
+  pageNum: number
+  pageSize: number
+  totalPages: number
+}
+
+/** 收藏统计（对齐后端 UserCollectStatsVO） */
+export interface CollectStats {
+  collectCount: number
+  folderCount: number
 }
 
 /** 视图模式 */
 export type ViewMode = 'grid' | 'list'
-
-/** 面板显示状态 */
-export interface PanelState {
-  /** 详情面板是否打开 */
-  detailOpen: boolean
-  /** 移动端侧边栏是否打开 */
-  mobileSidebarOpen: boolean
-  /** 移动端详情面板是否打开 */
-  mobileDetailOpen: boolean
-}

@@ -1,22 +1,36 @@
 package com.yyyouth.service.user.folder.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.UserFolderCreateDTO;
+import com.yyyouth.model.dto.user.UserFolderUpdateDTO;
 import com.yyyouth.model.pojo.auth.UserAccount;
+import com.yyyouth.model.pojo.user.UserCollect;
 import com.yyyouth.model.pojo.user.UserFolder;
 import com.yyyouth.model.vo.user.UserFolderCreateVO;
+import com.yyyouth.model.vo.user.UserFolderOptionsVO;
+import com.yyyouth.model.vo.user.UserFolderTreeVO;
+import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.UserFolderMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.user.folder.UserFolderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author yyyouth zg
@@ -39,15 +53,20 @@ public class UserFolderServiceImpl implements UserFolderService {
     private static final long TOP_LEVEL_PARENT_ID = 0L;
     private static final int MAX_FOLDER_DEPTH = 5;
     private static final int MIN_FOLDER_DEPTH = 1;
+    private static final int NOT_HIDE = 0;
+    private static final int IS_HIDE = 1;
+    private static final int IS_DEFAULT = 1;
+
+    private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
 
     private final UserFolderMapper userFolderMapper;
     private final UserAccountMapper userAccountMapper;
+    private final UserCollectMapper userCollectMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserFolderCreateVO createFolder(UserFolderCreateDTO createDTO) {
-        UserAccount currentUser = getCurrentActiveUser();
-        Long userId = currentUser.getId();
+        Long userId = getCurrentUserId();
 
         String normalizedName = normalizeFolderName(createDTO.getName());
         validateFolderNameDuplication(userId, createDTO.getParentId(), normalizedName);
@@ -65,6 +84,7 @@ public class UserFolderServiceImpl implements UserFolderService {
                 .parentId(createDTO.getParentId() != null ? createDTO.getParentId() : TOP_LEVEL_PARENT_ID)
                 .sort(createDTO.getSort() != null ? createDTO.getSort() : INITIAL_SORT)
                 .websiteCount(INITIAL_WEBSITE_COUNT)
+                .isHide(NOT_HIDE)
                 .isDefault(NOT_DEFAULT_FOLDER)
                 .status(FOLDER_STATUS_NORMAL)
                 .deleted(NOT_DELETED)
@@ -88,9 +108,139 @@ public class UserFolderServiceImpl implements UserFolderService {
                 .build();
     }
 
-    private UserAccount getCurrentActiveUser() {
-        StpUtil.checkLogin();
-        Long userId = StpUtil.getLoginIdAsLong();
+    @Override
+    public List<UserFolderTreeVO> getFolderTree() {
+        Long userId = getCurrentUserId();
+
+        List<UserFolder> allFolders = userFolderMapper.selectList(new LambdaQueryWrapper<UserFolder>()
+                .eq(UserFolder::getUserId, userId)
+                .eq(UserFolder::getStatus, FOLDER_STATUS_NORMAL)
+                .eq(UserFolder::getDeleted, NOT_DELETED)
+                .orderByAsc(UserFolder::getSort)
+                .orderByAsc(UserFolder::getId));
+
+        List<UserFolderTreeVO> voList = allFolders.stream()
+                .map(this::toTreeVO)
+                .collect(Collectors.toList());
+
+        return buildTree(voList);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateFolder(Long folderId, UserFolderUpdateDTO updateDTO) {
+        Long userId = getCurrentUserId();
+
+        UserFolder folder = getOwnedFolder(userId, folderId);
+
+        if (StringUtils.hasText(updateDTO.getName())) {
+            String normalizedName = normalizeFolderName(updateDTO.getName());
+            if (!normalizedName.equals(folder.getName())) {
+                validateFolderNameDuplication(userId, folder.getParentId(), normalizedName);
+                folder.setName(normalizedName);
+            }
+        }
+        if (updateDTO.getIcon() != null) {
+            folder.setIcon(normalizeOptionalText(updateDTO.getIcon()));
+        }
+        if (updateDTO.getColor() != null) {
+            folder.setColor(updateDTO.getColor());
+        }
+        if (updateDTO.getSort() != null) {
+            folder.setSort(updateDTO.getSort());
+        }
+
+        int updated = userFolderMapper.updateById(folder);
+        if (updated != 1) {
+            throw new BusinessException(HttpStatus.ERROR, "更新收藏夹失败，请稍后重试");
+        }
+
+        log.info("收藏夹更新成功，userId={}, folderId={}", userId, folderId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteFolder(Long folderId) {
+        Long userId = getCurrentUserId();
+
+        UserFolder folder = getOwnedFolder(userId, folderId);
+
+        if (folder.getIsDefault() != null && folder.getIsDefault() == IS_DEFAULT) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "默认收藏夹不可删除");
+        }
+
+        Long childCount = userFolderMapper.selectCount(new LambdaQueryWrapper<UserFolder>()
+                .eq(UserFolder::getParentId, folderId)
+                .eq(UserFolder::getUserId, userId)
+                .eq(UserFolder::getDeleted, NOT_DELETED));
+        if (childCount != null && childCount > 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "该收藏夹下存在子文件夹，不可删除");
+        }
+
+        Long collectCount = userCollectMapper.selectCount(new LambdaQueryWrapper<UserCollect>()
+                .eq(UserCollect::getFolderId, folderId)
+                .eq(UserCollect::getUserId, userId));
+        if (collectCount != null && collectCount > 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "该收藏夹下存在收藏网站，请先移除收藏后再删除");
+        }
+
+        int deleted = userFolderMapper.update(null, new LambdaUpdateWrapper<UserFolder>()
+                .eq(UserFolder::getId, folderId)
+                .set(UserFolder::getDeleted, 1));
+        if (deleted != 1) {
+            throw new BusinessException(HttpStatus.ERROR, "删除收藏夹失败，请稍后重试");
+        }
+
+        log.info("收藏夹删除成功，userId={}, folderId={}", userId, folderId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void toggleFolderHide(Long folderId, boolean isHide) {
+        Long userId = getCurrentUserId();
+
+        UserFolder folder = getOwnedFolder(userId, folderId);
+
+        int targetHide = isHide ? IS_HIDE : NOT_HIDE;
+        if (folder.getIsHide() != null && folder.getIsHide() == targetHide) {
+            return;
+        }
+
+        int updated = userFolderMapper.update(null, new LambdaUpdateWrapper<UserFolder>()
+                .eq(UserFolder::getId, folderId)
+                .set(UserFolder::getIsHide, targetHide));
+        if (updated != 1) {
+            throw new BusinessException(HttpStatus.ERROR, "操作失败，请稍后重试");
+        }
+
+        log.info("收藏夹隐藏状态变更，userId={}, folderId={}, isHide={}", userId, folderId, isHide);
+    }
+
+    @Override
+    public List<UserFolderOptionsVO> getFolderOptions() {
+        Long userId = getCurrentUserId();
+
+        List<UserFolder> folders = userFolderMapper.selectList(new LambdaQueryWrapper<UserFolder>()
+                .eq(UserFolder::getUserId, userId)
+                .eq(UserFolder::getStatus, FOLDER_STATUS_NORMAL)
+                .eq(UserFolder::getDeleted, NOT_DELETED)
+                .orderByAsc(UserFolder::getSort)
+                .orderByAsc(UserFolder::getId));
+
+        return folders.stream()
+                .map(f -> UserFolderOptionsVO.builder()
+                        .id(f.getId())
+                        .name(f.getName())
+                        .icon(f.getIcon())
+                        .color(f.getColor())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean verifyPassword(String password) {
+        Long userId = getCurrentUserId();
+
         UserAccount userAccount = userAccountMapper.selectOne(new LambdaQueryWrapper<UserAccount>()
                 .eq(UserAccount::getId, userId)
                 .eq(UserAccount::getDeleted, NOT_DELETED)
@@ -99,7 +249,74 @@ public class UserFolderServiceImpl implements UserFolderService {
         if (userAccount == null) {
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "用户未登录或账号不可用");
         }
-        return userAccount;
+
+        String encodedPassword = userAccount.getPasswordHash();
+        if (!StringUtils.hasText(encodedPassword)) {
+            encodedPassword = userAccount.getPassword();
+        }
+
+        if (!StringUtils.hasText(encodedPassword)) {
+            throw new BusinessException(HttpStatus.ERROR, "账户密码信息异常");
+        }
+
+        return PASSWORD_ENCODER.matches(password, encodedPassword);
+    }
+
+    private Long getCurrentUserId() {
+        StpUtil.checkLogin();
+        return StpUtil.getLoginIdAsLong();
+    }
+
+    private UserFolder getOwnedFolder(Long userId, Long folderId) {
+        UserFolder folder = userFolderMapper.selectOne(new LambdaQueryWrapper<UserFolder>()
+                .eq(UserFolder::getId, folderId)
+                .eq(UserFolder::getUserId, userId)
+                .eq(UserFolder::getStatus, FOLDER_STATUS_NORMAL)
+                .eq(UserFolder::getDeleted, NOT_DELETED)
+                .last("limit 1"));
+        if (folder == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "收藏夹不存在或不可用");
+        }
+        return folder;
+    }
+
+    private UserFolderTreeVO toTreeVO(UserFolder folder) {
+        return UserFolderTreeVO.builder()
+                .id(folder.getId())
+                .name(folder.getName())
+                .icon(folder.getIcon())
+                .color(folder.getColor())
+                .parentId(folder.getParentId())
+                .sort(folder.getSort())
+                .websiteCount(folder.getWebsiteCount())
+                .isHide(folder.getIsHide())
+                .isDefault(folder.getIsDefault())
+                .children(new ArrayList<>())
+                .build();
+    }
+
+    private List<UserFolderTreeVO> buildTree(List<UserFolderTreeVO> allNodes) {
+        Map<Long, UserFolderTreeVO> nodeMap = new LinkedHashMap<>();
+        for (UserFolderTreeVO node : allNodes) {
+            nodeMap.put(node.getId(), node);
+        }
+
+        List<UserFolderTreeVO> roots = new ArrayList<>();
+        for (UserFolderTreeVO node : allNodes) {
+            Long parentId = node.getParentId();
+            if (parentId == null || parentId == TOP_LEVEL_PARENT_ID) {
+                roots.add(node);
+            } else {
+                UserFolderTreeVO parent = nodeMap.get(parentId);
+                if (parent != null) {
+                    parent.getChildren().add(node);
+                } else {
+                    roots.add(node);
+                }
+            }
+        }
+
+        return roots;
     }
 
     private String normalizeFolderName(String name) {

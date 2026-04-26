@@ -3,7 +3,7 @@
  * @author yyyouth zg
  * @date 2026-04-25
  *
- * 左侧导航栏 — 快捷访问 + 分类列表 + 存储条
+ * 左侧导航栏 — 快捷访问 + 分类列表 + 收藏统计条
  * 支持右键/长按上下文菜单、行内重命名编辑
  */
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
@@ -14,13 +14,14 @@ defineOptions({ name: 'CollectionSidebar' })
 const props = defineProps<{
   quickAccessList: CollectionQuickAccess[]
   categories: CollectionCategory[]
+  visibleCategories: CollectionCategory[]
   activeQuickAccess: string | null
   activeCategoryId: number | null
-  storageUsed: number
-  storageTotal: number
+  collectCount: number
+  collectLimit: number
   storagePercent: number
   editingCategoryId?: number | null
-  hiddenCategoryIds?: Set<number>
+  isLoading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -34,19 +35,6 @@ const emit = defineEmits<{
 
 const renameInputRef = ref<HTMLInputElement | null>(null)
 const localEditingName = ref('')
-const visibleCategories = ref<CollectionCategory[]>([])
-
-watch(
-  () => [props.categories, props.hiddenCategoryIds] as const,
-  ([cats, hidden]) => {
-    if (hidden && hidden.size > 0) {
-      visibleCategories.value = cats.filter((c) => !hidden.has(c.id))
-    } else {
-      visibleCategories.value = cats
-    }
-  },
-  { immediate: true, deep: true },
-)
 
 watch(
   () => props.editingCategoryId,
@@ -179,126 +167,149 @@ onBeforeUnmount(() => {
       @touchend="handleTouchEnd"
       @touchcancel="handleTouchEnd"
     >
-      <!-- 快捷访问 -->
-      <div>
-        <div
-          class="text-xs font-semibold text-[#9ca3af] dark:text-[#4b5563] uppercase tracking-wider mb-2 px-3"
-        >
-          Quick Access
-        </div>
-        <nav class="space-y-0.5">
-          <button
-            v-for="item in quickAccessList"
-            :key="item.key"
-            type="button"
-            class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200"
-            :class="
-              activeQuickAccess === item.key
-                ? 'bg-blue-500/10 dark:bg-blue-500/[0.12] text-blue-600 dark:text-blue-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.15)] dark:shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]'
-                : 'text-[#374151] dark:text-[#9ca3af] hover:bg-[#e5e7eb]/60 dark:hover:bg-white/[0.04]'
-            "
-            @click="emit('select-quick-access', item.key)"
-          >
-            <i
-              :class="[
-                item.icon,
-                'text-[15px] mr-3',
-                activeQuickAccess === item.key
-                  ? 'text-blue-500 dark:text-blue-400'
-                  : 'text-[#9ca3af] dark:text-[#4b5563]',
-              ]"
-            ></i>
-            {{ item.label }}
-          </button>
-        </nav>
+      <!-- 加载状态 -->
+      <div v-if="isLoading" class="py-8 text-center text-[#9ca3af] dark:text-[#4b5563]">
+        <i class="fas fa-spinner fa-spin text-lg mb-2"></i>
+        <p class="text-xs">加载中...</p>
       </div>
 
-      <!-- 分类 -->
-      <div>
-        <div
-          class="text-xs font-semibold text-[#9ca3af] dark:text-[#4b5563] uppercase tracking-wider mb-2 px-3"
-        >
-          Categories
-        </div>
-        <nav class="space-y-0.5">
+      <template v-else>
+        <!-- 快捷访问 -->
+        <div>
           <div
-            v-for="cat in visibleCategories"
-            :key="cat.id"
-            data-folder-item
-            @contextmenu.prevent="(e: MouseEvent) => handleContextMenuOnFolder(e, cat)"
-            @touchstart.passive="(e: TouchEvent) => handleTouchStartFolder(e, cat)"
-            @touchmove.passive="handleTouchMove"
-            @touchend="handleTouchEnd"
-            @touchcancel="handleTouchEnd"
+            class="text-xs font-semibold text-[#9ca3af] dark:text-[#4b5563] uppercase tracking-wider mb-2 px-3"
           >
+            Quick Access
+          </div>
+          <nav class="space-y-0.5">
             <button
-              v-if="editingCategoryId !== cat.id"
+              v-for="item in quickAccessList"
+              :key="item.key"
               type="button"
               class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200"
               :class="
-                activeCategoryId === cat.id
+                activeQuickAccess === item.key
                   ? 'bg-blue-500/10 dark:bg-blue-500/[0.12] text-blue-600 dark:text-blue-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.15)] dark:shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]'
                   : 'text-[#374151] dark:text-[#9ca3af] hover:bg-[#e5e7eb]/60 dark:hover:bg-white/[0.04]'
               "
-              @click="emit('select-category', cat.id)"
+              @click="emit('select-quick-access', item.key)"
             >
               <i
                 :class="[
-                  cat.icon,
+                  item.icon,
                   'text-[15px] mr-3',
-                  activeCategoryId === cat.id
+                  activeQuickAccess === item.key
                     ? 'text-blue-500 dark:text-blue-400'
                     : 'text-[#9ca3af] dark:text-[#4b5563]',
                 ]"
               ></i>
-              <span class="truncate">{{ cat.name }}</span>
-              <span class="ml-auto text-xs text-[#9ca3af] dark:text-[#4b5563] tabular-nums">{{ cat.count }}</span>
+              {{ item.label }}
             </button>
+          </nav>
+        </div>
 
-            <!-- 行内重命名输入框 -->
-            <div
-              v-else
-              class="w-full flex items-center px-3 py-1.5 bg-blue-500/10 dark:bg-blue-500/[0.12] rounded-lg shadow-[inset_0_0_0_1px_rgba(59,130,246,0.15)] dark:shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]"
-            >
-              <i
-                :class="[
-                  cat.icon,
-                  'text-[15px] mr-3 text-blue-500 dark:text-blue-400',
-                ]"
-              ></i>
-              <input
-                ref="renameInputRef"
-                v-model="localEditingName"
-                type="text"
-                maxlength="50"
-                class="flex-1 min-w-0 bg-transparent text-sm font-medium text-blue-600 dark:text-blue-400 outline-none border-b border-blue-500/30 dark:border-blue-400/30 pb-0.5"
-                @keydown="(e: KeyboardEvent) => handleRenameKeydown(e, cat.id)"
-                @blur="handleRenameBlur(cat.id)"
-              />
-            </div>
+        <!-- 分类 -->
+        <div>
+          <div
+            class="text-xs font-semibold text-[#9ca3af] dark:text-[#4b5563] uppercase tracking-wider mb-2 px-3"
+          >
+            Categories
           </div>
-        </nav>
-      </div>
+          <nav class="space-y-0.5">
+            <div
+              v-for="cat in visibleCategories"
+              :key="cat.id"
+              data-folder-item
+              @contextmenu.prevent="(e: MouseEvent) => handleContextMenuOnFolder(e, cat)"
+              @touchstart.passive="(e: TouchEvent) => handleTouchStartFolder(e, cat)"
+              @touchmove.passive="handleTouchMove"
+              @touchend="handleTouchEnd"
+              @touchcancel="handleTouchEnd"
+            >
+              <button
+                v-if="editingCategoryId !== cat.id"
+                type="button"
+                class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200"
+                :class="
+                  activeCategoryId === cat.id
+                    ? 'bg-blue-500/10 dark:bg-blue-500/[0.12] text-blue-600 dark:text-blue-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.15)] dark:shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]'
+                    : 'text-[#374151] dark:text-[#9ca3af] hover:bg-[#e5e7eb]/60 dark:hover:bg-white/[0.04]'
+                "
+                @click="emit('select-category', cat.id)"
+              >
+                <i
+                  v-if="cat.icon"
+                  :class="[
+                    cat.icon,
+                    'text-[15px] mr-3',
+                    activeCategoryId === cat.id
+                      ? 'text-blue-500 dark:text-blue-400'
+                      : 'text-[#9ca3af] dark:text-[#4b5563]',
+                  ]"
+                ></i>
+                <i
+                  v-else
+                  :class="[
+                    'fas fa-folder text-[15px] mr-3',
+                    activeCategoryId === cat.id
+                      ? 'text-blue-500 dark:text-blue-400'
+                      : 'text-[#9ca3af] dark:text-[#4b5563]',
+                  ]"
+                ></i>
+                <span class="truncate">{{ cat.name }}</span>
+                <span class="ml-auto text-xs text-[#9ca3af] dark:text-[#4b5563] tabular-nums">{{ cat.websiteCount }}</span>
+              </button>
 
-      <!-- 可长按/右击的空白区域 -->
-      <div
-        class="min-h-[120px] rounded-xl border border-dashed border-[#e5e7eb] dark:border-[#2d2d2d] flex items-center justify-center"
-        @contextmenu.prevent="handleContextMenuOnEmpty"
-        @touchstart.passive="handleTouchStartEmpty"
-        @touchmove.passive="handleTouchMove"
-        @touchend="handleTouchEnd"
-        @touchcancel="handleTouchEnd"
-      >
-        <span class="text-xs text-[#9ca3af] dark:text-[#4b5563]">长按或右击管理收藏夹</span>
-      </div>
+              <!-- 行内重命名输入框 -->
+              <div
+                v-else
+                class="w-full flex items-center px-3 py-1.5 bg-blue-500/10 dark:bg-blue-500/[0.12] rounded-lg shadow-[inset_0_0_0_1px_rgba(59,130,246,0.15)] dark:shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]"
+              >
+                <i
+                  v-if="cat.icon"
+                  :class="[
+                    cat.icon,
+                    'text-[15px] mr-3 text-blue-500 dark:text-blue-400',
+                  ]"
+                ></i>
+                <i
+                  v-else
+                  class="fas fa-folder text-[15px] mr-3 text-blue-500 dark:text-blue-400"
+                ></i>
+                <input
+                  ref="renameInputRef"
+                  v-model="localEditingName"
+                  type="text"
+                  maxlength="50"
+                  class="flex-1 min-w-0 bg-transparent text-sm font-medium text-blue-600 dark:text-blue-400 outline-none border-b border-blue-500/30 dark:border-blue-400/30 pb-0.5"
+                  @keydown="(e: KeyboardEvent) => handleRenameKeydown(e, cat.id)"
+                  @blur="handleRenameBlur(cat.id)"
+                />
+              </div>
+            </div>
+          </nav>
+        </div>
+
+        <!-- 可长按/右击的空白区域 -->
+        <div
+          class="min-h-[120px] rounded-xl border border-dashed border-[#e5e7eb] dark:border-[#2d2d2d] flex items-center justify-center"
+          @contextmenu.prevent="handleContextMenuOnEmpty"
+          @touchstart.passive="handleTouchStartEmpty"
+          @touchmove.passive="handleTouchMove"
+          @touchend="handleTouchEnd"
+          @touchcancel="handleTouchEnd"
+        >
+          <span class="text-xs text-[#9ca3af] dark:text-[#4b5563]">长按或右击管理收藏夹</span>
+        </div>
+      </template>
     </div>
 
-    <!-- 存储用量 -->
+    <!-- 收藏统计 -->
     <div class="p-6 border-t border-[#e5e7eb] dark:border-white/[0.06]">
       <div class="flex justify-between text-xs mb-1.5">
-        <span class="text-[#9ca3af] dark:text-[#4b5563]">存储</span>
+        <span class="text-[#9ca3af] dark:text-[#4b5563]">收藏</span>
         <span class="text-[#9ca3af] dark:text-[#4b5563] tabular-nums"
-          >{{ storageUsed }} GB / {{ storageTotal }} GB</span
+          >{{ collectCount }} / {{ collectLimit }}</span
         >
       </div>
       <div class="w-full bg-[#e5e7eb] dark:bg-white/[0.06] rounded-full h-1.5">
