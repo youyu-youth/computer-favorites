@@ -172,6 +172,12 @@ const router = createRouter({
           meta: { requiresAuth: true },
         },
         {
+          path: 'website/upload-list',
+          name: 'websitesUpload',
+          component: () => import('@/views/user/WebsitesUploadView.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
           path: 'notifications',
           name: 'notifications',
           redirect: '/computer/settings',

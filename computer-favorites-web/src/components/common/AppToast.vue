@@ -10,11 +10,12 @@ const iconClassMap: Record<string, string> = {
 </script>
 
 <template>
-  <Toast
-    position="top-right"
-    group="app-headless"
-    :pt="{ root: { class: 'w-full sm:max-w-[360px]' } }"
-  >
+  <Teleport to="body">
+    <Toast
+      position="top-right"
+      group="app-headless"
+      :pt="{ root: { class: 'z-[99999] w-full sm:max-w-[360px]' } }"
+    >
     <template #container="{ message, closeCallback }">
       <div
         class="pointer-events-auto flex w-full items-start gap-3 rounded-xl border border-gray-100 bg-white/95 p-4 shadow-[var(--cf-shadow-toast-light)] backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/95 dark:shadow-[var(--cf-shadow-toast-dark)]"
@@ -42,5 +43,6 @@ const iconClassMap: Record<string, string> = {
         </button>
       </div>
     </template>
-  </Toast>
+    </Toast>
+  </Teleport>
 </template>

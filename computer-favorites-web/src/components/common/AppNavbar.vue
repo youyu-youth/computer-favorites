@@ -71,7 +71,7 @@ const openCreateFolderDialog = () => {
 const goToWebsiteSubmissions = () => {
   profileMenuOpen.value = false
   mobileMenuOpen.value = false
-  router.push({ name: 'websiteSubmissions' })
+  router.push({ name: 'websitesUpload' })
 }
 
 const goToCollection = () => {
