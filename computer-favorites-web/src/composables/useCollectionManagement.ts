@@ -3,6 +3,7 @@
  * @date 2026-04-25
  *
  * 收藏夹页面状态管理 composable — 对接真实后端 API
+ * 文件夹相关状态由 useFolderStore 统一管理，本 composable 负责收藏页面特有逻辑
  */
 
 import { ref, computed, onMounted } from 'vue'
@@ -14,10 +15,10 @@ import type {
   ViewMode,
 } from '@/types/collection'
 import type { FolderOption } from '@/types/folder'
-import { getFolderTree, getFolderOptions, updateFolder, deleteFolder, toggleFolderHide } from '@/api/user-folder'
-import { getCollectPage, getCollectStats, cancelCollect } from '@/api/user-collect'
+import { getCollectPage, cancelCollect } from '@/api/user-collect'
 import { verifyPassword } from '@/api/user-password'
 import { useToast } from '@/composables/useToast'
+import { useFolderStore } from '@/stores/folder'
 
 const COLLECT_LIMIT = 500
 
@@ -28,8 +29,8 @@ const QUICK_ACCESS_LIST: CollectionQuickAccess[] = [
 
 export function useCollectionManagement() {
   const toast = useToast()
+  const folderStore = useFolderStore()
 
-  const categories = ref<CollectionCategory[]>([])
   const quickAccessList = ref<CollectionQuickAccess[]>(QUICK_ACCESS_LIST)
   const activeQuickAccess = ref<string | null>(null)
   const activeCategoryId = ref<number | null>(null)
@@ -42,8 +43,6 @@ export function useCollectionManagement() {
   const mobileSidebarOpen = ref(false)
   const mobileDetailOpen = ref(false)
   const isLoading = ref(false)
-  const collectStats = ref<CollectStats>({ collectCount: 0, folderCount: 0 })
-  const folderOptions = ref<FolderOption[]>([])
   const currentPage = ref(1)
   const pageSize = ref(20)
   const totalPages = ref(1)
@@ -63,7 +62,7 @@ export function useCollectionManagement() {
 
   const totalCount = computed(() => totalCollectCount.value)
   const selectedCount = computed(() => (selectedWebsite.value ? 1 : 0))
-  const storagePercent = computed(() => Math.min(100, Math.round((collectStats.value.collectCount / COLLECT_LIMIT) * 100)))
+  const storagePercent = computed(() => Math.min(100, Math.round((folderStore.collectStats.collectCount / COLLECT_LIMIT) * 100)))
 
   const breadcrumbPath = computed(() => {
     const parts = ['Home']
@@ -75,7 +74,7 @@ export function useCollectionManagement() {
       }
     }
     if (activeCategoryId.value !== null) {
-      const cat = findCategoryById(categories.value, activeCategoryId.value)
+      const cat = findCategoryById(folderStore.categories, activeCategoryId.value)
       if (cat) {
         parts.push(cat.name)
       }
@@ -90,34 +89,6 @@ export function useCollectionManagement() {
       if (found) return found
     }
     return undefined
-  }
-
-  const visibleCategories = computed(() => {
-    const filterHidden = (cats: CollectionCategory[]): CollectionCategory[] => {
-      return cats
-        .filter((c) => !c.isHide)
-        .map((c) => ({
-          ...c,
-          children: c.children ? filterHidden(c.children) : [],
-        }))
-    }
-    return filterHidden(categories.value)
-  })
-
-  const loadFolderTree = async () => {
-    try {
-      categories.value = await getFolderTree()
-    } catch {
-      toast.add({ title: '加载失败', description: '文件夹加载失败，请刷新重试', type: 'error' })
-    }
-  }
-
-  const loadFolderOptions = async () => {
-    try {
-      folderOptions.value = await getFolderOptions()
-    } catch {
-      folderOptions.value = []
-    }
   }
 
   const loadCollectPage = async (reset = true) => {
@@ -150,16 +121,8 @@ export function useCollectionManagement() {
     }
   }
 
-  const loadCollectStats = async () => {
-    try {
-      collectStats.value = await getCollectStats()
-    } catch {
-      collectStats.value = { collectCount: 0, folderCount: 0 }
-    }
-  }
-
   const refreshAll = async () => {
-    await Promise.all([loadFolderTree(), loadFolderOptions(), loadCollectStats()])
+    await folderStore.refreshFolderData()
     currentPage.value = 1
     await loadCollectPage(true)
   }
@@ -209,53 +172,6 @@ export function useCollectionManagement() {
     }
   }
 
-  const handleRenameCategory = async (id: number, newName: string) => {
-    try {
-      await updateFolder(id, { name: newName })
-      toast.add({ title: '重命名成功', description: `收藏夹已更名为「${newName}」`, type: 'success' })
-      await loadFolderTree()
-    } catch (e) {
-      toast.add({ title: '重命名失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
-    }
-  }
-
-  const handleDeleteFolder = async (id: number) => {
-    try {
-      await deleteFolder(id)
-      toast.add({ title: '已删除', description: '收藏夹已删除', type: 'success' })
-      if (activeCategoryId.value === id) {
-        setActiveCategory(null)
-      }
-      await loadFolderTree()
-      await loadCollectStats()
-    } catch (e) {
-      toast.add({ title: '删除失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
-    }
-  }
-
-  const handleHideFolder = async (id: number) => {
-    try {
-      await toggleFolderHide(id, true)
-      toast.add({ title: '已隐藏', description: '收藏夹及其内容已隐藏', type: 'success' })
-      if (activeCategoryId.value === id) {
-        setActiveCategory(null)
-      }
-      await loadFolderTree()
-    } catch (e) {
-      toast.add({ title: '操作失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
-    }
-  }
-
-  const handleShowHiddenFolders = async (hiddenIds: number[]) => {
-    try {
-      await Promise.all(hiddenIds.map((id) => toggleFolderHide(id, false)))
-      toast.add({ title: '已恢复', description: '所有隐藏的收藏夹已恢复显示', type: 'success' })
-      await loadFolderTree()
-    } catch (e) {
-      toast.add({ title: '操作失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
-    }
-  }
-
   const handleVerifyPassword = async (password: string): Promise<boolean> => {
     try {
       return await verifyPassword(password)
@@ -264,20 +180,13 @@ export function useCollectionManagement() {
     }
   }
 
-  const handleFolderCreated = async () => {
-    toast.add({ title: '创建成功', description: '收藏夹已创建', type: 'success' })
-    await loadFolderTree()
-    await loadFolderOptions()
-    await loadCollectStats()
-  }
-
   onMounted(() => {
     refreshAll()
   })
 
   return {
-    categories,
-    visibleCategories,
+    categories: folderStore.categories,
+    visibleCategories: folderStore.visibleCategories,
     quickAccessList,
     activeQuickAccess,
     activeCategoryId,
@@ -291,8 +200,9 @@ export function useCollectionManagement() {
     mobileSidebarOpen,
     mobileDetailOpen,
     isLoading,
-    collectStats,
-    folderOptions,
+    collectStats: folderStore.collectStats,
+    hiddenCategoryIds: folderStore.hiddenCategoryIds,
+    folderOptions: folderStore.folderOptions,
     totalCount,
     selectedCount,
     storagePercent,
@@ -307,13 +217,13 @@ export function useCollectionManagement() {
     setViewMode,
     setZoomLevel,
     handleCancelCollect,
-    handleRenameCategory,
-    handleDeleteFolder,
-    handleHideFolder,
-    handleShowHiddenFolders,
+    handleRenameCategory: folderStore.handleRenameCategory,
+    handleDeleteFolder: folderStore.handleDeleteFolder,
+    handleHideFolder: folderStore.handleHideFolder,
+    handleShowHiddenFolders: folderStore.handleShowHiddenFolders,
     handleVerifyPassword,
-    handleFolderCreated,
+    handleFolderCreated: folderStore.handleFolderCreated,
     refreshAll,
-    loadFolderOptions,
+    loadFolderOptions: folderStore.loadFolderOptions,
   }
 }

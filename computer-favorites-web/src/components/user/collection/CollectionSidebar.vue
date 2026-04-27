@@ -3,10 +3,11 @@
  * @author yyyouth zg
  * @date 2026-04-25
  *
- * 左侧导航栏 — 快捷访问 + 分类列表 + 收藏统计条
- * 支持右键/长按上下文菜单、行内重命名编辑
+ * 左侧导航栏 — 快捷访问 + 分类列表（层级嵌套） + 收藏统计条
+ * 支持右键/长按上下文菜单
  */
-import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
+import SidebarFolderItem from '@/components/user/collection/SidebarFolderItem.vue'
 import type { CollectionQuickAccess, CollectionCategory } from '@/types/collection'
 
 defineOptions({ name: 'CollectionSidebar' })
@@ -33,52 +34,11 @@ const emit = defineEmits<{
   (e: 'rename-cancel'): void
 }>()
 
-const renameInputRef = ref<HTMLInputElement | null>(null)
-const localEditingName = ref('')
-
-watch(
-  () => props.editingCategoryId,
-  (id) => {
-    if (id !== null && id !== undefined) {
-      const cat = props.categories.find((c) => c.id === id)
-      if (cat) {
-        localEditingName.value = cat.name
-        nextTick(() => {
-          renameInputRef.value?.focus()
-          renameInputRef.value?.select()
-        })
-      }
-    } else {
-      localEditingName.value = ''
-    }
-  },
-)
-
-const handleRenameSave = (id: number) => {
-  const trimmed = localEditingName.value.trim()
-  if (trimmed.length > 0 && trimmed.length <= 50) {
-    emit('rename-category', id, trimmed)
-  } else {
-    emit('rename-cancel')
+const handleContextMenuOnFolder = (event: MouseEvent | TouchEvent, category: CollectionCategory) => {
+  if (event instanceof MouseEvent) {
+    event.preventDefault()
+    event.stopPropagation()
   }
-}
-
-const handleRenameKeydown = (e: KeyboardEvent, id: number) => {
-  if (e.key === 'Enter') {
-    e.preventDefault()
-    handleRenameSave(id)
-  } else if (e.key === 'Escape') {
-    emit('rename-cancel')
-  }
-}
-
-const handleRenameBlur = (id: number) => {
-  handleRenameSave(id)
-}
-
-const handleContextMenuOnFolder = (event: MouseEvent, category: CollectionCategory) => {
-  event.preventDefault()
-  event.stopPropagation()
   emit('context-menu-folder', event, category)
 }
 
@@ -100,16 +60,6 @@ const clearLongPress = () => {
     clearTimeout(longPressTimer.value)
     longPressTimer.value = null
   }
-}
-
-const handleTouchStartFolder = (event: TouchEvent, category: CollectionCategory) => {
-  const touch = event.touches[0]
-  if (!touch) return
-  touchStartPos.value = { x: touch.clientX, y: touch.clientY }
-  longPressTimer.value = setTimeout(() => {
-    longPressTimer.value = null
-    emit('context-menu-folder', event, category)
-  }, LONG_PRESS_DURATION)
 }
 
 const handleTouchStartEmpty = (event: TouchEvent) => {
@@ -208,85 +158,30 @@ onBeforeUnmount(() => {
           </nav>
         </div>
 
-        <!-- 分类 -->
+        <!-- 分类 — 使用递归组件展示层级 -->
         <div>
           <div
             class="text-xs font-semibold text-[#9ca3af] dark:text-[#4b5563] uppercase tracking-wider mb-2 px-3"
           >
             Categories
           </div>
-          <nav class="space-y-0.5">
-            <div
+          <nav class="space-y-0.5" data-folder-item>
+            <SidebarFolderItem
               v-for="cat in visibleCategories"
               :key="cat.id"
-              data-folder-item
-              @contextmenu.prevent="(e: MouseEvent) => handleContextMenuOnFolder(e, cat)"
-              @touchstart.passive="(e: TouchEvent) => handleTouchStartFolder(e, cat)"
-              @touchmove.passive="handleTouchMove"
+              :category="cat"
+              :depth="0"
+              :active-category-id="activeCategoryId"
+              :editing-category-id="editingCategoryId"
+              @select-category="(id) => emit('select-category', id)"
+              @context-menu-folder="(e, cat) => handleContextMenuOnFolder(e, cat)"
+              @rename-category="(id, name) => emit('rename-category', id, name)"
+              @rename-cancel="emit('rename-cancel')"
+              @touchstart-folder="(e, cat) => emit('context-menu-folder', e, cat)"
+              @touchmove="handleTouchMove"
               @touchend="handleTouchEnd"
               @touchcancel="handleTouchEnd"
-            >
-              <button
-                v-if="editingCategoryId !== cat.id"
-                type="button"
-                class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200"
-                :class="
-                  activeCategoryId === cat.id
-                    ? 'bg-blue-500/10 dark:bg-blue-500/[0.12] text-blue-600 dark:text-blue-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.15)] dark:shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]'
-                    : 'text-[#374151] dark:text-[#9ca3af] hover:bg-[#e5e7eb]/60 dark:hover:bg-white/[0.04]'
-                "
-                @click="emit('select-category', cat.id)"
-              >
-                <i
-                  v-if="cat.icon"
-                  :class="[
-                    cat.icon,
-                    'text-[15px] mr-3',
-                    activeCategoryId === cat.id
-                      ? 'text-blue-500 dark:text-blue-400'
-                      : 'text-[#9ca3af] dark:text-[#4b5563]',
-                  ]"
-                ></i>
-                <i
-                  v-else
-                  :class="[
-                    'fas fa-folder text-[15px] mr-3',
-                    activeCategoryId === cat.id
-                      ? 'text-blue-500 dark:text-blue-400'
-                      : 'text-[#9ca3af] dark:text-[#4b5563]',
-                  ]"
-                ></i>
-                <span class="truncate">{{ cat.name }}</span>
-                <span class="ml-auto text-xs text-[#9ca3af] dark:text-[#4b5563] tabular-nums">{{ cat.websiteCount }}</span>
-              </button>
-
-              <!-- 行内重命名输入框 -->
-              <div
-                v-else
-                class="w-full flex items-center px-3 py-1.5 bg-blue-500/10 dark:bg-blue-500/[0.12] rounded-lg shadow-[inset_0_0_0_1px_rgba(59,130,246,0.15)] dark:shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]"
-              >
-                <i
-                  v-if="cat.icon"
-                  :class="[
-                    cat.icon,
-                    'text-[15px] mr-3 text-blue-500 dark:text-blue-400',
-                  ]"
-                ></i>
-                <i
-                  v-else
-                  class="fas fa-folder text-[15px] mr-3 text-blue-500 dark:text-blue-400"
-                ></i>
-                <input
-                  ref="renameInputRef"
-                  v-model="localEditingName"
-                  type="text"
-                  maxlength="50"
-                  class="flex-1 min-w-0 bg-transparent text-sm font-medium text-blue-600 dark:text-blue-400 outline-none border-b border-blue-500/30 dark:border-blue-400/30 pb-0.5"
-                  @keydown="(e: KeyboardEvent) => handleRenameKeydown(e, cat.id)"
-                  @blur="handleRenameBlur(cat.id)"
-                />
-              </div>
-            </div>
+            />
           </nav>
         </div>
 

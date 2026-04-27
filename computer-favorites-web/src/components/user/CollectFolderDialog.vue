@@ -11,11 +11,10 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { X, BookmarkPlus, Search, FolderPlus } from 'lucide-vue-next'
 import FolderTreeNode from '@/components/user/FolderTreeNode.vue'
 import CreateFolderDialog from '@/components/user/CreateFolderDialog.vue'
-import { getFolderTree, getFolderOptions } from '@/api/user-folder'
 import { collectWebsite } from '@/api/user-collect'
-import { useToast } from '@/composables/useToast'
+import { useMessage } from '@/composables/useMessage'
+import { useFolderStore } from '@/stores/folder'
 import type { CollectionCategory } from '@/types/collection'
-import type { FolderOption } from '@/types/folder'
 
 defineOptions({ name: 'CollectFolderDialog' })
 
@@ -34,15 +33,13 @@ const emit = defineEmits<{
   (e: 'confirm', folderId: number, websiteId: number): void
 }>()
 
-const toast = useToast()
+const message = useMessage()
+const folderStore = useFolderStore()
 
 const selectedFolderId = ref<number | null>(null)
 const searchQuery = ref('')
 const isSubmitting = ref(false)
-const folderTree = ref<CollectionCategory[]>([])
-const isLoading = ref(false)
 const showCreateDialog = ref(false)
-const folderParentOptions = ref<FolderOption[]>([])
 
 let previousScrollY = 0
 
@@ -68,7 +65,7 @@ const findFolderName = (nodes: CollectionCategory[], id: number): string => {
   return ''
 }
 
-const filteredTree = computed(() => filterTree(folderTree.value, searchQuery.value))
+const filteredTree = computed(() => filterTree(folderStore.categories, searchQuery.value))
 const canConfirm = computed(() => selectedFolderId.value !== null && !isSubmitting.value)
 
 const closeDialog = () => {
@@ -85,41 +82,25 @@ const handleConfirm = async () => {
   isSubmitting.value = true
   try {
     await collectWebsite({ websiteId: props.websiteId, folderId: selectedFolderId.value })
-    const folderName = findFolderName(folderTree.value, selectedFolderId.value)
-    toast.add({ title: '收藏成功', description: folderName ? `已收藏到「${folderName}」` : '收藏成功', type: 'success' })
+    const folderName = findFolderName(folderStore.categories, selectedFolderId.value)
+    message.add({ title: '收藏该网站成功', description: folderName ? `已收藏到「${folderName}」` : undefined, type: 'success', position: 'top-right' })
     emit('confirm', selectedFolderId.value, props.websiteId)
     closeDialog()
   } catch (e) {
-    toast.add({ title: '收藏失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
+    message.add({ title: '收藏失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error', position: 'top-right' })
   } finally {
     isSubmitting.value = false
   }
 }
 
 const handleCreateFolder = async () => {
-  try {
-    folderParentOptions.value = await getFolderOptions()
-  } catch {
-    folderParentOptions.value = []
-  }
+  await folderStore.loadFolderOptions()
   showCreateDialog.value = true
 }
 
 const handleFolderCreated = async () => {
   showCreateDialog.value = false
-  await loadFolderTree()
-}
-
-const loadFolderTree = async () => {
-  isLoading.value = true
-  try {
-    folderTree.value = await getFolderTree()
-  } catch (e) {
-    folderTree.value = []
-    toast.add({ title: '加载失败', description: '收藏夹列表加载失败，请重试', type: 'error' })
-  } finally {
-    isLoading.value = false
-  }
+  await folderStore.handleFolderCreated()
 }
 
 const lockPageScroll = () => {
@@ -150,7 +131,7 @@ watch(
     if (isOpen) {
       lockPageScroll()
       resetState()
-      loadFolderTree()
+      folderStore.loadFolderTree()
     } else {
       unlockPageScroll()
     }
@@ -240,7 +221,7 @@ onBeforeUnmount(() => {
               class="collect-folder-list flex-1 overflow-y-auto px-3 py-3"
               style="max-height: calc(80vh - 14rem)"
             >
-              <div v-if="isLoading" class="py-12 text-center">
+              <div v-if="folderStore.isLoading" class="py-12 text-center">
                 <div class="collect-loading-spinner mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"></div>
                 <p class="collect-loading-text text-xs">加载收藏夹...</p>
               </div>
@@ -317,7 +298,7 @@ onBeforeUnmount(() => {
 
   <CreateFolderDialog
     v-model:open="showCreateDialog"
-    :parent-options="folderParentOptions"
+    :parent-options="folderStore.folderOptions"
     @submit="handleFolderCreated"
   />
 </template>

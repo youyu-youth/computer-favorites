@@ -12,6 +12,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Bell, Bookmark, FolderOpen, FolderPlus, IdCard, LogOut, Menu, Settings, User, X } from 'lucide-vue-next'
 import CreateFolderDialog from '@/components/user/CreateFolderDialog.vue'
+import { useFolderStore } from '@/stores/folder'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -19,6 +20,7 @@ const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
+const folderStore = useFolderStore()
 const profileMenuRef = ref<HTMLElement | null>(null)
 const profileMenuOpen = ref(false)
 const logoutLoading = ref(false)
@@ -62,9 +64,10 @@ const goToProfile = () => {
   router.push({ name: 'profile' })
 }
 
-const openCreateFolderDialog = () => {
+const openCreateFolderDialog = async () => {
   profileMenuOpen.value = false
   mobileMenuOpen.value = false
+  await folderStore.loadFolderOptions()
   createFolderDialogOpen.value = true
 }
 
@@ -126,7 +129,7 @@ const toggleProfileMenu = () => {
   profileMenuOpen.value = !profileMenuOpen.value
 }
 
-const handleFolderCreate = () => {
+const handleFolderCreate = async () => {
   mobileMenuOpen.value = false
   profileMenuOpen.value = false
   toast.add({
@@ -134,6 +137,7 @@ const handleFolderCreate = () => {
     description: '收藏夹已创建',
     type: 'success',
   })
+  await folderStore.refreshFolderData()
 }
 
 const handlePendingFeature = () => {
@@ -589,7 +593,7 @@ onBeforeUnmount(() => {
     </Transition>
   </header>
   <FeedbackDialog v-model:open="feedbackDialogOpen" />
-  <CreateFolderDialog v-model:open="createFolderDialogOpen" @submit="handleFolderCreate" />
+  <CreateFolderDialog v-model:open="createFolderDialogOpen" :parent-options="folderStore.folderOptions" @submit="handleFolderCreate" />
 </template>
 
 <style scoped>

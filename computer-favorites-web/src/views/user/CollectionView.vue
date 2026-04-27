@@ -43,6 +43,7 @@ const {
   storagePercent,
   breadcrumbPath,
   collectStats,
+  hiddenCategoryIds,
   folderOptions,
   collectLimit,
   isLoading,
@@ -56,13 +57,33 @@ const {
   setZoomLevel,
   handleCancelCollect,
   handleRenameCategory: apiRenameCategory,
-  handleDeleteFolder,
-  handleHideFolder,
+  handleDeleteFolder: apiDeleteFolder,
+  handleHideFolder: apiHideFolder,
   handleShowHiddenFolders,
   handleVerifyPassword,
   handleFolderCreated,
   loadFolderOptions,
 } = useCollectionManagement()
+
+/**
+ * 删除收藏夹包装：如果当前激活的分类是被删除的，重置激活状态
+ */
+const handleDeleteFolder = async (id: number) => {
+  if (activeCategoryId.value === id) {
+    setActiveCategory(null)
+  }
+  await apiDeleteFolder(id)
+}
+
+/**
+ * 隐藏收藏夹包装：如果当前激活的分类是被隐藏的，重置激活状态
+ */
+const handleHideFolder = async (id: number) => {
+  if (activeCategoryId.value === id) {
+    setActiveCategory(null)
+  }
+  await apiHideFolder(id)
+}
 
 const isDark = ref(false)
 let darkModeObserver: MutationObserver | null = null
@@ -180,19 +201,6 @@ const openCreateFolder = async (parentId: number) => {
   createFolderDialogVisible.value = true
 }
 
-/* ========== 收藏夹隐藏ID追踪 ========== */
-const getHiddenCategoryIds = (): number[] => {
-  const result: number[] = []
-  const collect = (cats: CollectionCategory[]) => {
-    for (const cat of cats) {
-      if (cat.isHide) result.push(cat.id)
-      if (cat.children) collect(cat.children)
-    }
-  }
-  collect(categories.value)
-  return result
-}
-
 /* ========== 菜单构建 ========== */
 const buildFolderMenuItems = (category: CollectionCategory): MenuItem[] => [
   {
@@ -247,7 +255,7 @@ const buildEmptyMenuItems = (): MenuItem[] => {
     },
   ]
 
-  const hiddenIds = getHiddenCategoryIds()
+  const hiddenIds = hiddenCategoryIds
   if (hiddenIds.length > 0) {
     items.push({
       label: '显示隐藏收藏夹',
