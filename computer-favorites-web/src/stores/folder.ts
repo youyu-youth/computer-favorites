@@ -58,7 +58,8 @@ export const useFolderStore = defineStore('folder', () => {
     isLoading.value = true
     try {
       categories.value = await getFolderTree()
-    } catch {
+    } catch (e) {
+      console.error('加载文件夹树失败:', e)
       toast.add({ title: '加载失败', description: '文件夹加载失败，请刷新重试', type: 'error' })
     } finally {
       isLoading.value = false
@@ -68,7 +69,8 @@ export const useFolderStore = defineStore('folder', () => {
   const loadFolderOptions = async () => {
     try {
       folderOptions.value = await getFolderOptions()
-    } catch {
+    } catch (e) {
+      console.error('加载文件夹选项失败:', e)
       folderOptions.value = []
     }
   }
@@ -76,7 +78,8 @@ export const useFolderStore = defineStore('folder', () => {
   const loadCollectStats = async () => {
     try {
       collectStats.value = await getCollectStats()
-    } catch {
+    } catch (e) {
+      console.error('加载收藏统计失败:', e)
       collectStats.value = { collectCount: 0, folderCount: 0 }
     }
   }

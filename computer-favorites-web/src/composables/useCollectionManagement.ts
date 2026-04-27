@@ -185,8 +185,8 @@ export function useCollectionManagement() {
   })
 
   return {
-    categories: folderStore.categories,
-    visibleCategories: folderStore.visibleCategories,
+    categories: computed(() => folderStore.categories),
+    visibleCategories: computed(() => folderStore.visibleCategories),
     quickAccessList,
     activeQuickAccess,
     activeCategoryId,
@@ -200,9 +200,9 @@ export function useCollectionManagement() {
     mobileSidebarOpen,
     mobileDetailOpen,
     isLoading,
-    collectStats: folderStore.collectStats,
-    hiddenCategoryIds: folderStore.hiddenCategoryIds,
-    folderOptions: folderStore.folderOptions,
+    collectStats: computed(() => folderStore.collectStats),
+    hiddenCategoryIds: computed(() => folderStore.hiddenCategoryIds),
+    folderOptions: computed(() => folderStore.folderOptions),
     totalCount,
     selectedCount,
     storagePercent,

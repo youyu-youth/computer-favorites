@@ -1,6 +1,5 @@
 package com.yyyouth.service.user.folder.impl;
 
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -17,6 +16,7 @@ import com.yyyouth.model.vo.user.UserFolderTreeVO;
 import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.UserFolderMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
+import com.yyyouth.service.common.AuthContext;
 import com.yyyouth.service.user.folder.UserFolderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +62,7 @@ public class UserFolderServiceImpl implements UserFolderService {
     private final UserFolderMapper userFolderMapper;
     private final UserAccountMapper userAccountMapper;
     private final UserCollectMapper userCollectMapper;
+    private final AuthContext authContext;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -116,6 +117,7 @@ public class UserFolderServiceImpl implements UserFolderService {
                 .eq(UserFolder::getUserId, userId)
                 .eq(UserFolder::getStatus, FOLDER_STATUS_NORMAL)
                 .eq(UserFolder::getDeleted, NOT_DELETED)
+                .eq(UserFolder::getIsHide, NOT_HIDE)
                 .orderByAsc(UserFolder::getSort)
                 .orderByAsc(UserFolder::getId));
 
@@ -224,6 +226,7 @@ public class UserFolderServiceImpl implements UserFolderService {
                 .eq(UserFolder::getUserId, userId)
                 .eq(UserFolder::getStatus, FOLDER_STATUS_NORMAL)
                 .eq(UserFolder::getDeleted, NOT_DELETED)
+                .eq(UserFolder::getIsHide, NOT_HIDE)
                 .orderByAsc(UserFolder::getSort)
                 .orderByAsc(UserFolder::getId));
 
@@ -263,8 +266,7 @@ public class UserFolderServiceImpl implements UserFolderService {
     }
 
     private Long getCurrentUserId() {
-        StpUtil.checkLogin();
-        return StpUtil.getLoginIdAsLong();
+        return authContext.getCurrentUserId();
     }
 
     private UserFolder getOwnedFolder(Long userId, Long folderId) {

@@ -255,7 +255,7 @@ const buildEmptyMenuItems = (): MenuItem[] => {
     },
   ]
 
-  const hiddenIds = hiddenCategoryIds
+  const hiddenIds = hiddenCategoryIds.value
   if (hiddenIds.length > 0) {
     items.push({
       label: '显示隐藏收藏夹',
