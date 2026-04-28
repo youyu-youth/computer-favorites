@@ -40,6 +40,7 @@ cf:
       - /api/auth/register
       - /api/auth/register/code
       - /api/auth/register/username/check
+      - /api/website/**
   profile:
     marker: base
 

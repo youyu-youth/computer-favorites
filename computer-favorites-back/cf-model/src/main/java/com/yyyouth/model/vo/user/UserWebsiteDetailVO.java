@@ -71,6 +71,11 @@ public class UserWebsiteDetailVO {
     private Integer collectCount;
 
     /**
+     * 当前用户是否已收藏（未登录时为false）
+     */
+    private Boolean isCollected;
+
+    /**
      * 评论量
      */
     private Integer commentCount;

@@ -22,6 +22,7 @@ import com.yyyouth.service.user.collect.UserCollectService;
 import com.yyyouth.service.user.website.support.UserWebsiteTagSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -95,17 +96,27 @@ public class UserCollectServiceImpl implements UserCollectService {
                 .folderId(folderId)
                 .build();
 
-        int inserted = userCollectMapper.insert(collect);
-        if (inserted != 1 || collect.getId() == null) {
-            throw new BusinessException(HttpStatus.ERROR, "收藏失败，请稍后重试");
+        try {
+            int inserted = userCollectMapper.insert(collect);
+            if (inserted != 1 || collect.getId() == null) {
+                throw new BusinessException(HttpStatus.ERROR, "收藏失败，请稍后重试");
+            }
+
+            incrementFolderWebsiteCount(folderId);
+            incrementWebsiteCollectCount(createDTO.getWebsiteId());
+
+            log.info("收藏成功，userId={}, websiteId={}, folderId={}, collectId={}",
+                    userId, createDTO.getWebsiteId(), folderId, collect.getId());
+
+            return collect.getId();
+        } catch (DuplicateKeyException ex) {
+            log.info("收藏并发冲突，userId={}, websiteId={}", userId, createDTO.getWebsiteId());
+            UserCollect existingRecord = userCollectMapper.selectOne(new LambdaQueryWrapper<UserCollect>()
+                    .eq(UserCollect::getUserId, userId)
+                    .eq(UserCollect::getWebsiteId, createDTO.getWebsiteId())
+                    .last("limit 1"));
+            return existingRecord != null ? existingRecord.getId() : null;
         }
-
-        incrementFolderWebsiteCount(folderId);
-
-        log.info("收藏成功，userId={}, websiteId={}, folderId={}, collectId={}",
-                userId, createDTO.getWebsiteId(), folderId, collect.getId());
-
-        return collect.getId();
     }
 
     @Override
@@ -118,7 +129,8 @@ public class UserCollectServiceImpl implements UserCollectService {
                 .eq(UserCollect::getWebsiteId, websiteId)
                 .last("limit 1"));
         if (existing == null) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "未收藏该网站，无法取消");
+            log.info("取消收藏已忽略，记录不存在，userId={}, websiteId={}", userId, websiteId);
+            return;
         }
 
         int deleted = userCollectMapper.deleteById(existing.getId());
@@ -129,6 +141,7 @@ public class UserCollectServiceImpl implements UserCollectService {
         if (existing.getFolderId() != null && existing.getFolderId() > 0) {
             decrementFolderWebsiteCount(existing.getFolderId());
         }
+        decrementWebsiteCollectCount(websiteId);
 
         log.info("取消收藏成功，userId={}, websiteId={}, collectId={}", userId, websiteId, existing.getId());
     }
@@ -263,6 +276,30 @@ public class UserCollectServiceImpl implements UserCollectService {
                 .eq(UserFolder::getId, folderId)
                 .gt(UserFolder::getWebsiteCount, 0)
                 .setSql("website_count = website_count - 1"));
+    }
+
+    /**
+     * 递增网站收藏量
+     *
+     * @param websiteId 网站ID
+     */
+    private void incrementWebsiteCollectCount(Long websiteId) {
+        websiteMapper.update(null, new LambdaUpdateWrapper<Website>()
+                .eq(Website::getId, websiteId)
+                .gt(Website::getCollectCount, -1)
+                .setSql("collect_count = collect_count + 1"));
+    }
+
+    /**
+     * 递减网站收藏量
+     *
+     * @param websiteId 网站ID
+     */
+    private void decrementWebsiteCollectCount(Long websiteId) {
+        websiteMapper.update(null, new LambdaUpdateWrapper<Website>()
+                .eq(Website::getId, websiteId)
+                .gt(Website::getCollectCount, 0)
+                .setSql("collect_count = collect_count - 1"));
     }
 
     private UserCollectItemVO buildCollectItemVO(UserCollect collect, Map<Long, Website> websiteMap, Map<Long, UserWebsiteTagItemVO> tagItemMap) {

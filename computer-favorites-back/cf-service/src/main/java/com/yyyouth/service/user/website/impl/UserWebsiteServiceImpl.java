@@ -1,5 +1,6 @@
 package com.yyyouth.service.user.website.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -9,6 +10,7 @@ import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.UserWebsiteQueryDTO;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
+import com.yyyouth.model.pojo.user.UserCollect;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
 import com.yyyouth.model.vo.user.UserWebsiteCategoryVO;
@@ -17,6 +19,7 @@ import com.yyyouth.model.vo.user.UserWebsiteListItemVO;
 import com.yyyouth.model.vo.user.UserWebsitePageVO;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
+import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
@@ -71,6 +74,8 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
     private final UserAccountMapper userAccountMapper;
 
     private final AdminAccountMapper adminAccountMapper;
+
+    private final UserCollectMapper userCollectMapper;
 
     private final UserWebsiteTagSupport userWebsiteTagSupport;
 
@@ -187,7 +192,25 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
         );
         detailVO.setTags(userWebsiteTagSupport.buildWebsiteTagItems(website.getTags(), tagItemMap));
         detailVO.setProviderName(resolveProviderName(website));
+        detailVO.setIsCollected(resolveIsCollected(websiteId));
         return detailVO;
+    }
+
+    /**
+     * 判断当前用户是否已收藏该网站
+     *
+     * @param websiteId 网站ID
+     * @return 是否已收藏
+     */
+    private Boolean resolveIsCollected(Long websiteId) {
+        if (!StpUtil.isLogin()) {
+            return false;
+        }
+        Long userId = StpUtil.getLoginIdAsLong();
+        Long count = userCollectMapper.selectCount(new LambdaQueryWrapper<UserCollect>()
+                .eq(UserCollect::getUserId, userId)
+                .eq(UserCollect::getWebsiteId, websiteId));
+        return count != null && count > 0;
     }
 
     /**

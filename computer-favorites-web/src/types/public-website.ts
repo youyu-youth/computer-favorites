@@ -72,6 +72,7 @@ export interface PublicWebsiteDetail {
   clickCount: number
   likeCount: number
   collectCount: number
+  isCollected?: boolean
   commentCount: number
   score: number
   scoreCount: number

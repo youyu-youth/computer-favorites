@@ -17,16 +17,21 @@ import {
 } from 'lucide-vue-next'
 
 import { getWebsiteDetail } from '@/api/website'
+import { cancelCollect } from '@/api/user-collect'
 import recommendIcon from '@/assets/icons/svg/tuijian.svg'
 import MarkdownViewer from '@/components/user/MarkdownViewer.vue'
 import StarRating from '@/components/common/StarRating.vue'
 import ReportDialog from '@/components/user/ReportDialog.vue'
 import CollectFolderDialog from '@/components/user/CollectFolderDialog.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useMessage } from '@/composables/useMessage'
 import type { PublicWebsiteTagRef, PublicWebsiteDetail } from '@/types/public-website'
 import type { ReportFormData } from '@/types/report'
 import { buildTagColorStyle, normalizeTagColor } from '@/utils/tag-color'
 
 const route = useRoute()
+const authStore = useAuthStore()
+const message = useMessage()
 
 const activeTab = ref('Overview')
 const tabs = ['Overview', 'Schema', 'Related Servers', 'Score', 'Discussions']
@@ -165,12 +170,49 @@ const showReportDialog = ref(false)
 
 const showCollectDialog = ref(false)
 
+const isCollected = ref(false)
+
+const isCanceling = ref(false)
+
 const handleCollectClick = () => {
-  showCollectDialog.value = true
+  if (!authStore.isAuthed) {
+    window.location.href = `/computer/login?redirect=${encodeURIComponent(route.fullPath)}`
+    return
+  }
+  if (isCollected.value) {
+    handleCancelCollect()
+  } else {
+    showCollectDialog.value = true
+  }
 }
 
-const handleCollectConfirm = (_folderId: number, wid: number) => {
-  console.log('收藏到文件夹成功:', wid)
+const handleCancelCollect = async () => {
+  if (!websiteId.value || isCanceling.value) return
+  isCanceling.value = true
+  try {
+    await cancelCollect(websiteId.value)
+    isCollected.value = false
+    if (detail.value) {
+      detail.value.collectCount = Math.max(0, (detail.value.collectCount || 0) - 1)
+    }
+    message.add({ title: '已取消收藏', type: 'success', position: 'top-right' })
+  } catch (e) {
+    message.add({
+      title: '取消收藏失败',
+      description: e instanceof Error ? e.message : '请稍后重试',
+      type: 'error',
+      position: 'top-right',
+    })
+  } finally {
+    isCanceling.value = false
+  }
+}
+
+const handleCollectConfirm = (_folderId: number, _wid: number) => {
+  isCollected.value = true
+  if (detail.value) {
+    detail.value.collectCount = (detail.value.collectCount || 0) + 1
+  }
 }
 
 const handleReportClick = () => {
@@ -208,6 +250,7 @@ const loadDetail = async () => {
       return
     }
     detail.value = detailData
+    isCollected.value = Boolean(detailData.isCollected)
   } catch (error) {
     if (requestId !== latestRequestId) {
       return
@@ -274,11 +317,20 @@ watch(
                   官方
                 </span>
                 <button
-                  class="flex items-center gap-1.5 rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-200 hover:border-primary-500 hover:text-primary-500 transition-colors cursor-pointer"
+                  class="flex items-center gap-1.5 rounded border px-3 py-1 text-sm transition-colors cursor-pointer"
+                  :class="
+                    isCollected
+                      ? 'border-red-300 bg-red-50 text-red-500 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400'
+                      : 'border-gray-300 text-gray-700 dark:border-gray-700 dark:text-gray-200 hover:border-primary-500 hover:text-primary-500'
+                  "
+                  :disabled="isCanceling"
                   @click="handleCollectClick"
                 >
-                  <Heart class="h-4 w-4" />
-                  收藏 {{ formatCount(detail.collectCount) }}
+                  <Heart
+                    class="h-4 w-4"
+                    :class="isCollected ? 'fill-red-500 dark:fill-red-400' : ''"
+                  />
+                  {{ isCollected ? '已收藏' : '收藏' }} {{ formatCount(detail.collectCount) }}
                 </button>
                 <div class="ml-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                   <button class="flex items-center gap-1.5 hover:text-primary-500 transition-colors cursor-pointer"

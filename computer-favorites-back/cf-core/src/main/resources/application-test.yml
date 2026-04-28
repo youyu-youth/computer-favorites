@@ -28,6 +28,7 @@ cf:
       - /api/auth/login
       - /api/admin/auth/login
       - /api/auth/register
+      - /api/website/**
   profile:
     marker: test
 
