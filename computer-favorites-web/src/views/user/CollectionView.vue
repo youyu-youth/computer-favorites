@@ -202,49 +202,70 @@ const openCreateFolder = async (parentId: number) => {
 }
 
 /* ========== 菜单构建 ========== */
-const buildFolderMenuItems = (category: CollectionCategory): MenuItem[] => [
-  {
-    label: '新建收藏夹',
-    icon: 'folder-plus',
-    onClick: () => openCreateFolder(category.id),
-  },
-  {
-    label: '重命名',
-    icon: 'pencil',
-    onClick: () => { editingCategoryId.value = category.id },
-  },
-  {
-    label: category.isHide ? '显示' : '隐藏',
-    icon: category.isHide ? 'eye' : 'eye-off',
-    onClick: () => {
-      if (category.isHide) {
-        handleShowHiddenFolders([category.id])
-      } else {
+const buildFolderMenuItems = (category: CollectionCategory): MenuItem[] => {
+  const items: MenuItem[] = [
+    {
+      label: '新建收藏夹',
+      icon: 'folder-plus',
+      onClick: () => openCreateFolder(category.id),
+    },
+    {
+      label: '重命名',
+      icon: 'pencil',
+      onClick: () => { editingCategoryId.value = category.id },
+    },
+    {
+      label: category.isHide ? '显示' : '隐藏',
+      icon: category.isHide ? 'eye' : 'eye-off',
+      onClick: () => {
+        if (category.isHide) {
+          handleShowHiddenFolders([category.id])
+        } else {
+          openPasswordDialog(
+            '隐藏收藏夹',
+            `请输入登录密码以隐藏「${category.name}」及其内容`,
+            () => {
+              handleHideFolder(category.id)
+            },
+          )
+        }
+      },
+    },
+    {
+      label: '删除',
+      icon: 'trash-2',
+      danger: true,
+      onClick: () => {
         openPasswordDialog(
-          '隐藏收藏夹',
-          `请输入登录密码以隐藏「${category.name}」及其内容`,
+          '删除收藏夹',
+          `请输入登录密码以删除「${category.name}」`,
           () => {
-            handleHideFolder(category.id)
+            handleDeleteFolder(category.id)
           },
         )
-      }
+      },
     },
-  },
-  {
-    label: '删除',
-    icon: 'trash-2',
-    danger: true,
-    onClick: () => {
-      openPasswordDialog(
-        '删除收藏夹',
-        `请输入登录密码以删除「${category.name}」`,
-        () => {
-          handleDeleteFolder(category.id)
-        },
-      )
-    },
-  },
-]
+  ]
+
+  const hiddenIds = hiddenCategoryIds.value
+  if (hiddenIds.length > 0) {
+    items.push({
+      label: '显示收藏夹',
+      icon: 'eye',
+      onClick: () => {
+        openPasswordDialog(
+          '显示收藏夹',
+          '请输入登录密码以恢复所有隐藏的收藏夹',
+          () => {
+            handleShowHiddenFolders(hiddenIds)
+          },
+        )
+      },
+    })
+  }
+
+  return items
+}
 
 const buildEmptyMenuItems = (): MenuItem[] => {
   const items: MenuItem[] = [

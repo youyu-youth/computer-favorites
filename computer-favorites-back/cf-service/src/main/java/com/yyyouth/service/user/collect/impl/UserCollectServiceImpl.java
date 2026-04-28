@@ -14,10 +14,12 @@ import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.vo.user.UserCollectItemVO;
 import com.yyyouth.model.vo.user.UserCollectPageVO;
 import com.yyyouth.model.vo.user.UserCollectStatsVO;
+import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
 import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.UserFolderMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
 import com.yyyouth.service.user.collect.UserCollectService;
+import com.yyyouth.service.user.website.support.UserWebsiteTagSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,7 +30,10 @@ import org.springframework.validation.annotation.Validated;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author yyyouth zg
@@ -51,6 +56,7 @@ public class UserCollectServiceImpl implements UserCollectService {
     private final UserCollectMapper userCollectMapper;
     private final UserFolderMapper userFolderMapper;
     private final WebsiteMapper websiteMapper;
+    private final UserWebsiteTagSupport userWebsiteTagSupport;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -142,16 +148,32 @@ public class UserCollectServiceImpl implements UserCollectService {
         Page<UserCollect> page = new Page<>(pageDTO.getPageNum(), pageDTO.getPageSize());
         Page<UserCollect> result = userCollectMapper.selectPage(page, wrapper);
 
+        List<Long> websiteIds = result.getRecords().stream()
+                .map(UserCollect::getWebsiteId)
+                .distinct()
+                .toList();
+        Map<Long, Website> websiteMap = websiteIds.isEmpty() ? Map.of() :
+                websiteMapper.selectList(new LambdaQueryWrapper<Website>()
+                                .in(Website::getId, websiteIds)
+                                .eq(Website::getDeleted, NOT_DELETED))
+                        .stream().collect(Collectors.toMap(Website::getId, w -> w, (a, b) -> a));
+
+        Set<Long> tagIds = websiteMap.values().stream()
+                .flatMap(w -> userWebsiteTagSupport.parseTagIds(w.getTags()).stream())
+                .collect(Collectors.toSet());
+        Map<Long, UserWebsiteTagItemVO> tagItemMap = userWebsiteTagSupport.buildTagItemMap(tagIds);
+
         List<UserCollectItemVO> items = new ArrayList<>();
         for (UserCollect collect : result.getRecords()) {
-            UserCollectItemVO item = buildCollectItemVO(collect);
+            UserCollectItemVO item = buildCollectItemVO(collect, websiteMap, tagItemMap);
             if (item != null) {
                 if (StringUtils.hasText(pageDTO.getKeyword())) {
                     String keyword = pageDTO.getKeyword().trim().toLowerCase();
-                    boolean match = (item.getWebsiteName() != null && item.getWebsiteName().toLowerCase().contains(keyword))
-                            || (item.getWebsiteSummary() != null && item.getWebsiteSummary().toLowerCase().contains(keyword))
-                            || (item.getWebsiteTags() != null && item.getWebsiteTags().toLowerCase().contains(keyword));
-                    if (!match) {
+                    boolean nameMatch = item.getWebsiteName() != null && item.getWebsiteName().toLowerCase().contains(keyword);
+                    boolean summaryMatch = item.getWebsiteSummary() != null && item.getWebsiteSummary().toLowerCase().contains(keyword);
+                    boolean tagMatch = item.getWebsiteTags() != null && item.getWebsiteTags().stream()
+                            .anyMatch(t -> t.getName() != null && t.getName().toLowerCase().contains(keyword));
+                    if (!nameMatch && !summaryMatch && !tagMatch) {
                         continue;
                     }
                 }
@@ -243,13 +265,8 @@ public class UserCollectServiceImpl implements UserCollectService {
                 .setSql("website_count = website_count - 1"));
     }
 
-    private UserCollectItemVO buildCollectItemVO(UserCollect collect) {
-        Website website = websiteMapper.selectOne(new LambdaQueryWrapper<Website>()
-                .eq(Website::getId, collect.getWebsiteId())
-                .eq(Website::getDeleted, NOT_DELETED)
-                .select(Website::getId, Website::getName, Website::getUrl, Website::getIcon,
-                        Website::getSummary, Website::getTags, Website::getLikeCount)
-                .last("limit 1"));
+    private UserCollectItemVO buildCollectItemVO(UserCollect collect, Map<Long, Website> websiteMap, Map<Long, UserWebsiteTagItemVO> tagItemMap) {
+        Website website = websiteMap.get(collect.getWebsiteId());
         if (website == null) {
             return null;
         }
@@ -272,7 +289,7 @@ public class UserCollectServiceImpl implements UserCollectService {
                 .websiteUrl(website.getUrl())
                 .websiteIcon(website.getIcon())
                 .websiteSummary(website.getSummary())
-                .websiteTags(website.getTags())
+                .websiteTags(userWebsiteTagSupport.buildWebsiteTagItems(website.getTags(), tagItemMap))
                 .likeCount(website.getLikeCount())
                 .collectTime(collect.getCreateTime() != null ? collect.getCreateTime().format(DATE_FORMATTER) : null)
                 .folderId(collect.getFolderId())

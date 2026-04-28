@@ -38,9 +38,17 @@ const extractDomain = (url: string): string => {
   }
 }
 
-const parseTags = (tags: string | null | undefined): string[] => {
-  if (!tags) return []
-  return tags.split(',').map((t) => t.trim()).filter(Boolean)
+const getTagStyleVars = (color: string): Record<string, string> => {
+  const r = parseInt(color.slice(1, 3), 16)
+  const g = parseInt(color.slice(3, 5), 16)
+  const b = parseInt(color.slice(5, 7), 16)
+  return {
+    '--tag-bg': `rgba(${r}, ${g}, ${b}, 0.1)`,
+    '--tag-text': color,
+    '--tag-bg-dark': `rgba(${r}, ${g}, ${b}, 0.08)`,
+    '--tag-text-dark': `rgba(${r}, ${g}, ${b}, 0.8)`,
+    '--tag-border-dark': `rgba(${r}, ${g}, ${b}, 0.12)`,
+  } as Record<string, string>
 }
 </script>
 
@@ -91,11 +99,12 @@ const parseTags = (tags: string | null | undefined): string[] => {
     <!-- 标签 -->
     <div class="flex flex-wrap gap-2 mb-4">
       <span
-        v-for="tag in parseTags(item.websiteTags).slice(0, 3)"
-        :key="tag"
-        class="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+        v-for="tag in item.websiteTags?.slice(0, 3)"
+        :key="tag.id"
+        class="collect-tag inline-flex items-center px-2 py-0.5 rounded-none text-xs font-medium"
+        :style="getTagStyleVars(tag.color)"
       >
-        {{ tag }}
+        {{ tag.name }}
       </span>
     </div>
 
@@ -150,17 +159,18 @@ const parseTags = (tags: string | null | undefined): string[] => {
     <!-- 标签 -->
     <div class="hidden lg:flex flex-wrap gap-1.5 mx-4 max-w-[200px]">
       <span
-        v-for="tag in parseTags(item.websiteTags).slice(0, 2)"
-        :key="tag"
-        class="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300 whitespace-nowrap"
+        v-for="tag in item.websiteTags?.slice(0, 2)"
+        :key="tag.id"
+        class="collect-tag inline-flex items-center px-2 py-0.5 rounded-none text-xs font-medium whitespace-nowrap"
+        :style="getTagStyleVars(tag.color)"
       >
-        {{ tag }}
+        {{ tag.name }}
       </span>
       <span
-        v-if="parseTags(item.websiteTags).length > 2"
+        v-if="(item.websiteTags?.length ?? 0) > 2"
         class="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-medium bg-gray-100 text-gray-500 dark:bg-white/[0.05] dark:text-gray-500"
       >
-        +{{ parseTags(item.websiteTags).length - 2 }}
+        +{{ item.websiteTags.length - 2 }}
       </span>
     </div>
 
@@ -187,3 +197,16 @@ const parseTags = (tags: string | null | undefined): string[] => {
     </button>
   </div>
 </template>
+
+<style scoped>
+.collect-tag {
+  background-color: var(--tag-bg);
+  color: var(--tag-text);
+}
+
+:root.dark .collect-tag {
+  background-color: var(--tag-bg-dark);
+  color: var(--tag-text-dark);
+  box-shadow: inset 0 0 0 1px var(--tag-border-dark);
+}
+</style>

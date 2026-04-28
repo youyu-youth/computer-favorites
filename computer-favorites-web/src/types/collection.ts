@@ -5,6 +5,13 @@
  * 用户收藏夹页面相关类型定义
  */
 
+/** 标签项（对齐后端 UserWebsiteTagItemVO） */
+export interface WebsiteTagItem {
+  id: number
+  name: string
+  color: string
+}
+
 /** 收藏的网站条目（对齐后端 UserCollectItemVO） */
 export interface CollectionWebsite {
   id: number
@@ -13,7 +20,7 @@ export interface CollectionWebsite {
   websiteUrl: string
   websiteIcon: string
   websiteSummary: string
-  websiteTags: string
+  websiteTags: WebsiteTagItem[]
   likeCount: number
   collectTime: string
   folderId: number

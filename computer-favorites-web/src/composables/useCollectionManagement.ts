@@ -56,7 +56,7 @@ export function useCollectionManagement() {
       (w) =>
         w.websiteName.toLowerCase().includes(keyword) ||
         (w.websiteSummary && w.websiteSummary.toLowerCase().includes(keyword)) ||
-        (w.websiteTags && w.websiteTags.toLowerCase().includes(keyword)),
+        (w.websiteTags && w.websiteTags.some(t => t.name.toLowerCase().includes(keyword))),
     )
   })
 

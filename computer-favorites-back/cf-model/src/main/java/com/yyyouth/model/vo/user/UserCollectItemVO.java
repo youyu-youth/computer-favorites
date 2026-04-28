@@ -3,6 +3,8 @@ package com.yyyouth.model.vo.user;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * @author yyyouth zg
  * @date 2026-04-25
@@ -25,7 +27,7 @@ public class UserCollectItemVO {
 
     private String websiteSummary;
 
-    private String websiteTags;
+    private List<UserWebsiteTagItemVO> websiteTags;
 
     private Integer likeCount;
 

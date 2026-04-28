@@ -2,7 +2,10 @@ spring:
   application:
     name: computer-favorites
   profiles:
-    default: local
+    active: local
+  ai:
+    dash scope:
+      api-key: ${bailian.api-key}
   mail:
     host: ${CF_MAIL_HOST:127.0.0.1}
     port: ${CF_MAIL_PORT:25}

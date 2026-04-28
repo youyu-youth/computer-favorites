@@ -30,9 +30,17 @@ const extractDomain = (url: string): string => {
   }
 }
 
-const parseTags = (tags: string | null | undefined): string[] => {
-  if (!tags) return []
-  return tags.split(',').map((t) => t.trim()).filter(Boolean)
+const getTagStyleVars = (color: string): Record<string, string> => {
+  const r = parseInt(color.slice(1, 3), 16)
+  const g = parseInt(color.slice(3, 5), 16)
+  const b = parseInt(color.slice(5, 7), 16)
+  return {
+    '--tag-bg': `rgba(${r}, ${g}, ${b}, 0.1)`,
+    '--tag-text': color,
+    '--tag-bg-dark': `rgba(${r}, ${g}, ${b}, 0.08)`,
+    '--tag-text-dark': `rgba(${r}, ${g}, ${b}, 0.8)`,
+    '--tag-border-dark': `rgba(${r}, ${g}, ${b}, 0.12)`,
+  } as Record<string, string>
 }
 </script>
 
@@ -115,7 +123,7 @@ const parseTags = (tags: string | null | undefined): string[] => {
           </p>
 
           <!-- 标签 -->
-          <div v-if="parseTags(website.websiteTags).length > 0">
+          <div v-if="website.websiteTags && website.websiteTags.length > 0">
             <h4
               class="text-gray-400 dark:text-gray-600 mb-2 text-xs font-medium uppercase tracking-wider"
             >
@@ -123,11 +131,12 @@ const parseTags = (tags: string | null | undefined): string[] => {
             </h4>
             <div class="flex flex-wrap gap-2">
               <span
-                v-for="tag in parseTags(website.websiteTags)"
-                :key="tag"
-                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/[0.08] dark:text-blue-400/80 dark:shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]"
+                v-for="tag in website.websiteTags"
+                :key="tag.id"
+                class="collect-tag inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                :style="getTagStyleVars(tag.color)"
               >
-                {{ tag }}
+                {{ tag.name }}
               </span>
             </div>
           </div>
@@ -210,3 +219,16 @@ const parseTags = (tags: string | null | undefined): string[] => {
     </template>
   </aside>
 </template>
+
+<style scoped>
+.collect-tag {
+  background-color: var(--tag-bg);
+  color: var(--tag-text);
+}
+
+:root.dark .collect-tag {
+  background-color: var(--tag-bg-dark);
+  color: var(--tag-text-dark);
+  box-shadow: inset 0 0 0 1px var(--tag-border-dark);
+}
+</style>

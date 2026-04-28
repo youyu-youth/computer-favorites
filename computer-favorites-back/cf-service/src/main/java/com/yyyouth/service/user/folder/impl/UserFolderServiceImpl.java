@@ -117,7 +117,6 @@ public class UserFolderServiceImpl implements UserFolderService {
                 .eq(UserFolder::getUserId, userId)
                 .eq(UserFolder::getStatus, FOLDER_STATUS_NORMAL)
                 .eq(UserFolder::getDeleted, NOT_DELETED)
-                .eq(UserFolder::getIsHide, NOT_HIDE)
                 .orderByAsc(UserFolder::getSort)
                 .orderByAsc(UserFolder::getId));
 
