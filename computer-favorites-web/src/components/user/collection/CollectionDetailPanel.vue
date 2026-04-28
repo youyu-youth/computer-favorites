@@ -5,9 +5,12 @@
  *
  * 右侧详情面板 — 网站详细信息（可切换显示/隐藏），暗黑模式纯黑
  */
+import { useRouter } from 'vue-router'
 import type { CollectionWebsite } from '@/types/collection'
 
 defineOptions({ name: 'CollectionDetailPanel' })
+
+const router = useRouter()
 
 defineProps<{
   website: CollectionWebsite | null
@@ -72,14 +75,14 @@ const parseTags = (tags: string | null | undefined): string[] => {
           </div>
         </div>
 
-        <!-- 访问按钮 -->
+        <!-- 查看详情按钮 -->
         <button
           type="button"
           class="w-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center mb-4 transition-all duration-200 cursor-pointer active:scale-[0.97] shadow-sm dark:shadow-[0_2px_8px_rgba(59,130,246,0.2)]"
-          @click="emit('visit', website.websiteUrl)"
+          @click="router.push(`/computer/website/${website.websiteId}`)"
         >
-          访问网站
-          <i class="fas fa-external-link-alt text-[13px] ml-2"></i>
+          查看详情
+          <i class="fas fa-arrow-right text-[13px] ml-2"></i>
         </button>
 
         <!-- 操作按钮组 -->

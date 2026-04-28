@@ -5,9 +5,12 @@
  *
  * 主内容区顶部 — 面包屑 + 搜索框 + 添加按钮 + 通知 + 头像
  */
+import { useRouter } from 'vue-router'
 import InputText from 'primevue/inputtext'
 
 defineOptions({ name: 'CollectionContentHeader' })
+
+const router = useRouter()
 
 defineProps<{
   breadcrumbPath: string[]
@@ -79,14 +82,14 @@ const emit = defineEmits<{
     </div>
 
     <div class="flex items-center space-x-3">
-      <!-- 添加资源按钮 -->
+      <!-- 发现更多宝藏网站按钮 -->
       <button
         type="button"
         class="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-black active:scale-[0.97]"
-        @click="emit('add-resource')"
+        @click="router.push('/computer/home')"
       >
-        <i class="fas fa-plus text-[12px] mr-1.5"></i>
-        添加资源
+        <i class="fas fa-compass text-[12px] mr-1.5"></i>
+        发现更多宝藏网站
       </button>
 
       <!-- 通知按钮 -->
