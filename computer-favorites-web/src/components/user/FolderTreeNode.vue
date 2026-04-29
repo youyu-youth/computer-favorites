@@ -100,12 +100,12 @@ const handleChildSelect = (id: number) => {
       </span>
 
       <!-- 收藏数量 -->
-      <span
+      <!-- <span
         v-if="node.websiteCount > 0"
         class="folder-count shrink-0 text-xs font-medium tabular-nums"
       >
         {{ node.websiteCount }}
-      </span>
+      </span> -->
 
       <!-- 选中指示器 -->
       <span

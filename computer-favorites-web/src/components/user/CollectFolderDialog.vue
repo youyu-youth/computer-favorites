@@ -22,10 +22,12 @@ interface Props {
   visible: boolean
   websiteId: number | null
   websiteName?: string
+  isCollected?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   websiteName: '',
+  isCollected: false,
 })
 
 const emit = defineEmits<{
@@ -83,7 +85,9 @@ const handleConfirm = async () => {
   try {
     await collectWebsite({ websiteId: props.websiteId, folderId: selectedFolderId.value })
     const folderName = findFolderName(folderStore.categories, selectedFolderId.value)
-    message.add({ title: '收藏该网站成功', description: folderName ? `已收藏到「${folderName}」` : undefined, type: 'success', position: 'top-right' })
+    const actionText = props.isCollected ? '更换收藏夹成功' : '收藏该网站成功'
+    const descText = folderName ? (props.isCollected ? `已移至「${folderName}」` : `已收藏到「${folderName}」`) : undefined
+    message.add({ title: actionText, description: descText, type: 'success', position: 'top-right' })
     emit('confirm', selectedFolderId.value, props.websiteId)
     closeDialog()
   } catch (e) {
@@ -186,7 +190,7 @@ onBeforeUnmount(() => {
                 </div>
                 <div>
                   <h2 id="collect-folder-title" class="collect-dialog-title text-base font-semibold">
-                    收藏到文件夹
+                    {{ props.isCollected ? '更换收藏夹' : '收藏到文件夹' }}
                   </h2>
                   <p v-if="websiteName" class="collect-dialog-subtitle mt-0.5 text-xs">
                     {{ websiteName }}
@@ -286,7 +290,7 @@ onBeforeUnmount(() => {
                   :disabled="!canConfirm"
                   @click="handleConfirm"
                 >
-                  {{ isSubmitting ? '收藏中...' : '确认收藏' }}
+                  {{ isSubmitting ? (props.isCollected ? '更换中...' : '收藏中...') : (props.isCollected ? '确认更换' : '确认收藏') }}
                 </button>
               </div>
             </footer>

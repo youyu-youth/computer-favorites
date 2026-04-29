@@ -71,7 +71,7 @@ const getTagStyleVars = (color: string): Record<string, string> => {
       @click.stop="emit('cancel-collect', item.websiteId)"
     >
       <i
-        class="fas fa-heart text-[17px] text-red-500 dark:text-red-400 hover:text-red-300 transition-colors"
+        class="fas fa-bookmark text-[17px] text-yellow-500 dark:text-yellow-400 hover:text-yellow-300 transition-colors"
       ></i>
     </button>
 
@@ -115,10 +115,7 @@ const getTagStyleVars = (color: string): Record<string, string> => {
       <span class="text-xs text-gray-500 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors cursor-pointer">
         {{ extractDomain(item.websiteUrl) }}
       </span>
-      <div class="flex items-center text-xs text-gray-500 dark:text-gray-500">
-        <i class="far fa-heart text-[13px] mr-1"></i>
-        <span class="tabular-nums">{{ formatLikeCount(item.likeCount) }}</span>
-      </div>
+
     </div>
   </div>
 
@@ -179,12 +176,6 @@ const getTagStyleVars = (color: string): Record<string, string> => {
       {{ extractDomain(item.websiteUrl) }}
     </span>
 
-    <!-- 点赞数 -->
-    <div class="flex items-center text-xs text-gray-500 dark:text-gray-500 mx-3 whitespace-nowrap">
-      <i class="far fa-heart text-[13px] mr-1"></i>
-      <span class="tabular-nums">{{ formatLikeCount(item.likeCount) }}</span>
-    </div>
-
     <!-- 取消收藏按钮 -->
     <button
       type="button"
@@ -192,7 +183,7 @@ const getTagStyleVars = (color: string): Record<string, string> => {
       @click.stop="emit('cancel-collect', item.websiteId)"
     >
       <i
-        class="fas fa-heart text-[16px] text-red-500 dark:text-red-400 hover:text-red-300 transition-colors"
+        class="fas fa-bookmark text-[16px] text-yellow-500 dark:text-yellow-400 hover:text-yellow-300 transition-colors"
       ></i>
     </button>
   </div>

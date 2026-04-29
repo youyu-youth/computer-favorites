@@ -97,16 +97,17 @@ const getTagStyleVars = (color: string): Record<string, string> => {
         <div class="grid grid-cols-3 gap-2 mb-6 border-b border-[#e5e7eb] dark:border-white/[0.06] pb-6">
           <button
             type="button"
-            class="flex items-center justify-center py-2.5 border border-[#e5e7eb] dark:border-white/[0.06] rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-red-500 dark:text-red-400 cursor-pointer transition-all duration-200 active:scale-[0.95]"
+            class="flex items-center justify-center py-2.5 border border-[#e5e7eb] dark:border-white/[0.06] rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/10 text-blue-500 dark:text-blue-400 cursor-pointer transition-all duration-200 active:scale-[0.95]"
             @click="emit('cancel-collect', website.websiteId)"
           >
-            <i class="fas fa-heart-broken text-[18px]"></i>
+             <i class="far fa-bookmark text-[18px]"></i>
+
           </button>
           <button
             type="button"
             class="flex items-center justify-center py-2.5 border border-[#e5e7eb] dark:border-white/[0.06] rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.04] text-gray-400 dark:text-gray-600 cursor-pointer transition-all duration-200 active:scale-[0.95]"
           >
-            <i class="far fa-bookmark text-[18px]"></i>
+            <i class="fas fa-thumbs-up text-[18px]"></i>
           </button>
           <button
             type="button"

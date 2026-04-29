@@ -78,7 +78,25 @@ public class UserCollectServiceImpl implements UserCollectService {
                 .eq(UserCollect::getWebsiteId, createDTO.getWebsiteId())
                 .last("limit 1"));
         if (existing != null) {
-            log.info("重复收藏已忽略，userId={}, websiteId={}, collectId={}", userId, createDTO.getWebsiteId(), existing.getId());
+            Long newFolderId = createDTO.getFolderId();
+            if (newFolderId == null || newFolderId <= 0) {
+                newFolderId = getDefaultFolderId(userId);
+            }
+            Long oldFolderId = existing.getFolderId();
+            if (Objects.equals(oldFolderId, newFolderId)) {
+                log.info("收藏文件夹未变更，userId={}, websiteId={}, folderId={}", userId, createDTO.getWebsiteId(), oldFolderId);
+                return existing.getId();
+            }
+            validateFolderOwnership(userId, newFolderId);
+            userCollectMapper.update(null, new LambdaUpdateWrapper<UserCollect>()
+                    .eq(UserCollect::getId, existing.getId())
+                    .set(UserCollect::getFolderId, newFolderId));
+            if (oldFolderId != null && oldFolderId > 0) {
+                decrementFolderWebsiteCount(oldFolderId);
+            }
+            incrementFolderWebsiteCount(newFolderId);
+            log.info("收藏移夹成功，userId={}, websiteId={}, oldFolderId={}, newFolderId={}",
+                    userId, createDTO.getWebsiteId(), oldFolderId, newFolderId);
             return existing.getId();
         }
 

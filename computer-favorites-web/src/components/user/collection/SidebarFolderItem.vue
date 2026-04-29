@@ -152,8 +152,8 @@ const handleRenameBlur = () => {
       <!-- 文件夹名称 -->
       <span class="truncate text-sm font-medium flex-1 min-w-0">{{ category.name }}</span>
 
-      <!-- 网站数量 -->
-      <span class="ml-auto text-xs text-[#9ca3af] dark:text-[#4b5563] tabular-nums shrink-0 pl-2">{{ category.websiteCount }}</span>
+      <!-- 网站数量
+      <span class="ml-auto text-xs text-[#9ca3af] dark:text-[#4b5563] tabular-nums shrink-0 pl-2">{{ category.websiteCount }}</span> -->
     </button>
 
     <!-- 重命名态 -->
