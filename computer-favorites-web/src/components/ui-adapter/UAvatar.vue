@@ -29,7 +29,7 @@ const mappedSize = computed(() => {
 </script>
 
 <template>
-  <Avatar :image="src" :label="alt" shape="circle" :size="mappedSize" :class="attrs.class">
+  <Avatar :image="src" :label="src ? undefined : alt" shape="circle" :size="mappedSize" :class="attrs.class">
     <slot />
   </Avatar>
 </template>

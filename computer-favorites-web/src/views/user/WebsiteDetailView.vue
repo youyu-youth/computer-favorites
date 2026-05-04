@@ -19,6 +19,7 @@ import { getWebsiteDetail } from '@/api/website'
 import { cancelCollect } from '@/api/user-collect'
 import recommendIcon from '@/assets/icons/svg/tuijian.svg'
 import MarkdownViewer from '@/components/user/MarkdownViewer.vue'
+import WebsiteCommentSection from '@/components/user/WebsiteCommentSection.vue'
 import StarRating from '@/components/common/StarRating.vue'
 import ReportDialog from '@/components/user/ReportDialog.vue'
 import CollectFolderDialog from '@/components/user/CollectFolderDialog.vue'
@@ -32,7 +33,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 const message = useMessage()
 
-const activeTab = ref('Overview')
+const activeTab = ref('网站介绍')
 const tabs = ['网站介绍', '网站评论', '相关网站推荐']
 
 const loading = ref(false)
@@ -252,8 +253,31 @@ const loadDetail = async () => {
     if (requestId !== latestRequestId) {
       return
     }
-    detail.value = null
-    errorMessage.value = resolveErrorMessage(error, '加载网站详情失败')
+    // TEMP mock fallback for UI testing
+    detail.value = {
+      id: websiteId.value,
+      name: 'hello 看看你',
+      icon: '',
+      isOfficial: 1,
+      collectCount: 0,
+      likeCount: 0,
+      clickCount: 0,
+      tags: [{id:1,name:'Unity资源',color:'#3b82f6'},{id:2,name:'Pygame',color:'#10b981'},{id:3,name:'Cocos Creator',color:'#f59e0b'}],
+      categoryName: '游戏开发',
+      score: 0,
+      scoreCount: 0,
+      providerName: '1',
+      submitterId: 1,
+      isRecommend: 1,
+      url: 'https://www.test.com',
+      shelfTime: '2026-04-07 22:50:35',
+      createTime: '2026-04-07 22:50:35',
+      updateTime: '2026-04-28 22:16:21',
+      description: '',
+      summary: 'test',
+      commentCount: 6
+    } as any
+    isCollected.value = false
   } finally {
     if (requestId === latestRequestId) {
       loading.value = false
@@ -418,15 +442,27 @@ watch(
 
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div class="lg:col-span-2">
-            <blockquote
-              class="flat-design mb-6 w-full rounded-r border-l-4 border-primary-500 bg-primary-500/10 p-4 dark:bg-primary-500/20"
-            >
-              <p class="text-sm italic leading-relaxed text-primary-600 md:text-base dark:text-amber-400">
-                {{ summaryText }}
-              </p>
-            </blockquote>
+            <template v-if="activeTab === '网站介绍'">
+              <blockquote
+                class="flat-design mb-6 w-full rounded-r border-l-4 border-primary-500 bg-primary-500/10 p-4 dark:bg-primary-500/20"
+              >
+                <p class="text-sm italic leading-relaxed text-primary-600 md:text-base dark:text-amber-400">
+                  {{ summaryText }}
+                </p>
+              </blockquote>
 
-            <MarkdownViewer :content="markdownContent" />
+              <MarkdownViewer :content="markdownContent" />
+            </template>
+
+            <template v-else-if="activeTab === '网站评论'">
+              <WebsiteCommentSection />
+            </template>
+
+            <template v-else-if="activeTab === '相关网站推荐'">
+              <div class="py-12 text-center text-sm text-slate-400 dark:text-slate-500">
+                相关网站推荐功能即将上线，敬请期待～
+              </div>
+            </template>
           </div>
 
           <div class="flex flex-col gap-6 lg:col-span-1">
