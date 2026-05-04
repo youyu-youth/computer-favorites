@@ -10,17 +10,17 @@ import type { ThemeTokenValueMap } from '../types'
 export const ADMIN_THEME_TOKEN_VALUE_MAP: ThemeTokenValueMap = {
   color: {
     primary50: '#eff6ff',
-    primary100: '#dbeafe',
-    primary400: '#60a5fa',
-    primary500: '#3b82f6',
-    primary600: '#2563eb',
+    primary100: '#fc805a',
+    primary400: '#df5f3f',
+    primary500: '#f55911',
+    primary600: '#f73920e2',
     darkBg: '#0f172a',
     darkCard: '#1e293b',
     darkBorder: '#334155',
     semanticSuccess: '#10b981',
     semanticError: '#ef4444',
     semanticWarning: '#f59e0b',
-    semanticInfo: '#3b82f6',
+    semanticInfo: '#e95322',
   },
   border: {
     lightDefault: 'rgb(203 213 225 / 1)',

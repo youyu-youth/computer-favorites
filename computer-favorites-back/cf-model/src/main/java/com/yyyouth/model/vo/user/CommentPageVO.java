@@ -43,4 +43,9 @@ public class CommentPageVO {
      * 总页数
      */
     private Integer totalPages;
+
+    /**
+     * 网站评论总数量（包含一级评论和回复）
+     */
+    private Long totalCommentCount;
 }

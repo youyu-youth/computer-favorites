@@ -177,8 +177,13 @@ public class UserCommentServiceImpl implements UserCommentService {
         Page<Comment> page = commentMapper.selectPage(new Page<>(pageNum, pageSize), topLevelWrapper);
 
         List<Comment> topLevelComments = page.getRecords();
+        long totalCommentCount = commentMapper.selectCount(
+                new LambdaQueryWrapper<Comment>()
+                        .eq(Comment::getWebsiteId, websiteId)
+                        .eq(Comment::getDeleted, NOT_DELETED)
+                        .eq(Comment::getStatus, VISIBLE_STATUS));
         if (topLevelComments.isEmpty()) {
-            return buildEmptyCommentPage(pageNum, pageSize);
+            return buildEmptyCommentPage(pageNum, pageSize, totalCommentCount);
         }
 
         List<Long> topLevelIds = topLevelComments.stream().map(Comment::getId).toList();
@@ -242,6 +247,7 @@ public class UserCommentServiceImpl implements UserCommentService {
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .totalPages((int) Math.ceil((double) page.getTotal() / pageSize))
+                .totalCommentCount(totalCommentCount)
                 .build();
     }
 
@@ -512,13 +518,14 @@ public class UserCommentServiceImpl implements UserCommentService {
                 .build();
     }
 
-    private CommentPageVO buildEmptyCommentPage(int pageNum, int pageSize) {
+    private CommentPageVO buildEmptyCommentPage(int pageNum, int pageSize, long totalCommentCount) {
         return CommentPageVO.builder()
                 .records(List.of())
                 .total(0L)
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .totalPages(0)
+                .totalCommentCount(totalCommentCount)
                 .build();
     }
 

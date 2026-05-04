@@ -33,7 +33,8 @@ public class AgentConfig {
 
 
     @Bean(name = "dashscopeChatClient")
-    public ChatClient dashscopeChatClient() {
+    public ChatClient chatClient() {
+        log.info("创建ChatClient!~!!!!!");
         ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)  // 设置默认系统提示
                 .build();

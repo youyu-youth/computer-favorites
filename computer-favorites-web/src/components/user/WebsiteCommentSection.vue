@@ -29,6 +29,7 @@ const authStore = useAuthStore()
 
 const comments = ref<CommentItemType[]>([])
 const total = ref(0)
+const totalCommentCount = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const sort = ref<'time' | 'hot'>('time')
@@ -37,7 +38,7 @@ const hasMore = ref(true)
 
 const currentAvatar = computed(() => authStore.avatar || '')
 
-const totalCount = computed(() => total.value)
+const totalCount = computed(() => totalCommentCount.value)
 
 const loadComments = async (reset = false) => {
   if (loading.value || !props.websiteId) return
@@ -60,6 +61,7 @@ const loadComments = async (reset = false) => {
       comments.value.push(...result.records)
     }
     total.value = result.total
+    totalCommentCount.value = result.totalCommentCount ?? result.total
     hasMore.value = pageNum.value < result.totalPages
   } catch (e: unknown) {
     message.add({ title: (e as Error).message || '加载评论失败', type: 'error', position: 'top-right' })
@@ -183,6 +185,7 @@ const findCommentOrReply = (
 watch(() => props.websiteId, () => {
   comments.value = []
   total.value = 0
+  totalCommentCount.value = 0
   if (props.websiteId) {
     loadComments(true)
   }

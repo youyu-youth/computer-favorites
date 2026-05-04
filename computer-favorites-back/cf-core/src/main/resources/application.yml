@@ -7,7 +7,7 @@ spring:
     dash scope:
       api-key: ${model.api-key.dashboard:sk-placeholder}
     deepseek:
-      api-key: ${model.api-key.deepseek:sk-placeholder}
+      api-key: ${model.api-key.deepseek}
   mail:
     host: ${CF_MAIL_HOST:127.0.0.1}
     port: ${CF_MAIL_PORT:25}

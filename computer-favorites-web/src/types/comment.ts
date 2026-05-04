@@ -45,6 +45,7 @@ export interface CommentPageResult {
   pageNum: number
   pageSize: number
   totalPages: number
+  totalCommentCount: number
 }
 
 /**
