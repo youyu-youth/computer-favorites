@@ -96,14 +96,14 @@ const handleCancelReply = () => {
 
       <UAvatar
         :src="comment.user.avatar"
-        :alt="comment.user.nickname"
+
         size="sm"
         class="h-9 w-9 flex-shrink-0"
       />
 
       <div class="min-w-0 flex-1">
         <div class="flex flex-wrap items-center gap-2">
-          <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <span class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
             {{ comment.user.nickname }}
           </span>
           <span class="text-xs text-slate-400 dark:text-slate-500">
@@ -200,7 +200,7 @@ const handleCancelReply = () => {
 
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                <span class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                   {{ reply.user.nickname }}
                 </span>
                 <span v-if="reply.replyTo" class="text-xs text-slate-400 dark:text-slate-500">
