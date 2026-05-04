@@ -85,7 +85,7 @@ const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
     key: 'comments',
     label: '评论管理',
     icon: 'fas fa-comments',
-    mockOnly: true,
+    mockOnly: false,
   },
   {
     key: 'auditLogs',

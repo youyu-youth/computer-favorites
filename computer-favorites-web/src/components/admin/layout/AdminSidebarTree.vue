@@ -90,6 +90,10 @@ const navigateByMenu = async (menuKey: AdminMenuKey): Promise<void> => {
     await router.push({ name: 'adminFeedbacks' })
   }
 
+  if (menuKey === 'comments' && route.name !== 'adminComments') {
+    await router.push({ name: 'adminComments' })
+  }
+
   if (menuKey === 'announcements' && route.name !== 'adminAnnouncements') {
     await router.push({ name: 'adminAnnouncements' })
   }
