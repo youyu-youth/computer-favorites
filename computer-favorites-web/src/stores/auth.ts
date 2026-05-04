@@ -5,6 +5,7 @@ import { renewSession } from '@/api/auth'
 import { isUnauthorizedError } from '@/utils/http'
 
 export interface AuthUserSnapshot {
+  userId: number | null
   nickname: string
   avatar: string
 }
@@ -15,6 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   const tokenName = ref<string>(localStorage.getItem('tokenName') || 'satoken')
   const nickname = ref<string>(localStorage.getItem('userNickname') || '')
   const avatar = ref<string>(localStorage.getItem('userAvatar') || '')
+  const userId = ref<number | null>(localStorage.getItem('userId') ? Number(localStorage.getItem('userId')) : null)
   const profileLoading = ref(false)
   const sessionChecked = ref(false)
   const sessionValid = ref(false)
@@ -24,6 +26,7 @@ export const useAuthStore = defineStore('auth', () => {
     () => Boolean(token.value) && sessionChecked.value && sessionValid.value,
   )
   const userSnapshot = computed<AuthUserSnapshot>(() => ({
+    userId: userId.value,
     nickname: nickname.value,
     avatar: avatar.value,
   }))
@@ -40,6 +43,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const setUserSnapshot = (snapshot: Partial<AuthUserSnapshot>) => {
+    if (snapshot.userId != null) {
+      userId.value = snapshot.userId
+      localStorage.setItem('userId', String(snapshot.userId))
+    }
     nickname.value = snapshot.nickname || ''
     avatar.value = snapshot.avatar || ''
     localStorage.setItem('userNickname', nickname.value)
@@ -54,6 +61,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const profile = await getCurrentUserProfile()
       setUserSnapshot({
+        userId: profile.user?.id ?? null,
         nickname: profile.user?.nickname || profile.user?.username || '',
         avatar: profile.user?.avatar || '',
       })
@@ -125,6 +133,7 @@ export const useAuthStore = defineStore('auth', () => {
     tokenName.value = 'satoken'
     nickname.value = ''
     avatar.value = ''
+    userId.value = null
     sessionChecked.value = true
     sessionValid.value = false
     lastRenewAt.value = 0
@@ -132,6 +141,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('tokenName')
     localStorage.removeItem('userNickname')
     localStorage.removeItem('userAvatar')
+    localStorage.removeItem('userId')
   }
 
   return {
@@ -139,6 +149,7 @@ export const useAuthStore = defineStore('auth', () => {
     tokenName,
     nickname,
     avatar,
+    userId,
     profileLoading,
     userSnapshot,
     isAuthed,

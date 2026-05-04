@@ -455,7 +455,7 @@ watch(
             </template>
 
             <template v-else-if="activeTab === '网站评论'">
-              <WebsiteCommentSection />
+              <WebsiteCommentSection :website-id="websiteId" />
             </template>
 
             <template v-else-if="activeTab === '相关网站推荐'">

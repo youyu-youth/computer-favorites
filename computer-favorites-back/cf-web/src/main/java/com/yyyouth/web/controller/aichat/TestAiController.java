@@ -19,13 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class TestAiController {
 
-    private final ChatClient chatClient;
+    private final ChatClient dashscopeChatClient;
 
 
     @GetMapping("chat/{message}")
     public String chat(@PathVariable String message){
         log.info("用户请求Ai聊天，message={}", message);
-        ChatResponse chatResponse = chatClient.prompt().user(message).call().chatResponse();
+        ChatResponse chatResponse = dashscopeChatClient.prompt().user(message).call().chatResponse();
         return chatResponse.getResult().getOutput().getText();
     }
 }

@@ -2,8 +2,11 @@ package com.yyyouth.service.aichat.config;
 
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 
+import com.yyyouth.service.aichat.demo.domain.MyResponseType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.StructuredOutputValidationAdvisor;
+import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,12 +21,19 @@ public class AgentConfig {
 
     String SYSTEM_PROMPT = "You are a helpful assistant.";
 
+    /** 结构化输出验证顾问 **/
+    StructuredOutputValidationAdvisor validationAdvisor = StructuredOutputValidationAdvisor.builder()
+            .outputType(MyResponseType.class)
+            .maxRepeatAttempts(3)  // 最大尝试次数
+            .advisorOrder(BaseAdvisor.HIGHEST_PRECEDENCE + 1000)
+            .build();
 
     @Autowired
     DashScopeChatModel dashscopeChatModel;
 
-    @Bean
-    public ChatClient chatClient() {
+
+    @Bean(name = "dashscopeChatClient")
+    public ChatClient dashscopeChatClient() {
         ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)  // 设置默认系统提示
                 .build();

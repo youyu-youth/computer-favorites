@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ThumbsUp, MessageCircle } from 'lucide-vue-next'
+import { ThumbsUp, MessageCircle, Trash2 } from 'lucide-vue-next'
 import UAvatar from '@/components/ui-adapter/UAvatar.vue'
 import CommentInput from './CommentInput.vue'
-import type { CommentItem as CommentItemType, CommentReply } from './comment-mock'
+import type { CommentItem as CommentItemType, CommentReply } from '@/types/comment'
+import { useAuthStore } from '@/stores/auth'
 
 const props = withDefaults(
   defineProps<{
@@ -19,19 +20,30 @@ const emit = defineEmits<{
   (e: 'reply', commentId: number, content: string): void
   (e: 'like', commentId: number): void
   (e: 'likeReply', replyId: number): void
-  (e: 'replyToReply', commentId: number, replyId: number, content: string): void
+  (e: 'replyToReply', commentId: number, replyId: number, replyUserId: number, content: string): void
+  (e: 'delete', commentId: number): void
 }>()
 
+const authStore = useAuthStore()
+
 const showReplyInput = ref(false)
-const replyTarget = ref<{ type: 'comment' | 'reply'; id: number; nickname: string } | null>(null)
+const replyTarget = ref<{ type: 'comment' | 'reply'; id: number; userId: number; nickname: string } | null>(null)
 
 const maxDepth = 2
 const canNest = computed(() => props.depth < maxDepth - 1)
 
+const isOwnComment = computed(() => {
+  const currentUserId = authStore.userId
+  return currentUserId != null && props.comment.user.id === Number(currentUserId)
+})
+
 const relativeTime = (dateStr: string): string => {
-  const date = new Date(dateStr)
+  if (!dateStr) return ''
+  const date = new Date(dateStr.replace(' ', 'T'))
+  if (isNaN(date.getTime())) return dateStr
   const now = new Date()
   const diff = now.getTime() - date.getTime()
+  if (diff < 0) return '刚刚'
   const minutes = Math.floor(diff / 60000)
   if (minutes < 1) return '刚刚'
   if (minutes < 60) return `${minutes}分钟前`
@@ -43,13 +55,13 @@ const relativeTime = (dateStr: string): string => {
 }
 
 const handleReplyClick = () => {
-  replyTarget.value = { type: 'comment', id: props.comment.id, nickname: props.comment.user.nickname }
+  replyTarget.value = { type: 'comment', id: props.comment.id, userId: props.comment.user.id, nickname: props.comment.user.nickname }
   showReplyInput.value = true
 }
 
 const handleReplyToReplyClick = (reply: CommentReply) => {
   if (!canNest.value) return
-  replyTarget.value = { type: 'reply', id: reply.id, nickname: reply.user.nickname }
+  replyTarget.value = { type: 'reply', id: reply.id, userId: reply.user.id, nickname: reply.user.nickname }
   showReplyInput.value = true
 }
 
@@ -58,7 +70,7 @@ const handleReplySubmit = (content: string) => {
   if (replyTarget.value.type === 'comment') {
     emit('reply', props.comment.id, content)
   } else {
-    emit('replyToReply', props.comment.id, replyTarget.value.id, content)
+    emit('replyToReply', props.comment.id, replyTarget.value.id, replyTarget.value.userId, content)
   }
   showReplyInput.value = false
   replyTarget.value = null
@@ -76,7 +88,6 @@ const handleCancelReply = () => {
     :class="depth > 0 ? 'ml-0 sm:ml-4' : ''"
   >
     <div class="flex gap-3 py-4">
-      <!-- thread line for nested replies -->
       <div v-if="depth > 0" class="relative hidden sm:flex">
         <div
           class="absolute -left-3 top-0 h-full w-px bg-slate-200 dark:bg-white/10"
@@ -100,7 +111,14 @@ const handleCancelReply = () => {
           </span>
         </div>
 
-        <p class="mt-1.5 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+        <p
+          class="mt-1.5 text-sm leading-relaxed"
+          :class="
+            comment.isDeleted
+              ? 'italic text-slate-400 dark:text-slate-500'
+              : 'text-slate-700 dark:text-slate-300'
+          "
+        >
           {{ comment.content }}
         </p>
 
@@ -119,15 +137,24 @@ const handleCancelReply = () => {
           </button>
 
           <button
+            v-if="!comment.isDeleted"
             class="flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-pointer"
             @click="handleReplyClick"
           >
             <MessageCircle class="h-3.5 w-3.5" />
             回复
           </button>
+
+          <button
+            v-if="isOwnComment && !comment.isDeleted"
+            class="flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 cursor-pointer"
+            @click="emit('delete', comment.id)"
+          >
+            <Trash2 class="h-3.5 w-3.5" />
+            删除
+          </button>
         </div>
 
-        <!-- Reply input -->
         <div
           v-if="showReplyInput"
           class="mt-3 overflow-hidden transition-all duration-300"
@@ -152,7 +179,6 @@ const handleCancelReply = () => {
           </div>
         </div>
 
-        <!-- Nested replies -->
         <div v-if="comment.replies.length > 0" class="mt-2 space-y-0">
           <div
             v-for="reply in comment.replies"
@@ -188,7 +214,14 @@ const handleCancelReply = () => {
                 </span>
               </div>
 
-              <p class="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              <p
+                class="mt-1 text-sm leading-relaxed"
+                :class="
+                  reply.isDeleted
+                    ? 'italic text-slate-400 dark:text-slate-500'
+                    : 'text-slate-700 dark:text-slate-300'
+                "
+              >
                 {{ reply.content }}
               </p>
 
@@ -207,7 +240,7 @@ const handleCancelReply = () => {
                 </button>
 
                 <button
-                  v-if="canNest"
+                  v-if="canNest && !reply.isDeleted"
                   class="flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-pointer"
                   @click="handleReplyToReplyClick(reply)"
                 >

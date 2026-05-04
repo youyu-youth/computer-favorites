@@ -1,4 +1,4 @@
-package com.yyyouth.model.pojo.system;
+package com.yyyouth.model.pojo.website;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -13,16 +13,16 @@ import java.time.LocalDateTime;
 
 /**
  * @author yyyouth zg
- * @date 2026-04-05
+ * @date 2026-05-04
  *
- * 站内消息实体
+ * 评论点赞实体
  */
-@Builder
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("t_message")
-public class SystemMessage {
+@TableName("t_comment_like")
+public class CommentLike {
 
     /**
      * 主键ID
@@ -31,40 +31,20 @@ public class SystemMessage {
     private Long id;
 
     /**
-     * 接收用户ID
+     * 用户ID
      */
     @TableField("user_id")
     private Long userId;
 
     /**
-     * 标题
+     * 评论ID
      */
-    private String title;
-
-    /**
-     * 内容
-     */
-    private String content;
-
-    /**
-     * 消息类型：1系统通知，2评论回复，3收藏提醒，4审核结果，5举报反馈
-     */
-    private Integer type;
-
-    /**
-     * 关联业务ID
-     */
-    @TableField("related_id")
-    private Long relatedId;
-
-    /**
-     * 是否已读
-     */
-    @TableField("is_read")
-    private Integer isRead;
+    @TableField("comment_id")
+    private Long commentId;
 
     /**
      * 创建时间
      */
+    @TableField("create_time")
     private LocalDateTime createTime;
 }

@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +18,9 @@ import java.time.LocalDateTime;
  * 评论实体
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @TableName("t_comment")
 public class Comment {
 
@@ -37,9 +43,32 @@ public class Comment {
     private Long websiteId;
 
     /**
+     * 父评论ID，0表示顶级评论
+     */
+    @TableField("parent_id")
+    private Long parentId;
+
+    /**
+     * 回复用户ID
+     */
+    @TableField("reply_user_id")
+    private Long replyUserId;
+
+    /**
      * 评论内容
      */
     private String content;
+
+    /**
+     * 评论IP
+     */
+    private String ip;
+
+    /**
+     * 点赞数
+     */
+    @TableField("like_count")
+    private Integer likeCount;
 
     /**
      * 状态：0隐藏，1显示
