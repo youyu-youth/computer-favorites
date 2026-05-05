@@ -75,6 +75,12 @@ const router = createRouter({
           meta: { requiresAdminAuth: true, title: '审计日志' },
         },
         {
+          path: 'tech-stack',
+          name: 'adminTechStack',
+          component: () => import('@/views/admin/TechStackManagementView.vue'),
+          meta: { requiresAdminAuth: true, title: '技术栈管理' },
+        },
+        {
           path: 'websites',
           name: 'adminWebsites',
           component: WebsitesManagementView,
@@ -328,6 +334,11 @@ router.afterEach((to) => {
 
   if (to.name === 'adminAuditLogs') {
     useAdminNavStore().setActiveMenu('auditLogs')
+    return
+  }
+
+  if (to.name === 'adminTechStack') {
+    useAdminNavStore().setActiveMenu('techStack')
     return
   }
 

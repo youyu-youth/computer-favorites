@@ -101,6 +101,10 @@ const navigateByMenu = async (menuKey: AdminMenuKey): Promise<void> => {
   if (menuKey === 'auditLogs' && route.name !== 'adminAuditLogs') {
     await router.push({ name: 'adminAuditLogs' })
   }
+
+  if (menuKey === 'techStack' && route.name !== 'adminTechStack') {
+    await router.push({ name: 'adminTechStack' })
+  }
 }
 
 const goWebsitesRoot = async (): Promise<void> => {
