@@ -1,5 +1,17 @@
-import { computed, onMounted, reactive, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
 import { useToast } from '@/composables/useToast'
+import {
+  batchDeleteAdminTechStack,
+  createAdminTechStack,
+  deleteAdminTechStack,
+  deleteAdminTechStackIcon,
+  getAdminTechStackPage,
+  getAdminTechStackStats,
+  updateAdminTechStack,
+  updateAdminTechStackStatus,
+  uploadAdminTechStackIcon,
+} from '@/api/admin-tech-stack'
+import type { FileUploadUploaderEvent } from 'primevue/fileupload'
 import type {
   AdminTechStackFormModel,
   AdminTechStackItem,
@@ -34,150 +46,43 @@ const normalizeOptionalText = (value: string): string | undefined => {
   return normalizedValue ? normalizedValue : undefined
 }
 
-const MOCK_TECH_STACKS: AdminTechStackItem[] = [
-  {
-    id: 1,
-    name: 'Java',
-    iconPng: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg',
-    officialUrl: 'https://www.java.com',
-    description: '广泛使用的面向对象编程语言，企业级开发首选',
-    color: '#ED8B00',
-    status: 'ACTIVE',
-    sort: 1,
-    createdAt: '2025-01-10 09:00:00',
-    updatedAt: '2025-03-15 14:30:00',
-    userCount: 128,
-  },
-  {
-    id: 2,
-    name: 'Spring Boot',
-    iconPng: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg',
-    officialUrl: 'https://spring.io/projects/spring-boot',
-    description: '基于 Spring 的快速开发框架，简化企业应用开发',
-    color: '#6DB33F',
-    status: 'ACTIVE',
-    sort: 2,
-    createdAt: '2025-01-10 09:05:00',
-    updatedAt: '2025-03-15 14:30:00',
-    userCount: 96,
-  },
-  {
-    id: 3,
-    name: 'Vue.js',
-    iconPng: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg',
-    officialUrl: 'https://vuejs.org',
-    description: '渐进式 JavaScript 框架，用于构建用户界面',
-    color: '#4FC08D',
-    status: 'ACTIVE',
-    sort: 3,
-    createdAt: '2025-01-12 10:00:00',
-    updatedAt: '2025-02-20 11:00:00',
-    userCount: 85,
-  },
-  {
-    id: 4,
-    name: 'React',
-    iconPng: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',
-    officialUrl: 'https://react.dev',
-    description: '用于构建用户界面的 JavaScript 库',
-    color: '#61DAFB',
-    status: 'ACTIVE',
-    sort: 4,
-    createdAt: '2025-01-12 10:05:00',
-    updatedAt: '2025-02-20 11:00:00',
-    userCount: 72,
-  },
-  {
-    id: 5,
-    name: 'Python',
-    iconPng: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg',
-    officialUrl: 'https://www.python.org',
-    description: '简洁优雅的通用编程语言，AI/数据科学首选',
-    color: '#3776AB',
-    status: 'ACTIVE',
-    sort: 5,
-    createdAt: '2025-01-15 08:00:00',
-    updatedAt: '2025-03-01 16:00:00',
-    userCount: 110,
-  },
-  {
-    id: 6,
-    name: 'Docker',
-    iconPng: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg',
-    officialUrl: 'https://www.docker.com',
-    description: '容器化平台，简化应用部署和运维',
-    color: '#2496ED',
-    status: 'ACTIVE',
-    sort: 6,
-    createdAt: '2025-01-20 09:00:00',
-    updatedAt: '2025-02-28 10:00:00',
-    userCount: 64,
-  },
-  {
-    id: 7,
-    name: 'MySQL',
-    iconPng: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg',
-    officialUrl: 'https://www.mysql.com',
-    description: '最流行的开源关系型数据库管理系统',
-    color: '#4479A1',
-    status: 'ACTIVE',
-    sort: 7,
-    createdAt: '2025-02-01 10:00:00',
-    updatedAt: '2025-03-10 15:00:00',
-    userCount: 88,
-  },
-  {
-    id: 8,
-    name: 'Redis',
-    iconPng: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg',
-    officialUrl: 'https://redis.io',
-    description: '高性能内存键值数据库，常用于缓存和消息队列',
-    color: '#DC382D',
-    status: 'ACTIVE',
-    sort: 8,
-    createdAt: '2025-02-01 10:10:00',
-    updatedAt: '2025-03-10 15:00:00',
-    userCount: 56,
-  },
-  {
-    id: 9,
-    name: 'Go',
-    iconPng: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original-wordmark.svg',
-    officialUrl: 'https://go.dev',
-    description: 'Google 推出的静态编译型语言，高并发场景首选',
-    color: '#00ADD8',
-    status: 'DISABLED',
-    sort: 9,
-    createdAt: '2025-02-10 11:00:00',
-    updatedAt: '2025-03-20 09:00:00',
-    userCount: 34,
-  },
-  {
-    id: 10,
-    name: 'TypeScript',
-    iconPng: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg',
-    officialUrl: 'https://www.typescriptlang.org',
-    description: 'JavaScript 的超集，添加静态类型支持',
-    color: '#3178C6',
-    status: 'DISABLED',
-    sort: 10,
-    createdAt: '2025-02-10 11:05:00',
-    updatedAt: '2025-03-20 09:00:00',
-    userCount: 45,
-  },
-]
+const extractObjectKeyFromUrl = (url: string): string => {
+  if (!url) {
+    return ''
+  }
+  const idx = url.indexOf('/computer-favorites/')
+  if (idx === -1) {
+    return ''
+  }
+  return url.substring(idx + '/computer-favorites/'.length)
+}
 
-let nextId = 11
+const mapRecordToItem = (record: Record<string, unknown>): AdminTechStackItem => ({
+  id: record.id as number,
+  name: record.name as string,
+  iconPng: (record.iconPng as string) || '',
+  officialUrl: (record.officialUrl as string) || '',
+  description: (record.description as string) || '',
+  color: (record.color as string) || '',
+  status: mapStatusToView(record.status as number),
+  sort: record.sort as number,
+  createdAt: (record.createTime as string) || '',
+  updatedAt: (record.updateTime as string) || '',
+  userCount: (record.userCount as number) || 0,
+})
 
 export function useTechStack() {
   const { add: showToast } = useToast()
 
-  const allTechStacks = shallowRef<AdminTechStackItem[]>([...MOCK_TECH_STACKS])
+  const techStacks = shallowRef<AdminTechStackItem[]>([])
   const searchKeyword = shallowRef('')
   const sortField = shallowRef<AdminTechStackSortField>('sort')
   const sortOrder = shallowRef<AdminTechStackSortOrder>(1)
   const currentPage = shallowRef(1)
   const pageSize = shallowRef(DEFAULT_PAGE_SIZE)
+  const totalItems = shallowRef(0)
+  const totalPages = shallowRef(1)
+  const loading = shallowRef(false)
 
   const editorOpen = shallowRef(false)
   const editorMode = shallowRef<EditorMode>('create')
@@ -203,46 +108,13 @@ export function useTechStack() {
   const batchDeleteDialogOpen = shallowRef(false)
   const batchDeleteSubmitting = shallowRef(false)
 
-  const filteredTechStacks = computed(() => {
-    const normalizedKeyword = searchKeyword.value.trim().toLowerCase()
-    let result = [...allTechStacks.value]
+  const iconUploading = shallowRef(false)
+  const iconObjectKey = shallowRef('')
 
-    if (normalizedKeyword) {
-      result = result.filter((item) => {
-        const nameMatched = item.name.toLowerCase().includes(normalizedKeyword)
-        const descriptionMatched = item.description.toLowerCase().includes(normalizedKeyword)
-        return nameMatched || descriptionMatched
-      })
-    }
+  const stats = shallowRef<AdminTechStackStats>({ total: 0, enabled: 0, disabled: 0 })
 
-    result.sort((leftItem, rightItem) => {
-      const leftValue = leftItem[sortField.value]
-      const rightValue = rightItem[sortField.value]
-      const orderValue = sortOrder.value
-
-      if (leftValue == null) {
-        return -1 * orderValue
-      }
-      if (rightValue == null) {
-        return 1 * orderValue
-      }
-      if (leftValue < rightValue) {
-        return -1 * orderValue
-      }
-      if (leftValue > rightValue) {
-        return 1 * orderValue
-      }
-      return 0
-    })
-
-    return result
-  })
-
-  const totalItems = computed(() => filteredTechStacks.value.length)
-
-  const totalPages = computed(() => {
-    return Math.max(1, Math.ceil(totalItems.value / pageSize.value))
-  })
+  let listRequestId = 0
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
 
   const visiblePages = computed<Array<number | string>>(() => {
     if (totalPages.value <= 7) {
@@ -276,28 +148,67 @@ export function useTechStack() {
     ]
   })
 
-  const pagedTechStacks = computed(() => {
-    const startIndex = (currentPage.value - 1) * pageSize.value
-    const endIndex = startIndex + pageSize.value
-    return filteredTechStacks.value.slice(startIndex, endIndex)
-  })
+  const loadTechStackPage = async (options?: { silent?: boolean }): Promise<void> => {
+    const requestId = ++listRequestId
+    if (!options?.silent) {
+      loading.value = true
+    }
 
-  const stats = computed<AdminTechStackStats>(() => {
-    let total = 0
-    let enabled = 0
-    let disabled = 0
+    try {
+      const res = await getAdminTechStackPage({
+        pageNum: currentPage.value,
+        pageSize: pageSize.value,
+        keyword: searchKeyword.value.trim() || undefined,
+        sortField: sortField.value,
+        sortOrder: sortOrder.value,
+      })
 
-    allTechStacks.value.forEach((item) => {
-      total += 1
-      if (item.status === 'ACTIVE') {
-        enabled += 1
-      } else {
-        disabled += 1
+      if (requestId !== listRequestId) {
+        return
       }
-    })
 
-    return { total, enabled, disabled }
-  })
+      techStacks.value = res.records.map(mapRecordToItem)
+      totalItems.value = res.total
+      totalPages.value = res.totalPages || Math.max(1, Math.ceil(res.total / pageSize.value))
+
+      if (currentPage.value > totalPages.value && totalPages.value > 0) {
+        currentPage.value = totalPages.value
+      }
+    } catch (error) {
+      if (requestId !== listRequestId) {
+        return
+      }
+      showToast({
+        type: 'error',
+        title: resolveErrorMessage(error, '技术栈列表加载失败'),
+      })
+    } finally {
+      if (requestId === listRequestId) {
+        loading.value = false
+      }
+    }
+  }
+
+  const loadTechStackStats = async (silentErrorToast = false): Promise<void> => {
+    try {
+      const res = await getAdminTechStackStats()
+      stats.value = res
+    } catch (error) {
+      if (!silentErrorToast) {
+        showToast({
+          type: 'error',
+          title: resolveErrorMessage(error, '技术栈统计加载失败'),
+        })
+      }
+    }
+  }
+
+  const reloadTechStackData = async (options?: { silent?: boolean }): Promise<void> => {
+    await Promise.all([
+      loadTechStackPage(options),
+      loadTechStackStats(true),
+    ])
+  }
 
   const clearFormErrors = (): void => {
     Object.keys(formErrors).forEach((field) => {
@@ -319,14 +230,11 @@ export function useTechStack() {
   const refreshTechStacks = async (silent = false): Promise<void> => {
     try {
       selectedIds.value = []
-      if (currentPage.value > totalPages.value) {
-        currentPage.value = totalPages.value
-      }
+      await reloadTechStackData({ silent })
       if (!silent) {
         showToast({ type: 'success', title: '技术栈数据已更新' })
       }
     } catch (error) {
-      selectedIds.value = []
       showToast({
         type: 'error',
         title: resolveErrorMessage(error, '技术栈数据加载失败'),
@@ -338,6 +246,13 @@ export function useTechStack() {
     searchKeyword.value = keyword
     currentPage.value = 1
     selectedIds.value = []
+
+    if (searchTimer) {
+      clearTimeout(searchTimer)
+    }
+    searchTimer = setTimeout(() => {
+      void loadTechStackPage()
+    }, 300)
   }
 
   const setSort = (field: AdminTechStackSortField, order: AdminTechStackSortOrder): void => {
@@ -345,11 +260,13 @@ export function useTechStack() {
     sortOrder.value = order
     currentPage.value = 1
     selectedIds.value = []
+    void loadTechStackPage()
   }
 
   const openCreateEditor = (): void => {
     editorMode.value = 'create'
     editingId.value = null
+    iconObjectKey.value = ''
     resetFormModel()
     editorOpen.value = true
   }
@@ -357,6 +274,7 @@ export function useTechStack() {
   const openEditEditor = (item: AdminTechStackItem): void => {
     editorMode.value = 'edit'
     editingId.value = item.id
+    iconObjectKey.value = extractObjectKeyFromUrl(item.iconPng)
     formModel.name = item.name
     formModel.iconPng = item.iconPng || ''
     formModel.officialUrl = item.officialUrl || ''
@@ -385,18 +303,6 @@ export function useTechStack() {
       formErrors.name = '技术栈名称长度不能超过 100 个字符'
       return false
     }
-
-    const duplicateItem = allTechStacks.value.find((item) => {
-      const sameName = item.name.trim().toLowerCase() === normalizedName.toLowerCase()
-      const notCurrentItem = item.id !== editingId.value
-      return sameName && notCurrentItem
-    })
-
-    if (duplicateItem) {
-      formErrors.name = '技术栈名称已存在'
-      return false
-    }
-
     delete formErrors.name
     return true
   }
@@ -449,6 +355,57 @@ export function useTechStack() {
     return validName && validSort && validIconUrl && validOfficialUrl && validColor
   }
 
+  const buildCreatePayload = () => ({
+    name: formModel.name.trim(),
+    iconPng: normalizeOptionalText(formModel.iconPng),
+    officialUrl: normalizeOptionalText(formModel.officialUrl),
+    description: normalizeOptionalText(formModel.description),
+    color: normalizeOptionalText(formModel.color),
+    sort: formModel.sort,
+  })
+
+  const handleIconUpload = async (event: FileUploadUploaderEvent): Promise<void> => {
+    const selectedFile = event.files[0]
+    if (!selectedFile) {
+      return
+    }
+
+    iconUploading.value = true
+    try {
+      if (iconObjectKey.value) {
+        try {
+          await deleteAdminTechStackIcon(iconObjectKey.value)
+        } catch {
+          // 旧图标删除失败不阻塞上传
+        }
+        iconObjectKey.value = ''
+      }
+
+      const uploadResult = await uploadAdminTechStackIcon(selectedFile)
+      formModel.iconPng = uploadResult.iconUrl
+      iconObjectKey.value = uploadResult.objectKey
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: resolveErrorMessage(error, '图标上传失败'),
+      })
+    } finally {
+      iconUploading.value = false
+    }
+  }
+
+  const handleIconClear = async (): Promise<void> => {
+    if (iconObjectKey.value) {
+      try {
+        await deleteAdminTechStackIcon(iconObjectKey.value)
+      } catch {
+        // 删除失败不阻塞前端清理
+      }
+      iconObjectKey.value = ''
+    }
+    formModel.iconPng = ''
+  }
+
   const saveItem = async (): Promise<void> => {
     if (editorSubmitting.value) {
       return
@@ -462,52 +419,20 @@ export function useTechStack() {
     editorSubmitting.value = true
 
     try {
-      const now = new Date().toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      }).replace(/\//g, '-')
-
       if (editorMode.value === 'create') {
-        const newItem: AdminTechStackItem = {
-          id: nextId++,
-          name: formModel.name.trim(),
-          iconPng: normalizeOptionalText(formModel.iconPng) || '',
-          officialUrl: normalizeOptionalText(formModel.officialUrl) || '',
-          description: formModel.description.trim(),
-          color: formModel.color.trim(),
-          status: 'ACTIVE',
-          sort: formModel.sort,
-          createdAt: now,
-          updatedAt: now,
-          userCount: 0,
-        }
-        allTechStacks.value = [newItem, ...allTechStacks.value]
+        await createAdminTechStack(buildCreatePayload())
         showToast({ type: 'success', title: '技术栈创建成功' })
       } else if (editingId.value !== null) {
-        allTechStacks.value = allTechStacks.value.map((item) => {
-          if (item.id !== editingId.value) {
-            return item
-          }
-          return {
-            ...item,
-            name: formModel.name.trim(),
-            iconPng: normalizeOptionalText(formModel.iconPng) || '',
-            officialUrl: normalizeOptionalText(formModel.officialUrl) || '',
-            description: formModel.description.trim(),
-            color: formModel.color.trim(),
-            sort: formModel.sort,
-            status: formModel.status,
-            updatedAt: now,
-          }
-        })
+        const payload = {
+          ...buildCreatePayload(),
+          status: mapStatusToValue(formModel.status),
+        }
+        await updateAdminTechStack(editingId.value, payload)
         showToast({ type: 'success', title: '技术栈更新成功' })
       }
 
       editorOpen.value = false
+      await reloadTechStackData()
     } catch (error) {
       showToast({
         type: 'error',
@@ -541,12 +466,11 @@ export function useTechStack() {
 
     deleteSubmitting.value = true
     try {
-      allTechStacks.value = allTechStacks.value.filter(
-        (item) => item.id !== deletingItem.value!.id,
-      )
+      await deleteAdminTechStack(deletingItem.value.id)
       selectedIds.value = selectedIds.value.filter((id) => id !== deletingItem.value!.id)
       showToast({ type: 'success', title: '技术栈删除成功' })
       closeDeleteDialog()
+      await reloadTechStackData()
     } catch (error) {
       showToast({
         type: 'error',
@@ -578,12 +502,11 @@ export function useTechStack() {
 
     batchDeleteSubmitting.value = true
     try {
-      const idsToDelete = new Set(selectedIds.value)
-      allTechStacks.value = allTechStacks.value.filter((item) => !idsToDelete.has(item.id))
-      const deletedCount = idsToDelete.size
+      const deletedCount = await batchDeleteAdminTechStack({ techStackIds: selectedIds.value })
       selectedIds.value = []
       showToast({ type: 'success', title: `已删除 ${deletedCount} 个技术栈` })
       closeBatchDeleteDialog()
+      await reloadTechStackData()
     } catch (error) {
       showToast({
         type: 'error',
@@ -594,18 +517,21 @@ export function useTechStack() {
     }
   }
 
-  const toggleStatus = (item: AdminTechStackItem): void => {
-    const newStatus: AdminTechStackStatus = item.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE'
-    allTechStacks.value = allTechStacks.value.map((stack) => {
-      if (stack.id !== item.id) {
-        return stack
-      }
-      return { ...stack, status: newStatus }
-    })
-    showToast({
-      type: 'success',
-      title: newStatus === 'ACTIVE' ? '技术栈已启用' : '技术栈已禁用',
-    })
+  const toggleStatus = async (item: AdminTechStackItem): Promise<void> => {
+    const targetStatus: AdminTechStackStatusValue = item.status === 'ACTIVE' ? 0 : 1
+    try {
+      await updateAdminTechStackStatus(item.id, targetStatus)
+      showToast({
+        type: 'success',
+        title: targetStatus === 1 ? '技术栈已启用' : '技术栈已禁用',
+      })
+      await reloadTechStackData()
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: resolveErrorMessage(error, '状态切换失败'),
+      })
+    }
   }
 
   const setSelectedIds = (ids: number[]): void => {
@@ -620,6 +546,7 @@ export function useTechStack() {
     }
     currentPage.value -= 1
     selectedIds.value = []
+    void loadTechStackPage()
   }
 
   const nextPage = (): void => {
@@ -628,6 +555,7 @@ export function useTechStack() {
     }
     currentPage.value += 1
     selectedIds.value = []
+    void loadTechStackPage()
   }
 
   const goToPage = (page: number | string): void => {
@@ -639,6 +567,7 @@ export function useTechStack() {
     }
     currentPage.value = page
     selectedIds.value = []
+    void loadTechStackPage()
   }
 
   watch(totalPages, (nextTotalPages) => {
@@ -649,11 +578,18 @@ export function useTechStack() {
   })
 
   onMounted(() => {
-    void refreshTechStacks(true)
+    void reloadTechStackData()
+  })
+
+  onBeforeUnmount(() => {
+    if (searchTimer) {
+      clearTimeout(searchTimer)
+      searchTimer = null
+    }
   })
 
   return {
-    techStacks: pagedTechStacks,
+    techStacks,
     currentPage,
     pageSize,
     totalItems,
@@ -662,6 +598,7 @@ export function useTechStack() {
     searchKeyword,
     sortField,
     sortOrder,
+    loading,
     editorOpen,
     editorMode,
     editorSubmitting,
@@ -673,6 +610,8 @@ export function useTechStack() {
     selectedIds,
     batchDeleteDialogOpen,
     batchDeleteSubmitting,
+    iconUploading,
+    iconObjectKey,
     stats,
 
     refreshTechStacks,
@@ -693,5 +632,7 @@ export function useTechStack() {
     prevPage,
     nextPage,
     goToPage,
+    handleIconUpload,
+    handleIconClear,
   }
 }

@@ -8,6 +8,7 @@ import AdminPagination from '@/components/admin/common/AdminPagination.vue'
 import TechStackEditorModal from '@/components/admin/tech-stack/TechStackEditorModal.vue'
 import { useTechStack } from '@/composables/admin/useTechStack'
 import { useAdminNavStore } from '@/stores/adminNav'
+import type { FileUploadUploaderEvent } from 'primevue/fileupload'
 import type {
   AdminTechStackFormModel,
   AdminTechStackItem,
@@ -38,6 +39,7 @@ const {
   selectedIds,
   batchDeleteDialogOpen,
   batchDeleteSubmitting,
+  iconUploading,
   stats,
 
   refreshTechStacks,
@@ -58,6 +60,8 @@ const {
   prevPage,
   nextPage,
   goToPage,
+  handleIconUpload,
+  handleIconClear,
 } = useTechStack()
 
 const updateFormModel = (nextValue: AdminTechStackFormModel): void => {
@@ -94,6 +98,14 @@ const handleBatchDeleteModalOpenChange = (value: boolean): void => {
 
 const refreshData = () => {
   void refreshTechStacks()
+}
+
+const onIconUpload = (event: FileUploadUploaderEvent): void => {
+  void handleIconUpload(event)
+}
+
+const onIconClear = (): void => {
+  void handleIconClear()
 }
 
 const enabledPercent = () => {
@@ -273,6 +285,7 @@ onMounted(() => {
       :modelValue="formModel"
       :errors="formErrors"
       :submitting="editorSubmitting"
+      :iconUploading="iconUploading"
       @update:open="
         (value) => {
           if (!value) closeEditor()
@@ -280,6 +293,8 @@ onMounted(() => {
       "
       @update:modelValue="updateFormModel"
       @submit="saveItem"
+      @upload="onIconUpload"
+      @clear="onIconClear"
     />
 
     <!-- Single Delete Dialog -->

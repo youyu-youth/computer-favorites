@@ -10,12 +10,15 @@ const props = defineProps<{
   modelValue: AdminTechStackFormModel
   errors: Record<string, string>
   submitting: boolean
+  iconUploading: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:open', val: boolean): void
   (e: 'update:modelValue', val: AdminTechStackFormModel): void
   (e: 'submit'): void
+  (e: 'upload', event: FileUploadUploaderEvent): void
+  (e: 'clear'): void
 }>()
 
 const isCreate = computed(() => props.mode === 'create')
@@ -49,14 +52,12 @@ const handleInput = (field: 'name' | 'officialUrl' | 'description', event: Event
   updateField(field, target.value)
 }
 
-const handleIconUpload = (_event: FileUploadUploaderEvent): void => {
-  // TODO: 对接 MinIO 上传，目前使用假数据模拟
-  const mockUrl = 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg'
-  updateField('iconPng', mockUrl)
+const handleIconUpload = (event: FileUploadUploaderEvent): void => {
+  emit('upload', event)
 }
 
 const handleIconClear = (): void => {
-  updateField('iconPng', '')
+  emit('clear')
 }
 
 const handleColorInput = (event: Event): void => {
@@ -170,6 +171,7 @@ const inputClass = (hasError: boolean) => [
               chooseIcon="fas fa-cloud-arrow-up"
               helperText="支持 PNG、SVG 格式，建议 64x64 以上"
               :maxFileSize="2 * 1024 * 1024"
+              :uploading="iconUploading"
               :submitting="submitting"
               @upload="handleIconUpload"
               @clear="handleIconClear"

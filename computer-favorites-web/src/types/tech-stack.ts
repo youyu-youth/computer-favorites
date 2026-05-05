@@ -45,5 +45,31 @@ export interface AdminTechStackStats {
   disabled: number
 }
 
-export type AdminTechStackSortField = 'sort' | 'createdAt' | 'updatedAt'
+export type AdminTechStackSortField = 'sort' | 'name' | 'status' | 'createdAt' | 'updatedAt'
 export type AdminTechStackSortOrder = 1 | -1
+
+export interface AdminTechStackPage {
+  records: AdminTechStackItem[]
+  total: number
+  pageNum: number
+  pageSize: number
+  totalPages: number
+}
+
+export interface AdminTechStackPageQuery {
+  pageNum: number
+  pageSize: number
+  keyword?: string
+  status?: AdminTechStackStatusValue
+  sortField?: AdminTechStackSortField
+  sortOrder?: AdminTechStackSortOrder
+}
+
+export interface AdminTechStackBatchDeletePayload {
+  techStackIds: number[]
+}
+
+export interface AdminTechStackIconUploadResult {
+  objectKey: string
+  iconUrl: string
+}
