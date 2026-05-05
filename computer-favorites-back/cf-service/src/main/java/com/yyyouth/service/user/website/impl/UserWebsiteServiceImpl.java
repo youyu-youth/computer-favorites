@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -203,6 +204,34 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
         detailVO.setIsCollected(resolveIsCollected(websiteId));
         detailVO.setIsLiked(resolveIsLiked(websiteId));
         detailVO.setUserScore(resolveUserScore(websiteId));
+
+        /**
+         * 从 t_website_score 实时统计平均分和评分人数
+         * 若 t_website 表中存储值与实时统计不一致，触发重算修正数据库
+         */
+        Map<String, Object> scoreStats = websiteScoreMapper.selectScoreStats(websiteId);
+        if (scoreStats != null) {
+            BigDecimal realScore = scoreStats.get("avgScore") instanceof BigDecimal
+                    ? (BigDecimal) scoreStats.get("avgScore") : BigDecimal.ZERO;
+            Long realCount = scoreStats.get("scoreCount") instanceof Number
+                    ? ((Number) scoreStats.get("scoreCount")).longValue() : 0L;
+            detailVO.setScore(realScore);
+            detailVO.setScoreCount(realCount.intValue());
+
+            boolean needRecalculate = false;
+            BigDecimal currentScore = website.getScore();
+            Integer currentCount = website.getScoreCount();
+            if (currentScore == null || currentScore.compareTo(realScore) != 0) {
+                needRecalculate = true;
+            }
+            if (currentCount == null || currentCount != realCount.intValue()) {
+                needRecalculate = true;
+            }
+            if (needRecalculate) {
+                websiteMapper.recalculateScore(websiteId);
+            }
+        }
+
         return detailVO;
     }
 

@@ -21,8 +21,8 @@ public interface WebsiteMapper extends BaseMapper<Website> {
      * @param websiteId 网站ID
      * @return 影响行数
      */
-    @Update("UPDATE t_website SET score = (SELECT IFNULL(ROUND(AVG(score), 1), 0) " +
-            "FROM t_website_score WHERE website_id = #{websiteId}), " +
+    @Update("UPDATE t_website SET score = (SELECT IFNULL(ROUND(AVG(wss.score), 1), 0) " +
+            "FROM t_website_score wss WHERE wss.website_id = #{websiteId}), " +
             "score_count = (SELECT COUNT(*) FROM t_website_score WHERE website_id = #{websiteId}) " +
             "WHERE id = #{websiteId}")
     int recalculateScore(@Param("websiteId") Long websiteId);

@@ -12,6 +12,8 @@ import {
   Calendar,
   History,
   Star,
+  Users,
+  TrendingUp,
 } from 'lucide-vue-next'
 
 import { getWebsiteDetail } from '@/api/website'
@@ -593,7 +595,7 @@ watch(
             </div>
 
             <div>
-              <h4 class="mb-3 text-lg font-bold text-gray-900 dark:text-white">开发资源</h4>
+              <h4 class="mb-3 text-lg font-bold text-gray-900 dark:text-white">其他信息</h4>
               <ul class="space-y-4 text-sm">
                 <li>
                   <button
@@ -632,50 +634,56 @@ watch(
             </div>
 
             <div
-              class="flat-design rounded border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-black"
+              class="rounded-xl border border-gray-200/60 bg-gray-50/50 p-5 dark:border-gray-800/60 dark:bg-gray-900/30"
             >
-              <ul class="space-y-4">
-                <li class="flex items-center gap-3 text-sm">
+              <div class="space-y-4">
+                <div class="flex items-center gap-3">
                   <div
-                    class="flex h-5 w-5 items-center justify-center rounded-full border-2 border-green-500 text-[10px] font-bold text-green-500"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400"
                   >
-                    {{ scoreGrade }}
+                    <Star class="h-4 w-4" fill="currentColor" />
                   </div>
-                  <span class="text-gray-700 dark:text-gray-300"
-                    >综合评分 – {{ scoreBadge }} / 5.0</span
-                  >
-                </li>
-                <li class="flex items-center gap-3 text-sm">
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">综合评分</p>
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-bold text-gray-900 dark:text-gray-100">
+                        {{ scoreBadge }} / 5.0
+                      </span>
+                      <span
+                        v-if="scoreValue > 0"
+                        class="inline-flex h-5 items-center rounded-full bg-emerald-500/10 px-2 text-[10px] font-bold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
+                      >
+                        {{ scoreGrade }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
                   <div
-                    class="flex h-5 w-5 items-center justify-center rounded-full border-2 border-green-500 text-[10px] font-bold text-green-500"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400"
                   >
-                    A
+                    <Users class="h-4 w-4" />
                   </div>
-                  <span class="text-gray-700 dark:text-gray-300"
-                    >评分人数 – {{ formatCount(detail.scoreCount) }} 人</span
-                  >
-                </li>
-                <li class="flex items-center gap-3 text-sm">
+                  <div class="min-w-0">
+                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">评分人数</p>
+                    <p class="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      {{ formatCount(detail.scoreCount) }} 人
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
                   <div
-                    class="flex h-5 w-5 items-center justify-center rounded-full border-2 border-green-500 text-[10px] font-bold text-green-500"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400"
                   >
-                    A
+                    <TrendingUp class="h-4 w-4" />
                   </div>
-                  <span class="text-gray-700 dark:text-gray-300"
-                    >互动热度 – {{ formatCount(detail.clickCount) }} 浏览</span
-                  >
-                </li>
-              </ul>
-              <div class="mt-4 border-t border-gray-200 pt-3 text-center dark:border-gray-800">
-                <a
-                  :href="websiteUrl || undefined"
-                  class="cursor-pointer text-xs text-gray-500 underline hover:text-primary-500 dark:text-gray-400"
-                  :class="!websiteUrl ? 'pointer-events-none opacity-60' : ''"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  查看网站原始地址
-                </a>
+                  <div class="min-w-0">
+                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">互动热度</p>
+                    <p class="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      {{ formatCount(detail.clickCount) }} 浏览
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
