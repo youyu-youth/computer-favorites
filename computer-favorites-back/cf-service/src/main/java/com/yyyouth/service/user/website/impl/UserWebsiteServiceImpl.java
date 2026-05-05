@@ -5,6 +5,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.UserWebsiteQueryDTO;
@@ -233,6 +234,21 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
         }
 
         return detailVO;
+    }
+
+    /**
+     * 增加网站点击量
+     *
+     * @param websiteId 网站ID
+     */
+    @Override
+    public void incrementClickCount(Long websiteId) {
+        websiteMapper.update(null, new LambdaUpdateWrapper<Website>()
+                .eq(Website::getId, websiteId)
+                .eq(Website::getDeleted, NOT_DELETED)
+                .eq(Website::getStatus, ONLINE_STATUS)
+                .eq(Website::getAuditStatus, AUDIT_APPROVED_STATUS)
+                .setSql("click_count = click_count + 1"));
     }
 
     /**

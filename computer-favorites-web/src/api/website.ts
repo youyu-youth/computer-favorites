@@ -1,4 +1,4 @@
-import { getJson } from '@/utils/http'
+import { getJson, postJson } from '@/utils/http'
 import type { ApiResult } from '@/api/types'
 import type {
   PublicWebsiteCategory,
@@ -84,6 +84,14 @@ export async function getWebsiteDetail(websiteId: number): Promise<PublicWebsite
     throw new Error('网站详情为空')
   }
   return res.data
+}
+
+/** 增加网站点击量 */
+export async function incrementClickCount(websiteId: number): Promise<void> {
+  const res = await postJson<ApiResult<null>>(`/api/website/${websiteId}/click`)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '增加点击量失败')
+  }
 }
 
 export async function getWebsiteTagPage(

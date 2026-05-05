@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -44,5 +45,20 @@ public class UserWebsiteDetailController {
         UserWebsiteDetailVO detailVO = userWebsiteService.queryWebsiteDetail(id);
         log.info("用户端查询网站详情成功，id={}", id);
         return HttpResult.success("查询成功", detailVO);
+    }
+
+    /**
+     * 增加网站点击量
+     *
+     * @param id 网站ID
+     * @return 操作结果
+     */
+    @ApiOperation(value = "增加网站点击量")
+    @PostMapping("/{id}/click")
+    public HttpResult click(@PathVariable @NotNull @Positive Long id) {
+        log.info("收到网站点击请求，id={}", id);
+        userWebsiteService.incrementClickCount(id);
+        log.info("网站点击处理完成，id={}", id);
+        return HttpResult.success("操作成功");
     }
 }

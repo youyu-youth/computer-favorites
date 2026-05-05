@@ -37,4 +37,11 @@ public interface UserWebsiteService {
      * @return 网站详情
      */
     UserWebsiteDetailVO queryWebsiteDetail(Long websiteId);
+
+    /**
+     * 增加网站点击量
+     *
+     * @param websiteId 网站ID
+     */
+    void incrementClickCount(Long websiteId);
 }

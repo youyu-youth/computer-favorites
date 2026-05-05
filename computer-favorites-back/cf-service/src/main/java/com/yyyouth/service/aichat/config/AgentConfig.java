@@ -11,6 +11,7 @@ import org.springframework.ai.chat.client.advisor.StructuredOutputValidationAdvi
 import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.deepseek.DeepSeekChatModel;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,6 +43,8 @@ public class AgentConfig {
 
     private final ChatMemory jdbcChatMemory;
 
+    private final ToolCallback[] toolCallback;
+
 
     @Bean(name = "deepseekChatClient")
     public ChatClient deepseekChatClient() {
@@ -49,6 +52,7 @@ public class AgentConfig {
         ChatClient chatClient = ChatClient.builder(deepSeekChatModel)
                 .defaultSystem(SYSTEM_PROMPT)  // 设置默认系统提示
                 .defaultAdvisors(PromptChatMemoryAdvisor.builder(jdbcChatMemory).build())
+                .defaultToolCallbacks(toolCallback) // 设置工具回调
                 .build();
         return chatClient;
     }
@@ -60,6 +64,7 @@ public class AgentConfig {
         ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)  // 设置默认系统提示
                 .defaultAdvisors(PromptChatMemoryAdvisor.builder(jdbcChatMemory).build())
+                .defaultToolCallbacks(toolCallback) // 设置工具回调
                 .build();
         return chatClient;
     }

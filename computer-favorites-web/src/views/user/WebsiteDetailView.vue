@@ -16,7 +16,7 @@ import {
   TrendingUp,
 } from 'lucide-vue-next'
 
-import { getWebsiteDetail } from '@/api/website'
+import { getWebsiteDetail, incrementClickCount } from '@/api/website'
 import { cancelCollect } from '@/api/user-collect'
 import { likeWebsite, unlikeWebsite } from '@/api/user-website-like'
 import { scoreWebsite } from '@/api/user-website-score'
@@ -341,6 +341,15 @@ const loadDetail = async () => {
     detail.value = detailData
     isCollected.value = Boolean(detailData.isCollected)
     isLiked.value = Boolean(detailData.isLiked)
+
+    // 增加网站点击量（非阻塞，失败不影响页面）
+    incrementClickCount(websiteId.value)
+      .then(() => {
+        if (detail.value && requestId === latestRequestId) {
+          detail.value.clickCount = (detail.value.clickCount || 0) + 1
+        }
+      })
+      .catch(() => {})
   } catch (error) {
     if (requestId !== latestRequestId) {
       return
