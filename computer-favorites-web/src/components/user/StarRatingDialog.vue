@@ -26,6 +26,8 @@ const selectedRating = ref(props.currentRating)
 const commentText = ref('')
 let previousScrollY = 0
 
+const hasScored = computed(() => props.currentRating > 0)
+
 const ratingLabels: Record<number, string> = {
   1: '较差',
   2: '一般',
@@ -35,16 +37,18 @@ const ratingLabels: Record<number, string> = {
 }
 
 const displayRating = computed(() => {
+  if (hasScored.value) return props.currentRating
   if (hoverRating.value > 0) return hoverRating.value
   return selectedRating.value
 })
 
 const ratingLabel = computed(() => {
+  if (hasScored.value) return '您已对该网站评分'
   const r = displayRating.value
   return r > 0 ? ratingLabels[r] : '点击星星评分'
 })
 
-const canSubmit = computed(() => selectedRating.value > 0)
+const canSubmit = computed(() => !hasScored.value && selectedRating.value > 0)
 
 function getStarState(index: number): 'full' | 'empty' {
   return index <= displayRating.value ? 'full' : 'empty'
@@ -167,20 +171,32 @@ defineOptions({
           {{ websiteName }}
         </p>
 
+        <p
+          v-if="hasScored"
+          class="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-600 dark:bg-amber-900/20 dark:text-amber-400"
+        >
+          您已对该网站评分，每个网站只能评分一次
+        </p>
+
         <div
           class="flex items-center gap-2.5"
-          @mouseleave="onStarLeave"
+          :class="hasScored ? '' : ''"
+          @mouseleave="hasScored ? undefined : onStarLeave()"
         >
           <button
             v-for="index in MAX_STARS"
             :key="index"
             type="button"
-            class="star-btn cursor-pointer border-0 bg-transparent p-0 outline-none transition-all duration-300"
-            :class="getStarState(index) === 'full' ? 'scale-110' : 'scale-100 hover:scale-105'"
+            class="star-btn border-0 bg-transparent p-0 outline-none transition-all duration-300"
+            :class="[
+              getStarState(index) === 'full' ? 'scale-110' : 'scale-100',
+              hasScored ? 'cursor-default' : 'cursor-pointer hover:scale-105',
+            ]"
             :style="{ transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }"
             :aria-label="`${index} 星`"
-            @mouseenter="onStarEnter(index)"
-            @click="onStarClick(index)"
+            :disabled="hasScored"
+            @mouseenter="hasScored ? undefined : onStarEnter(index)"
+            @click="hasScored ? undefined : onStarClick(index)"
           >
             <Star
               class="star-icon h-10 w-10 transition-all duration-300"
@@ -241,14 +257,16 @@ defineOptions({
           type="button"
           class="cursor-pointer rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98]"
           :class="
-            canSubmit
-              ? 'bg-amber-500 text-white shadow-[0_2px_12px_rgba(245,158,11,0.25)] hover:bg-amber-400 hover:shadow-[0_4px_20px_rgba(245,158,11,0.35)] dark:bg-amber-400 dark:text-zinc-900 dark:hover:bg-amber-300'
-              : 'cursor-not-allowed bg-zinc-200 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600'
+            hasScored
+              ? 'cursor-not-allowed bg-amber-100 text-amber-500 dark:bg-amber-900/30 dark:text-amber-400'
+              : canSubmit
+                ? 'bg-amber-500 text-white shadow-[0_2px_12px_rgba(245,158,11,0.25)] hover:bg-amber-400 hover:shadow-[0_4px_20px_rgba(245,158,11,0.35)] dark:bg-amber-400 dark:text-zinc-900 dark:hover:bg-amber-300'
+                : 'cursor-not-allowed bg-zinc-200 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600'
           "
           :disabled="!canSubmit"
           @click="handleSubmit"
         >
-          提交评分
+          {{ hasScored ? '已评分' : '提交评分' }}
         </button>
       </div>
     </template>

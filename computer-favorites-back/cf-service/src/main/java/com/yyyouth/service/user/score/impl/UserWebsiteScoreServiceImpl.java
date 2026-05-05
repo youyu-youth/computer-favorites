@@ -38,7 +38,7 @@ public class UserWebsiteScoreServiceImpl implements UserWebsiteScoreService {
     private final WebsiteMapper websiteMapper;
 
     /**
-     * 网站评分（upsert）
+     * 网站评分（一个用户只能评分一次）
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -47,7 +47,20 @@ public class UserWebsiteScoreServiceImpl implements UserWebsiteScoreService {
 
         validateWebsiteOnline(websiteId);
 
-        websiteScoreMapper.upsert(userId, websiteId, score);
+        WebsiteScore existing = websiteScoreMapper.selectOne(new LambdaQueryWrapper<WebsiteScore>()
+                .eq(WebsiteScore::getUserId, userId)
+                .eq(WebsiteScore::getWebsiteId, websiteId)
+                .last("limit 1"));
+        if (existing != null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "您已对该网站评分，无法重复评分");
+        }
+
+        WebsiteScore record = WebsiteScore.builder()
+                .userId(userId)
+                .websiteId(websiteId)
+                .score(score)
+                .build();
+        websiteScoreMapper.insert(record);
         websiteMapper.recalculateScore(websiteId);
 
         log.info("网站评分成功，userId={}, websiteId={}, score={}", userId, websiteId, score);

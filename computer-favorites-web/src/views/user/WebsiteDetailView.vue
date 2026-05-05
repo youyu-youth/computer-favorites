@@ -114,6 +114,14 @@ const scoreValue = computed(() => {
 
 const scoreBadge = computed(() => scoreValue.value.toFixed(1))
 
+const userScoreBadge = computed(() => {
+  const userScore = detail.value?.userScore
+  if (userScore != null && userScore > 0) {
+    return userScore.toFixed(1)
+  }
+  return '未评分'
+})
+
 const scoreGrade = computed(() => {
   if (scoreValue.value >= 4.5) {
     return 'A'
@@ -178,6 +186,11 @@ const isCollected = ref(false)
 
 const isLiked = ref(false)
 
+const isScored = computed(() => {
+  const score = detail.value?.userScore
+  return score != null && score > 0
+})
+
 const isCanceling = ref(false)
 
 const isLiking = ref(false)
@@ -228,6 +241,15 @@ const handleCollectClick = () => {
 const handleRatingClick = () => {
   if (!authStore.isAuthed) {
     window.location.href = `/computer/login?redirect=${encodeURIComponent(route.fullPath)}`
+    return
+  }
+  if (isScored.value) {
+    message.add({
+      title: '您已评分',
+      description: '每个网站只能评分一次',
+      type: 'warning',
+      position: 'top-right',
+    })
     return
   }
   showRatingDialog.value = true
@@ -450,10 +472,19 @@ watch(
               <BookOpen class="h-4 w-4" /> 分类 {{ categoryName }}
             </div>
             <button
-              class="flex items-center gap-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+              class="flex items-center gap-2 rounded border px-3 py-1.5 text-sm transition-colors cursor-pointer"
+              :class="
+                isScored
+                  ? 'border-amber-400 bg-amber-50 text-amber-600 dark:border-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
+                  : 'border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+              "
               @click="handleRatingClick"
             >
-              <Star class="h-4 w-4" /> 评分 {{ scoreBadge }} / 5.0
+              <Star
+                class="h-4 w-4"
+                :class="isScored ? 'fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400' : ''"
+              />
+              {{ isScored ? `评分 ${userScoreBadge} / 5.0` : '未评分' }}
             </button>
             <button
               class="flex items-center gap-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
@@ -545,11 +576,19 @@ watch(
                 访问网站
               </a>
               <button
-                class="flat-design flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-[#f59e0b]/30 bg-[#f59e0b]/10 px-4 py-3 font-bold text-[#b45309] transition-all hover:bg-[#f59e0b]/20 hover:border-[#f59e0b]/50 dark:border-[#f59e0b]/25 dark:bg-[#f59e0b]/10 dark:text-[#fbbf24] dark:hover:bg-[#f59e0b]/18"
+                class="flat-design flex w-full cursor-pointer items-center justify-center gap-2 rounded border px-4 py-3 font-bold transition-all"
+                :class="
+                  isScored
+                    ? 'border-amber-500/60 bg-amber-500/25 text-amber-700 dark:border-amber-500/50 dark:bg-amber-500/20 dark:text-amber-300'
+                    : 'border-[#f59e0b]/30 bg-[#f59e0b]/10 text-[#b45309] hover:bg-[#f59e0b]/20 hover:border-[#f59e0b]/50 dark:border-[#f59e0b]/25 dark:bg-[#f59e0b]/10 dark:text-[#fbbf24] dark:hover:bg-[#f59e0b]/18'
+                "
                 @click="handleRatingClick"
               >
-                <Star class="h-5 w-5" />
-                评分
+                <Star
+                  class="h-5 w-5"
+                  :class="isScored ? 'fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400' : ''"
+                />
+                {{ isScored ? '已评分' : '评分' }}
               </button>
             </div>
 
