@@ -240,33 +240,35 @@ defineOptions({
     :title="t('user.home.feedback.dialogTitle')"
     :description="''"
     :ui="{
-      overlay: 'feedback-modal-overlay z-[120] bg-black/45 dark:bg-black/75 backdrop-blur-sm',
+      overlay:
+        'feedback-modal-overlay z-[120] bg-zinc-900/35 dark:bg-zinc-950/65 backdrop-blur-xs',
       content:
-        'feedback-modal-content z-[130] !m-0 flex h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] w-screen flex-col overflow-hidden rounded-t-2xl border border-[#f59e0b]/20 bg-[#fffdf7] text-[#2a1b05] shadow-[0_24px_80px_rgba(245,158,11,0.2)] sm:!h-auto sm:!max-h-[85vh] sm:!w-[min(92vw,46rem)] sm:rounded-2xl dark:border-[#f59e0b]/28 dark:bg-black dark:text-[#ffe6b0] dark:shadow-[0_20px_80px_rgba(0,0,0,0.9)]',
+        'feedback-modal-content z-[130] !m-0 flex h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] w-screen flex-col overflow-hidden rounded-t-[2rem] bg-white text-zinc-800 shadow-[0_-8px_50px_-12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] sm:!h-auto sm:!max-h-[85vh] sm:!w-[min(92vw,30rem)] sm:rounded-[2rem] dark:bg-zinc-900 dark:text-zinc-200 dark:shadow-[0_24px_60px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)]',
       header:
-        'feedback-modal-header px-4 pt-5 pb-2 sm:px-8 bg-[#fffdf7] dark:bg-black',
-      title: 'feedback-modal-title text-xl font-bold text-[#1f1404] dark:text-[#fff8e3]',
+        'feedback-modal-header px-5 pt-5 pb-1 sm:px-6 bg-transparent',
+      title:
+        'feedback-modal-title text-lg font-bold tracking-tight text-zinc-800 dark:text-zinc-100',
       description: 'hidden',
-      body: 'feedback-modal-body overflow-y-auto flex-1 px-4 py-4 sm:px-8 bg-[#fffdf7] dark:bg-black',
+      body: 'feedback-modal-body overflow-y-auto flex-1 px-5 py-4 sm:px-6 bg-transparent',
       footer:
-        'feedback-modal-footer mt-auto px-4 pb-4 pt-2 sm:px-8 sm:pb-6 bg-[#fffdf7] dark:bg-black',
+        'feedback-modal-footer mt-auto px-5 pb-5 pt-2 sm:px-6 sm:pb-6 bg-transparent',
     }"
     @update:open="handleDialogOpenChange"
   >
     <template #header>
       <div class="flex w-full items-center justify-between gap-3">
-        <h2 class="text-xl font-bold text-[#1f1404] dark:text-[#fff8e3]">
+        <h2 class="text-lg font-bold tracking-tight text-zinc-800 dark:text-zinc-100">
           {{ t('user.home.feedback.dialogTitle') }}
         </h2>
         <button
           type="button"
-          class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#8b5b10] transition-colors hover:bg-[#f59e0b]/12 hover:text-[#7a4b00] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#d6ad59] dark:hover:bg-[#111] dark:hover:text-[#ffd37f]"
+          class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-all duration-200 hover:bg-zinc-100 hover:text-zinc-600 active:scale-95 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
           :aria-label="t('common.close')"
           :disabled="isBusy"
           @click="closeDialog"
         >
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
@@ -274,18 +276,18 @@ defineOptions({
     <template #body>
       <div class="flex flex-col gap-6">
         <div
-          class="flex items-start gap-3 rounded-xl border border-[#f59e0b]/25 bg-[#f59e0b]/10 p-4 text-[#7a4b00] dark:border-[#f59e0b]/30 dark:bg-[#f59e0b]/12 dark:text-[#e4b35a]"
+          class="flex items-start gap-3 rounded-2xl bg-amber-50/70 p-4 text-amber-800 dark:bg-amber-400/8 dark:text-amber-300"
         >
-          <div class="mt-0.5 text-[#f59e0b]">
+          <div class="mt-0.5 text-amber-500 dark:text-amber-400">
             <svg class="h-5 w-5 fill-current" viewBox="0 0 24 24">
               <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 10H6v-2h12v2zm0-3H6V7h12v2z" />
             </svg>
           </div>
           <div>
-            <p class="text-sm font-semibold text-[#8a5200] dark:text-[#f0c467]">
+            <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">
               欢迎提供反馈
             </p>
-            <p class="mt-1 text-xs leading-relaxed text-[#8a5a10] dark:text-[#bc9345]">
+            <p class="mt-1 text-xs leading-relaxed text-amber-700/80 dark:text-amber-400/70">
               {{ t('user.home.feedback.dialogDescription') }}
             </p>
           </div>
@@ -294,21 +296,21 @@ defineOptions({
         <div class="space-y-2">
           <label
             for="feedback-type"
-            class="block text-sm font-medium text-[#6d4510] dark:text-[#dcb066]"
+            class="block text-sm font-medium text-zinc-600 dark:text-zinc-400"
           >
             {{ t('user.home.feedback.typeLabel') }}
-            <span class="required-asterisk">*</span>
+            <span class="text-red-500">*</span>
           </label>
-          <div id="feedback-type" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div id="feedback-type" class="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button
               v-for="option in feedbackTypeOptions"
               :key="option.value"
               type="button"
-              class="cursor-pointer rounded-xl border px-3 py-2.5 text-center text-sm font-medium transition-all duration-200"
+              class="cursor-pointer rounded-xl px-3 py-2.5 text-center text-sm font-medium transition-all duration-200 active:scale-[0.97]"
               :class="
                 selectedType === option.value
-                  ? 'border-[#f59e0b] bg-[#f59e0b] text-white shadow-[0_8px_24px_rgba(245,158,11,0.35)] dark:text-black'
-                  : 'border-[#f59e0b]/24 bg-transparent text-[#8a5a10] hover:border-[#f59e0b]/60 hover:text-[#6f4300] dark:border-[#2b2b2b] dark:text-[#a98647] dark:hover:border-[#f59e0b]/55 dark:hover:text-[#f4c66f]'
+                  ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-zinc-900'
+                  : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200'
               "
               @click="selectedType = option.value"
             >
@@ -320,17 +322,17 @@ defineOptions({
         <div class="space-y-2">
           <label
             for="feedback-content"
-            class="block text-sm font-medium text-[#6d4510] dark:text-[#dcb066]"
+            class="block text-sm font-medium text-zinc-600 dark:text-zinc-400"
           >
             {{ t('user.home.feedback.contentLabel') }}
-            <span class="required-asterisk">*</span>
+            <span class="text-red-500">*</span>
           </label>
           <textarea
             id="feedback-content"
             v-model="feedbackContent"
             rows="5"
             :maxlength="contentMaxLength"
-            class="w-full rounded-xl border border-[#f59e0b]/25 bg-transparent p-4 text-sm text-[#2a1b05] outline-none transition-all placeholder:text-[#b6863b] focus:border-[#f59e0b] focus:ring-1 focus:ring-[#f59e0b] dark:border-[#2c2c2c] dark:text-[#f2d39b] dark:placeholder:text-[#6e572f] dark:focus:border-[#f59e0b]"
+            class="w-full resize-none rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-800 outline-none ring-0 transition-all duration-200 placeholder:text-zinc-400 focus:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-200 dark:placeholder:text-zinc-500 dark:focus:bg-zinc-800/70"
             :placeholder="t('user.home.feedback.contentPlaceholder')"
           />
           <div class="mt-2 flex items-center justify-between px-1">
@@ -339,7 +341,7 @@ defineOptions({
               :class="
                 contentLength < contentMinLength
                   ? 'text-red-500'
-                  : 'text-[#9a6509] dark:text-[#c3994a]'
+                  : 'text-zinc-400 dark:text-zinc-500'
               "
             >
               {{
@@ -350,7 +352,7 @@ defineOptions({
                 })
               }}
             </p>
-            <span class="text-xs font-mono text-[#c39850] dark:text-[#7d6338]">
+            <span class="text-xs font-mono text-zinc-400 dark:text-zinc-500">
               {{ feedbackContent.length }} / {{ contentMaxLength }}
             </span>
           </div>
@@ -359,7 +361,7 @@ defineOptions({
         <div class="space-y-2">
           <label
             for="feedback-contact"
-            class="block text-sm font-medium text-[#6d4510] dark:text-[#dcb066]"
+            class="block text-sm font-medium text-zinc-600 dark:text-zinc-400"
           >
             {{ t('user.home.feedback.contactLabel') }}
           </label>
@@ -368,20 +370,20 @@ defineOptions({
             v-model="contact"
             type="text"
             :maxlength="contactMaxLength"
-            class="w-full rounded-xl border border-[#f59e0b]/25 bg-transparent px-4 py-3.5 text-sm text-[#2a1b05] outline-none transition-all placeholder:text-[#b6863b] focus:border-[#f59e0b] focus:ring-1 focus:ring-[#f59e0b] dark:border-[#2c2c2c] dark:text-[#f2d39b] dark:placeholder:text-[#6e572f] dark:focus:border-[#f59e0b]"
+            class="w-full rounded-2xl bg-zinc-50 px-4 py-3.5 text-sm text-zinc-800 outline-none ring-0 transition-all duration-200 placeholder:text-zinc-400 focus:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-200 dark:placeholder:text-zinc-500 dark:focus:bg-zinc-800/70"
             :placeholder="t('user.home.feedback.contactPlaceholder')"
           />
         </div>
 
         <div class="space-y-2">
-          <p class="text-sm font-medium text-[#6d4510] dark:text-[#dcb066]">
+          <p class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
             {{ t('user.home.feedback.imagesLabel') }}
           </p>
           <div class="flex flex-wrap gap-2">
             <div
               v-for="(image, index) in uploadedImages"
               :key="image.objectKey"
-              class="group relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-xl border border-[#f59e0b]/30 dark:border-[#2c2c2c]"
+              class="group relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-2xl"
             >
               <img
                 :src="image.imageUrl"
@@ -391,7 +393,7 @@ defineOptions({
               <button
                 type="button"
                 :aria-label="t('user.home.feedback.removeImage', { index: index + 1 })"
-                class="absolute right-1 top-1 hidden h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/75 text-[10px] text-white group-hover:flex group-focus-within:flex"
+                class="absolute right-1 top-1 hidden h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-zinc-900/70 text-[10px] text-white transition-all active:scale-90 group-hover:flex group-focus-within:flex"
                 :disabled="isBusy"
                 @click="removeImage(index)"
               >
@@ -400,7 +402,7 @@ defineOptions({
             </div>
             <label
               v-if="uploadedImages.length < maxImageCount"
-              class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-xl border border-dashed border-[#f59e0b]/35 text-center text-xs font-medium text-[#a06d1c] transition-colors hover:border-[#f59e0b] hover:bg-[#f59e0b]/10 dark:border-[#3a2d13] dark:text-[#b38d4a] dark:hover:border-[#f59e0b]/55 dark:hover:bg-[#111]"
+              class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl bg-zinc-100 text-center text-xs font-medium text-zinc-500 transition-all duration-200 hover:bg-zinc-200 active:scale-[0.97] dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
               :class="isBusy ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'"
             >
               <span>{{ t('user.home.feedback.uploadAction') }}</span>
@@ -419,10 +421,10 @@ defineOptions({
     </template>
 
     <template #footer>
-      <div class="flex w-full flex-col-reverse items-stretch justify-end gap-2 sm:flex-row sm:items-center">
+      <div class="flex w-full flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center">
         <button
           type="button"
-          class="rounded-xl border border-[#f59e0b]/24 bg-transparent px-6 py-2.5 text-sm font-medium text-[#8a5a10] transition-colors hover:bg-[#f59e0b]/8 dark:border-[#2c2c2c] dark:text-[#b8924d] dark:hover:bg-[#101010]"
+          class="cursor-pointer rounded-xl bg-transparent px-6 py-2.5 text-sm font-medium text-zinc-500 transition-all duration-200 hover:bg-zinc-100 hover:text-zinc-700 active:scale-[0.98] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
           :disabled="isBusy"
           @click="closeDialog"
         >
@@ -430,7 +432,12 @@ defineOptions({
         </button>
         <button
           type="button"
-          class="rounded-xl bg-[#f59e0b] px-6 py-2.5 text-sm font-semibold text-white transition-all hover:translate-y-[-1px] hover:bg-[#e58f00] disabled:cursor-not-allowed disabled:bg-[#f59e0b]/35 disabled:text-[#fff3d6] dark:text-black dark:disabled:text-[#8a6a27]"
+          class="cursor-pointer rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98]"
+          :class="
+            canSubmit
+              ? 'bg-amber-500 text-white shadow-[0_2px_12px_rgba(245,158,11,0.25)] hover:bg-amber-400 hover:shadow-[0_4px_20px_rgba(245,158,11,0.35)] dark:bg-amber-400 dark:text-zinc-900 dark:hover:bg-amber-300'
+              : 'cursor-not-allowed bg-zinc-200 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600'
+          "
           :disabled="!canSubmit"
           @click="handleSubmit"
         >
@@ -454,30 +461,5 @@ defineOptions({
   width: 100%;
   overflow: hidden;
   touch-action: none;
-}
-
-:global(.dark .feedback-modal-content) {
-  color: #fff !important;
-}
-
-:global(.dark .feedback-modal-content :is(h1, h2, h3, h4, h5, h6, p, label, span, button, input, textarea)) {
-  color: #fff !important;
-}
-
-:global(.dark .feedback-modal-content :is(div, button, input, textarea, label, p, span)) {
-  border-color: transparent !important;
-}
-
-:global(.dark .feedback-modal-content input::placeholder),
-:global(.dark .feedback-modal-content textarea::placeholder) {
-  color: rgb(255 255 255 / 0.62) !important;
-}
-
-.required-asterisk {
-  color: #ef4444 !important;
-}
-
-:global(.dark .feedback-modal-content span.required-asterisk) {
-  color: #ef4444 !important;
 }
 </style>

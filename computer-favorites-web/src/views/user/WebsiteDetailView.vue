@@ -6,13 +6,12 @@ import {
   ThumbsUp,
   Eye,
   BookOpen,
-  Database,
   Download,
-  Play,
   Globe,
   Flag,
   Calendar,
   History,
+  Star,
 } from 'lucide-vue-next'
 
 import { getWebsiteDetail } from '@/api/website'
@@ -23,6 +22,7 @@ import WebsiteCommentSection from '@/components/user/WebsiteCommentSection.vue'
 import StarRating from '@/components/common/StarRating.vue'
 import ReportDialog from '@/components/user/ReportDialog.vue'
 import CollectFolderDialog from '@/components/user/CollectFolderDialog.vue'
+import StarRatingDialog from '@/components/user/StarRatingDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useMessage } from '@/composables/useMessage'
 import type { PublicWebsiteTagRef, PublicWebsiteDetail } from '@/types/public-website'
@@ -170,6 +170,8 @@ const showReportDialog = ref(false)
 
 const showCollectDialog = ref(false)
 
+const showRatingDialog = ref(false)
+
 const isCollected = ref(false)
 
 const isCanceling = ref(false)
@@ -180,6 +182,28 @@ const handleCollectClick = () => {
     return
   }
   showCollectDialog.value = true
+}
+
+const handleRatingClick = () => {
+  if (!authStore.isAuthed) {
+    window.location.href = `/computer/login?redirect=${encodeURIComponent(route.fullPath)}`
+    return
+  }
+  showRatingDialog.value = true
+}
+
+const handleRatingSubmit = (payload: { rating: number; comment?: string }) => {
+  console.log('评分提交:', { websiteId: websiteId.value, ...payload })
+  // TODO: 调用后端API提交评分
+  message.add({ title: '评分成功', type: 'success', position: 'top-right' })
+  // 更新本地评分显示
+  if (detail.value) {
+    const prevScore = detail.value.score || 0
+    const prevCount = detail.value.scoreCount || 0
+    const newCount = prevCount + 1
+    detail.value.score = (prevScore * prevCount + payload.rating) / newCount
+    detail.value.scoreCount = newCount
+  }
 }
 
 const handleCancelCollect = async () => {
@@ -262,7 +286,11 @@ const loadDetail = async () => {
       collectCount: 0,
       likeCount: 0,
       clickCount: 0,
-      tags: [{id:1,name:'Unity资源',color:'#3b82f6'},{id:2,name:'Pygame',color:'#10b981'},{id:3,name:'Cocos Creator',color:'#f59e0b'}],
+      tags: [
+        { id: 1, name: 'Unity资源', color: '#3b82f6' },
+        { id: 2, name: 'Pygame', color: '#10b981' },
+        { id: 3, name: 'Cocos Creator', color: '#f59e0b' },
+      ],
       categoryName: '游戏开发',
       score: 0,
       scoreCount: 0,
@@ -275,7 +303,7 @@ const loadDetail = async () => {
       updateTime: '2026-04-28 22:16:21',
       description: '',
       summary: 'test',
-      commentCount: 6
+      commentCount: 6,
     } as any
     isCollected.value = false
   } finally {
@@ -349,14 +377,20 @@ watch(
                 >
                   <i
                     class="text-[14px]"
-                    :class="isCollected ? 'fas fa-bookmark text-yellow-500 dark:text-yellow-400' : 'far fa-bookmark'"
+                    :class="
+                      isCollected
+                        ? 'fas fa-bookmark text-yellow-500 dark:text-yellow-400'
+                        : 'far fa-bookmark'
+                    "
                   ></i>
                   {{ isCollected ? '已收藏' : '收藏' }} {{ formatCount(detail.collectCount) }}
                 </button>
                 <div class="ml-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                  <button class="flex items-center gap-1.5 hover:text-primary-500 transition-colors cursor-pointer"
-                    ><ThumbsUp class="h-4 w-4" /> {{ formatCount(detail.likeCount) }}</button
+                  <button
+                    class="flex items-center gap-1.5 hover:text-primary-500 transition-colors cursor-pointer"
                   >
+                    <ThumbsUp class="h-4 w-4" /> {{ formatCount(detail.likeCount) }}
+                  </button>
                   <span class="flex items-center gap-1.5"
                     ><Eye class="h-4 w-4" /> {{ formatCount(detail.clickCount) }}</span
                   >
@@ -364,14 +398,13 @@ watch(
               </div>
 
               <div class="mt-3 flex flex-wrap items-center gap-2">
-
                 <span
                   v-for="tag in displayTags"
                   :key="tag.id"
                   class="rounded px-2 py-0.5 text-[11px] font-medium border-none"
                   :style="{
                     backgroundColor: buildTagColorStyle(tag.color).backgroundColor,
-                    color: buildTagColorStyle(tag.color).color
+                    color: buildTagColorStyle(tag.color).color,
                   }"
                 >
                   {{ tag.name }}
@@ -392,11 +425,12 @@ watch(
             >
               <BookOpen class="h-4 w-4" /> 分类 {{ categoryName }}
             </div>
-            <div
-              class="flex items-center gap-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300"
+            <button
+              class="flex items-center gap-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+              @click="handleRatingClick"
             >
-              <Database class="h-4 w-4" /> 评分 {{ scoreBadge }} / 5.0
-            </div>
+              <Star class="h-4 w-4" /> 评分 {{ scoreBadge }} / 5.0
+            </button>
             <button
               class="flex items-center gap-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
               @click="handleReportClick"
@@ -406,7 +440,9 @@ watch(
           </div>
         </header>
 
-        <div class="mb-6 flex flex-col gap-4 border-b border-gray-200 dark:border-gray-800 md:flex-row md:items-end md:justify-between md:gap-0">
+        <div
+          class="mb-6 flex flex-col gap-4 border-b border-gray-200 dark:border-gray-800 md:flex-row md:items-end md:justify-between md:gap-0"
+        >
           <nav class="no-scrollbar order-2 flex gap-6 overflow-x-auto md:order-1">
             <button
               v-for="tab in tabs"
@@ -422,17 +458,22 @@ watch(
               {{ tab }}
             </button>
           </nav>
-          <div class="order-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-500 sm:text-xs md:order-2 md:gap-4 md:pb-3 dark:text-gray-400">
-            <span class="flex items-center gap-1.5 cursor-pointer hover:text-primary-500 transition-colors">
+          <div
+            class="order-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-500 sm:text-xs md:order-2 md:gap-4 md:pb-3 dark:text-gray-400"
+          >
+            <span
+              class="flex items-center gap-1.5 cursor-pointer hover:text-primary-500 transition-colors"
+            >
               提供者: <span class="text-primary-500">{{ providerText }}</span>
             </span>
             <span class="flex items-center gap-1.5"
-              ><span class="h-2 w-2 rounded-full bg-blue-400"></span> 评分 {{ scoreCountText }}</span
+              ><span class="h-2 w-2 rounded-full bg-blue-400"></span> 评分
+              {{ scoreCountText }}</span
             >
             <span
               v-if="detail?.isRecommend === 1"
               class="flex items-center gap-1 rounded px-2 py-1 sm:py-1.5 text-[11px] font-medium sm:text-xs"
-              style="color: #e95322; background-color: rgba(233, 83, 34, 0.15);"
+              style="color: #e95322; background-color: rgba(233, 83, 34, 0.15)"
             >
               <img :src="recommendIcon" alt="管理员推荐" class="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               管理员推荐
@@ -446,7 +487,9 @@ watch(
               <blockquote
                 class="flat-design mb-6 w-full rounded-r border-l-4 border-primary-500 bg-primary-500/10 p-4 dark:bg-primary-500/20"
               >
-                <p class="text-sm italic leading-relaxed text-primary-600 md:text-base dark:text-amber-400">
+                <p
+                  class="text-sm italic leading-relaxed text-primary-600 md:text-base dark:text-amber-400"
+                >
                   {{ summaryText }}
                 </p>
               </blockquote>
@@ -469,7 +512,7 @@ watch(
             <div class="flex flex-col gap-3">
               <a
                 :href="websiteUrl || undefined"
-                class="flat-design flex w-full cursor-pointer items-center justify-center gap-2 rounded bg-primary-500 px-4 py-3 font-bold text-white transition-colors hover:bg-primary-600"
+                class="flat-design flex w-full cursor-pointer items-center justify-center gap-2 rounded bg-green-700 px-4 py-3 font-bold text-white transition-colors hover:bg-green-800"
                 :class="!websiteUrl ? 'pointer-events-none opacity-60' : ''"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -477,26 +520,28 @@ watch(
                 <Download class="h-5 w-5" />
                 访问网站
               </a>
-              <a
-                :href="websiteUrl || undefined"
-                class="flat-design flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-gray-300 bg-gray-200 px-4 py-3 font-bold text-gray-900 transition-colors hover:bg-gray-300 dark:border-[#1e4d42] dark:bg-[#112d26] dark:text-gray-100 dark:hover:bg-[#163a32]"
-                :class="!websiteUrl ? 'pointer-events-none opacity-60' : ''"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                class="flat-design flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-[#f59e0b]/30 bg-[#f59e0b]/10 px-4 py-3 font-bold text-[#b45309] transition-all hover:bg-[#f59e0b]/20 hover:border-[#f59e0b]/50 dark:border-[#f59e0b]/25 dark:bg-[#f59e0b]/10 dark:text-[#fbbf24] dark:hover:bg-[#f59e0b]/18"
+                @click="handleRatingClick"
               >
-                <Play class="h-5 w-5" />
-                新窗口打开
-              </a>
+                <Star class="h-5 w-5" />
+                评分
+              </button>
             </div>
 
             <div>
               <h4 class="mb-3 text-lg font-bold text-gray-900 dark:text-white">开发资源</h4>
               <ul class="space-y-4 text-sm">
                 <li>
-                  <div class="flex items-center gap-2">
+                  <button
+                    class="flex items-center gap-2 cursor-pointer hover:text-primary-500 transition-colors"
+                    @click="handleRatingClick"
+                  >
                     <StarRating :score="scoreValue" size-class="h-4 w-4" />
-                    <span class="text-gray-600 dark:text-gray-400 ml-1">{{ scoreBadge }} / 5.0</span>
-                  </div>
+                    <span class="text-gray-600 dark:text-gray-400 ml-1 hover:text-primary-500"
+                      >{{ scoreBadge }} / 5.0</span
+                    >
+                  </button>
                 </li>
                 <li>
                   <a
@@ -533,7 +578,9 @@ watch(
                   >
                     {{ scoreGrade }}
                   </div>
-                  <span class="text-gray-700 dark:text-gray-300">综合评分 – {{ scoreBadge }} / 5.0</span>
+                  <span class="text-gray-700 dark:text-gray-300"
+                    >综合评分 – {{ scoreBadge }} / 5.0</span
+                  >
                 </li>
                 <li class="flex items-center gap-3 text-sm">
                   <div
@@ -571,25 +618,34 @@ watch(
           </div>
         </div>
       </template>
-  </main>
+    </main>
 
-  <!-- Report Dialog -->
-  <ReportDialog
-    v-model:visible="showReportDialog"
-    :website-id="websiteId"
-    :website-name="websiteName"
-    @submit="handleReportSubmit"
-  />
+    <!-- Report Dialog -->
+    <ReportDialog
+      v-model:visible="showReportDialog"
+      :website-id="websiteId"
+      :website-name="websiteName"
+      @submit="handleReportSubmit"
+    />
 
-  <!-- Collect Folder Dialog -->
-  <CollectFolderDialog
-    v-model:visible="showCollectDialog"
-    :website-id="websiteId"
-    :website-name="websiteName"
-    :is-collected="isCollected"
-    @confirm="handleCollectConfirm"
-  />
-</div>
+    <!-- Collect Folder Dialog -->
+    <CollectFolderDialog
+      v-model:visible="showCollectDialog"
+      :website-id="websiteId"
+      :website-name="websiteName"
+      :is-collected="isCollected"
+      @confirm="handleCollectConfirm"
+    />
+
+    <!-- Rating Dialog -->
+    <StarRatingDialog
+      :open="showRatingDialog"
+      :website-name="websiteName"
+      :current-rating="Math.round(scoreValue)"
+      @update:open="showRatingDialog = $event"
+      @submit="handleRatingSubmit"
+    />
+  </div>
 </template>
 
 <style scoped>

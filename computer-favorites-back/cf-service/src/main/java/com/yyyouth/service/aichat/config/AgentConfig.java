@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.StructuredOutputValidationAdvisor;
 import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
+import org.springframework.ai.deepseek.DeepSeekChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,9 +33,25 @@ public class AgentConfig {
     DashScopeChatModel dashscopeChatModel;
 
 
+    @Autowired
+    DeepSeekChatModel deepSeekChatModel;
+
+
+
+
+    @Bean(name = "deepseekChatClient")
+    public ChatClient deepseekChatClient() {
+        log.info("创建deepseekChatClient !~!!!!!");
+        ChatClient chatClient = ChatClient.builder(deepSeekChatModel)
+                .defaultSystem(SYSTEM_PROMPT)  // 设置默认系统提示
+                .build();
+        return chatClient;
+    }
+
+
     @Bean(name = "dashscopeChatClient")
-    public ChatClient chatClient() {
-        log.info("创建ChatClient!~!!!!!");
+    public ChatClient dashscopeChatClient() {
+        log.info("创建dashscopeChatClient !~!!!!!");
         ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)  // 设置默认系统提示
                 .build();
