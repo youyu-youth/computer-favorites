@@ -3,7 +3,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { Bell, Inbox } from 'lucide-vue-next'
 import AppPagination from '@/components/common/AppPagination.vue'
 import MessageItem, { type MessageProps } from '@/components/user/message/MessageItem.vue'
-import UserSelect from '@/components/user/UserSelect.vue'
 import { batchReadUserMessages, getUserMessagePage, markUserMessageRead } from '@/api/user-notification'
 import { useUserMessageUnread } from '@/composables/useUserMessageUnread'
 import { useToast } from '@/composables/useToast'
@@ -32,6 +31,7 @@ const selectedIds = ref<number[]>([])
 const batchLoading = ref(false)
 const allReadLoading = ref(false)
 const singleLoadingIds = ref<number[]>([])
+const typeUnreadCounts = ref<Record<string, number>>({})
 
 let latestRequestId = 0
 
@@ -191,6 +191,29 @@ const loadMessages = async () => {
   }
 }
 
+const loadTypeUnreadCounts = async () => {
+  const results = await Promise.all(
+    USER_MESSAGE_TYPE_OPTIONS.map(async (option) => {
+      try {
+        const query: UserMessageQuery = { pageNum: 1, pageSize: 1, isRead: 0 }
+        if (option.id !== 'all') {
+          query.type = option.id
+        }
+        const result = await getUserMessagePage(query)
+        return { id: option.id, count: Number(result.unreadCount || 0) }
+      } catch {
+        return { id: option.id, count: 0 }
+      }
+    })
+  )
+
+  const nextCounts: Record<string, number> = {}
+  results.forEach(({ id, count }) => {
+    nextCounts[String(id)] = count
+  })
+  typeUnreadCounts.value = nextCounts
+}
+
 const retryLoad = () => {
   void loadMessages()
 }
@@ -237,6 +260,7 @@ const markSingleAsRead = async (message: MessageProps) => {
       title: '消息已标记为已读',
     })
     await loadMessages()
+    await loadTypeUnreadCounts()
   } catch (error) {
     showToast({
       type: 'error',
@@ -292,6 +316,7 @@ const markSelectedAsRead = async () => {
 
     selectedIds.value = []
     await loadMessages()
+    await loadTypeUnreadCounts()
   } catch (error) {
     showToast({
       type: 'error',
@@ -362,6 +387,7 @@ const markAllAsRead = async () => {
       })
     }
     await loadMessages()
+    await loadTypeUnreadCounts()
   } catch (error) {
     showToast({
       type: 'error',
@@ -372,13 +398,26 @@ const markAllAsRead = async () => {
   }
 }
 
-watch([currentTab, currentType], () => {
+const selectType = (type: UserMessageFilterValue) => {
+  if (currentType.value === type) {
+    return
+  }
+  currentType.value = type
   selectedIds.value = []
   if (pageNum.value !== 1) {
     pageNum.value = 1
-    return
+  } else {
+    void loadMessages()
   }
-  void loadMessages()
+}
+
+watch([currentTab], () => {
+  selectedIds.value = []
+  if (pageNum.value !== 1) {
+    pageNum.value = 1
+  } else {
+    void loadMessages()
+  }
 })
 
 watch(pageNum, () => {
@@ -388,12 +427,13 @@ watch(pageNum, () => {
 
 onMounted(() => {
   void loadMessages()
+  void loadTypeUnreadCounts()
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50 text-gray-800 transition-colors duration-300 dark:bg-black dark:text-gray-100">
-    <div class="mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
+    <div class="mx-auto max-w-5xl p-4 sm:p-6 lg:p-8">
       <header class="mb-6 flex items-center justify-between sm:mb-8">
         <h1 class="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
           <Bell class="h-7 w-7 text-primary-500" stroke-width="2" />
@@ -401,134 +441,154 @@ onMounted(() => {
         </h1>
       </header>
 
-      <div class="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div
-          class="no-scrollbar flex w-full space-x-1 overflow-x-auto rounded-lg bg-gray-200 p-1 dark:border dark:border-white/10 dark:bg-black sm:w-auto sm:space-x-2"
-        >
-          <button
-            v-for="tab in tabs"
-            :key="tab.value"
-            @click="currentTab = tab.value"
-            :class="[
-              'flex-1 cursor-pointer whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 sm:flex-none',
-              currentTab === tab.value
-                ? 'bg-white text-primary-600 shadow-sm dark:bg-white/10 dark:text-primary-400'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200',
-            ]"
+      <div class="flex flex-col gap-4 md:flex-row md:gap-6">
+        <!-- 左侧类型菜单 -->
+        <aside class="shrink-0 md:w-56">
+          <div
+            class="no-scrollbar flex gap-2 overflow-x-auto rounded-xl border border-gray-200 bg-white p-2 dark:border-white/10 dark:bg-black md:flex-col md:gap-1 md:overflow-visible md:p-3"
           >
-            {{ tab.label }}
-            <span
-              v-if="tab.value === 'unread' && unreadCount > 0"
-              class="ml-1 inline-flex items-center justify-center rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold leading-none text-red-100"
+            <button
+              v-for="option in USER_MESSAGE_TYPE_OPTIONS"
+              :key="option.id"
+              @click="selectType(option.id)"
+              :class="[
+                'flex shrink-0 cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 md:px-4',
+                currentType === option.id
+                  ? 'bg-primary-500 text-white shadow-sm dark:bg-primary-600'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200',
+              ]"
             >
-              {{ unreadCount }}
-            </span>
-          </button>
-        </div>
+              <span class="whitespace-nowrap">{{ option.name }}</span>
+              <span
+                v-if="typeUnreadCounts[String(option.id)] > 0"
+                :class="[
+                  'ml-2 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1 text-[11px] font-bold leading-none',
+                  currentType === option.id
+                    ? 'bg-white/20 text-white'
+                    : 'bg-red-500 text-white',
+                ]"
+              >
+                {{ typeUnreadCounts[String(option.id)] > 99 ? '99+' : typeUnreadCounts[String(option.id)] }}
+              </span>
+            </button>
+          </div>
+        </aside>
 
-        <div class="flex w-full items-center gap-3 sm:w-auto">
-          <UserSelect
-            v-model="currentType"
-            :options="USER_MESSAGE_TYPE_OPTIONS"
-            optionLabel="name"
-            optionValue="id"
-            placeholder="消息类型"
-            minWidth="160px"
+        <!-- 右侧消息列表 -->
+        <main class="min-w-0 flex-1">
+          <div class="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div
+              class="no-scrollbar flex w-full space-x-1 overflow-x-auto rounded-lg bg-gray-200 p-1 dark:border dark:border-white/10 dark:bg-black sm:w-auto sm:space-x-2"
+            >
+              <button
+                v-for="tab in tabs"
+                :key="tab.value"
+                @click="currentTab = tab.value"
+                :class="[
+                  'flex-1 cursor-pointer whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 sm:flex-none',
+                  currentTab === tab.value
+                    ? 'bg-white text-primary-600 shadow-sm dark:bg-white/10 dark:text-primary-400'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200',
+                ]"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+
+            <button
+              @click="markAllAsRead"
+              :disabled="allReadDisabled"
+              class="shrink-0 whitespace-nowrap rounded px-2 py-1 text-sm text-gray-500 transition-colors hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:text-primary-400"
+            >
+              {{ allReadLoading ? '处理中...' : '全部已读' }}
+            </button>
+          </div>
+
+          <div
+            class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black"
+          >
+            <div class="flex items-center gap-3">
+              <button
+                type="button"
+                class="cursor-pointer rounded px-2 py-1 text-sm text-gray-600 transition-colors hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:hover:text-primary-400"
+                :disabled="selectableUnreadIds.length === 0 || loading || batchLoading || allReadLoading"
+                @click="toggleSelectAllUnread"
+              >
+                {{ allUnreadSelected ? '取消全选未读' : '全选未读' }}
+              </button>
+              <span class="text-xs text-gray-500 dark:text-gray-400">已勾选 {{ selectedUnreadIds.length }} 条未读</span>
+            </div>
+
+            <button
+              type="button"
+              class="cursor-pointer rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:bg-primary-300 dark:disabled:bg-primary-800"
+              :disabled="!hasSelectedUnread || batchLoading || loading || allReadLoading"
+              @click="markSelectedAsRead"
+            >
+              {{ batchLoading ? '处理中...' : selectedUnreadIds.length > 1 ? '批量已读' : '标记已读' }}
+            </button>
+          </div>
+
+          <div
+            class="min-h-[400px] overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-black"
+          >
+            <div
+              v-if="loading"
+              class="flex h-64 items-center justify-center text-sm text-gray-500 dark:text-gray-400"
+            >
+              正在加载消息...
+            </div>
+
+            <div
+              v-else-if="loadError"
+              class="flex h-64 flex-col items-center justify-center gap-3 text-sm text-red-500 dark:text-red-400"
+            >
+              <p>{{ loadError }}</p>
+              <button
+                type="button"
+                class="cursor-pointer rounded border border-red-300 px-3 py-1 text-xs text-red-500 transition-colors hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/20"
+                @click="retryLoad"
+              >
+                重试
+              </button>
+            </div>
+
+            <transition-group
+              v-else-if="messages.length > 0"
+              name="list"
+              tag="ul"
+              class="divide-y divide-gray-100 dark:divide-dark-border"
+            >
+              <MessageItem
+                v-for="msg in messages"
+                :key="msg.id"
+                :message="msg"
+                :checked="selectedIds.includes(msg.id)"
+                :selectable="!msg.isRead"
+                :selecting="batchLoading || allReadLoading || loading"
+                :mark-read-loading="isSingleLoading(msg.id)"
+                @toggle-select="toggleSelect(msg.id)"
+                @mark-read="markSingleAsRead(msg)"
+              />
+            </transition-group>
+
+            <div
+              v-else
+              class="flex h-64 flex-col items-center justify-center text-gray-400 dark:text-gray-500"
+            >
+              <Inbox stroke-width="1" class="mb-4 h-12 w-12 opacity-50" />
+              <p>暂无相关消息</p>
+            </div>
+          </div>
+
+          <AppPagination
+            v-if="!loading && !loadError && totalPages > 1"
+            :current-page="pageNum"
+            :total-pages="totalPages"
+            @update:current-page="pageNum = $event"
           />
-
-          <button
-            @click="markAllAsRead"
-            :disabled="allReadDisabled"
-            class="shrink-0 whitespace-nowrap rounded px-2 py-1 text-sm text-gray-500 transition-colors hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:text-primary-400"
-          >
-            {{ allReadLoading ? '处理中...' : '全部已读' }}
-          </button>
-        </div>
+        </main>
       </div>
-
-      <div
-        class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-black"
-      >
-        <div class="flex items-center gap-3">
-          <button
-            type="button"
-            class="cursor-pointer rounded px-2 py-1 text-sm text-gray-600 transition-colors hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:hover:text-primary-400"
-            :disabled="selectableUnreadIds.length === 0 || loading || batchLoading || allReadLoading"
-            @click="toggleSelectAllUnread"
-          >
-            {{ allUnreadSelected ? '取消全选未读' : '全选未读' }}
-          </button>
-          <span class="text-xs text-gray-500 dark:text-gray-400">已勾选 {{ selectedUnreadIds.length }} 条未读</span>
-        </div>
-
-        <button
-          type="button"
-          class="cursor-pointer rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:bg-primary-300 dark:disabled:bg-primary-800"
-          :disabled="!hasSelectedUnread || batchLoading || loading || allReadLoading"
-          @click="markSelectedAsRead"
-        >
-          {{ batchLoading ? '处理中...' : selectedUnreadIds.length > 1 ? '批量已读' : '标记已读' }}
-        </button>
-      </div>
-
-      <div
-        class="min-h-[400px] overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-black"
-      >
-        <div
-          v-if="loading"
-          class="flex h-64 items-center justify-center text-sm text-gray-500 dark:text-gray-400"
-        >
-          正在加载消息...
-        </div>
-
-        <div
-          v-else-if="loadError"
-          class="flex h-64 flex-col items-center justify-center gap-3 text-sm text-red-500 dark:text-red-400"
-        >
-          <p>{{ loadError }}</p>
-          <button
-            type="button"
-            class="cursor-pointer rounded border border-red-300 px-3 py-1 text-xs text-red-500 transition-colors hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/20"
-            @click="retryLoad"
-          >
-            重试
-          </button>
-        </div>
-
-        <transition-group
-          v-else-if="messages.length > 0"
-          name="list"
-          tag="ul"
-          class="divide-y divide-gray-100 dark:divide-dark-border"
-        >
-          <MessageItem
-            v-for="msg in messages"
-            :key="msg.id"
-            :message="msg"
-            :checked="selectedIds.includes(msg.id)"
-            :selectable="!msg.isRead"
-            :selecting="batchLoading || allReadLoading || loading"
-            :mark-read-loading="isSingleLoading(msg.id)"
-            @toggle-select="toggleSelect(msg.id)"
-            @mark-read="markSingleAsRead(msg)"
-          />
-        </transition-group>
-
-        <div
-          v-else
-          class="flex h-64 flex-col items-center justify-center text-gray-400 dark:text-gray-500"
-        >
-          <Inbox stroke-width="1" class="mb-4 h-12 w-12 opacity-50" />
-          <p>暂无相关消息</p>
-        </div>
-      </div>
-
-      <AppPagination
-        v-if="!loading && !loadError && totalPages > 1"
-        :current-page="pageNum"
-        :total-pages="totalPages"
-        @update:current-page="pageNum = $event"
-      />
     </div>
   </div>
 </template>
