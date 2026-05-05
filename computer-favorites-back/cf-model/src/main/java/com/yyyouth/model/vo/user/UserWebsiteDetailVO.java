@@ -76,6 +76,16 @@ public class UserWebsiteDetailVO {
     private Boolean isCollected;
 
     /**
+     * 当前用户是否已点赞（未登录时为false）
+     */
+    private Boolean isLiked;
+
+    /**
+     * 当前用户的评分（1-5星，未评过时为null）
+     */
+    private Integer userScore;
+
+    /**
      * 评论量
      */
     private Integer commentCount;

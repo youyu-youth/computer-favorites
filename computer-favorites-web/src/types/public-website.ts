@@ -73,6 +73,8 @@ export interface PublicWebsiteDetail {
   likeCount: number
   collectCount: number
   isCollected?: boolean
+  isLiked?: boolean
+  userScore?: number | null
   commentCount: number
   score: number
   scoreCount: number

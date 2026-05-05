@@ -16,6 +16,8 @@ import {
 
 import { getWebsiteDetail } from '@/api/website'
 import { cancelCollect } from '@/api/user-collect'
+import { likeWebsite, unlikeWebsite } from '@/api/user-website-like'
+import { scoreWebsite } from '@/api/user-website-score'
 import recommendIcon from '@/assets/icons/svg/tuijian.svg'
 import MarkdownViewer from '@/components/user/MarkdownViewer.vue'
 import WebsiteCommentSection from '@/components/user/WebsiteCommentSection.vue'
@@ -174,7 +176,46 @@ const showRatingDialog = ref(false)
 
 const isCollected = ref(false)
 
+const isLiked = ref(false)
+
 const isCanceling = ref(false)
+
+const isLiking = ref(false)
+
+const handleLikeClick = async () => {
+  if (!authStore.isAuthed) {
+    window.location.href = `/computer/login?redirect=${encodeURIComponent(route.fullPath)}`
+    return
+  }
+  if (!websiteId.value || isLiking.value) return
+  isLiking.value = true
+  try {
+    if (isLiked.value) {
+      await unlikeWebsite(websiteId.value)
+      isLiked.value = false
+      if (detail.value) {
+        detail.value.likeCount = Math.max(0, (detail.value.likeCount || 0) - 1)
+      }
+      message.add({ title: '已取消点赞', type: 'success', position: 'top-right' })
+    } else {
+      await likeWebsite(websiteId.value)
+      isLiked.value = true
+      if (detail.value) {
+        detail.value.likeCount = (detail.value.likeCount || 0) + 1
+      }
+      message.add({ title: '点赞成功', type: 'success', position: 'top-right' })
+    }
+  } catch (e) {
+    message.add({
+      title: isLiked.value ? '取消点赞失败' : '点赞失败',
+      description: e instanceof Error ? e.message : '请稍后重试',
+      type: 'error',
+      position: 'top-right',
+    })
+  } finally {
+    isLiking.value = false
+  }
+}
 
 const handleCollectClick = () => {
   if (!authStore.isAuthed) {
@@ -192,17 +233,19 @@ const handleRatingClick = () => {
   showRatingDialog.value = true
 }
 
-const handleRatingSubmit = (payload: { rating: number; comment?: string }) => {
-  console.log('评分提交:', { websiteId: websiteId.value, ...payload })
-  // TODO: 调用后端API提交评分
-  message.add({ title: '评分成功', type: 'success', position: 'top-right' })
-  // 更新本地评分显示
-  if (detail.value) {
-    const prevScore = detail.value.score || 0
-    const prevCount = detail.value.scoreCount || 0
-    const newCount = prevCount + 1
-    detail.value.score = (prevScore * prevCount + payload.rating) / newCount
-    detail.value.scoreCount = newCount
+const handleRatingSubmit = async (payload: { rating: number; comment?: string }) => {
+  if (!websiteId.value) return
+  try {
+    await scoreWebsite(websiteId.value, { score: payload.rating })
+    message.add({ title: '评分成功', type: 'success', position: 'top-right' })
+    await loadDetail()
+  } catch (e) {
+    message.add({
+      title: '评分失败',
+      description: e instanceof Error ? e.message : '请稍后重试',
+      type: 'error',
+      position: 'top-right',
+    })
   }
 }
 
@@ -273,39 +316,12 @@ const loadDetail = async () => {
     }
     detail.value = detailData
     isCollected.value = Boolean(detailData.isCollected)
+    isLiked.value = Boolean(detailData.isLiked)
   } catch (error) {
     if (requestId !== latestRequestId) {
       return
     }
-    // TEMP mock fallback for UI testing
-    detail.value = {
-      id: websiteId.value,
-      name: 'hello 看看你',
-      icon: '',
-      isOfficial: 1,
-      collectCount: 0,
-      likeCount: 0,
-      clickCount: 0,
-      tags: [
-        { id: 1, name: 'Unity资源', color: '#3b82f6' },
-        { id: 2, name: 'Pygame', color: '#10b981' },
-        { id: 3, name: 'Cocos Creator', color: '#f59e0b' },
-      ],
-      categoryName: '游戏开发',
-      score: 0,
-      scoreCount: 0,
-      providerName: '1',
-      submitterId: 1,
-      isRecommend: 1,
-      url: 'https://www.test.com',
-      shelfTime: '2026-04-07 22:50:35',
-      createTime: '2026-04-07 22:50:35',
-      updateTime: '2026-04-28 22:16:21',
-      description: '',
-      summary: 'test',
-      commentCount: 6,
-    } as any
-    isCollected.value = false
+    errorMessage.value = resolveErrorMessage(error, '加载网站详情失败')
   } finally {
     if (requestId === latestRequestId) {
       loading.value = false
@@ -387,9 +403,17 @@ watch(
                 </button>
                 <div class="ml-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                   <button
-                    class="flex items-center gap-1.5 hover:text-primary-500 transition-colors cursor-pointer"
+                    class="flex items-center gap-1.5 transition-colors cursor-pointer"
+                    :class="
+                      isLiked
+                        ? 'text-primary-500'
+                        : 'hover:text-primary-500 text-gray-500 dark:text-gray-400'
+                    "
+                    :disabled="isLiking"
+                    @click="handleLikeClick"
                   >
-                    <ThumbsUp class="h-4 w-4" /> {{ formatCount(detail.likeCount) }}
+                    <ThumbsUp class="h-4 w-4" :class="isLiked ? 'fill-current' : ''" />
+                    {{ formatCount(detail.likeCount) }}
                   </button>
                   <span class="flex items-center gap-1.5"
                     ><Eye class="h-4 w-4" /> {{ formatCount(detail.clickCount) }}</span
@@ -641,7 +665,7 @@ watch(
     <StarRatingDialog
       :open="showRatingDialog"
       :website-name="websiteName"
-      :current-rating="Math.round(scoreValue)"
+      :current-rating="detail?.userScore ?? 0"
       @update:open="showRatingDialog = $event"
       @submit="handleRatingSubmit"
     />

@@ -13,6 +13,8 @@ import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.user.UserCollect;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
+import com.yyyouth.model.pojo.website.WebsiteLike;
+import com.yyyouth.model.pojo.website.WebsiteScore;
 import com.yyyouth.model.vo.user.UserWebsiteCategoryVO;
 import com.yyyouth.model.vo.user.UserWebsiteDetailVO;
 import com.yyyouth.model.vo.user.UserWebsiteListItemVO;
@@ -22,7 +24,9 @@ import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
+import com.yyyouth.service.mapper.website.WebsiteLikeMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
+import com.yyyouth.service.mapper.website.WebsiteScoreMapper;
 import com.yyyouth.service.user.website.UserWebsiteService;
 import com.yyyouth.service.user.website.support.UserWebsiteTagSupport;
 import lombok.RequiredArgsConstructor;
@@ -76,6 +80,10 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
     private final AdminAccountMapper adminAccountMapper;
 
     private final UserCollectMapper userCollectMapper;
+
+    private final WebsiteLikeMapper websiteLikeMapper;
+
+    private final WebsiteScoreMapper websiteScoreMapper;
 
     private final UserWebsiteTagSupport userWebsiteTagSupport;
 
@@ -193,6 +201,8 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
         detailVO.setTags(userWebsiteTagSupport.buildWebsiteTagItems(website.getTags(), tagItemMap));
         detailVO.setProviderName(resolveProviderName(website));
         detailVO.setIsCollected(resolveIsCollected(websiteId));
+        detailVO.setIsLiked(resolveIsLiked(websiteId));
+        detailVO.setUserScore(resolveUserScore(websiteId));
         return detailVO;
     }
 
@@ -211,6 +221,41 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
                 .eq(UserCollect::getUserId, userId)
                 .eq(UserCollect::getWebsiteId, websiteId));
         return count != null && count > 0;
+    }
+
+    /**
+     * 判断当前用户是否已点赞该网站
+     *
+     * @param websiteId 网站ID
+     * @return 是否已点赞
+     */
+    private Boolean resolveIsLiked(Long websiteId) {
+        if (!StpUtil.isLogin()) {
+            return false;
+        }
+        Long userId = StpUtil.getLoginIdAsLong();
+        Long count = websiteLikeMapper.selectCount(new LambdaQueryWrapper<WebsiteLike>()
+                .eq(WebsiteLike::getUserId, userId)
+                .eq(WebsiteLike::getWebsiteId, websiteId));
+        return count != null && count > 0;
+    }
+
+    /**
+     * 查询当前用户对该网站的评分
+     *
+     * @param websiteId 网站ID
+     * @return 评分值（1-5），未评过时返回null
+     */
+    private Integer resolveUserScore(Long websiteId) {
+        if (!StpUtil.isLogin()) {
+            return null;
+        }
+        Long userId = StpUtil.getLoginIdAsLong();
+        WebsiteScore websiteScore = websiteScoreMapper.selectOne(new LambdaQueryWrapper<WebsiteScore>()
+                .eq(WebsiteScore::getUserId, userId)
+                .eq(WebsiteScore::getWebsiteId, websiteId)
+                .last("limit 1"));
+        return websiteScore != null ? websiteScore.getScore() : null;
     }
 
     /**

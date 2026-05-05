@@ -8,6 +8,12 @@ spring:
       api-key: ${model.api-key.dashboard:sk-placeholder}
     deepseek:
       api-key: ${model.api-key.deepseek}
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: always
+            schema: classpath:/sql/schema-mysql.sql
   mail:
     host: ${CF_MAIL_HOST:127.0.0.1}
     port: ${CF_MAIL_PORT:25}
