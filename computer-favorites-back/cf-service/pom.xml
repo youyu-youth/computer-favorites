@@ -21,7 +21,12 @@
 
     <dependencies>
 
-
+<!--        rabbitmq-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+            <scope>compile</scope>
+        </dependency>
 <!--         spring ai 相关-->
         <dependency>
             <groupId>org.springframework.ai</groupId>
