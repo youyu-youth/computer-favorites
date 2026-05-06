@@ -73,8 +73,14 @@ public interface SystemMessageMapper extends BaseMapper<SystemMessage> {
      * 统计用户未读消息数量
      *
      * @param userId 接收用户ID
+     * @param type 消息类型
      * @return 未读数量
      */
-    @Select("SELECT COUNT(1) FROM t_message WHERE user_id = #{userId} AND is_read = 0")
-    Long countUnreadMessages(@Param("userId") Long userId);
+    @Select({
+            "<script>",
+            "SELECT COUNT(1) FROM t_message WHERE user_id = #{userId} AND is_read = 0",
+            "<if test='type != null'>AND type = #{type}</if>",
+            "</script>"
+    })
+    Long countUnreadMessages(@Param("userId") Long userId, @Param("type") Integer type);
 }

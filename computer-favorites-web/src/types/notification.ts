@@ -11,6 +11,7 @@ export interface UserMessageItem {
   content: string
   type: number // 1系统通知 2评论回复 3收藏提醒 4审核结果 5举报反馈
   relatedId?: number
+  websiteId?: number
   isRead: 0 | 1
   createTime: string
 }

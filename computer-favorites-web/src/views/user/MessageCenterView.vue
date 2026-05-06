@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { Bell, Inbox } from 'lucide-vue-next'
 import AppPagination from '@/components/common/AppPagination.vue'
 import MessageItem, { type MessageProps } from '@/components/user/message/MessageItem.vue'
@@ -15,6 +16,7 @@ import type { UserMessageItem, UserMessageQuery } from '@/types/notification'
 
 type TabValue = 'all' | 'unread' | 'read'
 
+const router = useRouter()
 const { add: showToast } = useToast()
 const { setUnreadCount: setGlobalUnreadCount } = useUserMessageUnread()
 
@@ -143,6 +145,7 @@ const toMessageView = (item: UserMessageItem): MessageProps => {
     content: item.content || '',
     time: formatMessageTime(item.createTime),
     isRead: item.isRead === 1,
+    websiteId: item.websiteId ?? undefined,
   }
 }
 
@@ -269,6 +272,27 @@ const markSingleAsRead = async (message: MessageProps) => {
   } finally {
     singleLoadingIds.value = singleLoadingIds.value.filter((id) => id !== message.id)
   }
+}
+
+const handleMessageClick = async (message: MessageProps) => {
+  if (message.type !== 'comment' || !message.websiteId) {
+    return
+  }
+
+  if (!message.isRead) {
+    try {
+      await markUserMessageRead(message.id)
+      await loadTypeUnreadCounts()
+    } catch {
+      // 标记已读失败不影响跳转
+    }
+  }
+
+  void router.push({
+    name: 'websiteDetail',
+    params: { id: String(message.websiteId) },
+    query: { tab: 'comments' },
+  })
 }
 
 const markSelectedAsRead = async () => {
@@ -569,6 +593,7 @@ onMounted(() => {
                 :mark-read-loading="isSingleLoading(msg.id)"
                 @toggle-select="toggleSelect(msg.id)"
                 @mark-read="markSingleAsRead(msg)"
+                @click="handleMessageClick(msg)"
               />
             </transition-group>
 

@@ -7,11 +7,14 @@ import com.yyyouth.common.constants.NotificationErrorCode;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.UserMessageBatchReadDTO;
 import com.yyyouth.model.dto.user.UserMessageQueryDTO;
+import com.yyyouth.model.enums.UserMessageType;
 import com.yyyouth.model.pojo.system.SystemMessage;
+import com.yyyouth.model.pojo.website.Comment;
 import com.yyyouth.model.vo.user.UserMessageBatchReadResultVO;
 import com.yyyouth.model.vo.user.UserMessageItemVO;
 import com.yyyouth.model.vo.user.UserMessagePageVO;
 import com.yyyouth.service.mapper.system.SystemMessageMapper;
+import com.yyyouth.service.mapper.website.CommentMapper;
 import com.yyyouth.service.user.notification.UserMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author yyyouth zg
@@ -45,6 +49,8 @@ public class UserMessageServiceImpl implements UserMessageService {
 
     private final SystemMessageMapper systemMessageMapper;
 
+    private final CommentMapper commentMapper;
+
     /**
      * 查询当前登录用户消息分页
      *
@@ -58,7 +64,7 @@ public class UserMessageServiceImpl implements UserMessageService {
         int pageSize = queryDTO.getPageSize() == null ? DEFAULT_PAGE_SIZE : queryDTO.getPageSize();
 
         Long total = systemMessageMapper.countUserMessages(loginUserId, queryDTO.getIsRead(), queryDTO.getType());
-        Long unreadCount = systemMessageMapper.countUnreadMessages(loginUserId);
+        Long unreadCount = systemMessageMapper.countUnreadMessages(loginUserId, queryDTO.getType());
 
         UserMessagePageVO pageVO = new UserMessagePageVO();
         pageVO.setTotal(total == null ? 0L : total);
@@ -83,6 +89,7 @@ public class UserMessageServiceImpl implements UserMessageService {
         List<UserMessageItemVO> messageItems = messages.stream()
                 .map(message -> BeanUtil.copyProperties(message, UserMessageItemVO.class))
                 .toList();
+        fillWebsiteIdForCommentMessages(messageItems);
         pageVO.setList(messageItems);
         return pageVO;
     }
@@ -235,5 +242,39 @@ public class UserMessageServiceImpl implements UserMessageService {
             }
         }
         return messageMap;
+    }
+
+    /**
+     * 为评论回复类型的消息填充关联网站ID
+     *
+     * @param messageItems 消息条目列表
+     */
+    private void fillWebsiteIdForCommentMessages(List<UserMessageItemVO> messageItems) {
+        if (CollUtil.isEmpty(messageItems)) {
+            return;
+        }
+
+        List<Long> commentIds = messageItems.stream()
+                .filter(item -> Objects.equals(item.getType(), UserMessageType.COMMENT_REPLY.getCode()))
+                .map(UserMessageItemVO::getRelatedId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (commentIds.isEmpty()) {
+            return;
+        }
+
+        List<Comment> comments = commentMapper.selectBatchIds(commentIds);
+        Map<Long, Long> commentToWebsiteMap = comments.stream()
+                .filter(comment -> comment.getId() != null && comment.getWebsiteId() != null)
+                .collect(Collectors.toMap(Comment::getId, Comment::getWebsiteId));
+
+        for (UserMessageItemVO item : messageItems) {
+            if (Objects.equals(item.getType(), UserMessageType.COMMENT_REPLY.getCode())
+                    && item.getRelatedId() != null) {
+                item.setWebsiteId(commentToWebsiteMap.get(item.getRelatedId()));
+            }
+        }
     }
 }

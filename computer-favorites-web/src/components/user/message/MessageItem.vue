@@ -9,6 +9,7 @@ export interface MessageProps {
   content: string
   time: string
   isRead: boolean
+  websiteId?: number
 }
 
 const props = defineProps<{
@@ -22,7 +23,17 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'toggle-select'): void
   (e: 'mark-read'): void
+  (e: 'click'): void
 }>()
+
+const isClickable = computed(() => props.message.type === 'comment' && props.message.websiteId != null)
+
+const handleClick = () => {
+  if (!isClickable.value) {
+    return
+  }
+  emit('click')
+}
 
 const iconBgClass = computed(() => {
   const classes: Record<string, string> = {
@@ -53,7 +64,9 @@ const IconComponent = computed(() => {
     :class="[
       'group relative p-4 transition-all duration-300 ease-out hover:bg-gray-50 dark:hover:bg-white/[0.02] sm:p-5',
       !message.isRead ? 'bg-primary-50/40 dark:bg-primary-900/10 border-l-4 border-l-primary-500' : 'border-l-4 border-l-transparent dark:bg-black',
+      isClickable ? 'cursor-pointer' : '',
     ]"
+    @click="handleClick"
   >
     <div class="absolute left-4 top-4 sm:left-5 sm:top-5">
       <button

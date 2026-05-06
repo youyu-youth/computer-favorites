@@ -39,6 +39,9 @@ class UserMessageServiceImplTest {
     @Mock
     private SystemMessageMapper systemMessageMapper;
 
+    @Mock
+    private com.yyyouth.service.mapper.website.CommentMapper commentMapper;
+
     @InjectMocks
     private UserMessageServiceImpl userMessageService;
 
@@ -65,7 +68,7 @@ class UserMessageServiceImplTest {
 
         when(systemMessageMapper.countUserMessages(1001L, 0, 4)).thenReturn(1L);
         when(systemMessageMapper.selectUserMessagePage(1001L, 0, 4, 0, 20)).thenReturn(List.of(message));
-        when(systemMessageMapper.countUnreadMessages(1001L)).thenReturn(3L);
+        when(systemMessageMapper.countUnreadMessages(1001L, 4)).thenReturn(3L);
 
         try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
             stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
@@ -82,7 +85,7 @@ class UserMessageServiceImplTest {
 
         verify(systemMessageMapper).countUserMessages(1001L, 0, 4);
         verify(systemMessageMapper).selectUserMessagePage(1001L, 0, 4, 0, 20);
-        verify(systemMessageMapper).countUnreadMessages(1001L);
+        verify(systemMessageMapper).countUnreadMessages(1001L, 4);
     }
 
     /**
@@ -108,7 +111,7 @@ class UserMessageServiceImplTest {
 
         when(systemMessageMapper.countUserMessages(1001L, 0, 5)).thenReturn(1L);
         when(systemMessageMapper.selectUserMessagePage(1001L, 0, 5, 0, 10)).thenReturn(List.of(message));
-        when(systemMessageMapper.countUnreadMessages(1001L)).thenReturn(2L);
+        when(systemMessageMapper.countUnreadMessages(1001L, 5)).thenReturn(2L);
 
         try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
             stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
@@ -126,7 +129,55 @@ class UserMessageServiceImplTest {
 
         verify(systemMessageMapper).countUserMessages(1001L, 0, 5);
         verify(systemMessageMapper).selectUserMessagePage(1001L, 0, 5, 0, 10);
-        verify(systemMessageMapper).countUnreadMessages(1001L);
+        verify(systemMessageMapper).countUnreadMessages(1001L, 5);
+    }
+
+    /**
+     * 查询评论回复消息时应正确填充关联网站ID
+     */
+    @Test
+    void shouldFillWebsiteIdForCommentReplyMessages() {
+        UserMessageQueryDTO queryDTO = new UserMessageQueryDTO();
+        queryDTO.setPageNum(1);
+        queryDTO.setPageSize(10);
+        queryDTO.setIsRead(0);
+        queryDTO.setType(2);
+
+        SystemMessage message = new SystemMessage();
+        message.setId(301L);
+        message.setUserId(1001L);
+        message.setTitle("收到评论回复");
+        message.setContent("牛福了");
+        message.setType(2);
+        message.setRelatedId(5001L);
+        message.setIsRead(0);
+        message.setCreateTime(LocalDateTime.of(2026, 5, 6, 10, 0, 0));
+
+        com.yyyouth.model.pojo.website.Comment comment = new com.yyyouth.model.pojo.website.Comment();
+        comment.setId(5001L);
+        comment.setWebsiteId(888L);
+
+        when(systemMessageMapper.countUserMessages(1001L, 0, 2)).thenReturn(1L);
+        when(systemMessageMapper.selectUserMessagePage(1001L, 0, 2, 0, 10)).thenReturn(List.of(message));
+        when(systemMessageMapper.countUnreadMessages(1001L, 2)).thenReturn(1L);
+        when(commentMapper.selectBatchIds(List.of(5001L))).thenReturn(List.of(comment));
+
+        try (MockedStatic<StpUtil> stpUtilMock = org.mockito.Mockito.mockStatic(StpUtil.class)) {
+            stpUtilMock.when(StpUtil::checkLogin).thenAnswer(invocation -> null);
+            stpUtilMock.when(StpUtil::getLoginIdAsLong).thenReturn(1001L);
+
+            UserMessagePageVO pageVO = userMessageService.queryMessagePage(queryDTO);
+
+            assertThat(pageVO.getTotal()).isEqualTo(1L);
+            assertThat(pageVO.getList()).hasSize(1);
+            assertThat(pageVO.getList().get(0).getType()).isEqualTo(2);
+            assertThat(pageVO.getList().get(0).getWebsiteId()).isEqualTo(888L);
+        }
+
+        verify(systemMessageMapper).countUserMessages(1001L, 0, 2);
+        verify(systemMessageMapper).selectUserMessagePage(1001L, 0, 2, 0, 10);
+        verify(systemMessageMapper).countUnreadMessages(1001L, 2);
+        verify(commentMapper).selectBatchIds(List.of(5001L));
     }
 
     /**

@@ -40,6 +40,15 @@ const message = useMessage()
 const activeTab = ref('网站介绍')
 const tabs = ['网站介绍', '网站评论', '相关网站推荐']
 
+const resolveTabFromQuery = (tabQuery: unknown): string => {
+  if (tabQuery === 'comments') {
+    return '网站评论'
+  }
+  return '网站介绍'
+}
+
+activeTab.value = resolveTabFromQuery(route.query.tab)
+
 const loading = ref(false)
 const errorMessage = ref('')
 const detail = ref<PublicWebsiteDetail | null>(null)

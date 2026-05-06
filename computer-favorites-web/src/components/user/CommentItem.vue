@@ -193,7 +193,6 @@ const handleCancelReply = () => {
 
             <UAvatar
               :src="reply.user.avatar"
-              :alt="reply.user.nickname"
               size="sm"
               class="h-8 w-8 flex-shrink-0"
             />

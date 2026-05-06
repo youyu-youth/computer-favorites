@@ -39,6 +39,11 @@ public class UserMessageItemVO {
     private Long relatedId;
 
     /**
+     * 关联网站ID（评论回复类型时有效）
+     */
+    private Long websiteId;
+
+    /**
      * 已读状态：0未读，1已读
      */
     private Integer isRead;
