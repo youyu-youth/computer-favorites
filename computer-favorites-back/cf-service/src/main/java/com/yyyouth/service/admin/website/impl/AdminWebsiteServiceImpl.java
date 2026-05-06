@@ -17,7 +17,6 @@ import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
 import com.yyyouth.model.enums.UserMessageType;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
-import com.yyyouth.model.pojo.system.SystemMessage;
 import com.yyyouth.model.pojo.website.Tag;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
@@ -32,8 +31,9 @@ import com.yyyouth.model.vo.admin.AdminWebsiteStatsVO;
 import com.yyyouth.model.vo.file.MinioUploadVO;
 import com.yyyouth.service.admin.website.AdminWebsiteService;
 import com.yyyouth.service.file.MinioFileService;
+import com.yyyouth.service.notification.MessageNotifyService;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
-import com.yyyouth.service.mapper.system.SystemMessageMapper;
+import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
 import com.yyyouth.service.mapper.website.TagMapper;
@@ -117,10 +117,6 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
 
     private static final int AUDIT_REJECT_ACTION = 2;
 
-    private static final int DEFAULT_AUDIT_MESSAGE_TYPE = UserMessageType.AUDIT_RESULT.getCode();
-
-    private static final int UNREAD_MESSAGE = 0;
-
     private static final String AUDIT_ACTION_SINGLE = "audit";
 
     private static final String AUDIT_ACTION_BATCH = "batch-audit";
@@ -133,7 +129,7 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
 
     private final MinioFileService minioFileService;
 
-    private final SystemMessageMapper systemMessageMapper;
+    private final MessageNotifyService messageNotifyService;
 
     private final TagMapper tagMapper;
 
@@ -1025,7 +1021,7 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
     }
 
     /**
-     * 写入审核结果站内消息
+     * 写入审核结果通知（异步消息）
      *
      * @param originWebsite 原始网站
      * @param updateEntity 更新实体
@@ -1039,21 +1035,29 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
             return;
         }
 
-        SystemMessage message = new SystemMessage();
-        message.setUserId(originWebsite.getSubmitterId());
-        message.setType(DEFAULT_AUDIT_MESSAGE_TYPE);
-        message.setIsRead(UNREAD_MESSAGE);
-        message.setRelatedId(originWebsite.getId());
-        message.setCreateTime(operationTime);
-        message.setTitle("网站投稿审核结果通知");
+        NotifyEvent event = NotifyEvent.builder()
+                .userId(originWebsite.getSubmitterId())
+                .title("网站投稿审核结果通知")
+                .content(buildAuditMessageContent(originWebsite, updateEntity))
+                .type(UserMessageType.AUDIT_RESULT.getCode())
+                .relatedId(originWebsite.getId())
+                .createTime(operationTime)
+                .build();
+        messageNotifyService.send(event);
+    }
 
+    /**
+     * 构建审核消息内容
+     *
+     * @param originWebsite 原始网站
+     * @param updateEntity 更新实体
+     * @return 消息内容
+     */
+    private String buildAuditMessageContent(Website originWebsite, Website updateEntity) {
         if (Objects.equals(updateEntity.getAuditStatus(), AUDIT_APPROVED_STATUS)) {
-            message.setContent("你投稿的网站《" + originWebsite.getName() + "》已审核通过并自动上架。");
-        } else {
-            message.setContent("你投稿的网站《" + originWebsite.getName() + "》未通过审核，原因：" + updateEntity.getAuditRemark());
+            return "你投稿的网站《" + originWebsite.getName() + "》已审核通过并自动上架。";
         }
-
-        systemMessageMapper.insert(message);
+        return "你投稿的网站《" + originWebsite.getName() + "》未通过审核，原因：" + updateEntity.getAuditRemark();
     }
 
     /**

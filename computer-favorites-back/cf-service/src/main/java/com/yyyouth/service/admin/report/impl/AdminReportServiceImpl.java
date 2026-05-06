@@ -14,7 +14,6 @@ import com.yyyouth.model.enums.UserMessageType;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.report.Report;
-import com.yyyouth.model.pojo.system.SystemMessage;
 import com.yyyouth.model.pojo.website.Comment;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.vo.admin.AdminReportBatchHandleResultItemVO;
@@ -28,7 +27,8 @@ import com.yyyouth.model.vo.admin.AdminReportStatisticsVO;
 import com.yyyouth.service.admin.report.AdminReportService;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.mapper.report.ReportMapper;
-import com.yyyouth.service.mapper.system.SystemMessageMapper;
+import com.yyyouth.service.notification.MessageNotifyService;
+import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CommentMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
@@ -68,10 +68,6 @@ public class AdminReportServiceImpl implements AdminReportService {
 
     private static final int NOT_DELETED = 0;
 
-    private static final int UNREAD_MESSAGE = 0;
-
-    private static final int REPORT_FEEDBACK_MESSAGE_TYPE = UserMessageType.REPORT_FEEDBACK.getCode();
-
     private static final String ACTION_PASS = "pass";
 
     private static final String ACTION_REJECT = "reject";
@@ -100,7 +96,7 @@ public class AdminReportServiceImpl implements AdminReportService {
 
     private final CommentMapper commentMapper;
 
-    private final SystemMessageMapper systemMessageMapper;
+    private final MessageNotifyService messageNotifyService;
 
     private final UserAccountMapper userAccountMapper;
 
@@ -577,7 +573,7 @@ public class AdminReportServiceImpl implements AdminReportService {
     }
 
     /**
-     * 写入举报反馈站内消息
+     * 写入举报反馈通知（异步消息）
      *
      * @param report 举报记录
      * @param handleDTO 处置参数
@@ -595,15 +591,15 @@ public class AdminReportServiceImpl implements AdminReportService {
         }
 
         TargetContext targetContext = resolveTargetContext(report);
-        SystemMessage message = new SystemMessage();
-        message.setUserId(report.getUserId());
-        message.setType(REPORT_FEEDBACK_MESSAGE_TYPE);
-        message.setIsRead(UNREAD_MESSAGE);
-        message.setRelatedId(report.getId());
-        message.setCreateTime(operationTime);
-        message.setTitle(REPORT_FEEDBACK_MESSAGE_TITLE);
-        message.setContent(buildReportFeedbackMessageContent(targetContext, handleDTO, nextStatus, actionExecuted));
-        systemMessageMapper.insert(message);
+        NotifyEvent event = NotifyEvent.builder()
+                .userId(report.getUserId())
+                .title(REPORT_FEEDBACK_MESSAGE_TITLE)
+                .content(buildReportFeedbackContent(targetContext, handleDTO, nextStatus, actionExecuted))
+                .type(UserMessageType.REPORT_FEEDBACK.getCode())
+                .relatedId(report.getId())
+                .createTime(operationTime)
+                .build();
+        messageNotifyService.send(event);
     }
 
     /**
@@ -615,10 +611,10 @@ public class AdminReportServiceImpl implements AdminReportService {
      * @param actionExecuted 是否已执行联动治理
      * @return 消息内容
      */
-    private String buildReportFeedbackMessageContent(TargetContext targetContext,
-                                                     AdminReportHandleDTO handleDTO,
-                                                     Integer nextStatus,
-                                                     boolean actionExecuted) {
+    private String buildReportFeedbackContent(TargetContext targetContext,
+                                              AdminReportHandleDTO handleDTO,
+                                              Integer nextStatus,
+                                              boolean actionExecuted) {
         String targetName = StringUtils.hasText(targetContext.targetName()) ? targetContext.targetName() : "目标内容";
         if (Objects.equals(nextStatus, ReportStatus.PROCESSED.getCode())) {
             if (actionExecuted) {
