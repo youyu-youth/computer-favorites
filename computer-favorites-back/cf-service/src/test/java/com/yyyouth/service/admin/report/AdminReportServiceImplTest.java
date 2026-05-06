@@ -6,6 +6,7 @@ import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.admin.AdminReportBatchHandleDTO;
 import com.yyyouth.model.dto.admin.AdminReportHandleDTO;
 import com.yyyouth.model.dto.admin.AdminReportQueryDTO;
+import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.model.enums.ReportStatus;
 import com.yyyouth.model.enums.ReportType;
 import com.yyyouth.model.pojo.admin.AdminAccount;
@@ -20,7 +21,7 @@ import com.yyyouth.model.vo.admin.AdminReportPageVO;
 import com.yyyouth.service.admin.report.impl.AdminReportServiceImpl;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.mapper.report.ReportMapper;
-import com.yyyouth.service.mapper.system.SystemMessageMapper;
+import com.yyyouth.service.notification.MessageNotifyService;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CommentMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
@@ -68,7 +69,7 @@ class AdminReportServiceImplTest {
     private CommentMapper commentMapper;
 
     @Mock
-    private SystemMessageMapper systemMessageMapper;
+    private MessageNotifyService messageNotifyService;
 
     @Mock
     private UserAccountMapper userAccountMapper;
@@ -277,12 +278,7 @@ class AdminReportServiceImplTest {
         ArgumentCaptor<Website> websiteCaptor = ArgumentCaptor.forClass(Website.class);
         verify(websiteMapper).updateById(websiteCaptor.capture());
         assertThat(websiteCaptor.getValue().getStatus()).isEqualTo(0);
-        ArgumentCaptor<com.yyyouth.model.pojo.system.SystemMessage> messageCaptor =
-                ArgumentCaptor.forClass(com.yyyouth.model.pojo.system.SystemMessage.class);
-        verify(systemMessageMapper).insert(messageCaptor.capture());
-        assertThat(messageCaptor.getValue().getUserId()).isEqualTo(203L);
-        assertThat(messageCaptor.getValue().getType()).isEqualTo(5);
-        assertThat(messageCaptor.getValue().getRelatedId()).isEqualTo(103L);
+        verify(messageNotifyService).send(any(NotifyEvent.class));
     }
 
     /**
@@ -364,7 +360,7 @@ class AdminReportServiceImplTest {
             assertThat(result.getResults().stream().filter(item -> !item.getSuccess())).hasSize(2);
         }
 
-        verify(systemMessageMapper).insert(any(com.yyyouth.model.pojo.system.SystemMessage.class));
+        verify(messageNotifyService).send(any(NotifyEvent.class));
     }
 
     /**

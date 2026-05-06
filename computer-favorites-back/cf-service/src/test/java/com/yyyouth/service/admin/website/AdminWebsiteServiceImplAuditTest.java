@@ -5,13 +5,13 @@ import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yyyouth.model.dto.admin.AdminWebsiteAuditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteBatchAuditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
-import com.yyyouth.model.pojo.system.SystemMessage;
+import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteCategory;
 import com.yyyouth.model.vo.admin.AdminWebsiteBatchAuditResultVO;
 import com.yyyouth.service.admin.website.impl.AdminWebsiteServiceImpl;
 import com.yyyouth.service.file.MinioFileService;
-import com.yyyouth.service.mapper.system.SystemMessageMapper;
+import com.yyyouth.service.notification.MessageNotifyService;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
@@ -57,7 +57,7 @@ class AdminWebsiteServiceImplAuditTest {
     private MinioFileService minioFileService;
 
     @Mock
-    private SystemMessageMapper systemMessageMapper;
+    private MessageNotifyService messageNotifyService;
 
     @Mock
     private TagMapper tagMapper;
@@ -80,7 +80,6 @@ class AdminWebsiteServiceImplAuditTest {
         MapperBuilderAssistant builderAssistant = new MapperBuilderAssistant(configuration, "");
         TableInfoHelper.initTableInfo(builderAssistant, Website.class);
         TableInfoHelper.initTableInfo(builderAssistant, WebsiteCategory.class);
-        TableInfoHelper.initTableInfo(builderAssistant, SystemMessage.class);
     }
 
     /**
@@ -98,7 +97,6 @@ class AdminWebsiteServiceImplAuditTest {
 
         when(websiteMapper.selectOne(any())).thenReturn(pendingWebsite);
         when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
-        when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
         AdminWebsiteAuditDTO auditDTO = new AdminWebsiteAuditDTO();
         auditDTO.setAction(1);
 
@@ -115,7 +113,7 @@ class AdminWebsiteServiceImplAuditTest {
         assertThat(updateEntity.getStatus()).isEqualTo(1);
         assertThat(updateEntity.getAuditAdminId()).isEqualTo(Math.toIntExact(ADMIN_ID));
 
-        verify(systemMessageMapper).insert(any(SystemMessage.class));
+        verify(messageNotifyService).send(any(NotifyEvent.class));
     }
 
     /**
@@ -133,7 +131,6 @@ class AdminWebsiteServiceImplAuditTest {
 
         when(websiteMapper.selectOne(any())).thenReturn(pendingWebsite);
         when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
-        when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
         AdminWebsiteAuditDTO auditDTO = new AdminWebsiteAuditDTO();
         auditDTO.setAction(2);
         auditDTO.setRemark("内容质量不符合规范");
@@ -173,7 +170,6 @@ class AdminWebsiteServiceImplAuditTest {
 
         when(websiteMapper.selectList(any())).thenReturn(List.of(pendingWebsite, approvedWebsite));
         when(websiteMapper.updateById(any(Website.class))).thenReturn(1);
-        when(systemMessageMapper.insert(any(SystemMessage.class))).thenReturn(1);
         AdminWebsiteBatchAuditDTO batchAuditDTO = new AdminWebsiteBatchAuditDTO();
         batchAuditDTO.setWebsiteIds(List.of(201L, 202L, 203L));
         batchAuditDTO.setAction(1);
