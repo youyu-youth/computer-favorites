@@ -12,7 +12,7 @@ import com.yyyouth.model.dto.user.CommentPageQueryDTO;
 import com.yyyouth.model.dto.user.MyCommentPageQueryDTO;
 import com.yyyouth.model.enums.UserMessageType;
 import com.yyyouth.model.pojo.auth.UserAccount;
-import com.yyyouth.model.pojo.system.SystemMessage;
+import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.model.pojo.website.Comment;
 import com.yyyouth.model.pojo.website.CommentLike;
 import com.yyyouth.model.pojo.website.Website;
@@ -22,8 +22,8 @@ import com.yyyouth.model.vo.user.CommentReplyVO;
 import com.yyyouth.model.vo.user.CommentUserVO;
 import com.yyyouth.model.vo.user.MyCommentItemVO;
 import com.yyyouth.model.vo.user.MyCommentPageVO;
-import com.yyyouth.service.mapper.system.SystemMessageMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
+import com.yyyouth.service.notification.MessageNotifyService;
 import com.yyyouth.service.mapper.website.CommentLikeMapper;
 import com.yyyouth.service.mapper.website.CommentMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
@@ -88,7 +88,7 @@ public class UserCommentServiceImpl implements UserCommentService {
 
     private final UserAccountMapper userAccountMapper;
 
-    private final SystemMessageMapper systemMessageMapper;
+    private final MessageNotifyService messageNotifyService;
 
     /**
      * 发布评论
@@ -451,15 +451,14 @@ public class UserCommentServiceImpl implements UserCommentService {
         if (Objects.equals(replyUserId, StpUtil.getLoginIdAsLong())) {
             return;
         }
-        SystemMessage message = SystemMessage.builder()
+        NotifyEvent event = NotifyEvent.builder()
                 .userId(replyUserId)
                 .title("收到评论回复")
                 .content(content.length() > 50 ? content.substring(0, 50) + "..." : content)
                 .type(UserMessageType.COMMENT_REPLY.getCode())
                 .relatedId(commentId)
-                .isRead(0)
                 .build();
-        systemMessageMapper.insert(message);
+        messageNotifyService.send(event);
     }
 
     private Set<Long> collectUserIds(List<Comment> topLevel, List<Comment> replies) {

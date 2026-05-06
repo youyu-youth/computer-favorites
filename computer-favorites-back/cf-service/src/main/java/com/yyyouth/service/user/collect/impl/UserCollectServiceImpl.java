@@ -6,8 +6,11 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.common.exception.BusinessException;
+import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.model.dto.user.UserCollectCreateDTO;
 import com.yyyouth.model.dto.user.UserCollectPageDTO;
+import com.yyyouth.model.enums.UserMessageType;
+import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.user.UserCollect;
 import com.yyyouth.model.pojo.user.UserFolder;
 import com.yyyouth.model.pojo.website.Website;
@@ -17,7 +20,9 @@ import com.yyyouth.model.vo.user.UserCollectStatsVO;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
 import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.UserFolderMapper;
+import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
+import com.yyyouth.service.notification.MessageNotifyService;
 import com.yyyouth.service.user.collect.UserCollectService;
 import com.yyyouth.service.user.website.support.UserWebsiteTagSupport;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +63,8 @@ public class UserCollectServiceImpl implements UserCollectService {
     private final UserFolderMapper userFolderMapper;
     private final WebsiteMapper websiteMapper;
     private final UserWebsiteTagSupport userWebsiteTagSupport;
+    private final MessageNotifyService messageNotifyService;
+    private final UserAccountMapper userAccountMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -125,6 +132,26 @@ public class UserCollectServiceImpl implements UserCollectService {
 
             log.info("收藏成功，userId={}, websiteId={}, folderId={}, collectId={}",
                     userId, createDTO.getWebsiteId(), folderId, collect.getId());
+
+            Website collectWebsite = websiteMapper.selectById(createDTO.getWebsiteId());
+            if (collectWebsite != null && collectWebsite.getSubmitterId() != null
+                    && !Objects.equals(collectWebsite.getSubmitterId(), userId)) {
+                UserAccount submitter = userAccountMapper.selectOne(
+                        new LambdaQueryWrapper<UserAccount>()
+                                .eq(UserAccount::getId, collectWebsite.getSubmitterId())
+                                .select(UserAccount::getNickname)
+                                .last("limit 1"));
+                String submitterNickname = submitter != null ? submitter.getNickname() : null;
+                String displayName = submitterNickname != null ? submitterNickname : "一位用户";
+                NotifyEvent event = NotifyEvent.builder()
+                        .userId(collectWebsite.getSubmitterId())
+                        .title("收藏提醒")
+                        .content("用户 " + displayName + " 收藏了你投稿的网站《" + collectWebsite.getName() + "》")
+                        .type(UserMessageType.FAVORITE_REMINDER.getCode())
+                        .relatedId(collectWebsite.getId())
+                        .build();
+                messageNotifyService.send(event);
+            }
 
             return collect.getId();
         } catch (DuplicateKeyException ex) {
