@@ -136,13 +136,13 @@ public class UserCollectServiceImpl implements UserCollectService {
             Website collectWebsite = websiteMapper.selectById(createDTO.getWebsiteId());
             if (collectWebsite != null && collectWebsite.getSubmitterId() != null
                     && !Objects.equals(collectWebsite.getSubmitterId(), userId)) {
-                UserAccount submitter = userAccountMapper.selectOne(
+                UserAccount collector = userAccountMapper.selectOne(
                         new LambdaQueryWrapper<UserAccount>()
-                                .eq(UserAccount::getId, collectWebsite.getSubmitterId())
+                                .eq(UserAccount::getId, userId)
                                 .select(UserAccount::getNickname)
                                 .last("limit 1"));
-                String submitterNickname = submitter != null ? submitter.getNickname() : null;
-                String displayName = submitterNickname != null ? submitterNickname : "一位用户";
+                String collectorNickname = collector != null ? collector.getNickname() : null;
+                String displayName = collectorNickname != null ? collectorNickname : "一位用户";
                 NotifyEvent event = NotifyEvent.builder()
                         .userId(collectWebsite.getSubmitterId())
                         .title("收藏提醒")
