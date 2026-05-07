@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { settingsStateKey } from '@/components/user/settings/context'
 import EditableInput from '@/components/user/settings/components/EditableInput.vue'
+import TechStackPickerDialog from '@/components/user/settings/components/TechStackPickerDialog.vue'
 import githubIcon from '@/assets/icons/svg/github.svg'
 import giteeIcon from '@/assets/icons/svg/gitee.svg'
 
@@ -47,6 +48,25 @@ const techStackArray = computed<string[]>({
     profile.techStack = value.join(',')
   },
 })
+
+const techDialogOpen = ref(false)
+
+const handleAddTechStacks = (names: string[]) => {
+  const existing = new Set(techStackArray.value.map((n) => n.toLowerCase()))
+  const merged = [...techStackArray.value]
+  for (const name of names) {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      continue
+    }
+    if (!existing.has(trimmed.toLowerCase())) {
+      merged.push(trimmed)
+      existing.add(trimmed.toLowerCase())
+    }
+  }
+  techStackArray.value = merged
+  techDialogOpen.value = false
+}
 
 defineOptions({
   name: 'BasicProfileSection',
@@ -222,9 +242,24 @@ defineOptions({
           placeholder="如：Vue.js、TypeScript、Spring Boot、MySQL"
           class="w-full"
         />
+        <button
+          type="button"
+          class="cf-tech-add-btn group mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-600 transition-all duration-200 hover:border-amber-400/60 hover:bg-amber-50/40 hover:text-amber-700 dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-400 dark:hover:border-amber-400/40 dark:hover:bg-amber-500/[0.06] dark:hover:text-amber-300"
+          @click="techDialogOpen = true"
+        >
+          <UIcon name="i-lucide-plus" class="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
+          <span>从技术栈库中选择添加</span>
+        </button>
         <p class="text-[11px] text-slate-400 dark:text-slate-500">将展示在个人主页和投稿署名上</p>
       </UFormGroup>
     </section>
+
+    <TechStackPickerDialog
+      :open="techDialogOpen"
+      :existing="techStackArray"
+      @update:open="techDialogOpen = $event"
+      @submit="handleAddTechStacks"
+    />
   </div>
 </template>
 
