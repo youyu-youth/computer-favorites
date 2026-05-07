@@ -38,6 +38,7 @@ export interface LoginUserPreferenceSetting {
   collectNotice?: number
   commentNotice?: number
   homepageStyle?: string
+  favoritesHidePassword?: string
   pageSize?: number
 }
 
@@ -68,6 +69,7 @@ export interface UpdateUserSettingRequest {
   collectNotice?: number
   commentNotice?: number
   homepageStyle?: 'card' | 'list'
+  favoritesHidePassword?: string
   pageSize?: 10 | 20 | 50
 }
 

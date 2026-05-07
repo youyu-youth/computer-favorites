@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
-import { settingsStateKey } from '../context'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import EmailEditDialog from '@/components/user/settings/components/EmailEditDialog.vue'
+import UsernameEditDialog from '@/components/user/settings/components/UsernameEditDialog.vue'
+import { useSettingsStore } from '@/stores/settings'
+import { useToast } from '@/composables/useToast'
 
-const settingsState = inject(settingsStateKey)
-if (!settingsState) {
-  throw new Error('Settings state is not provided')
-}
-
-const basicInfo = settingsState.basicInfo
+const router = useRouter()
+const settingsStore = useSettingsStore()
+const toast = useToast()
+const basicInfo = settingsStore.basicInfo
+const usernameDialogOpen = ref(false)
+const emailDialogOpen = ref(false)
 
 const emailBound = computed(() => basicInfo.emailVerified === 1)
 const phoneBound = computed(() => basicInfo.phoneVerified === 1)
@@ -17,6 +21,54 @@ const oauthBindings = [
   { id: 'gitee', label: 'Gitee', desc: '国内 Gitee 仓库快捷登录', bound: false, icon: 'i-lucide-git-branch' },
   { id: 'qq', label: 'QQ', desc: '通过 QQ 一键登录', bound: false, icon: 'i-lucide-message-square' },
 ] as const
+
+const handleUsernameSubmit = async (username: string) => {
+  try {
+    await settingsStore.updateUsername(username)
+    usernameDialogOpen.value = false
+    toast.add({
+      title: '用户名已更新',
+      description: '新的用户名已保存',
+      type: 'success',
+    })
+  } catch (error) {
+    toast.add({
+      title: '用户名修改失败',
+      description: error instanceof Error ? error.message : '请稍后重试',
+      type: 'error',
+    })
+  }
+}
+
+const handleEmailSubmit = async (payload: { email: string; emailCode: string }) => {
+  try {
+    await settingsStore.updateEmail(payload)
+    emailDialogOpen.value = false
+    toast.add({
+      title: '邮箱已更新',
+      description: '下次登录请使用新邮箱',
+      type: 'success',
+    })
+  } catch (error) {
+    toast.add({
+      title: '邮箱修改失败',
+      description: error instanceof Error ? error.message : '请稍后重试',
+      type: 'error',
+    })
+  }
+}
+
+const handlePasswordChange = () => {
+  router.push({ name: 'passwordChange' })
+}
+
+const showComingSoon = (title: string) => {
+  toast.add({
+    title,
+    description: '该能力将在后续版本接入',
+    type: 'info',
+  })
+}
 
 defineOptions({
   name: 'AccountSettingsSection',
@@ -38,6 +90,28 @@ defineOptions({
     <section class="space-y-4">
       <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
         Contact · 联系方式
+      </div>
+
+      <div class="cf-row group flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white/60 p-4 transition-colors hover:border-slate-300 dark:border-white/[0.10] dark:bg-[#16161d] dark:hover:border-white/20 dark:hover:bg-[#1c1c25]">
+        <div class="flex min-w-0 items-center gap-4">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-600 dark:border-white/[0.10] dark:bg-[#1c1c25] dark:text-slate-300">
+            <UIcon name="i-lucide-id-card" class="h-5 w-5" />
+          </span>
+          <div class="min-w-0 space-y-1">
+            <p class="text-sm font-semibold text-slate-900 dark:text-white">用户名</p>
+            <p class="truncate font-mono text-sm tracking-wide text-slate-600 dark:text-slate-300">
+              {{ basicInfo.username || '未设置用户名' }}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="cf-action-btn shrink-0 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-medium text-slate-700 transition-colors hover:border-amber-400 hover:text-amber-600 dark:border-white/[0.10] dark:bg-[#1c1c25] dark:text-slate-200 dark:hover:border-amber-400/40 dark:hover:text-amber-300"
+          @click="usernameDialogOpen = true"
+        >
+          <UIcon name="i-lucide-pencil" class="h-3.5 w-3.5" />
+          <span>修改</span>
+        </button>
       </div>
 
       <!-- 邮箱 -->
@@ -67,6 +141,7 @@ defineOptions({
         <button
           type="button"
           class="cf-action-btn shrink-0 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-medium text-slate-700 transition-colors hover:border-amber-400 hover:text-amber-600 dark:border-white/[0.10] dark:bg-[#1c1c25] dark:text-slate-200 dark:hover:border-amber-400/40 dark:hover:text-amber-300"
+          @click="emailDialogOpen = true"
         >
           <UIcon :name="emailBound ? 'i-lucide-pencil' : 'i-lucide-link'" class="h-3.5 w-3.5" />
           <span>{{ emailBound ? '修改' : '立即绑定' }}</span>
@@ -100,6 +175,7 @@ defineOptions({
         <button
           type="button"
           class="cf-action-btn shrink-0 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-medium text-slate-700 transition-colors hover:border-amber-400 hover:text-amber-600 dark:border-white/[0.10] dark:bg-[#1c1c25] dark:text-slate-200 dark:hover:border-amber-400/40 dark:hover:text-amber-300"
+          @click="showComingSoon('手机号绑定开发中')"
         >
           <UIcon :name="phoneBound ? 'i-lucide-pencil' : 'i-lucide-link'" class="h-3.5 w-3.5" />
           <span>{{ phoneBound ? '修改' : '立即绑定' }}</span>
@@ -131,6 +207,7 @@ defineOptions({
         <button
           type="button"
           class="cf-action-btn shrink-0 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-medium text-slate-700 transition-colors hover:border-amber-400 hover:text-amber-600 dark:border-white/[0.10] dark:bg-[#1c1c25] dark:text-slate-200 dark:hover:border-amber-400/40 dark:hover:text-amber-300"
+          @click="handlePasswordChange"
         >
           <UIcon name="i-lucide-key-round" class="h-3.5 w-3.5" />
           <span>修改密码</span>
@@ -177,12 +254,29 @@ defineOptions({
             :class="bind.bound
               ? 'border-slate-200 bg-white text-slate-600 hover:border-rose-300 hover:text-rose-500 dark:border-white/[0.10] dark:bg-[#1c1c25] dark:text-slate-300 dark:hover:border-rose-400/40 dark:hover:text-rose-400'
               : 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100/70 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/15'"
+            @click="showComingSoon(`${bind.label} 绑定开发中`)"
           >
             {{ bind.bound ? '解除绑定' : '立即绑定' }}
           </button>
         </div>
       </div>
     </section>
+
+    <UsernameEditDialog
+      :open="usernameDialogOpen"
+      :current-username="basicInfo.username"
+      :loading="settingsStore.updatingUsername"
+      @update:open="usernameDialogOpen = $event"
+      @submit="handleUsernameSubmit"
+    />
+
+    <EmailEditDialog
+      :open="emailDialogOpen"
+      :current-email="basicInfo.email"
+      :loading="settingsStore.updatingEmail"
+      @update:open="emailDialogOpen = $event"
+      @submit="handleEmailSubmit"
+    />
   </div>
 </template>
 

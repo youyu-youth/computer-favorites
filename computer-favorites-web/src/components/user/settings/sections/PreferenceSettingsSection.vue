@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import { inject } from 'vue'
-import { settingsStateKey } from '../context'
+import { useSettingsStore } from '@/stores/settings'
 
-const settingsState = inject(settingsStateKey)
-if (!settingsState) {
-  throw new Error('Settings state is not provided')
-}
-
-const setting = settingsState.setting
+const settingsStore = useSettingsStore()
+const setting = settingsStore.setting
 
 const themeOptions = [
   { value: 'light', label: '浅色模式', icon: 'i-lucide-sun', desc: '明亮通透' },
@@ -169,6 +164,26 @@ defineOptions({
             </div>
           </div>
           <USelect v-model="setting.pageSize" :options="pageSizeOptions" class="w-full sm:w-44" />
+        </div>
+
+        <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white/60 p-4 transition-colors hover:border-slate-300 dark:border-white/[0.10] dark:bg-[#16161d] dark:hover:border-white/20 dark:hover:bg-[#1c1c25] sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 dark:border-white/[0.10] dark:bg-[#1c1c25] dark:text-slate-400">
+              <UIcon name="i-lucide-lock-keyhole" class="h-4 w-4" />
+            </span>
+            <div>
+              <p class="text-sm font-medium text-slate-900 dark:text-white">收藏夹访问密码</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">空值表示不启用收藏夹访问密码</p>
+            </div>
+          </div>
+          <UInput
+            v-model="setting.favoritesHidePassword"
+            type="password"
+            maxlength="64"
+            autocomplete="new-password"
+            placeholder="未设置"
+            class="w-full sm:w-56"
+          />
         </div>
       </div>
     </section>

@@ -1,7 +1,4 @@
 import type { InjectionKey, Ref } from 'vue'
-import type { SettingsStoreState } from '@/components/user/settings/mock'
-
-export const settingsStateKey: InjectionKey<SettingsStoreState> = Symbol('settingsState')
 
 /**
  * 设置页"保存成功"信号：父组件每次保存成功后递增此值，

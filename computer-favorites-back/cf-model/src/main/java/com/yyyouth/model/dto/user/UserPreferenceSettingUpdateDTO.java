@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -61,6 +62,12 @@ public class UserPreferenceSettingUpdateDTO {
     @NotBlank(message = "首页样式不能为空")
     @Pattern(regexp = "^(card|list)$", message = "首页样式仅支持 card、list")
     private String homepageStyle;
+
+    /**
+     * 收藏夹访问密码
+     */
+    @Size(max = 64, message = "收藏夹访问密码长度不能超过64个字符")
+    private String favoritesHidePassword;
 
     /**
      * 每页条数

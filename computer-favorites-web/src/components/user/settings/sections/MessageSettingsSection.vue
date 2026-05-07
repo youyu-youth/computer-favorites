@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
-import { settingsStateKey } from '../context'
+import { computed } from 'vue'
+import { useSettingsStore } from '@/stores/settings'
 
-const settingsState = inject(settingsStateKey)
-if (!settingsState) {
-  throw new Error('Settings state is not provided')
-}
-
-const setting = settingsState.setting
+const settingsStore = useSettingsStore()
+const setting = settingsStore.setting
 
 // number(0/1) <-> boolean 双向桥接
 const makeBoolBridge = (key: 'emailNotice' | 'collectNotice' | 'commentNotice') =>

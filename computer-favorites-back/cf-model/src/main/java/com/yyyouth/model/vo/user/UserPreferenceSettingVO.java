@@ -42,6 +42,11 @@ public class UserPreferenceSettingVO {
     private String homepageStyle;
 
     /**
+     * 收藏夹访问密码
+     */
+    private String favoritesHidePassword;
+
+    /**
      * 每页条数
      */
     private Integer pageSize;

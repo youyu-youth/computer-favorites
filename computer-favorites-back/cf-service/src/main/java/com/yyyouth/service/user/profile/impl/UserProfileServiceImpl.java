@@ -267,6 +267,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         userSetting.setCollectNotice(updateDTO.getCollectNotice());
         userSetting.setCommentNotice(updateDTO.getCommentNotice());
         userSetting.setHomepageStyle(normalizeHomepageStyle(updateDTO.getHomepageStyle()));
+        userSetting.setFavoritesHidePassword(normalizeText(updateDTO.getFavoritesHidePassword()));
         userSetting.setPageSize(updateDTO.getPageSize());
         userSetting.setUpdateTime(LocalDateTime.now());
 

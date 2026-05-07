@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, reactive, ref, shallowRef } from 'vue'
+import { computed, onMounted, provide, ref, shallowRef } from 'vue'
 // @ts-ignore
 import SettingsSidebar from '@/components/user/settings/SettingsSidebar.vue'
 // @ts-ignore
@@ -12,9 +12,9 @@ import PreferenceSettingsSection from '@/components/user/settings/sections/Prefe
 import DataManagementSection from '@/components/user/settings/sections/DataManagementSection.vue'
 // @ts-ignore
 import MessageSettingsSection from '@/components/user/settings/sections/MessageSettingsSection.vue'
-import { mockUserBasicInfo, mockUserDetailProfile, mockUserPreferenceSetting } from '@/components/user/settings/mock'
-import { settingsStateKey, settingsLockSignalKey } from '@/components/user/settings/context'
+import { settingsLockSignalKey } from '@/components/user/settings/context'
 import { useToast } from '@/composables/useToast'
+import { useSettingsStore } from '@/stores/settings'
 
 defineOptions({
   name: 'SettingsView',
@@ -28,18 +28,19 @@ const tabs = [
   { id: 'data', label: '数据管理', icon: 'i-lucide-database', component: DataManagementSection, hint: 'Data' },
 ]
 
-const settingsState = reactive({
-  basicInfo: { ...mockUserBasicInfo },
-  profile: { ...mockUserDetailProfile },
-  setting: { ...mockUserPreferenceSetting },
-})
 const toast = useToast()
+const settingsStore = useSettingsStore()
 
-const cloneState = () => JSON.parse(JSON.stringify(settingsState)) as typeof settingsState
+const cloneState = () =>
+  JSON.parse(JSON.stringify({
+    basicInfo: settingsStore.basicInfo,
+    profile: settingsStore.profile,
+    setting: settingsStore.setting,
+  }))
 const baselineSnapshot = ref(cloneState())
 const lockSignal = ref(0)
+const loadError = ref('')
 
-provide(settingsStateKey, settingsState)
 provide(settingsLockSignalKey, lockSignal)
 
 const firstTab = tabs[0]
@@ -50,9 +51,9 @@ if (!firstTab) {
 const activeTabId = ref(firstTab.id)
 const activeComponent = shallowRef(firstTab.component)
 const lastSavedAt = ref<Date | null>(null)
-const saving = ref(false)
+const saving = computed(() => settingsStore.saving)
 const hasDirty = computed(
-  () => JSON.stringify(settingsState) !== JSON.stringify(baselineSnapshot.value),
+  () => JSON.stringify(cloneState()) !== JSON.stringify(baselineSnapshot.value),
 )
 
 const activeTabLabel = computed(() => tabs.find((t) => t.id === activeTabId.value)?.label ?? '')
@@ -78,13 +79,27 @@ const handleTabChange = (id: string) => {
   }
 }
 
-const handleSaveAllChanges = () => {
-  if (saving.value || !hasDirty.value) {
+const loadSettings = async () => {
+  loadError.value = ''
+  try {
+    await settingsStore.fetchProfile()
+    baselineSnapshot.value = cloneState()
+  } catch (error) {
+    loadError.value = error instanceof Error ? error.message : '加载设置失败'
+    toast.add({
+      title: '加载失败',
+      description: loadError.value,
+      type: 'error',
+    })
+  }
+}
+
+const handleSaveAllChanges = async () => {
+  if (saving.value || settingsStore.loading || !hasDirty.value) {
     return
   }
-  saving.value = true
-  window.setTimeout(() => {
-    saving.value = false
+  try {
+    await settingsStore.saveAll()
     baselineSnapshot.value = cloneState()
     lastSavedAt.value = new Date()
     lockSignal.value += 1
@@ -93,8 +108,16 @@ const handleSaveAllChanges = () => {
       description: '已统一保存五个设置模块的更改',
       type: 'success',
     })
-  }, 320)
+  } catch (error) {
+    toast.add({
+      title: '保存失败',
+      description: error instanceof Error ? error.message : '设置保存失败，请稍后重试',
+      type: 'error',
+    })
+  }
 }
+
+onMounted(loadSettings)
 </script>
 
 <template>
@@ -150,8 +173,29 @@ const handleSaveAllChanges = () => {
         <!-- Content Area -->
         <main class="min-w-0 flex-1">
           <div class="cf-settings-card relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-colors dark:border-white/[0.10] dark:bg-[#0f0f14] dark:shadow-none md:p-8">
+            <div v-if="settingsStore.loading" class="space-y-4">
+              <USkeleton class="h-8 w-40" />
+              <USkeleton class="h-24 w-full" />
+              <USkeleton class="h-24 w-full" />
+              <USkeleton class="h-24 w-full" />
+            </div>
+            <div v-else-if="loadError" class="flex flex-col items-center gap-4 py-12 text-center">
+              <UIcon name="i-lucide-circle-alert" class="h-10 w-10 text-rose-500" />
+              <div class="space-y-1">
+                <p class="text-sm font-semibold text-slate-900 dark:text-white">设置加载失败</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">{{ loadError }}</p>
+              </div>
+              <button
+                type="button"
+                class="cf-btn-primary inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-all duration-200"
+                @click="loadSettings"
+              >
+                <UIcon name="i-lucide-refresh-cw" class="h-4 w-4" />
+                <span>重新加载</span>
+              </button>
+            </div>
             <transition name="cf-fade" mode="out-in">
-              <component :is="activeComponent" :key="activeTabId" />
+              <component v-if="!settingsStore.loading && !loadError" :is="activeComponent" :key="activeTabId" />
             </transition>
           </div>
 

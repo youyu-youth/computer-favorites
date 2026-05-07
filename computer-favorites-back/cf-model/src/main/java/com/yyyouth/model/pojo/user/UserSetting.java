@@ -37,6 +37,12 @@ public class UserSetting {
     private String theme;
 
     /**
+     * 收藏夹访问密码
+     */
+    @TableField("favorites_hide_password")
+    private String favoritesHidePassword;
+
+    /**
      * 语言
      */
     @TableField("language")

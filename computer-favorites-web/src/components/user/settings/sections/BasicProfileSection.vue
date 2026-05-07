@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue'
-import { settingsStateKey } from '@/components/user/settings/context'
+import { computed, ref } from 'vue'
 import EditableInput from '@/components/user/settings/components/EditableInput.vue'
 import TechStackPickerDialog from '@/components/user/settings/components/TechStackPickerDialog.vue'
+import AvatarUploadDialog from '@/components/user/settings/components/AvatarUploadDialog.vue'
+import { useSettingsStore } from '@/stores/settings'
+import { useToast } from '@/composables/useToast'
 import githubIcon from '@/assets/icons/svg/github.svg'
 import giteeIcon from '@/assets/icons/svg/gitee.svg'
 
-const settingsState = inject(settingsStateKey)
-if (!settingsState) {
-  throw new Error('Settings state is not provided')
-}
-
-const basicInfo = settingsState.basicInfo
-const profile = settingsState.profile
+const settingsStore = useSettingsStore()
+const toast = useToast()
+const basicInfo = settingsStore.basicInfo
+const profile = settingsStore.profile
 
 const SIGNATURE_MAX = 80
 
@@ -50,6 +49,42 @@ const techStackArray = computed<string[]>({
 })
 
 const techDialogOpen = ref(false)
+const avatarDialogOpen = ref(false)
+
+const handleAvatarSubmit = async (file: File) => {
+  try {
+    await settingsStore.uploadAvatar(file)
+    avatarDialogOpen.value = false
+    toast.add({
+      title: '头像已更新',
+      description: '新头像已保存到服务器',
+      type: 'success',
+    })
+  } catch (error) {
+    toast.add({
+      title: '头像上传失败',
+      description: error instanceof Error ? error.message : '请稍后重试',
+      type: 'error',
+    })
+  }
+}
+
+const handleDeleteAvatar = async () => {
+  try {
+    await settingsStore.deleteAvatar()
+    toast.add({
+      title: '头像已删除',
+      description: '已恢复为默认头像',
+      type: 'success',
+    })
+  } catch (error) {
+    toast.add({
+      title: '头像删除失败',
+      description: error instanceof Error ? error.message : '请稍后重试',
+      type: 'error',
+    })
+  }
+}
 
 const handleAddTechStacks = (names: string[]) => {
   const existing = new Set(techStackArray.value.map((n) => n.toLowerCase()))
@@ -110,16 +145,24 @@ defineOptions({
           <button
             type="button"
             class="cf-action-btn inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-amber-400/40 bg-amber-50 px-3.5 text-xs font-medium text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-100/70 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/15"
+            :disabled="settingsStore.uploadingAvatar"
+            @click="avatarDialogOpen = true"
           >
             <UIcon name="i-lucide-upload" class="h-3.5 w-3.5" />
             <span>更换头像</span>
           </button>
           <button
             type="button"
-            class="cf-action-btn inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:bg-[#1c1c25] dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white"
+            class="cf-action-btn inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-medium text-slate-700 transition-colors hover:border-rose-300 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/[0.10] dark:bg-[#1c1c25] dark:text-slate-200 dark:hover:border-rose-400/40 dark:hover:text-rose-400"
+            :disabled="!basicInfo.avatar || settingsStore.deletingAvatar"
+            @click="handleDeleteAvatar"
           >
-            <UIcon name="i-lucide-trash-2" class="h-3.5 w-3.5" />
-            <span>移除</span>
+            <UIcon
+              :name="settingsStore.deletingAvatar ? 'i-lucide-loader-2' : 'i-lucide-trash-2'"
+              class="h-3.5 w-3.5"
+              :class="settingsStore.deletingAvatar ? 'animate-spin' : ''"
+            />
+            <span>{{ settingsStore.deletingAvatar ? '删除中…' : '删除头像' }}</span>
           </button>
         </div>
       </div>
@@ -259,6 +302,14 @@ defineOptions({
       :existing="techStackArray"
       @update:open="techDialogOpen = $event"
       @submit="handleAddTechStacks"
+    />
+
+    <AvatarUploadDialog
+      :open="avatarDialogOpen"
+      :current-avatar="basicInfo.avatar"
+      :loading="settingsStore.uploadingAvatar"
+      @update:open="avatarDialogOpen = $event"
+      @submit="handleAvatarSubmit"
     />
   </div>
 </template>
