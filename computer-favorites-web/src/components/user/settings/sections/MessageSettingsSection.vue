@@ -51,19 +51,21 @@ defineOptions({
             <UIcon name="i-lucide-mail" class="h-4 w-4" />
           </span>
           <div class="min-w-0 space-y-1">
-            <div class="flex items-center gap-2">
-              <p class="text-sm font-semibold text-slate-900 dark:text-white">邮件通知</p>
-              <span
-                class="text-[10px] font-medium"
-                :class="emailNoticeBool ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'"
-              >
-                {{ emailNoticeBool ? 'ON' : 'OFF' }}
-              </span>
-            </div>
+            <p class="text-sm font-semibold text-slate-900 dark:text-white">邮件通知</p>
             <p class="text-xs text-slate-500 dark:text-slate-400">接收系统重要更新与安全提醒</p>
           </div>
         </div>
-        <USwitch v-model="emailNoticeBool" class="shrink-0" />
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="emailNoticeBool"
+          aria-label="邮件通知开关"
+          class="cf-toggle shrink-0"
+          :class="{ 'is-on': emailNoticeBool }"
+          @click="emailNoticeBool = !emailNoticeBool"
+        >
+          <span class="cf-toggle-thumb"></span>
+        </button>
       </div>
 
       <!-- 收藏提醒 -->
@@ -78,19 +80,21 @@ defineOptions({
             <UIcon name="i-lucide-bookmark" class="h-4 w-4" />
           </span>
           <div class="min-w-0 space-y-1">
-            <div class="flex items-center gap-2">
-              <p class="text-sm font-semibold text-slate-900 dark:text-white">收藏提醒</p>
-              <span
-                class="text-[10px] font-medium"
-                :class="collectNoticeBool ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'"
-              >
-                {{ collectNoticeBool ? 'ON' : 'OFF' }}
-              </span>
-            </div>
+            <p class="text-sm font-semibold text-slate-900 dark:text-white">收藏提醒</p>
             <p class="text-xs text-slate-500 dark:text-slate-400">当你的网站被他人收藏时通知我</p>
           </div>
         </div>
-        <USwitch v-model="collectNoticeBool" class="shrink-0" />
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="collectNoticeBool"
+          aria-label="收藏提醒开关"
+          class="cf-toggle shrink-0"
+          :class="{ 'is-on': collectNoticeBool }"
+          @click="collectNoticeBool = !collectNoticeBool"
+        >
+          <span class="cf-toggle-thumb"></span>
+        </button>
       </div>
 
       <!-- 评论与互动 -->
@@ -105,19 +109,21 @@ defineOptions({
             <UIcon name="i-lucide-message-circle" class="h-4 w-4" />
           </span>
           <div class="min-w-0 space-y-1">
-            <div class="flex items-center gap-2">
-              <p class="text-sm font-semibold text-slate-900 dark:text-white">评论与互动</p>
-              <span
-                class="text-[10px] font-medium"
-                :class="commentNoticeBool ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'"
-              >
-                {{ commentNoticeBool ? 'ON' : 'OFF' }}
-              </span>
-            </div>
+            <p class="text-sm font-semibold text-slate-900 dark:text-white">评论与互动</p>
             <p class="text-xs text-slate-500 dark:text-slate-400">当有新评论、新回复或新点赞时通知我</p>
           </div>
         </div>
-        <USwitch v-model="commentNoticeBool" class="shrink-0" />
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="commentNoticeBool"
+          aria-label="评论与互动开关"
+          class="cf-toggle shrink-0"
+          :class="{ 'is-on': commentNoticeBool }"
+          @click="commentNoticeBool = !commentNoticeBool"
+        >
+          <span class="cf-toggle-thumb"></span>
+        </button>
       </div>
 
       <p class="pt-2 text-[11px] text-slate-400 dark:text-slate-500">
@@ -127,3 +133,77 @@ defineOptions({
     </section>
   </div>
 </template>
+
+<style scoped>
+/* 通知行专属开关：纯 CSS toggle，避免 PrimeVue unstyled 模式下的渲染异常 */
+.cf-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid rgb(148 163 184 / 0.45);
+  border-radius: 9999px;
+  background: rgb(226 232 240);
+  cursor: pointer;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+.cf-toggle:hover:not(:disabled) {
+  border-color: rgb(148 163 184 / 0.7);
+}
+.cf-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(245 158 11 / 0.35);
+}
+
+.cf-toggle-thumb {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: white;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.25);
+  transform: translateY(-50%);
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cf-toggle.is-on {
+  background: rgb(245 158 11);
+  border-color: rgb(217 119 6 / 0.6);
+  box-shadow: 0 0 0 4px rgb(245 158 11 / 0.12);
+}
+.cf-toggle.is-on .cf-toggle-thumb {
+  transform: translate(20px, -50%);
+}
+
+/* 暗黑模式 */
+:where(html.dark) .cf-toggle {
+  background: rgb(71 85 105 / 0.7);
+  border-color: rgb(148 163 184 / 0.3);
+}
+:where(html.dark) .cf-toggle:hover:not(:disabled) {
+  border-color: rgb(148 163 184 / 0.5);
+}
+:where(html.dark) .cf-toggle.is-on {
+  background: rgb(245 158 11);
+  border-color: rgb(245 158 11 / 0.7);
+  box-shadow: 0 0 0 4px rgb(245 158 11 / 0.18);
+}
+:where(html.dark) .cf-toggle:focus-visible {
+  box-shadow: 0 0 0 3px rgb(245 158 11 / 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-toggle,
+  .cf-toggle-thumb {
+    transition: none;
+  }
+}
+</style>
