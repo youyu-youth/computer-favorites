@@ -66,8 +66,9 @@ const attrs = useAttrs()
 }
 
 :deep(.cf-switch[data-p-checked='true'] [data-pc-section='slider']) {
-  background: rgb(59 130 246);
-  border-color: rgb(37 99 235 / 0.45);
+  background: rgb(245 158 11);
+  border-color: rgb(217 119 6 / 0.55);
+  box-shadow: 0 0 0 4px rgb(245 158 11 / 0.12);
 }
 
 :deep(.cf-switch[data-p-checked='true'] [data-pc-section='handle']) {
@@ -80,8 +81,9 @@ const attrs = useAttrs()
 }
 
 :deep(.dark .cf-switch[data-p-checked='true'] [data-pc-section='slider']) {
-  background: rgb(96 165 250);
-  border-color: rgb(96 165 250 / 0.5);
+  background: rgb(245 158 11);
+  border-color: rgb(245 158 11 / 0.6);
+  box-shadow: 0 0 0 4px rgb(245 158 11 / 0.18);
 }
 
 :deep(.cf-switch[data-p-disabled='true']) {

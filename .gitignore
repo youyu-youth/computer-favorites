@@ -74,6 +74,10 @@ opencode.json
 
 **/aichat
 
+.windsurf/
+AGENTS.md
+
+
 ### 前端规范
 # Logs
 logs

@@ -35,7 +35,6 @@ const model = computed({
 const wrapperClass = computed(() => [attrs.class])
 const inputClass = computed(() => [
   'w-full resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 text-slate-900 shadow-none outline-none focus:ring-0 dark:text-white',
-  attrs.class,
 ])
 </script>
 
@@ -43,7 +42,7 @@ const inputClass = computed(() => [
   <div :class="wrapperClass">
     <div
       data-slot="base"
-      class="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-[#000000]"
+      class="rounded-lg border border-slate-200 bg-white px-3 py-2 transition-colors duration-150 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/40 dark:border-white/[0.10] dark:bg-[#16161d] dark:focus-within:border-amber-400/60 dark:focus-within:bg-[#1c1c25] dark:focus-within:ring-amber-400/30"
     >
       <Textarea
         v-model="model"

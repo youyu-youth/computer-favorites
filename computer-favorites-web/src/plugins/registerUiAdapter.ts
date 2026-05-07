@@ -14,6 +14,7 @@ import UIcon from '@/components/ui-adapter/UIcon.vue'
 import UInput from '@/components/ui-adapter/UInput.vue'
 import UInputTags from '@/components/ui-adapter/UInputTags.vue'
 import UModal from '@/components/ui-adapter/UModal.vue'
+import USelect from '@/components/ui-adapter/USelect.vue'
 import USeparator from '@/components/ui-adapter/USeparator.vue'
 import USkeleton from '@/components/ui-adapter/USkeleton.vue'
 import USwitch from '@/components/ui-adapter/USwitch.vue'
@@ -34,6 +35,7 @@ export const registerUiAdapter = (app: App): void => {
   app.component('UInput', UInput)
   app.component('UInputTags', UInputTags)
   app.component('UModal', UModal)
+  app.component('USelect', USelect)
   app.component('USeparator', USeparator)
   app.component('USkeleton', USkeleton)
   app.component('USwitch', USwitch)

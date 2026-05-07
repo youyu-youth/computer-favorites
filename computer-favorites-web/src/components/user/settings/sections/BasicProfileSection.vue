@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { computed, inject } from 'vue'
 import { settingsStateKey } from '@/components/user/settings/context'
-import nickNameIcon from '@/assets/icons/svg/nicheng.svg'
-import penIcon from '@/assets/icons/svg/pen.svg'
+import EditableInput from '@/components/user/settings/components/EditableInput.vue'
 import githubIcon from '@/assets/icons/svg/github.svg'
 import giteeIcon from '@/assets/icons/svg/gitee.svg'
-import blogIcon from '@/assets/icons/svg/blog.svg'
 
 const settingsState = inject(settingsStateKey)
 if (!settingsState) {
@@ -15,120 +13,242 @@ if (!settingsState) {
 const basicInfo = settingsState.basicInfo
 const profile = settingsState.profile
 
+const SIGNATURE_MAX = 80
+
+const signatureLength = computed(() => (profile.signature ?? '').length)
+
+const genderOptions = [
+  { value: 1, label: '男', icon: 'i-lucide-mars' },
+  { value: 2, label: '女', icon: 'i-lucide-venus' },
+  { value: 3, label: '保密', icon: 'i-lucide-circle-help' },
+] as const
+
+const setGender = (value: number) => {
+  profile.gender = value
+}
+
+// 字符串 <-> 数组双向转换，复用 UInputTags
+const splitTags = (raw: string): string[] =>
+  (raw ?? '')
+    .split(/[,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+
+const hobbyTagsArray = computed<string[]>({
+  get: () => splitTags(profile.hobbyTags),
+  set: (value: string[]) => {
+    profile.hobbyTags = value.join(',')
+  },
+})
+
+const techStackArray = computed<string[]>({
+  get: () => splitTags(profile.techStack),
+  set: (value: string[]) => {
+    profile.techStack = value.join(',')
+  },
+})
+
 defineOptions({
-  name: 'BasicProfileSection'
+  name: 'BasicProfileSection',
 })
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="space-y-1">
-      <h3 class="text-xl font-medium text-slate-900 dark:text-white">基础资料</h3>
-      <p class="text-sm text-slate-500 dark:text-slate-400">管理您的个人基础信息和公开展示的资料。</p>
-    </div>
+  <div class="space-y-8">
+    <!-- Section Header -->
+    <header class="space-y-2">
+      <div class="flex items-center gap-3">
+        <span class="block h-6 w-1 rounded-full bg-amber-500"></span>
+        <h3 class="text-xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-2xl">基础资料</h3>
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400">管理你的个人基础信息和公开展示的资料。</p>
+    </header>
 
-    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-0 dark:bg-black dark:shadow-none">
-      <div class="space-y-8">
+    <!-- 头像 -->
+    <section class="cf-block flex flex-col gap-6 rounded-xl border border-slate-200/80 bg-white/60 p-5 dark:border-white/[0.10] dark:bg-[#16161d] sm:flex-row sm:items-center">
+      <div class="relative shrink-0">
+        <div class="absolute -inset-1 rounded-full bg-amber-400/15 blur-md" aria-hidden="true"></div>
+        <UAvatar
+          :src="basicInfo.avatar"
+          :alt="basicInfo.nickname"
+          class="relative h-[112px] w-[112px] ring-2 ring-amber-400/40 ring-offset-4 ring-offset-white dark:ring-amber-400/30 dark:ring-offset-[#16161d]"
+        />
+        <span class="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-amber-500 text-white shadow dark:border-[#16161d]">
+          <UIcon name="i-lucide-camera" class="h-3 w-3" />
+        </span>
+      </div>
 
-        <!-- 头像设置 -->
-        <div class="flex items-center space-x-6">
-          <UAvatar :src="basicInfo.avatar" :alt="basicInfo.nickname" class="h-[120px] w-[120px] ring-2 ring-white dark:ring-0" />
-          <div class="space-y-2">
-            <UButton color="white" variant="solid" size="sm" class="cursor-pointer dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:ring-0">更改头像</UButton>
-            <p class="text-xs text-slate-500 dark:text-slate-500">支持 JPG、PNG 格式，最大 2MB</p>
-          </div>
+      <div class="flex flex-1 flex-col gap-3">
+        <div class="space-y-1">
+          <p class="text-sm font-semibold text-slate-900 dark:text-white">头像</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            <UIcon name="i-lucide-info" class="-mt-0.5 mr-1 inline h-3 w-3" />
+            支持 JPG / PNG / WebP，最大 2 MB；推荐 1:1 正方形 256×256 及以上
+          </p>
         </div>
-
-        <UDivider class="mt-2 dark:border-white/10" />
-
-        <!-- 基础表单 -->
-        <div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
-          <UFormGroup label="昵称" name="nickname">
-            <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                <img :src="nickNameIcon" alt="昵称图标" class="h-4 w-4 object-contain" />
-                昵称
-              </span>
-              <UInput v-model="basicInfo.nickname" placeholder="您的昵称" class="pl-24 dark:ring-0 dark:bg-white/5" />
-            </div>
-          </UFormGroup>
-
-          <UFormGroup label="所在国家" name="country">
-            <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-slate-500 dark:text-slate-400">国家</span>
-              <UInput v-model="profile.country" placeholder="例如：中国" class="pl-12 dark:ring-0 dark:bg-white/5" />
-            </div>
-          </UFormGroup>
-
-          <UFormGroup label="所在城市" name="city">
-            <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-slate-500 dark:text-slate-400">城市</span>
-              <UInput v-model="profile.city" placeholder="例如：深圳" class="pl-12 dark:ring-0 dark:bg-white/5" />
-            </div>
-          </UFormGroup>
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            class="cf-action-btn inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-amber-400/40 bg-amber-50 px-3.5 text-xs font-medium text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-100/70 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/15"
+          >
+            <UIcon name="i-lucide-upload" class="h-3.5 w-3.5" />
+            <span>更换头像</span>
+          </button>
+          <button
+            type="button"
+            class="cf-action-btn inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:bg-[#1c1c25] dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white"
+          >
+            <UIcon name="i-lucide-trash-2" class="h-3.5 w-3.5" />
+            <span>移除</span>
+          </button>
         </div>
+      </div>
+    </section>
 
-        <UFormGroup label="个性签名" name="signature">
-          <div class="relative">
-            <span class="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-              <img :src="penIcon" alt="签名图标" class="h-4 w-4 object-contain" />
-              签名
-            </span>
-            <UTextarea v-model="profile.signature" :rows="3" placeholder="介绍一下自己吧" class="pl-24 dark:ring-0 dark:bg-white/5" />
+    <div class="cf-hairline" aria-hidden="true"></div>
+
+    <!-- 身份信息 -->
+    <section class="space-y-5">
+      <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+        Identity · 身份信息
+      </div>
+
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <UFormGroup label="昵称">
+          <EditableInput v-model="basicInfo.nickname" placeholder="你希望被如何称呼" :maxlength="32" />
+        </UFormGroup>
+
+        <UFormGroup label="性别">
+          <div class="grid grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-white/10 dark:bg-[#1c1c25]">
+            <button
+              v-for="opt in genderOptions"
+              :key="opt.value"
+              type="button"
+              class="flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md text-xs font-medium transition-all duration-150"
+              :class="profile.gender === opt.value
+                ? 'bg-white text-amber-600 shadow-sm ring-1 ring-amber-400/40 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-400/30'
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+              @click="setGender(opt.value)"
+            >
+              <UIcon :name="opt.icon" class="h-3.5 w-3.5" />
+              <span>{{ opt.label }}</span>
+            </button>
           </div>
         </UFormGroup>
 
-        <UDivider class="pt-6 pb-2 dark:border-white/10" />
+        <UFormGroup label="所在国家">
+          <EditableInput v-model="profile.country" placeholder="例如：中国" />
+        </UFormGroup>
 
-        <div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
-          <UFormGroup label="GitHub 主页" name="githubUrl">
-            <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                <img :src="githubIcon" alt="GitHub图标" class="h-4 w-4 rounded-sm bg-white p-[1px] object-contain" />
-                GitHub
-              </span>
-              <UInput v-model="profile.githubUrl" placeholder="https://github.com/..." class="pl-24 dark:ring-0 dark:bg-white/5" />
-            </div>
-          </UFormGroup>
-
-          <UFormGroup label="Gitee 主页" name="giteeUrl">
-            <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                <img :src="giteeIcon" alt="Gitee图标" class="h-4 w-4 object-contain" />
-                Gitee
-              </span>
-              <UInput v-model="profile.giteeUrl" placeholder="https://gitee.com/..." class="pl-24 dark:ring-0 dark:bg-white/5" />
-            </div>
-          </UFormGroup>
-
-          <UFormGroup label="个人博客" name="blogUrl">
-            <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                <img :src="blogIcon" alt="博客图标" class="h-4 w-4 object-contain" />
-                博客
-              </span>
-              <UInput v-model="profile.blogUrl" placeholder="https://..." class="pl-20 dark:ring-0 dark:bg-white/5" />
-            </div>
-          </UFormGroup>
-
-          <UFormGroup label="爱好标签" name="hobbyTags">
-            <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-slate-500 dark:text-slate-400">爱好</span>
-              <UInput v-model="profile.hobbyTags" placeholder="如：阅读,开源,设计" class="pl-12 dark:ring-0 dark:bg-white/5" />
-            </div>
-          </UFormGroup>
-        </div>
-
-        <div class="grid grid-cols-1 gap-8">
-          <UFormGroup label="擅长技术栈" name="techStack">
-            <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-slate-500 dark:text-slate-400">技术栈</span>
-              <UInput v-model="profile.techStack" placeholder="如：Vue.js,TypeScript,Spring Boot,MySQL" class="pl-16 dark:ring-0 dark:bg-white/5" />
-            </div>
-          </UFormGroup>
-        </div>
-
+        <UFormGroup label="所在城市">
+          <EditableInput v-model="profile.city" placeholder="例如：深圳" />
+        </UFormGroup>
       </div>
-    </div>
+
+      <UFormGroup>
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-200">个性签名</label>
+          <span
+            class="font-mono text-[11px] tabular-nums"
+            :class="signatureLength >= SIGNATURE_MAX ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'"
+          >
+            {{ signatureLength }} / {{ SIGNATURE_MAX }}
+          </span>
+        </div>
+        <EditableInput
+          v-model="profile.signature"
+          as="textarea"
+          :rows="3"
+          :maxlength="SIGNATURE_MAX"
+          placeholder="一句话介绍自己，将展示在你的个人主页"
+        />
+      </UFormGroup>
+    </section>
+
+    <div class="cf-hairline" aria-hidden="true"></div>
+
+    <!-- 链接与标签 -->
+    <section class="space-y-5">
+      <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+        Links & Tags · 链接与标签
+      </div>
+
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <UFormGroup>
+          <label class="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+            <img :src="githubIcon" alt="GitHub" class="h-4 w-4 rounded-sm bg-white p-[1px] object-contain dark:bg-white/90" />
+            <span>GitHub</span>
+          </label>
+          <EditableInput v-model="profile.githubUrl" placeholder="https://github.com/your-name" input-class="font-mono text-sm" autocomplete="off" />
+        </UFormGroup>
+
+        <UFormGroup>
+          <label class="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+            <img :src="giteeIcon" alt="Gitee" class="h-4 w-4 object-contain" />
+            <span>Gitee</span>
+          </label>
+          <EditableInput v-model="profile.giteeUrl" placeholder="https://gitee.com/your-name" input-class="font-mono text-sm" autocomplete="off" />
+        </UFormGroup>
+
+        <UFormGroup>
+          <label class="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+            <UIcon name="i-lucide-globe" class="h-4 w-4 text-slate-500 dark:text-slate-400" />
+            <span>个人博客</span>
+          </label>
+          <EditableInput v-model="profile.blogUrl" placeholder="https://your-blog.com" input-class="font-mono text-sm" autocomplete="off" />
+        </UFormGroup>
+
+        <UFormGroup>
+          <label class="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+            <UIcon name="i-lucide-heart" class="h-4 w-4 text-amber-500" />
+            <span>爱好标签</span>
+          </label>
+          <UInputTags
+            v-model="hobbyTagsArray"
+            placeholder="输入后回车添加（如：阅读、开源、设计）"
+            class="w-full"
+          />
+          <p class="text-[11px] text-slate-400 dark:text-slate-500">回车或逗号确认 · 退格删除最近一项</p>
+        </UFormGroup>
+      </div>
+
+      <UFormGroup>
+        <label class="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+          <UIcon name="i-lucide-cpu" class="h-4 w-4 text-amber-500" />
+          <span>擅长技术栈</span>
+        </label>
+        <UInputTags
+          v-model="techStackArray"
+          placeholder="如：Vue.js、TypeScript、Spring Boot、MySQL"
+          class="w-full"
+        />
+        <p class="text-[11px] text-slate-400 dark:text-slate-500">将展示在个人主页和投稿署名上</p>
+      </UFormGroup>
+    </section>
   </div>
 </template>
+
+<style scoped>
+.cf-hairline {
+  height: 1px;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(15 23 42 / 0.08) 20%,
+    rgb(245 158 11 / 0.25) 50%,
+    rgb(15 23 42 / 0.08) 80%,
+    transparent 100%
+  );
+}
+
+:where(html.dark) .cf-hairline {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.06) 20%,
+    rgb(245 158 11 / 0.35) 50%,
+    rgb(255 255 255 / 0.06) 80%,
+    transparent 100%
+  );
+}
+</style>
