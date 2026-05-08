@@ -1,5 +1,12 @@
 <script setup lang="ts">
+/**
+ * @author yyyouth zg
+ * @date 2026-05-07
+ * 贡献活跃图：GitHub Stats 风格紧凑热力图（纯黑底 + 4 阶梯 emerald）
+ */
+import { Activity } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
+import StatCard from './dashboard/StatCard.vue'
 
 const columns = 26
 const rows = 7
@@ -39,11 +46,11 @@ const contributionCount = computed(
 )
 
 const getCellClass = (value: number) => {
-  if (value >= 8) return 'bg-emerald-500'
-  if (value >= 6) return 'bg-emerald-600'
-  if (value >= 4) return 'bg-emerald-700'
-  if (value >= 2) return 'bg-emerald-800/80'
-  return 'bg-gray-200 dark:bg-gray-700'
+  if (value >= 8) return 'bg-emerald-400'
+  if (value >= 6) return 'bg-emerald-500'
+  if (value >= 4) return 'bg-emerald-600/80'
+  if (value >= 2) return 'bg-emerald-700/60'
+  return 'bg-black/5 dark:bg-white/5'
 }
 
 const getMonthOffsetStyle = (idx: number) => {
@@ -52,94 +59,97 @@ const getMonthOffsetStyle = (idx: number) => {
     return { marginLeft: `${current * 2}px` }
   }
   const prev = monthOffsets[idx - 1] ?? 0
-  return { marginLeft: `${(current - prev - 1) * 14}px` }
+  return { marginLeft: `${(current - prev - 1) * 12}px` }
 }
 </script>
 
 <template>
-  <UCard
-    class="!ring-0 shadow-none bg-white/60 dark:!bg-black/60 backdrop-blur-md border border-gray-200 dark:border-[#1f1f1f] !rounded-none overflow-hidden"
-  >
-    <div class="space-y-4">
-      <div class="flex items-center justify-between gap-2">
-        <p class="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">
-          {{ contributionCount }} contributions in the last year
-        </p>
-        <span class="text-xs text-gray-500 dark:text-gray-400">Contribution settings</span>
-      </div>
+  <section class="space-y-3">
+    <header class="flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-chart-no-axes-combined" class="size-5 text-primary-500" />
-        <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">贡献活跃图</h3>
+        <Activity class="size-4 text-amber-500" :stroke-width="2" />
+        <h3 class="text-sm font-semibold tracking-tight text-gray-900 sm:text-base dark:text-gray-100">
+          贡献活跃图
+        </h3>
+        <span class="font-mono text-[11px] uppercase tracking-widest text-gray-500 dark:text-gray-400">
+          /heatmap
+        </span>
       </div>
-      <div class="flex flex-col sm:flex-row gap-4">
-        <div class="min-w-0 flex-1 space-y-3">
-          <div class="overflow-x-auto pb-1">
-            <div class="w-max space-y-2">
-              <div class="flex pl-14 text-xs text-gray-500 dark:text-gray-400">
-                <span
-                  v-for="(month, idx) in monthLabels"
-                  :key="month"
-                  class="leading-none"
-                  :style="getMonthOffsetStyle(idx)"
-                >
-                  {{ month }}
-                </span>
-              </div>
-              <div class="flex gap-2">
-                <div class="w-10 space-y-2 text-xs text-gray-500 dark:text-gray-400">
-                  <div v-for="label in weekdayLabels" :key="label" class="h-5 flex items-center">
-                    {{ label }}
-                  </div>
-                </div>
-                <div class="space-y-1.5">
-                  <div
-                    v-for="(week, rowIndex) in contributionGrid"
-                    :key="`week-${rowIndex}`"
-                    class="flex gap-1.5"
-                  >
-                    <div
-                      v-for="(value, colIndex) in week"
-                      :key="`cell-${rowIndex}-${colIndex}`"
-                      class="size-3 sm:size-3.5 rounded-none"
-                      :class="getCellClass(value)"
-                    />
-                  </div>
-                </div>
-              </div>
+      <span class="font-mono text-[11px] text-gray-500 dark:text-gray-400">
+        {{ contributionCount }} contributions in the last year
+      </span>
+    </header>
+
+    <StatCard>
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <div class="min-w-0 flex-1 space-y-2">
+        <div class="overflow-x-auto pb-1">
+          <div class="w-max space-y-1.5">
+            <div class="flex pl-12 font-mono text-[10px] text-gray-500 dark:text-gray-400">
+              <span
+                v-for="(month, idx) in monthLabels"
+                :key="month"
+                class="leading-none"
+                :style="getMonthOffsetStyle(idx)"
+              >
+                {{ month }}
+              </span>
             </div>
-          </div>
-          <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-            <span>Learn how we count contributions</span>
-            <div class="flex items-center gap-1">
-              <span>Less</span>
-              <span class="size-3 rounded-none bg-gray-200 dark:bg-gray-700" />
-              <span class="size-3 rounded-none bg-emerald-800/80" />
-              <span class="size-3 rounded-none bg-emerald-700" />
-              <span class="size-3 rounded-none bg-emerald-600" />
-              <span class="size-3 rounded-none bg-emerald-500" />
-              <span>More</span>
+            <div class="flex gap-1.5">
+              <div class="w-10 space-y-1.5 font-mono text-[10px] text-gray-500 dark:text-gray-400">
+                <div v-for="label in weekdayLabels" :key="label" class="h-[10px] flex items-center">
+                  {{ label }}
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div
+                  v-for="(week, rowIndex) in contributionGrid"
+                  :key="`week-${rowIndex}`"
+                  class="flex gap-1"
+                >
+                  <div
+                    v-for="(value, colIndex) in week"
+                    :key="`cell-${rowIndex}-${colIndex}`"
+                    class="size-[10px] rounded-[2px] transition-colors"
+                    :class="getCellClass(value)"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="sm:w-24">
-          <div class="flex sm:flex-col gap-2">
-            <button
-              v-for="year in yearOptions"
-              :key="year"
-              type="button"
-              class="h-9 px-3 rounded-none text-sm transition-colors border border-transparent dark:border-[#1f1f1f]"
-              :class="
-                selectedYear === year
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-black/5 text-gray-700 hover:bg-black/10 dark:bg-black/40 dark:text-gray-300 dark:hover:bg-black/60'
-              "
-              @click="selectedYear = year"
-            >
-              {{ year }}
-            </button>
+        <div class="flex items-center justify-between font-mono text-[10.5px] text-gray-500 dark:text-gray-400">
+          <span>Learn how we count contributions</span>
+          <div class="flex items-center gap-1">
+            <span>Less</span>
+            <span class="size-[10px] rounded-[2px] bg-black/5 dark:bg-white/5" />
+            <span class="size-[10px] rounded-[2px] bg-emerald-700/60" />
+            <span class="size-[10px] rounded-[2px] bg-emerald-600/80" />
+            <span class="size-[10px] rounded-[2px] bg-emerald-500" />
+            <span class="size-[10px] rounded-[2px] bg-emerald-400" />
+            <span>More</span>
           </div>
+        </div>
+      </div>
+      <div class="sm:w-20">
+        <div class="flex sm:flex-col gap-1.5">
+          <button
+            v-for="year in yearOptions"
+            :key="year"
+            type="button"
+            class="cursor-pointer rounded-sm border px-2 py-1 font-mono text-[12px] transition-colors"
+            :class="
+              selectedYear === year
+                ? 'border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                : 'border-black/5 text-gray-600 hover:bg-black/5 dark:border-white/[0.06] dark:text-gray-400 dark:hover:bg-white/5'
+            "
+            @click="selectedYear = year"
+          >
+            {{ year }}
+          </button>
         </div>
       </div>
     </div>
-  </UCard>
+    </StatCard>
+  </section>
 </template>

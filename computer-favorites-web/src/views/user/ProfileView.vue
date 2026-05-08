@@ -234,19 +234,25 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen dark:bg-black transition-colors duration-300">
-    <UContainer class="py-8 md:py-10">
-      <div v-if="loading" class="space-y-4">
-        <USkeleton class="h-52 w-full rounded-xl" />
-        <USkeleton class="h-40 w-full rounded-xl" />
-        <USkeleton class="h-40 w-full rounded-xl" />
+  <div class="min-h-screen bg-gray-50 transition-colors duration-300 dark:bg-black">
+    <div class="mx-auto max-w-7xl px-3 py-6 sm:px-4 sm:py-8 lg:px-6 lg:py-10">
+      <div v-if="loading" class="space-y-3">
+        <div class="h-44 w-full animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div
+            v-for="i in 6"
+            :key="i"
+            class="h-28 w-full animate-pulse rounded-md bg-black/5 dark:bg-white/5"
+          />
+        </div>
+        <div class="h-40 w-full animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
       </div>
 
-      <div v-else-if="hasProfile && profileData" class="flex flex-col lg:flex-row gap-6 lg:gap-8">
+      <div v-else-if="hasProfile && profileData" class="flex flex-col gap-4 lg:flex-row lg:gap-5">
         <ProfileSidebarCard :profile="profileData" />
 
-        <main class="flex-1 min-w-0 space-y-6">
-          <ProfileHeroSection :profile="profileData" />
+        <main class="min-w-0 flex-1 space-y-4 lg:pt-3">
+          <ProfileHeroSection />
           <ProfileHeatmapSection />
           <ProfileSkillsSection :skills="profileData.skills" />
           <ProfileContributionSection
@@ -256,20 +262,23 @@ onMounted(() => {
         </main>
       </div>
 
-      <UCard v-else class="!ring-0 rounded-xl bg-white dark:!bg-[#131418] shadow-sm dark:shadow-md">
+      <section
+        v-else
+        class="rounded-md border border-black/5 bg-white p-4 dark:border-white/[0.06] dark:bg-black"
+      >
         <div class="space-y-3">
           <p class="text-sm text-gray-600 dark:text-gray-300">
             {{ errorText || '暂无个人资料数据' }}
           </p>
-          <UButton
-            color="neutral"
-            variant="soft"
+          <button
+            type="button"
+            class="cursor-pointer rounded-sm border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-mono text-[12px] text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
             @click="loadProfile"
-            class="!bg-gray-100 hover:!bg-gray-200 !text-gray-900 dark:!bg-white/10 dark:hover:!bg-white/20 dark:!text-white"
-            >重新加载</UButton
           >
+            重新加载
+          </button>
         </div>
-      </UCard>
-    </UContainer>
+      </section>
+    </div>
   </div>
 </template>
