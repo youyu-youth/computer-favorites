@@ -9,6 +9,7 @@ import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.model.dto.user.UserCollectCreateDTO;
 import com.yyyouth.model.dto.user.UserCollectPageDTO;
+import com.yyyouth.model.enums.UserActivityType;
 import com.yyyouth.model.enums.UserMessageType;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.user.UserCollect;
@@ -23,6 +24,7 @@ import com.yyyouth.service.mapper.user.UserFolderMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
 import com.yyyouth.service.notification.MessageNotifyService;
+import com.yyyouth.service.rabbitmq.publisher.UserActivityPublisher;
 import com.yyyouth.service.user.collect.UserCollectService;
 import com.yyyouth.service.user.website.support.UserWebsiteTagSupport;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +67,7 @@ public class UserCollectServiceImpl implements UserCollectService {
     private final UserWebsiteTagSupport userWebsiteTagSupport;
     private final MessageNotifyService messageNotifyService;
     private final UserAccountMapper userAccountMapper;
+    private final UserActivityPublisher userActivityPublisher;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -132,6 +135,9 @@ public class UserCollectServiceImpl implements UserCollectService {
 
             log.info("收藏成功，userId={}, websiteId={}, folderId={}, collectId={}",
                     userId, createDTO.getWebsiteId(), folderId, collect.getId());
+
+            userActivityPublisher.publish(userId, UserActivityType.COLLECT,
+                    createDTO.getWebsiteId(), website.getCategoryId());
 
             Website collectWebsite = websiteMapper.selectById(createDTO.getWebsiteId());
             if (collectWebsite != null && collectWebsite.getSubmitterId() != null

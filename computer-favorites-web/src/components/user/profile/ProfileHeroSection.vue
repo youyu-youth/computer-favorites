@@ -3,16 +3,22 @@
  * @author yyyouth zg
  * @date 2026-05-07
  * 上传内容数据看板：GitHub Stats 风格紧凑卡组（保留 donut + bar 主图 + 多个 sparkline 小卡）
+ * 2026-05-08: 去 mock 对接后端 overview / trend-series / category-distribution API（user-15 M3）
  */
 import { Eye, Heart, Bookmark, MessageCircle, Activity, Sparkles } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import { computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import RingGaugeCard from './dashboard/RingGaugeCard.vue'
 import SparklineCard from './dashboard/SparklineCard.vue'
 import CategoryDonutCard from './dashboard/CategoryDonutCard.vue'
 import ContentTypeBarCard from './dashboard/ContentTypeBarCard.vue'
-import { buildDashboardItems, toSparkline } from './dashboard/mock'
 import { githubStatsPalette } from './dashboard/theme'
-import type { RangeKey } from './dashboard/types'
+import { useProfileDashboardStore } from '@/stores/profileDashboard'
+import type { TrendMetric, TrendRange } from '@/api/user-profile-dashboard'
+import type { SparklinePoint } from './dashboard/types'
+
+const store = useProfileDashboardStore()
+const { overview, trend, category, trendRange } = storeToRefs(store)
 
 const numberFormatter = new Intl.NumberFormat('zh-CN')
 const compactFormatter = new Intl.NumberFormat('en-US', {
@@ -20,113 +26,119 @@ const compactFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 1,
 })
 
-const rangeOptions: Array<{ label: string; value: RangeKey }> = [
+const rangeOptions: Array<{ label: string; value: TrendRange }> = [
   { label: '近7天', value: '7d' },
   { label: '近30天', value: '30d' },
   { label: '近90天', value: '90d' },
-  { label: '全部', value: 'all' },
 ]
-const selectedRange = ref<RangeKey>('30d')
-const selectedCategory = ref<string | null>(null)
 
-const allItems = buildDashboardItems()
-const today = new Date()
-
-const daysMap: Record<Exclude<RangeKey, 'all'>, number> = {
-  '7d': 7,
-  '30d': 30,
-  '90d': 90,
-}
-
-const filteredItems = computed(() => {
-  if (selectedRange.value === 'all') {
-    return allItems
-  }
-  const days = daysMap[selectedRange.value]
-  const cutoff = new Date(today)
-  cutoff.setDate(today.getDate() - (days - 1))
-  const cutoffDay = cutoff.toISOString().slice(0, 10)
-  return allItems.filter((item) => item.date >= cutoffDay)
+/** 把后端 TrendPoint(date,value) 映射为 SparklinePoint */
+const trendSeries = computed<SparklinePoint[]>(() => {
+  const points = trend.value.data?.points ?? []
+  return points.map((p) => ({ date: p.date, value: Number(p.value) || 0 }))
 })
 
-const overview = computed(() => {
-  const totalPv = filteredItems.value.reduce((sum, item) => sum + item.pv, 0)
-  const totalLikes = filteredItems.value.reduce((sum, item) => sum + item.likes, 0)
-  const totalFavorites = filteredItems.value.reduce((sum, item) => sum + item.favorites, 0)
-  const totalComments = filteredItems.value.reduce(
-    (sum, item) => sum + Math.round(item.likes * 0.42),
-    0,
-  )
-  return { totalPv, totalLikes, totalFavorites, totalComments }
+/** 当前环比 delta（0 当不足 2 点） */
+const trendDelta = computed(() => {
+  const raw = trend.value.data?.delta
+  if (raw === undefined || raw === null) return 0
+  const num = Number(raw)
+  return Number.isFinite(num) ? num : 0
 })
 
-const computeDelta = (data: Array<{ value: number }>): number => {
-  if (data.length < 4) return 0
-  const half = Math.floor(data.length / 2)
-  const recent = data.slice(half).reduce((s, d) => s + d.value, 0)
-  const prev = data.slice(0, half).reduce((s, d) => s + d.value, 0)
-  if (prev === 0) return 0
-  return ((recent - prev) / prev) * 100
+const overviewData = computed(() => overview.value.data)
+
+const toNum = (v: number | string | null | undefined) => {
+  if (v === null || v === undefined) return 0
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
 }
 
-const pvSeries = computed(() => toSparkline(filteredItems.value, 'pv'))
-const likesSeries = computed(() => toSparkline(filteredItems.value, 'likes'))
-const favoritesSeries = computed(() => toSparkline(filteredItems.value, 'favorites'))
-const commentSeries = computed(() =>
-  pvSeries.value.map((point) => ({ date: point.date, value: Math.round(point.value * 0.085) })),
-)
+/** 平均 PV/天（基于 overview.totalBrowse + trend 时间范围的天数） */
+const daysInRange = computed(() => {
+  const r = trendRange.value
+  return r === '7d' ? 7 : r === '30d' ? 30 : 90
+})
 
-const pvDelta = computed(() => computeDelta(pvSeries.value))
-const likesDelta = computed(() => computeDelta(likesSeries.value))
-const favoritesDelta = computed(() => computeDelta(favoritesSeries.value))
-const commentDelta = computed(() => computeDelta(commentSeries.value))
+const avgPvPerDay = computed(() => {
+  const base = trendSeries.value
+  if (base.length === 0) return 0
+  const sum = base.reduce((s, p) => s + p.value, 0)
+  return Math.round(sum / Math.max(1, base.length))
+})
 
+/** 环形中心得分：基于当前等级映射（S=100 / A=80 / B=60 / C=40） */
 const ringScore = computed(() => {
-  const days = filteredItems.value.length || 1
-  const avgPv = overview.value.totalPv / days
-  const score = Math.min(100, Math.round((avgPv / 4500) * 100))
-  return Math.max(46, score)
+  const code = overviewData.value?.levelCode ?? 'C'
+  const table: Record<string, number> = { S: 100, A: 80, B: 60, C: 40 }
+  return table[code] ?? 40
 })
 
 const ringStats = computed(() => [
-  { label: 'Total PV', value: numberFormatter.format(overview.value.totalPv), color: githubStatsPalette.primary },
-  { label: 'Total Likes', value: numberFormatter.format(overview.value.totalLikes), color: githubStatsPalette.rose },
-  { label: 'Total Favs', value: numberFormatter.format(overview.value.totalFavorites), color: githubStatsPalette.cyan },
-  { label: 'Avg/Day PV', value: numberFormatter.format(Math.round(overview.value.totalPv / Math.max(1, filteredItems.value.length))), color: githubStatsPalette.emerald },
+  {
+    label: 'Total Browse',
+    value: numberFormatter.format(toNum(overviewData.value?.totalBrowse)),
+    color: githubStatsPalette.primary,
+  },
+  {
+    label: 'Total Likes',
+    value: numberFormatter.format(toNum(overviewData.value?.totalLike)),
+    color: githubStatsPalette.rose,
+  },
+  {
+    label: 'Total Favs',
+    value: numberFormatter.format(toNum(overviewData.value?.totalCollect)),
+    color: githubStatsPalette.cyan,
+  },
+  {
+    label: 'Contribution',
+    value: numberFormatter.format(toNum(overviewData.value?.totalContribution)),
+    color: githubStatsPalette.emerald,
+  },
 ])
 
-const categoryPvList = computed(() => {
-  const map = new Map<string, number>()
-  filteredItems.value.forEach((item) => {
-    map.set(item.category, (map.get(item.category) || 0) + item.pv)
-  })
-  return [...map.entries()]
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
+/** Engagement = (likes + favorites) / browse * 100 */
+const engagementPct = computed(() => {
+  const pv = toNum(overviewData.value?.totalBrowse)
+  const likes = toNum(overviewData.value?.totalLike)
+  const favs = toNum(overviewData.value?.totalCollect)
+  if (pv === 0) return '0.0'
+  return (((likes + favs) / pv) * 100).toFixed(1)
 })
 
-const typeCountMerged = computed(() => {
-  const map = new Map<string, number>()
-  filteredItems.value.forEach((item) => {
-    map.set(item.contentType, (map.get(item.contentType) || 0) + 1)
-  })
-  const sorted = [...map.entries()]
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-  const topN = 6
-  if (sorted.length <= topN) {
-    return sorted
-  }
-  const top = sorted.slice(0, topN)
-  const other = sorted.slice(topN).reduce((sum, item) => sum + item.value, 0)
-  return [...top, { name: '其他', value: other }]
-})
+/** CategoryDonut 数据：name + value（weight） */
+const categoryPvList = computed(() =>
+  (category.value.data?.items ?? []).map((item) => ({
+    name: item.name,
+    value: toNum(item.weight),
+  })),
+)
 
-const handleCategorySelect = (name: string | null) => {
-  selectedCategory.value = name
+/** ContentTypeBar：这里复用 category pct 维度（M3 阶段后端暂无独立内容类型接口） */
+const typeCountMerged = computed(() =>
+  (category.value.data?.items ?? []).map((item) => ({
+    name: item.name,
+    value: toNum(item.pct),
+  })),
+)
+
+const handleCategorySelect = (_name: string | null) => {
+  // 保留交互占位（M6 再深挖分类过滤）
+}
+
+const handleRangeChange = (r: TrendRange) => {
+  store.setTrend(r, 'pv')
 }
 
 const formatCompact = (n: number) => compactFormatter.format(n)
+
+const isTrendLoading = computed(() => trend.value.state === 'loading')
+
+onMounted(() => {
+  if (overview.value.state === 'idle') store.loadOverview()
+  if (trend.value.state === 'idle') store.loadTrend()
+  if (category.value.state === 'idle') store.loadCategory()
+})
 </script>
 
 <template>
@@ -148,81 +160,98 @@ const formatCompact = (n: number) => compactFormatter.format(n)
           type="button"
           class="cursor-pointer rounded-sm px-2.5 py-1 font-mono text-[11px] transition-colors"
           :class="
-            selectedRange === item.value
+            trendRange === item.value
               ? 'bg-amber-500/15 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
               : 'text-gray-600 hover:bg-black/5 dark:text-gray-400 dark:hover:bg-white/5'
           "
-          @click="selectedRange = item.value"
+          @click="handleRangeChange(item.value)"
         >
           {{ item.label }}
         </button>
       </div>
     </header>
 
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div
+      v-if="overview.state === 'loading' && !overviewData"
+      class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4"
+    >
+      <div
+        v-for="i in 6"
+        :key="i"
+        class="h-28 w-full animate-pulse rounded-md bg-black/5 dark:bg-white/5"
+      />
+    </div>
+
+    <div v-else-if="overview.state === 'error'" class="rounded-md border border-red-200 bg-red-50 p-3 font-mono text-[12px] text-red-600 dark:border-red-400/30 dark:bg-red-400/10 dark:text-red-300">
+      {{ overview.error || '概览数据加载失败' }}
+    </div>
+
+    <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
       <RingGaugeCard
         class="md:col-span-2 xl:col-span-2"
-        title="GitHub-like Stats Overview"
+        title="Contribution Overview"
         :score="ringScore"
         :stats="ringStats"
       />
       <SparklineCard
         :icon="Eye"
-        label="Total PV"
-        :value="formatCompact(overview.totalPv)"
-        :delta="pvDelta"
-        :data="pvSeries"
+        label="Total Browse"
+        :value="formatCompact(toNum(overviewData?.totalBrowse))"
+        :delta="trendDelta"
+        :data="trendSeries"
         :color="githubStatsPalette.primary"
       />
       <SparklineCard
         :icon="Heart"
         label="Total Likes"
-        :value="formatCompact(overview.totalLikes)"
-        :delta="likesDelta"
-        :data="likesSeries"
+        :value="formatCompact(toNum(overviewData?.totalLike))"
+        :data="trendSeries"
         :color="githubStatsPalette.rose"
       />
       <SparklineCard
         :icon="Bookmark"
         label="Total Favorites"
-        :value="formatCompact(overview.totalFavorites)"
-        :delta="favoritesDelta"
-        :data="favoritesSeries"
+        :value="formatCompact(toNum(overviewData?.totalCollect))"
+        :data="trendSeries"
         :color="githubStatsPalette.cyan"
       />
       <SparklineCard
         :icon="MessageCircle"
         label="Total Comments"
-        :value="formatCompact(overview.totalComments)"
-        :delta="commentDelta"
-        :data="commentSeries"
+        :value="formatCompact(toNum(overviewData?.totalComment))"
+        :data="trendSeries"
         :color="githubStatsPalette.emerald"
       />
       <SparklineCard
         :icon="Activity"
-        label="Avg PV/Day"
-        :value="formatCompact(Math.round(overview.totalPv / Math.max(1, filteredItems.length)))"
-        :data="pvSeries"
+        :label="`Avg PV / Day (${daysInRange}d)`"
+        :value="formatCompact(avgPvPerDay)"
+        :data="trendSeries"
         :color="githubStatsPalette.blue"
       />
       <SparklineCard
         :icon="Sparkles"
         label="Engagement %"
-        :value="`${(((overview.totalLikes + overview.totalFavorites) / Math.max(1, overview.totalPv)) * 100).toFixed(1)}%`"
-        :data="likesSeries"
+        :value="`${engagementPct}%`"
+        :data="trendSeries"
         :color="githubStatsPalette.amber"
       />
     </div>
 
+    <div
+      v-if="isTrendLoading && trendSeries.length === 0"
+      class="h-2 w-full animate-pulse rounded-full bg-black/5 dark:bg-white/5"
+    />
+
     <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <CategoryDonutCard
-        title="各分类访问量占比"
+        title="各分类偏好权重占比"
         :data="categoryPvList"
-        :selected="selectedCategory"
+        :selected="null"
         @select="handleCategorySelect"
       />
       <ContentTypeBarCard
-        title="内容类型占比（前6 + 其他）"
+        title="分类占比（% TOP8 + 其他）"
         :data="typeCountMerged"
       />
     </div>

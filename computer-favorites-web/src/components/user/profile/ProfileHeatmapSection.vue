@@ -3,64 +3,80 @@
  * @author yyyouth zg
  * @date 2026-05-07
  * 贡献活跃图：GitHub Stats 风格紧凑热力图（纯黑底 + 4 阶梯 emerald）
+ * 2026-05-08: 去 mock 对接后端 ContributionGraph API（user-15 M3）
  */
 import { Activity } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import StatCard from './dashboard/StatCard.vue'
+import { storeToRefs } from 'pinia'
+import { useProfileDashboardStore } from '@/stores/profileDashboard'
+import type { ContributionCell } from '@/api/user-profile-dashboard'
 
-const columns = 26
-const rows = 7
-const maxValue = 10
-const yearOptions = [2026, 2025, 2024]
-const selectedYear = ref(yearOptions[0] || new Date().getFullYear())
-const monthLabels = [
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-  'Jan',
-  'Feb',
-]
-const monthOffsets = [0, 2, 4, 6, 8, 10, 13, 15, 17, 19, 21, 23]
+const store = useProfileDashboardStore()
+const { graph, currentYear } = storeToRefs(store)
+
+const nowYear = new Date().getFullYear()
+const yearOptions = [nowYear, nowYear - 1, nowYear - 2]
 const weekdayLabels = ['Mon', 'Wed', 'Fri']
 
-const yearSeed = computed(() => selectedYear.value % 97)
+/** 把后端 cells 转为 7 行 × N 列 grid，第 0 行=周一...第 6 行=周日（ISO） */
+const gridColumns = computed<Array<Array<ContributionCell | null>>>(() => {
+  const g = graph.value.data
+  if (!g || !g.cells || g.cells.length === 0) return []
 
-const contributionGrid = computed(() =>
-  Array.from({ length: rows }, (_, row) =>
-    Array.from(
-      { length: columns },
-      (_, col) => (row * 13 + col * 17 + row * col * 3 + yearSeed.value) % (maxValue + 1),
-    ),
-  ),
-)
+  const first = new Date(`${g.cells[0]!.date}T00:00:00`)
+  // JavaScript getDay: 0=Sun, 1=Mon ... 6=Sat；ISO 周一=0，周日=6
+  const jsDay = first.getDay()
+  const isoRow = jsDay === 0 ? 6 : jsDay - 1
 
-const contributionCount = computed(
-  () => contributionGrid.value.flat().filter((value) => value > 0).length,
-)
-
-const getCellClass = (value: number) => {
-  if (value >= 8) return 'bg-emerald-400'
-  if (value >= 6) return 'bg-emerald-500'
-  if (value >= 4) return 'bg-emerald-600/80'
-  if (value >= 2) return 'bg-emerald-700/60'
-  return 'bg-black/5 dark:bg-white/5'
-}
-
-const getMonthOffsetStyle = (idx: number) => {
-  const current = monthOffsets[idx] ?? 0
-  if (idx === 0) {
-    return { marginLeft: `${current * 2}px` }
+  const columns: Array<Array<ContributionCell | null>> = []
+  let col: Array<ContributionCell | null> = new Array(7).fill(null)
+  let rowCursor = isoRow
+  for (const cell of g.cells) {
+    col[rowCursor] = cell
+    rowCursor += 1
+    if (rowCursor >= 7) {
+      columns.push(col)
+      col = new Array(7).fill(null)
+      rowCursor = 0
+    }
   }
-  const prev = monthOffsets[idx - 1] ?? 0
-  return { marginLeft: `${(current - prev - 1) * 12}px` }
+  // 推入剩余不满 7 格的最后一列
+  if (col.some((c) => c !== null)) columns.push(col)
+  return columns
+})
+
+/** 月份标签基于后端返回的 colOffset */
+const monthBadges = computed(() => graph.value.data?.months ?? [])
+
+const contributionCount = computed(() => graph.value.data?.total ?? 0)
+
+const isLoading = computed(() => graph.value.state === 'loading')
+const errorText = computed(() => graph.value.error)
+
+const getCellClass = (cell: ContributionCell | null) => {
+  if (!cell || cell.level === 0) return 'bg-black/5 dark:bg-white/5'
+  if (cell.level === 1) return 'bg-emerald-700/60'
+  if (cell.level === 2) return 'bg-emerald-600/80'
+  if (cell.level === 3) return 'bg-emerald-500'
+  return 'bg-emerald-400'
 }
+
+/** 根据月份 colOffset 计算标签的绝对像素左位置（cell 10px + gap 4px ≈ 14px/列） */
+const COL_WIDTH = 14
+const getMonthLeftStyle = (colOffset: number) => ({
+  left: `${colOffset * COL_WIDTH}px`,
+})
+
+const handleYearChange = (year: number) => {
+  store.setGraphYear(year)
+}
+
+onMounted(() => {
+  if (graph.value.state === 'idle') {
+    store.loadGraph()
+  }
+})
 </script>
 
 <template>
@@ -76,23 +92,27 @@ const getMonthOffsetStyle = (idx: number) => {
         </span>
       </div>
       <span class="font-mono text-[11px] text-gray-500 dark:text-gray-400">
-        {{ contributionCount }} contributions in the last year
+        {{ contributionCount }} contributions in {{ currentYear }}
       </span>
     </header>
 
     <StatCard>
-    <div class="flex flex-col gap-3 sm:flex-row">
+    <div v-if="isLoading" class="h-32 w-full animate-pulse rounded-sm bg-black/5 dark:bg-white/5" />
+    <div v-else-if="errorText" class="py-6 text-center font-mono text-[12px] text-red-500 dark:text-red-400">
+      {{ errorText }}
+    </div>
+    <div v-else class="flex flex-col gap-3 sm:flex-row">
       <div class="min-w-0 flex-1 space-y-2">
         <div class="overflow-x-auto pb-1">
           <div class="w-max space-y-1.5">
-            <div class="flex pl-12 font-mono text-[10px] text-gray-500 dark:text-gray-400">
+            <div class="relative pl-12 font-mono text-[10px] text-gray-500 dark:text-gray-400 h-3">
               <span
-                v-for="(month, idx) in monthLabels"
-                :key="month"
-                class="leading-none"
-                :style="getMonthOffsetStyle(idx)"
+                v-for="(m, idx) in monthBadges"
+                :key="`m-${idx}`"
+                class="absolute top-0 leading-none"
+                :style="getMonthLeftStyle(m.colOffset)"
               >
-                {{ month }}
+                {{ m.label }}
               </span>
             </div>
             <div class="flex gap-1.5">
@@ -101,17 +121,18 @@ const getMonthOffsetStyle = (idx: number) => {
                   {{ label }}
                 </div>
               </div>
-              <div class="space-y-1">
+              <div class="flex gap-1">
                 <div
-                  v-for="(week, rowIndex) in contributionGrid"
-                  :key="`week-${rowIndex}`"
-                  class="flex gap-1"
+                  v-for="(col, colIndex) in gridColumns"
+                  :key="`col-${colIndex}`"
+                  class="flex flex-col gap-1"
                 >
                   <div
-                    v-for="(value, colIndex) in week"
-                    :key="`cell-${rowIndex}-${colIndex}`"
+                    v-for="(cell, rowIndex) in col"
+                    :key="`cell-${colIndex}-${rowIndex}`"
                     class="size-[10px] rounded-[2px] transition-colors"
-                    :class="getCellClass(value)"
+                    :class="getCellClass(cell)"
+                    :title="cell ? `${cell.date}: ${cell.count}` : ''"
                   />
                 </div>
               </div>
@@ -139,11 +160,11 @@ const getMonthOffsetStyle = (idx: number) => {
             type="button"
             class="cursor-pointer rounded-sm border px-2 py-1 font-mono text-[12px] transition-colors"
             :class="
-              selectedYear === year
+              currentYear === year
                 ? 'border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400'
                 : 'border-black/5 text-gray-600 hover:bg-black/5 dark:border-white/[0.06] dark:text-gray-400 dark:hover:bg-white/5'
             "
-            @click="selectedYear = year"
+            @click="handleYearChange(year)"
           >
             {{ year }}
           </button>

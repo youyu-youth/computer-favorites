@@ -10,7 +10,7 @@ const themeOptions = [
   { value: 'system', label: '跟随系统', icon: 'i-lucide-monitor-smartphone', desc: '自动切换' },
 ] as const
 
-const updateTheme = (val: string) => {
+const updateTheme = (val: (typeof themeOptions)[number]['value']) => {
   setting.theme = val
 }
 

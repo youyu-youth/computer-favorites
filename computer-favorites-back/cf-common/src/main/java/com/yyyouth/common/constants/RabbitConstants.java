@@ -31,4 +31,24 @@ public final class RabbitConstants {
 
     /** 系统通知 */
     public static final String ROUTING_KEY_SYSTEM = "notify.system";
+
+    // ==================== 用户统计 - user-15 用户主页 ====================
+
+    /** 用户统计主交换机（Direct） */
+    public static final String EXCHANGE_USER_STATS = "exchange.user.stats";
+
+    /** 用户统计死信交换机 */
+    public static final String EXCHANGE_DLX_USER_STATS = "exchange.dlx.user.stats";
+
+    /** 用户统计主队列 */
+    public static final String QUEUE_USER_STATS = "queue.user.stats.daily";
+
+    /** 用户统计死信队列 */
+    public static final String QUEUE_USER_STATS_DLQ = "queue.user.stats.daily.dlq";
+
+    /** 用户统计 - 行为事件 routing key */
+    public static final String ROUTING_KEY_USER_STATS_ACTIVITY = "user.stats.activity";
+
+    /** 用户统计 - 死信 routing key */
+    public static final String ROUTING_KEY_USER_STATS_DLQ = "user.stats.activity.dlq";
 }

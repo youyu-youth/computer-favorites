@@ -5,7 +5,7 @@
  * 分类访问量占比 donut（GitHub Stats 风格紧凑配色）
  */
 import type { EChartsOption } from 'echarts'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import StatCard from './StatCard.vue'
 import { useEchart } from './useEchart'
 import { buildTooltip, chartCategorical } from './theme'
@@ -123,7 +123,7 @@ const buildOption = (isDark: boolean): EChartsOption => {
   }
 }
 
-const { containerRef } = useEchart({
+const { containerRef, rerender } = useEchart({
   buildOption,
   onClick: (params: unknown) => {
     const payload = params as { name?: string }
@@ -133,6 +133,10 @@ const { containerRef } = useEchart({
     emit('select', props.selected === payload.name ? null : payload.name)
   },
 })
+
+watch([() => props.data, () => props.selected], () => {
+  void rerender()
+}, { deep: true })
 </script>
 
 <template>

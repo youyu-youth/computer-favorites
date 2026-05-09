@@ -2,7 +2,7 @@ package com.yyyouth.service.notification.impl;
 
 import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.service.notification.MessageNotifyService;
-import com.yyyouth.service.rabbitmq.config.RabbitMqProperties;
+import com.yyyouth.service.rabbitmq.properties.NotifyMqProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
@@ -25,7 +25,7 @@ public class MessageNotifyServiceImpl implements MessageNotifyService {
 
     private final RabbitTemplate rabbitTemplate;
 
-    private final RabbitMqProperties properties;
+    private final NotifyMqProperties properties;
 
     @Override
     public void send(NotifyEvent event) {
@@ -45,7 +45,7 @@ public class MessageNotifyServiceImpl implements MessageNotifyService {
     }
 
     private String buildRoutingKey(Integer type) {
-        String prefix = properties.getNotify().getRoutingKeyPrefix();
+        String prefix = properties.getRoutingKeyPrefix();
         return switch (type) {
             case 1 -> prefix + "system";
             case 2 -> prefix + "comment";

@@ -3,7 +3,7 @@ package com.yyyouth.service.notification;
 import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.model.enums.UserMessageType;
 import com.yyyouth.service.notification.impl.MessageNotifyServiceImpl;
-import com.yyyouth.service.rabbitmq.config.RabbitMqProperties;
+import com.yyyouth.service.rabbitmq.properties.NotifyMqProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,21 +31,19 @@ class MessageNotifyServiceImplTest {
     @Mock
     private RabbitTemplate rabbitTemplate;
 
-    private RabbitMqProperties properties;
+    private NotifyMqProperties properties;
 
     private MessageNotifyServiceImpl messageNotifyService;
 
     @BeforeEach
     void setUp() {
-        properties = new RabbitMqProperties();
+        properties = new NotifyMqProperties();
         properties.setExchange("message.notify");
         properties.setDlxExchange("exchange.dlx.notify");
-        RabbitMqProperties.Notify notify = new RabbitMqProperties.Notify();
-        notify.setQueue("q.notify.message");
-        notify.setRoutingKeyPrefix("notify.");
-        notify.setDlq("q.notify.dlq");
-        notify.setMaxRetry(3);
-        properties.setNotify(notify);
+        properties.setQueue("q.notify.message");
+        properties.setRoutingKeyPrefix("notify.");
+        properties.setDlq("q.notify.dlq");
+        properties.setMaxRetry(3);
         messageNotifyService = new MessageNotifyServiceImpl(rabbitTemplate, properties);
     }
 

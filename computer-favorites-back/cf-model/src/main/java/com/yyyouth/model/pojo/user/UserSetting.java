@@ -79,6 +79,24 @@ public class UserSetting {
     private Integer pageSize;
 
     /**
+     * 主页可见性 public=所有人 / logged=仅登录用户 / private=仅本人
+     */
+    @TableField("profile_visibility")
+    private String profileVisibility;
+
+    /**
+     * 是否对他人展示贡献热力图与贡献分 1-是 0-否
+     */
+    @TableField("show_contribution")
+    private Integer showContribution;
+
+    /**
+     * 是否对他人展示收藏列表 1-是 0-否
+     */
+    @TableField("show_collections")
+    private Integer showCollections;
+
+    /**
      * 创建时间
      */
     @TableField("create_time")

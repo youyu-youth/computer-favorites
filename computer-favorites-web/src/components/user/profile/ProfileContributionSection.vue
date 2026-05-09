@@ -6,20 +6,32 @@
  */
 import { BarChart3 } from 'lucide-vue-next'
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import ContributionRankCard from './dashboard/ContributionRankCard.vue'
 import StatCard from './dashboard/StatCard.vue'
-import { buildRankCardStats } from './dashboard/mock'
 import { githubStatsPalette } from './dashboard/theme'
+import { useProfileDashboardStore } from '@/stores/profileDashboard'
 import type { ProfileContribution, ProfileStat } from '@/types/profile'
+import type { RankCardStat } from './dashboard/types'
 
 const props = defineProps<{
   stats: ProfileStat[]
   contributions: ProfileContribution[]
 }>()
 
+const store = useProfileDashboardStore()
+const { overview } = storeToRefs(store)
+const numberFormatter = new Intl.NumberFormat('zh-CN')
+
 const parseNumber = (raw: string): number => {
   const match = raw.match(/-?\d+(\.\d+)?/)
   return match ? Number(match[0]) : 0
+}
+
+const toNum = (value: number | string | null | undefined) => {
+  if (value === null || value === undefined) return 0
+  const n = Number(value)
+  return Number.isFinite(n) ? n : 0
 }
 
 const completionScore = computed(() => {
@@ -29,14 +41,37 @@ const completionScore = computed(() => {
 })
 
 const rankScore = computed(() => {
-  const contribution = props.stats.find((s) => s.label.includes('贡献'))
-  const v = contribution ? parseNumber(contribution.value) : 0
-  return Math.max(60, Math.min(100, 60 + (v % 40)))
+  const raw = overview.value.data?.rankPercent
+  const score = toNum(raw)
+  return Math.max(0, Math.min(100, Math.round(score)))
 })
 
-const rankCardStats = computed(() =>
-  buildRankCardStats(parseNumber(props.stats.find((s) => s.label.includes('贡献'))?.value ?? '')),
-)
+const rankCardStats = computed<RankCardStat[]>(() => {
+  const data = overview.value.data
+  return [
+    { label: 'Total Submit', value: numberFormatter.format(toNum(data?.totalSubmit)), icon: 'star' },
+    { label: 'Total Comments', value: numberFormatter.format(toNum(data?.totalComment)), icon: 'commit' },
+    { label: 'Total Favs', value: numberFormatter.format(toNum(data?.totalCollect)), icon: 'pr' },
+    { label: 'Total Likes', value: numberFormatter.format(toNum(data?.totalLike)), icon: 'issue' },
+    { label: 'Total Browse', value: numberFormatter.format(toNum(data?.totalBrowse)), icon: 'monitor' },
+    { label: 'Streak', value: `${numberFormatter.format(toNum(data?.streakDays))} days`, icon: 'flame' },
+  ]
+})
+
+const overviewStats = computed<ProfileStat[]>(() => {
+  const data = overview.value.data
+  if (!data) {
+    return props.stats
+  }
+  return [
+    { label: '累计投稿', value: numberFormatter.format(toNum(data.totalSubmit)) },
+    { label: '累计评论', value: numberFormatter.format(toNum(data.totalComment)) },
+    { label: '累计收藏', value: numberFormatter.format(toNum(data.totalCollect)) },
+    { label: '累计点赞', value: numberFormatter.format(toNum(data.totalLike)) },
+    { label: '累计评分', value: numberFormatter.format(toNum(data.totalScore)) },
+    { label: '累计浏览', value: numberFormatter.format(toNum(data.totalBrowse)) },
+  ]
+})
 
 const accentList = [
   githubStatsPalette.primary,
@@ -69,7 +104,7 @@ const getAccent = (idx: number) => accentList[idx % accentList.length] ?? github
 
       <div class="grid grid-cols-2 gap-3">
         <StatCard
-          v-for="(stat, idx) in stats"
+          v-for="(stat, idx) in overviewStats"
           :key="stat.label"
           dense
           :accent="getAccent(idx)"

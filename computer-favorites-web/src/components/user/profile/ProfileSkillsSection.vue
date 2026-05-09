@@ -3,21 +3,54 @@
  * @author yyyouth zg
  * @date 2026-05-07
  * 技术栈区块：Top Languages 堆叠条 + 雷达图
+ * 2026-05-08: 去 mock 对接后端 tech-radar API（user-15 M3）
  */
 import { Cpu } from 'lucide-vue-next'
+import { computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import StatCard from './dashboard/StatCard.vue'
-import { githubStatsPalette } from './dashboard/theme'
+import SkillRadarCard from './dashboard/SkillRadarCard.vue'
+import TopLanguagesCard from './dashboard/TopLanguagesCard.vue'
+import { githubStatsPalette, chartCategorical } from './dashboard/theme'
+import { useProfileDashboardStore } from '@/stores/profileDashboard'
 import type { ProfileSkill } from '@/types/profile'
+import type { LangShare, RadarSkill } from './dashboard/types'
 
 defineProps<{
   skills: ProfileSkill[]
 }>()
+
+const store = useProfileDashboardStore()
+const { radar } = storeToRefs(store)
 
 const levelColorMap: Record<ProfileSkill['level'], string> = {
   精通: githubStatsPalette.emerald,
   熟练: githubStatsPalette.primary,
   基础: githubStatsPalette.slate,
 }
+
+/** 6 维雷达数据（后端未返回时给空数组） */
+const radarSkills = computed<RadarSkill[]>(() => {
+  const dims = radar.value.data?.dimensions ?? []
+  return dims.map((d) => ({ name: d.name, value: d.value }))
+})
+
+/** Top Languages 堆叠数据（后端返回 pct） */
+const topLanguages = computed<LangShare[]>(() => {
+  const langs = radar.value.data?.languages ?? []
+  return langs.map((l, idx) => ({
+    name: l.name,
+    pct: Number(l.pct) || 0,
+    color: chartCategorical[idx % chartCategorical.length] ?? githubStatsPalette.primary,
+  }))
+})
+
+const isLoading = computed(() => radar.value.state === 'loading')
+const errorText = computed(() => radar.value.error)
+
+onMounted(() => {
+  if (radar.value.state === 'idle') store.loadRadar()
+})
 </script>
 
 <template>
@@ -55,5 +88,22 @@ const levelColorMap: Record<ProfileSkill['level'], string> = {
         </li>
       </ul>
     </StatCard>
+
+    <div v-if="isLoading" class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div class="h-56 animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
+      <div class="h-56 animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
+    </div>
+
+    <div
+      v-else-if="errorText"
+      class="rounded-md border border-red-200 bg-red-50 p-3 font-mono text-[12px] text-red-600 dark:border-red-400/30 dark:bg-red-400/10 dark:text-red-300"
+    >
+      {{ errorText }}
+    </div>
+
+    <div v-else class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <SkillRadarCard title="六维技能雷达" :skills="radarSkills" />
+      <TopLanguagesCard title="Top Languages" :langs="topLanguages" />
+    </div>
   </section>
 </template>

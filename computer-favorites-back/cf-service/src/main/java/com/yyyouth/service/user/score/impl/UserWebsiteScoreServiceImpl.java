@@ -4,10 +4,12 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.common.exception.BusinessException;
+import com.yyyouth.model.enums.UserActivityType;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteScore;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
 import com.yyyouth.service.mapper.website.WebsiteScoreMapper;
+import com.yyyouth.service.rabbitmq.publisher.UserActivityPublisher;
 import com.yyyouth.service.user.score.UserWebsiteScoreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,8 @@ public class UserWebsiteScoreServiceImpl implements UserWebsiteScoreService {
 
     private final WebsiteMapper websiteMapper;
 
+    private final UserActivityPublisher userActivityPublisher;
+
     /**
      * 网站评分（一个用户只能评分一次）
      */
@@ -45,7 +49,7 @@ public class UserWebsiteScoreServiceImpl implements UserWebsiteScoreService {
     public void score(Long websiteId, Integer score) {
         Long userId = StpUtil.getLoginIdAsLong();
 
-        validateWebsiteOnline(websiteId);
+        Website website = validateWebsiteOnlineAndGet(websiteId);
 
         WebsiteScore existing = websiteScoreMapper.selectOne(new LambdaQueryWrapper<WebsiteScore>()
                 .eq(WebsiteScore::getUserId, userId)
@@ -64,6 +68,9 @@ public class UserWebsiteScoreServiceImpl implements UserWebsiteScoreService {
         websiteMapper.recalculateScore(websiteId);
 
         log.info("网站评分成功，userId={}, websiteId={}, score={}", userId, websiteId, score);
+
+        userActivityPublisher.publish(userId, UserActivityType.SCORE,
+                websiteId, website.getCategoryId());
     }
 
     /**
@@ -83,16 +90,18 @@ public class UserWebsiteScoreServiceImpl implements UserWebsiteScoreService {
     }
 
     /**
-     * 校验网站是否在线
+     * 校验网站是否在线，并返回网站实体（用于后续读取 categoryId）
      */
-    private void validateWebsiteOnline(Long websiteId) {
-        Long count = websiteMapper.selectCount(new LambdaQueryWrapper<Website>()
+    private Website validateWebsiteOnlineAndGet(Long websiteId) {
+        Website website = websiteMapper.selectOne(new LambdaQueryWrapper<Website>()
                 .eq(Website::getId, websiteId)
                 .eq(Website::getDeleted, NOT_DELETED)
                 .eq(Website::getStatus, ONLINE_STATUS)
-                .eq(Website::getAuditStatus, AUDIT_APPROVED_STATUS));
-        if (count == null || count == 0) {
+                .eq(Website::getAuditStatus, AUDIT_APPROVED_STATUS)
+                .last("limit 1"));
+        if (website == null) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "网站不存在或已下架");
         }
+        return website;
     }
 }

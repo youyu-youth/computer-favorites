@@ -7,6 +7,7 @@ import ProfileSidebarCard from '@/components/user/profile/ProfileSidebarCard.vue
 import ProfileSkillsSection from '@/components/user/profile/ProfileSkillsSection.vue'
 import { getCurrentUserProfile, type LoginUserProfileResponse } from '@/api/user'
 import { useToast } from '@/composables/useToast'
+import { useProfileDashboardStore } from '@/stores/profileDashboard'
 import type { ProfileData, ProfileSiteItem, ProfileSocialLink } from '@/types/profile'
 
 import githubIcon from '@/assets/icons/svg/github.svg'
@@ -19,6 +20,7 @@ defineOptions({
 })
 
 const toast = useToast()
+const dashboardStore = useProfileDashboardStore()
 const loading = ref(true)
 const errorText = ref('')
 const profileData = ref<ProfileData | null>(null)
@@ -230,6 +232,8 @@ const loadProfile = async () => {
 
 onMounted(() => {
   loadProfile()
+  // 并发触发看板 5 个卡片首屏拉取（单卡失败不影响其他）
+  dashboardStore.loadInitial()
 })
 </script>
 

@@ -8,7 +8,7 @@ import type { EChartsOption } from 'echarts'
 import { computed } from 'vue'
 import StatCard from './StatCard.vue'
 import { useEchart } from './useEchart'
-import { computeRank } from './mock'
+import { computeRank } from './rank'
 import { ringTrack } from './theme'
 
 interface StatItem {

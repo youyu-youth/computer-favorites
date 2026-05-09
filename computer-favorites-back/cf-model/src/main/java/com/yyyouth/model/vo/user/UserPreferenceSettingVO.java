@@ -50,4 +50,19 @@ public class UserPreferenceSettingVO {
      * 每页条数
      */
     private Integer pageSize;
+
+    /**
+     * 主页可见性
+     */
+    private String profileVisibility;
+
+    /**
+     * 是否展示贡献数据
+     */
+    private Integer showContribution;
+
+    /**
+     * 是否展示收藏列表
+     */
+    private Integer showCollections;
 }

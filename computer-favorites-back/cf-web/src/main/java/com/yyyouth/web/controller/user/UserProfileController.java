@@ -1,7 +1,9 @@
 package com.yyyouth.web.controller.user;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
 import com.yyyouth.common.web.HttpResult;
+import com.yyyouth.model.dto.user.ProfilePrivacyUpdateDTO;
 import com.yyyouth.model.dto.user.UserEmailCodeSendDTO;
 import com.yyyouth.model.dto.user.UserEmailUpdateDTO;
 import com.yyyouth.model.dto.user.UserPreferenceSettingUpdateDTO;
@@ -9,7 +11,9 @@ import com.yyyouth.model.dto.user.UserProfileUpdateDTO;
 import com.yyyouth.model.dto.user.UserUsernameUpdateDTO;
 import com.yyyouth.model.vo.user.LoginUserProfileVO;
 import com.yyyouth.model.vo.user.UserAvatarUploadVO;
+import com.yyyouth.service.audit.annotation.AuditLog;
 import com.yyyouth.service.user.profile.UserProfileService;
+import com.yyyouth.service.user.userstats.ProfilePrivacyService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
@@ -36,9 +40,12 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/user/profile")
+@AuditLog(module = "user-profile-dashboard")
 public class UserProfileController {
 
     private final UserProfileService userProfileService;
+
+    private final ProfilePrivacyService profilePrivacyService;
 
     /**
      * 查询登录用户资料
@@ -95,6 +102,25 @@ public class UserProfileController {
         log.info("收到偏好设置更新请求");
         userProfileService.updateLoginUserSetting(updateDTO);
         return HttpResult.success("偏好设置保存成功");
+    }
+
+    /**
+     * 更新登录用户主页隐私设置（user-15 M5）。
+     *
+     * 仅维护 t_user_setting 中 3 个隐私字段，与偏好设置接口解耦。
+     *
+     * @param updateDTO 隐私设置参数
+     * @return 执行结果
+     */
+    @ApiOperation(value = "更新登录用户主页隐私设置")
+    @PutMapping("/privacy")
+    @SaCheckLogin
+    @AuditLog(action = "privacy", description = "更新用户主页隐私设置")
+    public HttpResult updateProfilePrivacy(@RequestBody @Valid ProfilePrivacyUpdateDTO updateDTO) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        log.info("收到主页隐私设置更新请求 userId={}", userId);
+        profilePrivacyService.updatePrivacy(userId, updateDTO);
+        return HttpResult.success("隐私设置保存成功");
     }
 
     /**

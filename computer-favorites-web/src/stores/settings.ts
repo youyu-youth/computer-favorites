@@ -7,6 +7,7 @@ import {
   updateCurrentUsername,
   updateCurrentUserProfile,
   updateCurrentUserSetting,
+  updateProfilePrivacy,
   uploadCurrentUserAvatar,
   type LoginUserProfileResponse,
   type UpdateEmailRequest,
@@ -55,6 +56,12 @@ export interface SettingsPreferenceSetting {
   pageSize: 10 | 20 | 50
 }
 
+export interface SettingsProfilePrivacy {
+  profileVisibility: 'public' | 'logged' | 'private'
+  showContribution: number
+  showCollections: number
+}
+
 const createDefaultBasicInfo = (): SettingsBasicInfo => ({
   id: 0,
   username: '',
@@ -95,6 +102,12 @@ const createDefaultSetting = (): SettingsPreferenceSetting => ({
   pageSize: 20,
 })
 
+const createDefaultPrivacy = (): SettingsProfilePrivacy => ({
+  profileVisibility: 'public',
+  showContribution: 1,
+  showCollections: 1,
+})
+
 const normalizeTheme = (value: unknown): ThemeMode => {
   if (value === 'light' || value === 'dark' || value === 'system') {
     return value
@@ -125,10 +138,18 @@ const normalizePageSize = (value: unknown): 10 | 20 | 50 => {
 
 const normalizeNotice = (value: unknown): number => (value === 0 ? 0 : 1)
 
+const normalizeProfileVisibility = (value: unknown): 'public' | 'logged' | 'private' => {
+  if (value === 'public' || value === 'logged' || value === 'private') {
+    return value
+  }
+  return 'public'
+}
+
 export const useSettingsStore = defineStore('settings', () => {
   const basicInfo = reactive<SettingsBasicInfo>(createDefaultBasicInfo())
   const profile = reactive<SettingsDetailProfile>(createDefaultProfile())
   const setting = reactive<SettingsPreferenceSetting>(createDefaultSetting())
+  const privacy = reactive<SettingsProfilePrivacy>(createDefaultPrivacy())
   const loading = ref(false)
   const saving = ref(false)
   const updatingUsername = ref(false)
@@ -179,6 +200,12 @@ export const useSettingsStore = defineStore('settings', () => {
       homepageStyle: normalizeHomepageStyle(preference.homepageStyle),
       favoritesHidePassword: preference.favoritesHidePassword ?? '',
       pageSize: normalizePageSize(preference.pageSize),
+    })
+
+    Object.assign(privacy, {
+      profileVisibility: normalizeProfileVisibility(preference.profileVisibility),
+      showContribution: normalizeNotice(preference.showContribution),
+      showCollections: normalizeNotice(preference.showCollections),
     })
   }
 
@@ -239,11 +266,20 @@ export const useSettingsStore = defineStore('settings', () => {
     appStore.setLanguage(setting.language)
   }
 
+  const savePrivacy = async () => {
+    await updateProfilePrivacy({
+      profileVisibility: privacy.profileVisibility,
+      showContribution: privacy.showContribution,
+      showCollections: privacy.showCollections,
+    })
+  }
+
   const saveAll = async () => {
     saving.value = true
     try {
       await saveProfile()
       await saveSetting()
+      await savePrivacy()
     } finally {
       saving.value = false
     }
@@ -298,6 +334,7 @@ export const useSettingsStore = defineStore('settings', () => {
     basicInfo,
     profile,
     setting,
+    privacy,
     loading,
     saving,
     updatingUsername,
@@ -308,6 +345,7 @@ export const useSettingsStore = defineStore('settings', () => {
     saveAll,
     saveProfile,
     saveSetting,
+    savePrivacy,
     updateUsername,
     updateEmail,
     uploadAvatar,

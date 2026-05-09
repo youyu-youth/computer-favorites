@@ -226,7 +226,24 @@ public enum AuthErrorCode {
     /**
      * 管理员资料更新失败
      */
-    ADMIN_PROFILE_UPDATE_FAILED(100244, "管理员资料更新失败，请稍后重试");
+    ADMIN_PROFILE_UPDATE_FAILED(100244, "管理员资料更新失败，请稍后重试"),
+
+    // ==================== user-15 用户主页 - M5 公开主页 / 隐私 ====================
+
+    /**
+     * 主页要求登录后访问（visibility=logged 且未登录）
+     */
+    PROFILE_LOGIN_REQUIRED(100245, "请登录后查看该用户主页"),
+
+    /**
+     * 主页私密（visibility=private 且非本人）
+     */
+    PROFILE_PRIVATE(100246, "该用户未公开主页"),
+
+    /**
+     * 隐私设置更新失败
+     */
+    PROFILE_PRIVACY_UPDATE_FAILED(100247, "隐私设置更新失败，请稍后重试");
 
     private final int code;
 

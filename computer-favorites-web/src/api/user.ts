@@ -40,6 +40,9 @@ export interface LoginUserPreferenceSetting {
   homepageStyle?: string
   favoritesHidePassword?: string
   pageSize?: number
+  profileVisibility?: 'public' | 'logged' | 'private'
+  showContribution?: number
+  showCollections?: number
 }
 
 export interface LoginUserProfileResponse {
@@ -71,6 +74,12 @@ export interface UpdateUserSettingRequest {
   homepageStyle?: 'card' | 'list'
   favoritesHidePassword?: string
   pageSize?: 10 | 20 | 50
+}
+
+export interface UpdateProfilePrivacyRequest {
+  profileVisibility: 'public' | 'logged' | 'private'
+  showContribution: number
+  showCollections: number
 }
 
 export interface UpdateUsernameRequest {
@@ -129,6 +138,13 @@ export async function updateCurrentUserSetting(payload: UpdateUserSettingRequest
   const res = await putJson<ApiResult<null>>('/api/user/profile/setting', payload)
   if (res.code !== 200) {
     throw new Error(res.msg || '保存偏好设置失败')
+  }
+}
+
+export async function updateProfilePrivacy(payload: UpdateProfilePrivacyRequest): Promise<void> {
+  const res = await putJson<ApiResult<null>>('/api/user/profile/privacy', payload)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '保存隐私设置失败')
   }
 }
 

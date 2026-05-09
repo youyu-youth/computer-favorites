@@ -10,6 +10,7 @@ import com.yyyouth.common.utils.SensitiveWordUtils;
 import com.yyyouth.model.dto.user.CommentCreateDTO;
 import com.yyyouth.model.dto.user.CommentPageQueryDTO;
 import com.yyyouth.model.dto.user.MyCommentPageQueryDTO;
+import com.yyyouth.model.enums.UserActivityType;
 import com.yyyouth.model.enums.UserMessageType;
 import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.dto.notification.NotifyEvent;
@@ -27,6 +28,7 @@ import com.yyyouth.service.notification.MessageNotifyService;
 import com.yyyouth.service.mapper.website.CommentLikeMapper;
 import com.yyyouth.service.mapper.website.CommentMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
+import com.yyyouth.service.rabbitmq.publisher.UserActivityPublisher;
 import com.yyyouth.service.user.comment.UserCommentService;
 import com.yyyouth.service.user.comment.support.CommentRateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -90,6 +92,8 @@ public class UserCommentServiceImpl implements UserCommentService {
 
     private final MessageNotifyService messageNotifyService;
 
+    private final UserActivityPublisher userActivityPublisher;
+
     /**
      * 发布评论
      */
@@ -98,7 +102,7 @@ public class UserCommentServiceImpl implements UserCommentService {
     public Long publishComment(Long websiteId, CommentCreateDTO dto) {
         Long userId = requireLogin();
 
-        validateWebsiteAvailable(websiteId);
+        Website website = validateWebsiteAvailableAndGet(websiteId);
 
         String content = normalizeContent(dto.getContent());
         validateSensitiveWord(content);
@@ -150,6 +154,10 @@ public class UserCommentServiceImpl implements UserCommentService {
 
         log.info("评论发布成功，commentId={}, userId={}, websiteId={}, parentId={}",
                 comment.getId(), userId, websiteId, parentId);
+
+        userActivityPublisher.publish(userId, UserActivityType.COMMENT,
+                comment.getId(), website.getCategoryId());
+
         return comment.getId();
     }
 
@@ -400,7 +408,7 @@ public class UserCommentServiceImpl implements UserCommentService {
         return StpUtil.getLoginIdAsLong();
     }
 
-    private void validateWebsiteAvailable(Long websiteId) {
+    private Website validateWebsiteAvailableAndGet(Long websiteId) {
         Website website = websiteMapper.selectOne(new LambdaQueryWrapper<Website>()
                 .eq(Website::getId, websiteId)
                 .eq(Website::getDeleted, NOT_DELETED)
@@ -409,6 +417,7 @@ public class UserCommentServiceImpl implements UserCommentService {
                 || !Objects.equals(website.getAuditStatus(), AUDIT_APPROVED_STATUS)) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "网站不存在或已下架");
         }
+        return website;
     }
 
     private Comment validateParentComment(Long parentId) {

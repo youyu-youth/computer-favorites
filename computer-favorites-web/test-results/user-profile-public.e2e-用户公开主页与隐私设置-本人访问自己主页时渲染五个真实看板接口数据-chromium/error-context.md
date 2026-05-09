@@ -1,0 +1,143 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic:
+        - img
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - generic [ref=e10]: PROGRAMMER FAVORITES
+          - generic [ref=e11]: 编程爱好者的宝藏网站
+          - generic [ref=e12]: 你的灵感入口、资源收藏夹、以及下一次效率提升的起点。
+        - generic [ref=e13]:
+          - generic [ref=e19]: preview://favorites
+          - generic [ref=e20]:
+            - generic [ref=e22]:
+              - button "GitHub 开源代码托管与协作，灵感与工程同时发生。 Open Source Hover" [ref=e23] [cursor=pointer]:
+                - generic [ref=e24]:
+                  - generic [ref=e25]:
+                    - generic [ref=e26]: GitHub
+                    - generic [ref=e27]: 开源代码托管与协作，灵感与工程同时发生。
+                  - img [ref=e29]
+                - generic [ref=e31]:
+                  - generic [ref=e32]: Open Source
+                  - generic [ref=e33]: Hover
+              - button "Stack Overflow 问题、答案与经验沉淀，检索即生产力。 Q&A Hover" [ref=e34] [cursor=pointer]:
+                - generic [ref=e35]:
+                  - generic [ref=e36]:
+                    - generic [ref=e37]: Stack Overflow
+                    - generic [ref=e38]: 问题、答案与经验沉淀，检索即生产力。
+                  - img [ref=e40]
+                - generic [ref=e42]:
+                  - generic [ref=e43]: Q&A
+                  - generic [ref=e44]: Hover
+              - button "Vue 渐进式框架，优雅与效率的平衡。 Frontend Hover" [ref=e45] [cursor=pointer]:
+                - generic [ref=e46]:
+                  - generic [ref=e47]:
+                    - generic [ref=e48]: Vue
+                    - generic [ref=e49]: 渐进式框架，优雅与效率的平衡。
+                  - img [ref=e51]
+                - generic [ref=e53]:
+                  - generic [ref=e54]: Frontend
+                  - generic [ref=e55]: Hover
+              - button "Skills 把方法论固化为技能库，复用每一次经验。 Toolkit Hover" [ref=e56] [cursor=pointer]:
+                - generic [ref=e57]:
+                  - generic [ref=e58]:
+                    - generic [ref=e59]: Skills
+                    - generic [ref=e60]: 把方法论固化为技能库，复用每一次经验。
+                  - img [ref=e62]
+                - generic [ref=e65]:
+                  - generic [ref=e66]: Toolkit
+                  - generic [ref=e67]: Hover
+              - generic [ref=e68]:
+                - generic [ref=e69]:
+                  - generic [ref=e70]: Code Editor
+                  - generic [ref=e71]: TypeScript
+                - generic [ref=e73]:
+                  - generic [ref=e79]: TREASURE_VAULT.JS — EDITOR
+                  - generic [ref=e80]:
+                    - generic [ref=e81]:
+                      - generic [ref=e82]: "01"
+                      - generic [ref=e83]: "02"
+                      - generic [ref=e84]: "03"
+                      - generic [ref=e85]: "04"
+                      - generic [ref=e86]: "05"
+                    - generic [ref=e87]:
+                      - generic [ref=e88]: "constdevTreasure={"
+                      - generic [ref=e89]: status:'Ready',
+                      - generic [ref=e90]: passion:Infinity,
+                      - generic [ref=e91]: action:()=>explore()
+                      - generic [ref=e92]: "};"
+            - generic [ref=e93]:
+              - generic [ref=e94]: PREVIEW
+              - generic [ref=e95]: GitHub
+              - generic [ref=e96]: 开源代码托管与协作，灵感与工程同时发生。
+              - generic [ref=e97]:
+                - paragraph [ref=e99]: 全球最大的开源代码托管平台，拥有超过1亿开发者。在这里，你可以托管代码、审查变更、管理项目，并与其他开发者构建软件。从个人项目到企业级应用，GitHub都是协作的核心。
+                - generic [ref=e100]:
+                  - generic [ref=e101]: https://github.com
+                  - generic [ref=e102]: 介绍
+              - generic [ref=e105]: 悬停卡片查看预览
+    - generic [ref=e106]:
+      - generic:
+        - img
+      - button "切换主题" [ref=e108]:
+        - img [ref=e109]
+      - generic [ref=e111]:
+        - generic [ref=e112]:
+          - generic [ref=e113]:
+            - generic [ref=e115]:
+              - generic [ref=e116]: 欢迎回来
+              - generic [ref=e117]: 登录以管理你的收藏夹
+            - generic [ref=e118]:
+              - button "登录" [ref=e119]
+              - button "注册" [ref=e120]
+          - generic [ref=e121]:
+            - generic [ref=e122]:
+              - generic [ref=e123]:
+                - generic [ref=e124]: 邮箱
+                - textbox "邮箱" [ref=e125]:
+                  - /placeholder: name@example.com
+              - generic [ref=e126]:
+                - generic [ref=e127]: 邮箱验证码
+                - generic [ref=e128]:
+                  - textbox "邮箱验证码" [ref=e129]:
+                    - /placeholder: 请输入6位验证码
+                  - button "发送验证码" [ref=e130]:
+                    - generic [ref=e131]: 发送验证码
+            - button "登录" [disabled] [ref=e132]:
+              - generic [ref=e133]: 登录
+            - button "进行密码登录" [ref=e134] [cursor=pointer]
+            - generic [ref=e139]: 或者
+            - generic [ref=e140]:
+              - button "GitHub" [ref=e141]:
+                - img [ref=e142]
+                - text: GitHub
+              - button "Gitee" [ref=e144]:
+                - img [ref=e145]
+                - text: Gitee
+            - generic [ref=e148]:
+              - generic [ref=e149]: 已为
+              - generic [ref=e150]: 12,000+
+              - generic [ref=e151]: 开发者提供收藏服务
+              - img [ref=e152]
+        - contentinfo [ref=e155]:
+          - generic [ref=e156]:
+            - paragraph [ref=e157]: © 2026 Developer's Treasure Collection · Are you sure you want to delete your account? This action cannot be undone!
+            - generic [ref=e158]:
+              - link "Collection Notifications" [ref=e159] [cursor=pointer]:
+                - /url: "#"
+              - link "System Notifications" [ref=e160] [cursor=pointer]:
+                - /url: "#"
+              - link "Update Notifications" [ref=e161] [cursor=pointer]:
+                - /url: "#"
+              - link "平台公告" [ref=e162] [cursor=pointer]:
+                - /url: /computer/announcement
+  - generic [ref=e163]:
+    - generic "Toggle devtools panel" [ref=e164] [cursor=pointer]:
+      - img [ref=e165]
+    - generic "Toggle Component Inspector" [ref=e170] [cursor=pointer]:
+      - img [ref=e171]
+```

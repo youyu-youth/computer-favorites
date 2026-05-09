@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yyyouth.common.constants.HttpStatus;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.WebsiteLikePageDTO;
+import com.yyyouth.model.enums.UserActivityType;
 import com.yyyouth.model.pojo.website.Website;
 import com.yyyouth.model.pojo.website.WebsiteLike;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
@@ -14,6 +15,7 @@ import com.yyyouth.model.vo.user.WebsiteLikeItemVO;
 import com.yyyouth.model.vo.user.WebsiteLikePageVO;
 import com.yyyouth.service.mapper.website.WebsiteLikeMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
+import com.yyyouth.service.rabbitmq.publisher.UserActivityPublisher;
 import com.yyyouth.service.user.like.UserWebsiteLikeService;
 import com.yyyouth.service.user.website.support.UserWebsiteTagSupport;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +58,8 @@ public class UserWebsiteLikeServiceImpl implements UserWebsiteLikeService {
 
     private final UserWebsiteTagSupport userWebsiteTagSupport;
 
+    private final UserActivityPublisher userActivityPublisher;
+
     /**
      * 网站点赞
      */
@@ -64,7 +68,7 @@ public class UserWebsiteLikeServiceImpl implements UserWebsiteLikeService {
     public void like(Long websiteId) {
         Long userId = StpUtil.getLoginIdAsLong();
 
-        validateWebsiteOnline(websiteId);
+        Website website = validateWebsiteOnlineAndGet(websiteId);
 
         WebsiteLike like = WebsiteLike.builder()
                 .userId(userId)
@@ -77,6 +81,8 @@ public class UserWebsiteLikeServiceImpl implements UserWebsiteLikeService {
                 websiteMapper.update(null, new LambdaUpdateWrapper<Website>()
                         .eq(Website::getId, websiteId)
                         .setSql("like_count = like_count + 1"));
+                userActivityPublisher.publish(userId, UserActivityType.LIKE,
+                        websiteId, website.getCategoryId());
             }
         } catch (org.springframework.dao.DuplicateKeyException e) {
             log.debug("重复点赞，userId={}, websiteId={}，幂等处理", userId, websiteId);
@@ -198,16 +204,18 @@ public class UserWebsiteLikeServiceImpl implements UserWebsiteLikeService {
     }
 
     /**
-     * 校验网站是否在线
+     * 校验网站是否在线，并返回网站实体（用于后续读取 categoryId / submitterId 等字段）
      */
-    private void validateWebsiteOnline(Long websiteId) {
-        Long count = websiteMapper.selectCount(new LambdaQueryWrapper<Website>()
+    private Website validateWebsiteOnlineAndGet(Long websiteId) {
+        Website website = websiteMapper.selectOne(new LambdaQueryWrapper<Website>()
                 .eq(Website::getId, websiteId)
                 .eq(Website::getDeleted, NOT_DELETED)
                 .eq(Website::getStatus, ONLINE_STATUS)
-                .eq(Website::getAuditStatus, AUDIT_APPROVED_STATUS));
-        if (count == null || count == 0) {
+                .eq(Website::getAuditStatus, AUDIT_APPROVED_STATUS)
+                .last("limit 1"));
+        if (website == null) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "网站不存在或已下架");
         }
+        return website;
     }
 }

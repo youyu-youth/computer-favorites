@@ -11,9 +11,17 @@ import StatCard from './dashboard/StatCard.vue'
 import type { ProfileData } from '@/types/profile'
 import catPlayingAnimation from '@/assets/animation/Cat playing animation.lottie?url'
 
-defineProps<{
-  profile: ProfileData
-}>()
+withDefaults(
+  defineProps<{
+    profile: ProfileData
+    isOwn?: boolean
+    showCollections?: boolean
+  }>(),
+  {
+    isOwn: true,
+    showCollections: true,
+  },
+)
 
 const router = useRouter()
 
@@ -68,6 +76,7 @@ const handleSocialClick = (url: string) => {
           </div>
 
           <button
+            v-if="isOwn"
             type="button"
             class="inline-flex w-28 cursor-pointer items-center justify-center gap-1 whitespace-nowrap rounded-sm bg-amber-500/10 px-1.5 py-1.5 font-mono text-[11px] text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
             @click="handleEdit"
@@ -161,7 +170,7 @@ const handleSocialClick = (url: string) => {
         </ul>
       </StatCard>
 
-      <StatCard dense>
+      <StatCard v-if="isOwn || showCollections" dense>
         <template #header>
           <div class="flex w-full items-center justify-between gap-2">
             <span class="flex items-center gap-1.5 text-[12.5px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">

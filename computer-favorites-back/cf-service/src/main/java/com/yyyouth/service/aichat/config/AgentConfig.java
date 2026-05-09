@@ -46,6 +46,16 @@ public class AgentConfig {
     private final ToolCallback[] toolCallback;
 
 
+
+    @Bean(name = "nolChatClient")
+    public ChatClient nolChatClient() {
+        log.info("nolChatClient !~!!!!!");
+        ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
+                .defaultSystem(SYSTEM_PROMPT)  // 设置默认系统提示
+                .build();
+        return chatClient;
+    }
+
     @Bean(name = "deepseekChatClient")
     public ChatClient deepseekChatClient() {
         log.info("创建deepseekChatClient !~!!!!!");

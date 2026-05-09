@@ -14,6 +14,7 @@ import com.yyyouth.model.dto.admin.AdminWebsiteCreateDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteEditDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteQueryDTO;
 import com.yyyouth.model.dto.admin.AdminWebsiteStatusUpdateDTO;
+import com.yyyouth.model.enums.UserActivityType;
 import com.yyyouth.model.enums.UserMessageType;
 import com.yyyouth.model.pojo.admin.AdminAccount;
 import com.yyyouth.model.pojo.auth.UserAccount;
@@ -32,6 +33,7 @@ import com.yyyouth.model.vo.file.MinioUploadVO;
 import com.yyyouth.service.admin.website.AdminWebsiteService;
 import com.yyyouth.service.file.MinioFileService;
 import com.yyyouth.service.notification.MessageNotifyService;
+import com.yyyouth.service.rabbitmq.publisher.UserActivityPublisher;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
@@ -136,6 +138,8 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
     private final UserAccountMapper userAccountMapper;
 
     private final AdminAccountMapper adminAccountMapper;
+
+    private final UserActivityPublisher userActivityPublisher;
 
     /**
      * 查询网站分页列表
@@ -490,6 +494,12 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
         }
 
         insertAuditResultMessage(website, updateEntity, operationTime);
+
+        if (Objects.equals(updateEntity.getAuditStatus(), AUDIT_APPROVED_STATUS)
+                && website.getSubmitterId() != null && website.getSubmitterId() > 0) {
+            userActivityPublisher.publish(website.getSubmitterId(), UserActivityType.SUBMIT,
+                    website.getId(), website.getCategoryId());
+        }
     }
 
     /**
@@ -541,6 +551,13 @@ public class AdminWebsiteServiceImpl implements AdminWebsiteService {
             }
 
             insertAuditResultMessage(website, updateEntity, operationTime);
+
+            if (Objects.equals(updateEntity.getAuditStatus(), AUDIT_APPROVED_STATUS)
+                    && website.getSubmitterId() != null && website.getSubmitterId() > 0) {
+                userActivityPublisher.publish(website.getSubmitterId(), UserActivityType.SUBMIT,
+                        website.getId(), website.getCategoryId());
+            }
+
             successCount++;
         }
 

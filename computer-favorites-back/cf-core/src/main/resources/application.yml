@@ -49,6 +49,7 @@ cf:
       - /api/auth/register/code
       - /api/auth/register/username/check
       - /api/website/**
+      - /api/user/profile/public/**
   profile:
     marker: base
 

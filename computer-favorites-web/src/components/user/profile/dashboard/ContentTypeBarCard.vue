@@ -5,7 +5,7 @@
  * 内容类型占比纤细柱图（GitHub Stats 风格）
  */
 import type { EChartsOption } from 'echarts'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import StatCard from './StatCard.vue'
 import { useEchart } from './useEchart'
 import { buildAxisLabel, buildTooltip, githubStatsPalette, splitDashed } from './theme'
@@ -92,7 +92,11 @@ const buildOption = (isDark: boolean): EChartsOption => {
   }
 }
 
-const { containerRef } = useEchart({ buildOption })
+const { containerRef, rerender } = useEchart({ buildOption })
+
+watch(() => props.data, () => {
+  void rerender()
+}, { deep: true })
 </script>
 
 <template>

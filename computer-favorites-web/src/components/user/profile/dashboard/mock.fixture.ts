@@ -2,6 +2,7 @@
  * @author yyyouth zg
  * @date 2026-05-07
  * Dashboard 看板 mock 数据生成
+ * @deprecated 仅用于 Storybook / 单元测试 fixture，生产组件禁止引用
  */
 import { githubStatsPalette } from './theme'
 import type { DashboardItem, LangShare, RadarSkill, RankCardStat, SparklinePoint } from './types'

@@ -9,6 +9,8 @@ import AccountSettingsSection from '@/components/user/settings/sections/AccountS
 // @ts-ignore
 import PreferenceSettingsSection from '@/components/user/settings/sections/PreferenceSettingsSection.vue'
 // @ts-ignore
+import PrivacySettingsSection from '@/components/user/settings/sections/PrivacySettingsSection.vue'
+// @ts-ignore
 import DataManagementSection from '@/components/user/settings/sections/DataManagementSection.vue'
 // @ts-ignore
 import MessageSettingsSection from '@/components/user/settings/sections/MessageSettingsSection.vue'
@@ -24,6 +26,7 @@ const tabs = [
   { id: 'basic', label: '基础资料', icon: 'i-lucide-user-round', component: BasicProfileSection, hint: 'Profile' },
   { id: 'account', label: '账号设置', icon: 'i-lucide-shield-check', component: AccountSettingsSection, hint: 'Security' },
   { id: 'preference', label: '偏好设置', icon: 'i-lucide-sliders-horizontal', component: PreferenceSettingsSection, hint: 'Appearance' },
+  { id: 'privacy', label: '隐私设置', icon: 'i-lucide-lock-keyhole', component: PrivacySettingsSection, hint: 'Privacy' },
   { id: 'message', label: '消息设置', icon: 'i-lucide-bell', component: MessageSettingsSection, hint: 'Notifications' },
   { id: 'data', label: '数据管理', icon: 'i-lucide-database', component: DataManagementSection, hint: 'Data' },
 ]
@@ -36,6 +39,7 @@ const cloneState = () =>
     basicInfo: settingsStore.basicInfo,
     profile: settingsStore.profile,
     setting: settingsStore.setting,
+    privacy: settingsStore.privacy,
   }))
 const baselineSnapshot = ref(cloneState())
 const lockSignal = ref(0)
@@ -105,10 +109,14 @@ const handleSaveAllChanges = async () => {
     lockSignal.value += 1
     toast.add({
       title: '保存成功',
-      description: '已统一保存五个设置模块的更改',
+      description: '已统一保存设置模块的更改',
       type: 'success',
     })
   } catch (error) {
+    Object.assign(settingsStore.basicInfo, baselineSnapshot.value.basicInfo)
+    Object.assign(settingsStore.profile, baselineSnapshot.value.profile)
+    Object.assign(settingsStore.setting, baselineSnapshot.value.setting)
+    Object.assign(settingsStore.privacy, baselineSnapshot.value.privacy)
     toast.add({
       title: '保存失败',
       description: error instanceof Error ? error.message : '设置保存失败，请稍后重试',

@@ -1,16 +1,9 @@
 package com.yyyouth.service.rabbitmq.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.QueueBuilder;
-import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.ConditionalRejectingErrorHandler;
-import org.springframework.amqp.rabbit.listener.RabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.support.ListenerExecutionFailedException;
 import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -24,55 +17,17 @@ import org.springframework.messaging.converter.MessageConversionException;
  * @author yyyouth zg
  * @date 2026-05-06
  *
- * RabbitMQ Exchange/Queue/Binding 声明及消息转换配置
+ * RabbitMQ 通用基础设施配置：MessageConverter + ListenerContainerFactory。
+ * 业务相关的 Exchange / Queue / Binding 已拆出到各业务 Binding 类：
+ *   - {@link com.yyyouth.service.rabbitmq.binding.NotifyRabbitBinding}
+ *   - {@link com.yyyouth.service.rabbitmq.binding.UserStatsRabbitBinding}
  */
 @Configuration
-@RequiredArgsConstructor
 public class RabbitMqConfig {
-
-    private final RabbitMqProperties properties;
-
-    @Bean
-    public TopicExchange notifyExchange() {
-        return new TopicExchange(properties.getExchange(), true, false);
-    }
-
-    @Bean
-    public TopicExchange dlxExchange() {
-        return new TopicExchange(properties.getDlxExchange(), true, false);
-    }
-
-    @Bean
-    public Queue notifyQueue() {
-        return QueueBuilder.durable(properties.getNotify().getQueue())
-                .deadLetterExchange(properties.getDlxExchange())
-                .deadLetterRoutingKey(properties.getNotify().getRoutingKeyPrefix() + "dlq")
-                .build();
-    }
-
-    @Bean
-    public Queue notifyDlq() {
-        return QueueBuilder.durable(properties.getNotify().getDlq())
-                .build();
-    }
-
-    @Bean
-    public Binding notifyBinding() {
-        return BindingBuilder.bind(notifyQueue())
-                .to(notifyExchange())
-                .with(properties.getNotify().getRoutingKeyPrefix() + "#");
-    }
-
-    @Bean
-    public Binding dlqBinding() {
-        return BindingBuilder.bind(notifyDlq())
-                .to(dlxExchange())
-                .with(properties.getNotify().getRoutingKeyPrefix() + "dlq");
-    }
 
     /**
      * JSON 消息转换器，使用 Spring 容器中的 ObjectMapper（含 JavaTimeModule），
-     * 配置受信包以支持 NotifyEvent 等 DTO 的类型推断
+     * 配置受信包以支持 NotifyEvent / UserActivityEvent 等 DTO 的类型推断。
      */
     @Bean
     public MessageConverter jsonMessageConverter(ObjectMapper objectMapper) {

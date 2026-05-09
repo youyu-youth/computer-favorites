@@ -148,6 +148,13 @@ const router = createRouter({
           meta: { requiresAuth: true },
         },
         {
+          path: 'profile/:username',
+          name: 'profilePublic',
+          component: () => import('@/views/user/ProfilePublicView.vue'),
+          props: true,
+          meta: { requiresAuth: false },
+        },
+        {
           path: 'settings',
           name: 'settings',
           component: SettingsView,
