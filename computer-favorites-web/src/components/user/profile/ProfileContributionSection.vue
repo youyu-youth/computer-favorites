@@ -49,12 +49,12 @@ const rankScore = computed(() => {
 const rankCardStats = computed<RankCardStat[]>(() => {
   const data = overview.value.data
   return [
-    { label: 'Total Submit', value: numberFormatter.format(toNum(data?.totalSubmit)), icon: 'star' },
-    { label: 'Total Comments', value: numberFormatter.format(toNum(data?.totalComment)), icon: 'commit' },
-    { label: 'Total Favs', value: numberFormatter.format(toNum(data?.totalCollect)), icon: 'pr' },
-    { label: 'Total Likes', value: numberFormatter.format(toNum(data?.totalLike)), icon: 'issue' },
-    { label: 'Total Browse', value: numberFormatter.format(toNum(data?.totalBrowse)), icon: 'monitor' },
-    { label: 'Streak', value: `${numberFormatter.format(toNum(data?.streakDays))} days`, icon: 'flame' },
+    { label: '累计投稿', value: numberFormatter.format(toNum(data?.totalSubmit)), icon: 'star' },
+    { label: '累计评论', value: numberFormatter.format(toNum(data?.totalComment)), icon: 'commit' },
+    { label: '累计收藏', value: numberFormatter.format(toNum(data?.totalCollect)), icon: 'pr' },
+    { label: '累计点赞', value: numberFormatter.format(toNum(data?.totalLike)), icon: 'issue' },
+    { label: '累计浏览', value: numberFormatter.format(toNum(data?.totalBrowse)), icon: 'monitor' },
+    { label: '连续活跃', value: `${numberFormatter.format(toNum(data?.streakDays))} 天`, icon: 'flame' },
   ]
 })
 
@@ -91,13 +91,13 @@ const getAccent = (idx: number) => accentList[idx % accentList.length] ?? github
         贡献概览
       </h3>
       <span class="font-mono text-[11px] uppercase tracking-widest text-gray-500 dark:text-gray-400">
-        /contributions
+        贡献概览
       </span>
     </header>
 
     <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <ContributionRankCard
-        title="GitHub Stats Rank"
+        title="贡献等级"
         :score="rankScore"
         :stats="rankCardStats"
       />
@@ -124,7 +124,7 @@ const getAccent = (idx: number) => accentList[idx % accentList.length] ?? github
         <StatCard dense :accent="githubStatsPalette.emerald">
           <div class="flex flex-col gap-1">
             <span class="font-mono text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Profile Health
+              资料完整度
             </span>
             <div class="flex items-end gap-1.5">
               <span

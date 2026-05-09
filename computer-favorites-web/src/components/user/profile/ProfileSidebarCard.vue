@@ -4,9 +4,22 @@
  * @date 2026-05-07
  * Profile 侧边栏（GitHub Stats 风格）：头像 + 编辑入口 + 签名 + 社交链接 + 标签 + 上传 / 收藏文件夹
  */
+import type { Component } from 'vue'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import { useRouter } from 'vue-router'
-import { Folder, FolderTree, MapPin, Pencil, Star } from 'lucide-vue-next'
+import {
+  BookOpen,
+  Folder,
+  FolderTree,
+  GitBranch,
+  Github,
+  Globe,
+  Link as LinkIcon,
+  Mail,
+  MapPin,
+  Pencil,
+  Star,
+} from 'lucide-vue-next'
 import StatCard from './dashboard/StatCard.vue'
 import type { ProfileData } from '@/types/profile'
 import catPlayingAnimation from '@/assets/animation/Cat playing animation.lottie?url'
@@ -41,6 +54,25 @@ const handleSocialClick = (url: string) => {
     return
   }
   router.push(url)
+}
+
+const socialIconMap: Record<string, Component> = {
+  GitHub: Github,
+  Gitee: GitBranch,
+  博客: BookOpen,
+  个人网站: Globe,
+  邮箱: Mail,
+}
+
+const resolveSocialIcon = (label: string): Component => socialIconMap[label] ?? LinkIcon
+
+// 基于标签文本哈希出一个稳定的色相（0~359），让每个标签拥有随机但可复现的背景色
+const tagHue = (tag: string): number => {
+  let hash = 0
+  for (let i = 0; i < tag.length; i++) {
+    hash = (hash * 31 + tag.charCodeAt(i)) >>> 0
+  }
+  return hash % 360
 }
 </script>
 
@@ -97,36 +129,33 @@ const handleSocialClick = (url: string) => {
       </StatCard>
 
       <StatCard v-if="profile.socialLinks.length" dense title="社交链接">
-        <ul class="grid grid-cols-2 gap-1.5">
+        <ul class="grid grid-cols-4 gap-2">
           <li v-for="link in profile.socialLinks" :key="link.label">
             <button
               type="button"
-              class="flex w-full cursor-pointer items-center gap-1.5 rounded-sm border border-black/5 px-2 py-1.5 font-mono text-[11.5px] text-gray-700 transition-colors hover:bg-black/5 dark:border-white/[0.06] dark:text-gray-300 dark:hover:bg-white/5"
+              :title="link.label"
+              :aria-label="link.label"
+              class="flex aspect-square w-full cursor-pointer items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1]"
               @click="handleSocialClick(link.url)"
             >
-              <img
-                v-if="link.imageIcon"
-                :src="link.imageIcon"
-                :alt="link.label"
-                :class="[
-                  'size-3.5 shrink-0',
-                  ['博客', 'Gitee', '邮箱'].includes(link.label)
-                    ? ''
-                    : 'dark:invert dark:brightness-0',
-                ]"
+              <component
+                :is="resolveSocialIcon(link.label)"
+                class="size-6 shrink-0"
+                :stroke-width="2"
+                :style="{ color: '#f59e0b' }"
               />
-              <span class="truncate">{{ link.label }}</span>
             </button>
           </li>
         </ul>
       </StatCard>
 
       <StatCard v-if="profile.tags.length" dense title="个人标签">
-        <ul class="flex flex-wrap gap-1.5">
+        <ul class="flex flex-wrap gap-2">
           <li
             v-for="tag in profile.tags"
             :key="tag"
-            class="rounded-sm border border-black/5 bg-black/[0.03] px-1.5 py-0.5 font-mono text-[11px] text-gray-700 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-gray-300"
+            class="profile-tag rounded-full px-3 py-1 text-[12.5px] font-medium italic tracking-wide"
+            :style="{ '--tag-hue': tagHue(tag).toString() }"
           >
             {{ tag }}
           </li>
@@ -209,3 +238,26 @@ const handleSocialClick = (url: string) => {
     </div>
   </aside>
 </template>
+
+<style scoped>
+.profile-tag {
+  font-family: 'Caveat', 'Segoe Script', 'Comic Sans MS', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+  background-color: hsla(var(--tag-hue), 75%, 55%, 0.12);
+  color: hsla(var(--tag-hue), 65%, 32%, 1);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+.profile-tag:hover {
+  background-color: hsla(var(--tag-hue), 75%, 55%, 0.2);
+}
+
+:global(.dark) .profile-tag {
+  background-color: hsla(var(--tag-hue), 70%, 65%, 0.18);
+  color: hsla(var(--tag-hue), 90%, 82%, 1);
+}
+
+:global(.dark) .profile-tag:hover {
+  background-color: hsla(var(--tag-hue), 70%, 65%, 0.28);
+}
+</style>

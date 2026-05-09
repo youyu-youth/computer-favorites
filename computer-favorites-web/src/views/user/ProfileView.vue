@@ -121,8 +121,12 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
   const country = payload.profile?.country?.trim()
   const rawLocation = [country, city].filter(Boolean).join(' · ')
   const location = rawLocation || '未设置地区'
-  const website = payload.profile?.blogUrl
-  const email = payload.user?.email
+  const normalizeUrl = (value: string | null | undefined): string => (value ?? '').trim()
+  const githubUrl = normalizeUrl(payload.profile?.githubUrl)
+  const giteeUrl = normalizeUrl(payload.profile?.giteeUrl)
+  const blogUrl = normalizeUrl(payload.profile?.blogUrl)
+  const website = blogUrl
+  const email = (payload.user?.email ?? '').trim()
   const hobbyTags = normalizeStringArray(payload.profile?.hobbyTags)
   const techStack = normalizeStringArray(payload.profile?.techStack)
   const favoriteSites = normalizeSiteItems(payload.profile?.favoriteWebsites, 'i-lucide-link-2')
@@ -130,23 +134,17 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
   const profileTags = hobbyTags
 
   const socialLinkCandidates: Array<ProfileSocialLink | null> = [
-    payload.profile?.githubUrl
-      ? { label: 'GitHub', imageIcon: githubIcon, url: payload.profile.githubUrl }
-      : null,
-    payload.profile?.giteeUrl
-      ? { label: 'Gitee', imageIcon: giteeIcon, url: payload.profile.giteeUrl }
-      : null,
-    payload.profile?.blogUrl
-      ? { label: '博客', imageIcon: blogIcon, url: payload.profile.blogUrl }
-      : null,
-    website ? { label: '个人网站', icon: 'i-lucide-globe', url: website } : null,
+    githubUrl ? { label: 'GitHub', imageIcon: githubIcon, url: githubUrl } : null,
+    giteeUrl ? { label: 'Gitee', imageIcon: giteeIcon, url: giteeUrl } : null,
+    blogUrl ? { label: '博客', imageIcon: blogIcon, url: blogUrl } : null,
     email ? { label: '邮箱', imageIcon: emailIcon, url: `mailto:${email}` } : null,
   ]
   const socialLinkList = socialLinkCandidates.filter(
     (item): item is ProfileSocialLink => item !== null,
   )
   const socialLinks = socialLinkList.filter(
-    (item, index, list) => list.findIndex((target) => target.url === item.url) === index,
+    (item, index, list) =>
+      list.findIndex((target) => target.label === item.label) === index,
   )
 
   const timeline = [

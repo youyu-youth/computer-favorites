@@ -113,7 +113,7 @@ const buildOption = (isDark: boolean): EChartsOption => {
         left: 'center',
         top: '53%',
         style: {
-          text: 'Total PV',
+          text: '总浏览量',
           fill: isDark ? '#64748b' : '#94a3b8',
           fontSize: 10,
           fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',

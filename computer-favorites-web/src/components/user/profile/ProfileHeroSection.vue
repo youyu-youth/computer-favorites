@@ -21,7 +21,7 @@ const store = useProfileDashboardStore()
 const { overview, trend, category, trendRange } = storeToRefs(store)
 
 const numberFormatter = new Intl.NumberFormat('zh-CN')
-const compactFormatter = new Intl.NumberFormat('en-US', {
+const compactFormatter = new Intl.NumberFormat('zh-CN', {
   notation: 'compact',
   maximumFractionDigits: 1,
 })
@@ -76,22 +76,22 @@ const ringScore = computed(() => {
 
 const ringStats = computed(() => [
   {
-    label: 'Total Browse',
+    label: '累计浏览',
     value: numberFormatter.format(toNum(overviewData.value?.totalBrowse)),
     color: githubStatsPalette.primary,
   },
   {
-    label: 'Total Likes',
+    label: '累计点赞',
     value: numberFormatter.format(toNum(overviewData.value?.totalLike)),
     color: githubStatsPalette.rose,
   },
   {
-    label: 'Total Favs',
+    label: '累计收藏',
     value: numberFormatter.format(toNum(overviewData.value?.totalCollect)),
     color: githubStatsPalette.cyan,
   },
   {
-    label: 'Contribution',
+    label: '贡献值',
     value: numberFormatter.format(toNum(overviewData.value?.totalContribution)),
     color: githubStatsPalette.emerald,
   },
@@ -150,7 +150,7 @@ onMounted(() => {
           上传内容数据看板
         </h3>
         <span class="font-mono text-[11px] uppercase tracking-widest text-gray-500 dark:text-gray-400">
-          /dashboard
+          数据看板
         </span>
       </div>
       <div class="flex items-center gap-1 rounded-md border border-black/5 bg-white p-0.5 dark:border-white/5 dark:bg-black">
@@ -189,13 +189,13 @@ onMounted(() => {
     <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
       <RingGaugeCard
         class="md:col-span-2 xl:col-span-2"
-        title="Contribution Overview"
+        title="贡献概览"
         :score="ringScore"
         :stats="ringStats"
       />
       <SparklineCard
         :icon="Eye"
-        label="Total Browse"
+        label="累计浏览"
         :value="formatCompact(toNum(overviewData?.totalBrowse))"
         :delta="trendDelta"
         :data="trendSeries"
@@ -203,35 +203,35 @@ onMounted(() => {
       />
       <SparklineCard
         :icon="Heart"
-        label="Total Likes"
+        label="累计点赞"
         :value="formatCompact(toNum(overviewData?.totalLike))"
         :data="trendSeries"
         :color="githubStatsPalette.rose"
       />
       <SparklineCard
         :icon="Bookmark"
-        label="Total Favorites"
+        label="累计收藏"
         :value="formatCompact(toNum(overviewData?.totalCollect))"
         :data="trendSeries"
         :color="githubStatsPalette.cyan"
       />
       <SparklineCard
         :icon="MessageCircle"
-        label="Total Comments"
+        label="累计评论"
         :value="formatCompact(toNum(overviewData?.totalComment))"
         :data="trendSeries"
         :color="githubStatsPalette.emerald"
       />
       <SparklineCard
         :icon="Activity"
-        :label="`Avg PV / Day (${daysInRange}d)`"
+        :label="`日均浏览（近${daysInRange}天）`"
         :value="formatCompact(avgPvPerDay)"
         :data="trendSeries"
         :color="githubStatsPalette.blue"
       />
       <SparklineCard
         :icon="Sparkles"
-        label="Engagement %"
+        label="互动率"
         :value="`${engagementPct}%`"
         :data="trendSeries"
         :color="githubStatsPalette.amber"
@@ -251,7 +251,7 @@ onMounted(() => {
         @select="handleCategorySelect"
       />
       <ContentTypeBarCard
-        title="分类占比（% TOP8 + 其他）"
+        title="分类占比（前8项 + 其他）"
         :data="typeCountMerged"
       />
     </div>
