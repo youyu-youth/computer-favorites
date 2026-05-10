@@ -144,7 +144,7 @@ public class ProfilePublicServiceImpl implements ProfilePublicService {
                 .username(account.getUsername())
                 .nickname(account.getNickname())
                 .avatar(account.getAvatar())
-                .joinDate(account.getCreateTime())
+                .joinDate(account.getCreateTime() != null ? account.getCreateTime().toLocalDate() : null)
                 .build();
 
         ProfilePublicProfileVO profileVO = ProfilePublicProfileVO.builder()

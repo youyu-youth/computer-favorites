@@ -6,7 +6,7 @@
   --cf-color-primary-500-rgb: 245 158 11;
   --cf-color-primary-600-rgb: 217 119 6;
 
-  --cf-color-dark-bg-rgb: 18 18 18;
+  --cf-color-dark-bg-rgb: 0 0 0;
   --cf-color-dark-card-rgb: 28 28 30;
   --cf-color-dark-border-rgb: 45 45 45;
 
@@ -25,6 +25,8 @@
 
   --cf-color-surface-page-rgb: 249 250 251;
   --cf-color-surface-card-rgb: 255 255 255;
+  --cf-color-user-layout-accent-start: rgb(16 185 129 / 0.12);
+  --cf-color-user-layout-accent-end: rgb(180 83 9 / 0.1);
   --cf-color-text-primary-rgb: 17 24 39;
   --cf-color-text-secondary-rgb: 75 85 99;
   --cf-color-border-default-rgb: 229 231 235;
@@ -51,8 +53,10 @@
 
 :root.dark,
 :root.dark[data-cf-theme='user'] {
-  --cf-color-surface-page-rgb: 5 5 7;
+  --cf-color-surface-page-rgb: 0 0 0;
   --cf-color-surface-card-rgb: 12 12 14;
+  --cf-color-user-layout-accent-start: transparent;
+  --cf-color-user-layout-accent-end: transparent;
   --cf-color-text-primary-rgb: 240 240 244;
   --cf-color-text-secondary-rgb: 140 145 158;
   --cf-color-border-default-rgb: 45 45 45;

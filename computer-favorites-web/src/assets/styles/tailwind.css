@@ -366,7 +366,7 @@ body.email-modal-scroll-lock {
 .neon-bg {
   position: relative;
   overflow: hidden;
-  background-color: #fafafa;
+  background-color: rgb(var(--cf-color-surface-page-rgb) / 1);
 }
 
 .neon-bg::before,
@@ -384,13 +384,13 @@ body.email-modal-scroll-lock {
 .neon-bg::before {
   left: -180px;
   top: 80px;
-  background-color: rgba(16, 185, 129, 0.12);
+  background-color: var(--cf-color-user-layout-accent-start);
 }
 
 .neon-bg::after {
   right: -180px;
   bottom: 40px;
-  background-color: rgba(180, 83, 9, 0.1);
+  background-color: var(--cf-color-user-layout-accent-end);
 }
 
 .neon-bg > :not(.fixed) {
@@ -399,31 +399,13 @@ body.email-modal-scroll-lock {
 }
 
 .dark .neon-bg {
-  background-color: #121212;
+  background-color: rgb(var(--cf-color-surface-page-rgb) / 1);
 }
 
 .dark .neon-bg::before {
-  background-color: rgba(16, 185, 129, 0.18);
+  background-color: var(--cf-color-user-layout-accent-start);
 }
 
 .dark .neon-bg::after {
-  background-color: rgba(180, 83, 9, 0.14);
-}
-
-.dark .cf-home-black-dark-scope {
-  --cf-color-surface-page-rgb: 0 0 0;
-  --cf-color-dark-bg-rgb: 0 0 0;
-  background-color: rgb(0 0 0 / 1) !important;
-}
-
-.dark .cf-home-black-dark-scope.neon-bg::before,
-.dark .cf-home-black-dark-scope.neon-bg::after {
-  background-color: transparent !important;
-}
-
-.dark .cf-home-black-dark-scope [data-testid='navbar-root'],
-.dark .cf-home-black-dark-scope [data-testid='navbar-mobile-menu'],
-.dark .cf-home-black-dark-scope [data-testid='profile-dropdown'],
-.dark .cf-home-black-dark-scope [data-testid='app-footer'] {
-  background-color: rgb(0 0 0 / 1) !important;
+  background-color: var(--cf-color-user-layout-accent-end);
 }

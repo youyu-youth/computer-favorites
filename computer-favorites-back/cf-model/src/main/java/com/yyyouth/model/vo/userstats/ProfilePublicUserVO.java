@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 /**
  * @author yyyouth zg
@@ -32,5 +32,5 @@ public class ProfilePublicUserVO implements Serializable {
 
     /** 加入日期（注册时间），脱敏到日级即可 */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDateTime joinDate;
+    private LocalDate joinDate;
 }

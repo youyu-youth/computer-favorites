@@ -10,7 +10,7 @@ export const USER_THEME_TOKEN_VALUE_MAP: ThemeTokenValueMap = {
     primary400: '#fbbf24',
     primary500: '#f59e0b',
     primary600: '#d97706',
-    darkBg: '#121212',
+    darkBg: '#000000',
     darkCard: '#1c1c1e',
     darkBorder: '#2d2d2d',
     semanticSuccess: '#10b981',
