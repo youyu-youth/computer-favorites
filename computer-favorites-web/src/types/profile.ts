@@ -19,6 +19,10 @@ export interface ProfileSiteItem {
   name: string
   description: string
   icon: string
+  /** 站内详情页 ID，存在时整行可点击跳 /computer/website/:id（仅"上传网站"卡片使用） */
+  websiteId?: number
+  /** 远程 icon URL（OSS / 站点图标），存在时优先于 lucide 图标 */
+  iconUrl?: string
 }
 
 export interface ProfileSkill {

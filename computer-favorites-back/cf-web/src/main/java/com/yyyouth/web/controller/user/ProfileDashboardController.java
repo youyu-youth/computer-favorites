@@ -8,9 +8,11 @@ import com.yyyouth.model.vo.userstats.ContributionGraphVO;
 import com.yyyouth.model.vo.userstats.DashboardOverviewVO;
 import com.yyyouth.model.vo.userstats.TechRadarVO;
 import com.yyyouth.model.vo.userstats.TrendSeriesVO;
+import com.yyyouth.model.vo.userstats.UploadImpactVO;
 import com.yyyouth.service.audit.annotation.AuditLog;
 import com.yyyouth.service.ratelimit.annotation.RateLimit;
 import com.yyyouth.service.user.userstats.ProfileDashboardService;
+import com.yyyouth.service.user.userstats.UploadImpactService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,8 @@ import java.time.LocalDate;
 public class ProfileDashboardController {
 
     private final ProfileDashboardService profileDashboardService;
+
+    private final UploadImpactService uploadImpactService;
 
     /**
      * 贡献概览（6 累计 + 等级 + streak + rank_percent + lastActiveDate）
@@ -118,5 +122,23 @@ public class ProfileDashboardController {
         Long userId = StpUtil.getLoginIdAsLong();
         log.info("[dashboard] trendSeries userId={}, range={}, metric={}", userId, range, metric);
         return HttpResult.success(profileDashboardService.getTrendSeries(userId, range, metric));
+    }
+
+    /**
+     * 上传网站影响力：聚合「他人对当前用户上传网站」的浏览/点赞/收藏/评论/评分。
+     *
+     * @param range 时间范围：7d / 30d / 90d / all，默认 30d
+     */
+    @ApiOperation(value = "上传网站影响力")
+    @GetMapping("/upload-impact")
+    @SaCheckLogin
+    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 5, window = 1)
+    @AuditLog(action = "upload-impact", description = "查询上传网站影响力，range=#{#range}")
+    public HttpResult uploadImpact(
+            @RequestParam(value = "range", required = false, defaultValue = "30d") String range) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        log.info("[dashboard] uploadImpact userId={}, range={}", userId, range);
+        UploadImpactVO data = uploadImpactService.getUploadImpact(userId, range);
+        return HttpResult.success(data);
     }
 }

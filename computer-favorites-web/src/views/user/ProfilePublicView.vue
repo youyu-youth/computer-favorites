@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import ProfileContributionSection from '@/components/user/profile/ProfileContributionSection.vue'
 import ProfileHeatmapSection from '@/components/user/profile/ProfileHeatmapSection.vue'
 import ProfileHeroSection from '@/components/user/profile/ProfileHeroSection.vue'
+import ProfileImpactSection from '@/components/user/profile/ProfileImpactSection.vue'
 import ProfileSidebarCard from '@/components/user/profile/ProfileSidebarCard.vue'
 import ProfileSkillsSection from '@/components/user/profile/ProfileSkillsSection.vue'
 import ProfilePrivateView from '@/views/user/ProfilePrivateView.vue'
@@ -85,6 +86,7 @@ watch(
         />
 
         <main class="min-w-0 flex-1 space-y-4 lg:pt-3">
+          <ProfileImpactSection :username="username" />
           <template v-if="showContribution">
             <ProfileHeroSection />
             <ProfileHeatmapSection />

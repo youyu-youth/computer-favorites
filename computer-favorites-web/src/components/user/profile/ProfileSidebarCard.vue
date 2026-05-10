@@ -4,7 +4,7 @@
  * @date 2026-05-07
  * Profile 侧边栏（GitHub Stats 风格）：头像 + 编辑入口 + 签名 + 社交链接 + 标签 + 上传 / 收藏文件夹
  */
-import type { Component } from 'vue'
+import { reactive, type Component } from 'vue'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import { useRouter } from 'vue-router'
 import {
@@ -74,6 +74,20 @@ const tagHue = (tag: string): number => {
   }
   return hash % 360
 }
+
+/**
+ * 记录加载失败的远程 icon URL，渲染时回退为 Folder 图标
+ */
+const iconErrorMap = reactive<Set<string>>(new Set())
+const handleIconError = (url?: string) => {
+  if (url) {
+    iconErrorMap.add(url)
+  }
+}
+const shouldUseRemoteIcon = (url?: string): boolean => Boolean(url && !iconErrorMap.has(url))
+
+const buildWebsiteHref = (websiteId?: number): string =>
+  websiteId ? `/computer/website/${websiteId}` : ''
 </script>
 
 <template>
@@ -170,25 +184,39 @@ const tagHue = (tag: string): number => {
               上传网站（文件夹）
             </span>
             <span class="font-mono text-[10.5px] text-gray-500 dark:text-gray-400">
-              {{ profile.uploadedProjects.length }} 个网站
+              {{ profile.uploadedProjects.length >= 5 ? '5+' : profile.uploadedProjects.length }} 个网站
             </span>
           </div>
         </template>
         <ul class="space-y-1.5">
-          <li
-            v-for="item in profile.uploadedProjects"
-            :key="item.name"
-            class="flex items-start gap-1.5 rounded-sm border border-black/5 bg-black/[0.02] p-1.5 dark:border-white/[0.06] dark:bg-white/[0.02]"
-          >
-            <Folder class="mt-0.5 size-3.5 shrink-0 text-amber-500" :stroke-width="2" />
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-[12.5px] font-semibold text-gray-900 dark:text-gray-100">
-                {{ item.name }}
-              </p>
-              <p class="break-all font-mono text-[11px] leading-5 text-gray-500 dark:text-gray-400">
-                {{ item.description }}
-              </p>
-            </div>
+          <li v-for="item in profile.uploadedProjects" :key="item.websiteId ?? item.name">
+            <component
+              :is="item.websiteId ? 'a' : 'div'"
+              :href="item.websiteId ? buildWebsiteHref(item.websiteId) : undefined"
+              :target="item.websiteId ? '_blank' : undefined"
+              :rel="item.websiteId ? 'noopener noreferrer' : undefined"
+              :title="item.name"
+              class="flex items-start gap-1.5 rounded-sm border border-black/5 bg-black/[0.02] p-1.5 transition-colors dark:border-white/[0.06] dark:bg-white/[0.02]"
+              :class="item.websiteId ? 'cursor-pointer hover:border-amber-500/30 hover:bg-amber-500/5 dark:hover:border-amber-400/30 dark:hover:bg-amber-400/5' : ''"
+            >
+              <img
+                v-if="shouldUseRemoteIcon(item.iconUrl)"
+                :src="item.iconUrl"
+                :alt="item.name"
+                class="mt-0.5 size-3.5 shrink-0 rounded-[2px] object-cover"
+                referrerpolicy="no-referrer"
+                @error="handleIconError(item.iconUrl)"
+              />
+              <Folder v-else class="mt-0.5 size-3.5 shrink-0 text-amber-500" :stroke-width="2" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-[12.5px] font-semibold text-gray-900 dark:text-gray-100">
+                  {{ item.name }}
+                </p>
+                <p class="break-all font-mono text-[11px] leading-5 text-gray-500 dark:text-gray-400">
+                  {{ item.description }}
+                </p>
+              </div>
+            </component>
           </li>
           <li
             v-if="!profile.uploadedProjects.length"
@@ -197,6 +225,13 @@ const tagHue = (tag: string): number => {
             暂无上传网站
           </li>
         </ul>
+        <router-link
+          v-if="isOwn && profile.uploadedProjects.length"
+          to="/computer/website/submissions"
+          class="mt-2 inline-flex items-center gap-1 font-mono text-[11px] text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+        >
+          查看全部 →
+        </router-link>
       </StatCard>
 
       <StatCard v-if="isOwn || showCollections" dense>

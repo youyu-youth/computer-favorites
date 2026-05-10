@@ -8,11 +8,13 @@ import com.yyyouth.model.vo.userstats.DashboardOverviewVO;
 import com.yyyouth.model.vo.userstats.ProfilePublicVO;
 import com.yyyouth.model.vo.userstats.TechRadarVO;
 import com.yyyouth.model.vo.userstats.TrendSeriesVO;
+import com.yyyouth.model.vo.userstats.UploadImpactVO;
 import com.yyyouth.service.audit.annotation.AuditLog;
 import com.yyyouth.service.ratelimit.annotation.RateLimit;
 import com.yyyouth.service.user.userstats.ProfileDashboardService;
 import com.yyyouth.service.user.userstats.ProfilePublicService;
 import com.yyyouth.service.user.userstats.ProfilePublicService.ProfileVisibilityCheckResult;
+import com.yyyouth.service.user.userstats.UploadImpactService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.constraints.NotBlank;
@@ -53,9 +55,11 @@ public class ProfilePublicController {
     private static final String SECTION_CATEGORY = "category-distribution";
     private static final String SECTION_RADAR = "tech-radar";
     private static final String SECTION_TREND = "trend-series";
+    private static final String SECTION_UPLOAD_IMPACT = "upload-impact";
 
     private final ProfilePublicService profilePublicService;
     private final ProfileDashboardService profileDashboardService;
+    private final UploadImpactService uploadImpactService;
 
     /**
      * 公开主页基础资料。
@@ -125,7 +129,11 @@ public class ProfilePublicController {
                 TrendSeriesVO data = profileDashboardService.getTrendSeries(targetUserId, range, metric);
                 yield HttpResult.success(data);
             }
-            default -> HttpResult.error(400, "未知 section：" + section + "（支持 overview / contribution-graph / category-distribution / tech-radar / trend-series）");
+            case SECTION_UPLOAD_IMPACT -> {
+                UploadImpactVO data = uploadImpactService.getUploadImpact(targetUserId, range);
+                yield HttpResult.success(data);
+            }
+            default -> HttpResult.error(400, "未知 section：" + section + "（支持 overview / contribution-graph / category-distribution / tech-radar / trend-series / upload-impact）");
         };
     }
 

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import ProfileContributionSection from '@/components/user/profile/ProfileContributionSection.vue'
+import ProfileDashboardCharts from '@/components/user/profile/ProfileDashboardCharts.vue'
+import ProfileDashboardSummary from '@/components/user/profile/ProfileDashboardSummary.vue'
 import ProfileHeatmapSection from '@/components/user/profile/ProfileHeatmapSection.vue'
-import ProfileHeroSection from '@/components/user/profile/ProfileHeroSection.vue'
+import ProfileImpactSection from '@/components/user/profile/ProfileImpactSection.vue'
 import ProfileSidebarCard from '@/components/user/profile/ProfileSidebarCard.vue'
 import ProfileSkillsSection from '@/components/user/profile/ProfileSkillsSection.vue'
 import { getCurrentUserProfile, type LoginUserProfileResponse } from '@/api/user'
 import { useToast } from '@/composables/useToast'
+import { useUserApprovedSubmissions } from '@/composables/useUserApprovedSubmissions'
 import { useProfileDashboardStore } from '@/stores/profileDashboard'
 import type { ProfileData, ProfileSiteItem, ProfileSocialLink } from '@/types/profile'
 
@@ -21,6 +23,7 @@ defineOptions({
 
 const toast = useToast()
 const dashboardStore = useProfileDashboardStore()
+const approvedSubmissions = useUserApprovedSubmissions({ limit: 5 })
 const loading = ref(true)
 const errorText = ref('')
 const profileData = ref<ProfileData | null>(null)
@@ -130,7 +133,6 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
   const hobbyTags = normalizeStringArray(payload.profile?.hobbyTags)
   const techStack = normalizeStringArray(payload.profile?.techStack)
   const favoriteSites = normalizeSiteItems(payload.profile?.favoriteWebsites, 'i-lucide-link-2')
-  const uploadedProjects = normalizeSiteItems(payload.profile?.uploadedWebsites, 'i-lucide-folder')
   const profileTags = hobbyTags
 
   const socialLinkCandidates: Array<ProfileSocialLink | null> = [
@@ -192,7 +194,7 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
         : website
           ? [{ name: '个人网站', description: website, icon: 'i-lucide-link-2' }]
           : [],
-    uploadedProjects,
+    uploadedProjects: [],
     skills: techStack.map((item) => ({ name: item, level: '熟练' as const })),
     contributions:
       contributions.length > 0
@@ -207,6 +209,19 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
 }
 
 const hasProfile = computed(() => Boolean(profileData.value))
+
+/**
+ * 将真实审核通过的投稿合并进 profileData，作为「上传网站」卡片的真实数据源
+ */
+const displayProfile = computed<ProfileData | null>(() => {
+  if (!profileData.value) {
+    return null
+  }
+  return {
+    ...profileData.value,
+    uploadedProjects: approvedSubmissions.items.value,
+  }
+})
 
 const loadProfile = async () => {
   loading.value = true
@@ -232,6 +247,8 @@ onMounted(() => {
   loadProfile()
   // 并发触发看板 5 个卡片首屏拉取（单卡失败不影响其他）
   dashboardStore.loadInitial()
+  // 并发拉取当前用户审核通过的投稿，作为侧边栏「上传网站」卡片真实数据源
+  approvedSubmissions.load()
 })
 </script>
 
@@ -250,17 +267,17 @@ onMounted(() => {
         <div class="h-40 w-full animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
       </div>
 
-      <div v-else-if="hasProfile && profileData" class="flex flex-col gap-4 lg:flex-row lg:gap-5">
-        <ProfileSidebarCard :profile="profileData" />
+      <div v-else-if="hasProfile && displayProfile" class="flex flex-col gap-4 lg:flex-row lg:gap-5">
+        <ProfileSidebarCard :profile="displayProfile" />
 
         <main class="min-w-0 flex-1 space-y-4 lg:pt-3">
-          <ProfileHeroSection />
+
+          <ProfileDashboardCharts />
           <ProfileHeatmapSection />
-          <ProfileSkillsSection :skills="profileData.skills" />
-          <ProfileContributionSection
-            :stats="profileData.stats"
-            :contributions="profileData.contributions"
-          />
+              <ProfileImpactSection />
+
+          <ProfileSkillsSection :skills="displayProfile.skills" />
+           <ProfileDashboardSummary />
         </main>
       </div>
 
