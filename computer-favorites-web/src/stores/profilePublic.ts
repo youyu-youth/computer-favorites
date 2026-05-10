@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { getPublicProfile, type ProfilePublicResponse } from '@/api/user-profile-public'
-import type { ProfileData, ProfileSiteItem, ProfileSocialLink } from '@/types/profile'
+import type { ProfileData, ProfileSiteItem, ProfileSkill, ProfileSocialLink } from '@/types/profile'
 
 import githubIcon from '@/assets/icons/svg/github.svg'
 import giteeIcon from '@/assets/icons/svg/gitee.svg'
@@ -44,6 +44,80 @@ const normalizeStringArray = (value: unknown): string[] => {
 
 const emptySites = (): ProfileSiteItem[] => []
 
+const normalizeSkillLevel = (value: unknown): ProfileSkill['level'] => {
+  return value === '基础' || value === '精通' ? value : '熟练'
+}
+
+const normalizeProfileSkillItem = (item: unknown): ProfileSkill | null => {
+  if (typeof item === 'string') {
+    const name = item.trim()
+    return name ? { name, level: '熟练' } : null
+  }
+
+  if (typeof item !== 'object' || item === null) {
+    return null
+  }
+
+  const record = item as Record<string, unknown>
+  const name = String(record.name ?? record.title ?? '').trim()
+  if (!name) {
+    return null
+  }
+
+  const iconPng = String(
+    record.iconPng ?? record.icon_png ?? record.iconUrl ?? record.icon_url ?? '',
+  ).trim()
+  const officialUrl = String(record.officialUrl ?? record.official_url ?? record.url ?? '').trim()
+  const color = String(record.color ?? '').trim()
+  const description = String(record.description ?? record.desc ?? '').trim()
+
+  return {
+    name,
+    level: normalizeSkillLevel(record.level),
+    ...(iconPng ? { iconPng } : {}),
+    ...(officialUrl ? { officialUrl } : {}),
+    ...(color ? { color } : {}),
+    ...(description ? { description } : {}),
+  }
+}
+
+const normalizeProfileSkills = (value: unknown): ProfileSkill[] => {
+  if (Array.isArray(value)) {
+    return value
+      .map(normalizeProfileSkillItem)
+      .filter((item): item is ProfileSkill => Boolean(item))
+  }
+
+  if (typeof value !== 'string') {
+    return []
+  }
+
+  const input = value.trim()
+  if (!input) {
+    return []
+  }
+
+  if (
+    (input.startsWith('[') && input.endsWith(']')) ||
+    (input.startsWith('{') && input.endsWith('}'))
+  ) {
+    try {
+      const parsed = JSON.parse(input)
+      const parsedItems = Array.isArray(parsed) ? parsed : [parsed]
+      return parsedItems
+        .map(normalizeProfileSkillItem)
+        .filter((item): item is ProfileSkill => Boolean(item))
+    } catch {
+      return []
+    }
+  }
+
+  return input
+    .split(/[，,、|]/)
+    .map(normalizeProfileSkillItem)
+    .filter((item): item is ProfileSkill => Boolean(item))
+}
+
 const resolveErrorCode = (error: unknown): number | null => {
   if (typeof error === 'object' && error !== null && 'code' in error) {
     const code = (error as { code?: unknown }).code
@@ -60,7 +134,7 @@ const mapToProfileData = (payload: ProfilePublicResponse): ProfileData => {
   const rawLocation = [country, city].filter(Boolean).join(' · ')
   const location = rawLocation || '未设置地区'
   const hobbyTags = normalizeStringArray(payload.profile?.hobbyTags)
-  const techStack = normalizeStringArray(payload.profile?.techStack)
+  const techStack = normalizeProfileSkills(payload.profile?.techStack)
   const website = payload.profile?.blogUrl
 
   const socialLinkCandidates: Array<ProfileSocialLink | null> = [
@@ -107,7 +181,7 @@ const mapToProfileData = (payload: ProfilePublicResponse): ProfileData => {
 
   return {
     name: displayName,
-    role: techStack[0] || '程序员',
+    role: techStack[0]?.name || '程序员',
     location,
     organization: country || '未设置国家',
     signature: payload.profile?.signature || '这个人很懒，还没有填写个性签名。',
@@ -117,9 +191,10 @@ const mapToProfileData = (payload: ProfilePublicResponse): ProfileData => {
     tags: hobbyTags,
     timeline,
     socialLinks,
-    favoriteSites: payload.privacy?.showCollections === 0 && !payload.isOwn ? emptySites() : emptySites(),
+    favoriteSites:
+      payload.privacy?.showCollections === 0 && !payload.isOwn ? emptySites() : emptySites(),
     uploadedProjects: emptySites(),
-    skills: techStack.map((item) => ({ name: item, level: '熟练' as const })),
+    skills: techStack,
     contributions: showContribution
       ? [{ title: '公开主页', summary: payload.profile?.signature || '该用户暂未填写贡献说明。' }]
       : [],

@@ -28,6 +28,10 @@ export interface ProfileSiteItem {
 export interface ProfileSkill {
   name: string
   level: '基础' | '熟练' | '精通'
+  iconPng?: string
+  officialUrl?: string
+  color?: string
+  description?: string
 }
 
 export interface ProfileContribution {

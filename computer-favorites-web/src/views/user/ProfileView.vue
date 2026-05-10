@@ -10,7 +10,7 @@ import { getCurrentUserProfile, type LoginUserProfileResponse } from '@/api/user
 import { useToast } from '@/composables/useToast'
 import { useUserApprovedSubmissions } from '@/composables/useUserApprovedSubmissions'
 import { useProfileDashboardStore } from '@/stores/profileDashboard'
-import type { ProfileData, ProfileSiteItem, ProfileSocialLink } from '@/types/profile'
+import type { ProfileData, ProfileSiteItem, ProfileSkill, ProfileSocialLink } from '@/types/profile'
 
 import githubIcon from '@/assets/icons/svg/github.svg'
 import giteeIcon from '@/assets/icons/svg/gitee.svg'
@@ -90,6 +90,80 @@ const normalizeSiteItems = (value: unknown, defaultIcon: string): ProfileSiteIte
     .filter((item): item is ProfileSiteItem => Boolean(item))
 }
 
+const normalizeSkillLevel = (value: unknown): ProfileSkill['level'] => {
+  return value === '基础' || value === '精通' ? value : '熟练'
+}
+
+const normalizeProfileSkillItem = (item: unknown): ProfileSkill | null => {
+  if (typeof item === 'string') {
+    const name = item.trim()
+    return name ? { name, level: '熟练' } : null
+  }
+
+  if (typeof item !== 'object' || item === null) {
+    return null
+  }
+
+  const record = item as Record<string, unknown>
+  const name = String(record.name ?? record.title ?? '').trim()
+  if (!name) {
+    return null
+  }
+
+  const iconPng = String(
+    record.iconPng ?? record.icon_png ?? record.iconUrl ?? record.icon_url ?? '',
+  ).trim()
+  const officialUrl = String(record.officialUrl ?? record.official_url ?? record.url ?? '').trim()
+  const color = String(record.color ?? '').trim()
+  const description = String(record.description ?? record.desc ?? '').trim()
+
+  return {
+    name,
+    level: normalizeSkillLevel(record.level),
+    ...(iconPng ? { iconPng } : {}),
+    ...(officialUrl ? { officialUrl } : {}),
+    ...(color ? { color } : {}),
+    ...(description ? { description } : {}),
+  }
+}
+
+const normalizeProfileSkills = (value: unknown): ProfileSkill[] => {
+  if (Array.isArray(value)) {
+    return value
+      .map(normalizeProfileSkillItem)
+      .filter((item): item is ProfileSkill => Boolean(item))
+  }
+
+  if (typeof value !== 'string') {
+    return []
+  }
+
+  const input = value.trim()
+  if (!input) {
+    return []
+  }
+
+  if (
+    (input.startsWith('[') && input.endsWith(']')) ||
+    (input.startsWith('{') && input.endsWith('}'))
+  ) {
+    try {
+      const parsed = JSON.parse(input)
+      const parsedItems = Array.isArray(parsed) ? parsed : [parsed]
+      return parsedItems
+        .map(normalizeProfileSkillItem)
+        .filter((item): item is ProfileSkill => Boolean(item))
+    } catch {
+      return []
+    }
+  }
+
+  return input
+    .split(/[，,、|]/)
+    .map(normalizeProfileSkillItem)
+    .filter((item): item is ProfileSkill => Boolean(item))
+}
+
 const completionPercent = (payload: LoginUserProfileResponse) => {
   const fields = [
     payload.user?.nickname,
@@ -131,7 +205,7 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
   const website = blogUrl
   const email = (payload.user?.email ?? '').trim()
   const hobbyTags = normalizeStringArray(payload.profile?.hobbyTags)
-  const techStack = normalizeStringArray(payload.profile?.techStack)
+  const techStack = normalizeProfileSkills(payload.profile?.techStack)
   const favoriteSites = normalizeSiteItems(payload.profile?.favoriteWebsites, 'i-lucide-link-2')
   const profileTags = hobbyTags
 
@@ -145,8 +219,7 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
     (item): item is ProfileSocialLink => item !== null,
   )
   const socialLinks = socialLinkList.filter(
-    (item, index, list) =>
-      list.findIndex((target) => target.label === item.label) === index,
+    (item, index, list) => list.findIndex((target) => target.label === item.label) === index,
   )
 
   const timeline = [
@@ -178,7 +251,7 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
 
   return {
     name: displayName,
-    role: techStack[0] || '程序员',
+    role: techStack[0]?.name || '程序员',
     location,
     organization: country || '未设置国家',
     signature: payload.profile?.signature || '这个人很懒，还没有填写个性签名。',
@@ -195,7 +268,7 @@ const mapToProfileData = (payload: LoginUserProfileResponse): ProfileData => {
           ? [{ name: '个人网站', description: website, icon: 'i-lucide-link-2' }]
           : [],
     uploadedProjects: [],
-    skills: techStack.map((item) => ({ name: item, level: '熟练' as const })),
+    skills: techStack,
     contributions:
       contributions.length > 0
         ? contributions
@@ -267,17 +340,19 @@ onMounted(() => {
         <div class="h-40 w-full animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
       </div>
 
-      <div v-else-if="hasProfile && displayProfile" class="flex flex-col gap-4 lg:flex-row lg:gap-5">
+      <div
+        v-else-if="hasProfile && displayProfile"
+        class="flex flex-col gap-4 lg:flex-row lg:gap-5"
+      >
         <ProfileSidebarCard :profile="displayProfile" />
 
         <main class="min-w-0 flex-1 space-y-4 lg:pt-3">
-
           <ProfileDashboardCharts />
           <ProfileHeatmapSection />
-              <ProfileImpactSection />
+          <ProfileImpactSection />
 
           <ProfileSkillsSection :skills="displayProfile.skills" />
-           <ProfileDashboardSummary />
+          <ProfileDashboardSummary />
         </main>
       </div>
 
