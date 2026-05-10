@@ -1,6 +1,11 @@
 import { deleteJson, getJson, postJson, putJson } from '@/utils/http'
 import type { ApiResult } from '@/api/types'
-import type { FolderFormData, FolderUpdateData, FolderOption, UserFolderCreateResult } from '@/types/folder'
+import type {
+  FolderFormData,
+  FolderUpdateData,
+  FolderOption,
+  UserFolderCreateResult,
+} from '@/types/folder'
 import type { CollectionCategory } from '@/types/collection'
 
 export async function createUserFolder(payload: FolderFormData): Promise<UserFolderCreateResult> {
@@ -38,6 +43,18 @@ export async function deleteFolder(id: number): Promise<void> {
 
 export async function toggleFolderHide(id: number, isHide: boolean): Promise<void> {
   const res = await putJson<ApiResult<null>>(`/api/user/folder/${id}/hide?isHide=${isHide}`)
+  if (res.code !== 200) {
+    throw new Error(res.msg || '操作失败')
+  }
+}
+
+/**
+ * 切换收藏夹对外可见性（user-15 公开收藏夹）。
+ * @param id 收藏夹 ID
+ * @param isPublic true=对外公开，false=对外私密
+ */
+export async function toggleFolderPublic(id: number, isPublic: boolean): Promise<void> {
+  const res = await putJson<ApiResult<null>>(`/api/user/folder/${id}/public?isPublic=${isPublic}`)
   if (res.code !== 200) {
     throw new Error(res.msg || '操作失败')
   }

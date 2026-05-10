@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import ProfileDashboardCharts from '@/components/user/profile/ProfileDashboardCharts.vue'
 import ProfileDashboardSummary from '@/components/user/profile/ProfileDashboardSummary.vue'
 import ProfileHeatmapSection from '@/components/user/profile/ProfileHeatmapSection.vue'
 import ProfileImpactSection from '@/components/user/profile/ProfileImpactSection.vue'
 import ProfileSidebarCard from '@/components/user/profile/ProfileSidebarCard.vue'
 import ProfileSkillsSection from '@/components/user/profile/ProfileSkillsSection.vue'
+import PublicFolderDialog from '@/components/user/profile/PublicFolderDialog.vue'
+import { getPublicFolders, type PublicFolderItem } from '@/api/user-profile-public'
 import { getCurrentUserProfile, type LoginUserProfileResponse } from '@/api/user'
 import { useToast } from '@/composables/useToast'
 import { useUserApprovedSubmissions } from '@/composables/useUserApprovedSubmissions'
@@ -316,12 +319,51 @@ const loadProfile = async () => {
   }
 }
 
-onMounted(() => {
-  loadProfile()
-  // 并发触发看板 5 个卡片首屏拉取（单卡失败不影响其他）
+// user-15 公开收藏夹（本人主页看到自己全部顶层夹）
+const publicFolders = ref<PublicFolderItem[]>([])
+const publicFoldersLoading = ref(false)
+const dialogOpen = ref(false)
+const activeFolder = ref<PublicFolderItem | null>(null)
+const router = useRouter()
+
+// 从 getCurrentUserProfile 的原始 payload 中拿 username（profileData.name 是 nickname、不可靠）
+const rawUsername = ref<string>('')
+
+const loadPublicFolders = async () => {
+  if (!rawUsername.value) return
+  publicFoldersLoading.value = true
+  try {
+    publicFolders.value = await getPublicFolders(rawUsername.value, 5)
+  } catch (e) {
+    console.warn('[ProfileView] 加载公开收藏夹失败：', e)
+    publicFolders.value = []
+  } finally {
+    publicFoldersLoading.value = false
+  }
+}
+
+const handleOpenFolder = (folder: PublicFolderItem) => {
+  activeFolder.value = folder
+  dialogOpen.value = true
+}
+
+const handleViewAll = () => {
+  router.push({ name: 'collection' })
+}
+
+onMounted(async () => {
+  // 1) 拉个人资料 + 看板 + 投稿
+  await loadProfile()
   dashboardStore.loadInitial()
-  // 并发拉取当前用户审核通过的投稿，作为侧边栏「上传网站」卡片真实数据源
   approvedSubmissions.load()
+  // 2) 取 username 后拉公开收藏夹列表
+  try {
+    const data = await getCurrentUserProfile()
+    rawUsername.value = data.user?.username || ''
+    void loadPublicFolders()
+  } catch {
+    rawUsername.value = ''
+  }
 })
 </script>
 
@@ -344,7 +386,20 @@ onMounted(() => {
         v-else-if="hasProfile && displayProfile"
         class="flex flex-col gap-4 lg:flex-row lg:gap-5"
       >
-        <ProfileSidebarCard :profile="displayProfile" />
+        <ProfileSidebarCard
+          :profile="displayProfile"
+          :public-folders="publicFolders"
+          :public-folders-loading="publicFoldersLoading"
+          @open-folder="handleOpenFolder"
+          @view-all="handleViewAll"
+        />
+
+        <PublicFolderDialog
+          v-model:open="dialogOpen"
+          :username="rawUsername"
+          :folder="activeFolder"
+          @view-all="handleViewAll"
+        />
 
         <main class="min-w-0 flex-1 space-y-4 lg:pt-3">
           <ProfileDashboardCharts />

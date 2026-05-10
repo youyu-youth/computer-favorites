@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yyyouth.common.constants.HttpStatus;
+import com.yyyouth.common.constants.RedisConstant;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.notification.NotifyEvent;
 import com.yyyouth.model.dto.user.UserCollectCreateDTO;
@@ -21,6 +22,7 @@ import com.yyyouth.model.vo.user.UserCollectStatsVO;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
 import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.UserFolderMapper;
+import com.yyyouth.service.redis.RedisCache;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
 import com.yyyouth.service.notification.MessageNotifyService;
@@ -63,6 +65,7 @@ public class UserCollectServiceImpl implements UserCollectService {
 
     private final UserCollectMapper userCollectMapper;
     private final UserFolderMapper userFolderMapper;
+    private final RedisCache redisCache;
     private final WebsiteMapper websiteMapper;
     private final UserWebsiteTagSupport userWebsiteTagSupport;
     private final MessageNotifyService messageNotifyService;
@@ -107,6 +110,7 @@ public class UserCollectServiceImpl implements UserCollectService {
             incrementFolderWebsiteCount(newFolderId);
             log.info("收藏移夹成功，userId={}, websiteId={}, oldFolderId={}, newFolderId={}",
                     userId, createDTO.getWebsiteId(), oldFolderId, newFolderId);
+            evictPublicFolderCache(userId);
             return existing.getId();
         }
 
@@ -159,6 +163,7 @@ public class UserCollectServiceImpl implements UserCollectService {
                 messageNotifyService.send(event);
             }
 
+            evictPublicFolderCache(userId);
             return collect.getId();
         } catch (DuplicateKeyException ex) {
             log.info("收藏并发冲突，userId={}, websiteId={}", userId, createDTO.getWebsiteId());
@@ -195,6 +200,25 @@ public class UserCollectServiceImpl implements UserCollectService {
         decrementWebsiteCollectCount(websiteId);
 
         log.info("取消收藏成功，userId={}, websiteId={}, collectId={}", userId, websiteId, existing.getId());
+        evictPublicFolderCache(userId);
+    }
+
+    /**
+     * 清空该用户的公开收藏夹相关缓存（user-15）。
+     * 收藏/取消收藏/移夹 均会影响顶层、子项、全量树三类缓存。
+     * 仅 log warn，不影响主流程。
+     */
+    private void evictPublicFolderCache(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        try {
+            redisCache.evictByPattern(RedisConstant.PUBLIC_FOLDER_TOP_PREFIX + userId + ":*");
+            redisCache.evictByPattern(RedisConstant.PUBLIC_FOLDER_CHILDREN_PREFIX + userId + ":*");
+            redisCache.evict(RedisConstant.PUBLIC_FOLDER_TREE_PREFIX + userId);
+        } catch (Exception e) {
+            log.warn("[public-folder] evict cache fail userId={}, err={}", userId, e.getMessage());
+        }
     }
 
     @Override

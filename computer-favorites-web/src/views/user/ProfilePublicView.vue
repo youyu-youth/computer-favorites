@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import ProfileContributionSection from '@/components/user/profile/ProfileContributionSection.vue'
+import ProfileDashboardCharts from '@/components/user/profile/ProfileDashboardCharts.vue'
+import ProfileDashboardSummary from '@/components/user/profile/ProfileDashboardSummary.vue'
 import ProfileHeatmapSection from '@/components/user/profile/ProfileHeatmapSection.vue'
-import ProfileHeroSection from '@/components/user/profile/ProfileHeroSection.vue'
 import ProfileImpactSection from '@/components/user/profile/ProfileImpactSection.vue'
 import ProfileSidebarCard from '@/components/user/profile/ProfileSidebarCard.vue'
 import ProfileSkillsSection from '@/components/user/profile/ProfileSkillsSection.vue'
+import PublicFolderDialog from '@/components/user/profile/PublicFolderDialog.vue'
 import ProfilePrivateView from '@/views/user/ProfilePrivateView.vue'
 import { useProfileDashboardStore } from '@/stores/profileDashboard'
 import { useProfilePublicStore } from '@/stores/profilePublic'
+import type { PublicFolderItem } from '@/api/user-profile-public'
 
 const props = defineProps<{
   username: string
@@ -17,6 +20,7 @@ const props = defineProps<{
 
 const publicStore = useProfilePublicStore()
 const dashboardStore = useProfileDashboardStore()
+const router = useRouter()
 const {
   profileData,
   loading,
@@ -27,7 +31,24 @@ const {
   isPrivate,
   isLoginRequired,
   isNotFound,
+  publicFolders,
+  publicFoldersLoading,
 } = storeToRefs(publicStore)
+
+const dialogOpen = ref(false)
+const activeFolder = ref<PublicFolderItem | null>(null)
+
+const handleOpenFolder = (folder: PublicFolderItem) => {
+  activeFolder.value = folder
+  dialogOpen.value = true
+}
+
+const handleViewAll = () => {
+  router.push({
+    name: 'profilePublicCollections',
+    params: { username: props.username },
+  })
+}
 
 const emptyReason = computed(() => {
   if (isLoginRequired.value) return 'login'
@@ -42,6 +63,10 @@ const loadPublicProfile = async () => {
   dashboardStore.reset()
   try {
     await publicStore.load(props.username)
+    // 主 profile 加载后并发拉公开收藏夹（showCollections=0 时后端会抛错，store 内部 swallow）
+    if (isOwn.value || showCollections.value) {
+      void publicStore.loadPublicFolders(props.username, 5)
+    }
     if (showContribution.value) {
       await dashboardStore.loadInitial({ username: props.username })
       return
@@ -78,18 +103,32 @@ watch(
         <div class="h-40 w-full animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
       </div>
 
-      <div v-else-if="canRenderProfile && profileData" class="flex flex-col gap-4 lg:flex-row lg:gap-5">
+      <div
+        v-else-if="canRenderProfile && profileData"
+        class="flex flex-col gap-4 lg:flex-row lg:gap-5"
+      >
         <ProfileSidebarCard
           :profile="profileData"
           :is-own="isOwn"
           :show-collections="showCollections"
+          :public-folders="publicFolders"
+          :public-folders-loading="publicFoldersLoading"
+          @open-folder="handleOpenFolder"
+          @view-all="handleViewAll"
+        />
+
+        <PublicFolderDialog
+          v-model:open="dialogOpen"
+          :username="username"
+          :folder="activeFolder"
+          @view-all="handleViewAll"
         />
 
         <main class="min-w-0 flex-1 space-y-4 lg:pt-3">
-          <ProfileImpactSection :username="username" />
           <template v-if="showContribution">
-            <ProfileHeroSection />
+            <ProfileDashboardCharts />
             <ProfileHeatmapSection />
+            <ProfileImpactSection :username="username" />
           </template>
           <section
             v-else
@@ -98,11 +137,7 @@ watch(
             该用户已关闭贡献数据展示。
           </section>
           <ProfileSkillsSection :skills="profileData.skills" />
-          <ProfileContributionSection
-            v-if="showContribution"
-            :stats="profileData.stats"
-            :contributions="profileData.contributions"
-          />
+          <ProfileDashboardSummary v-if="showContribution" />
         </main>
       </div>
 

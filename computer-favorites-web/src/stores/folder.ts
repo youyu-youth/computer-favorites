@@ -10,7 +10,14 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { CollectionCategory, CollectStats } from '@/types/collection'
 import type { FolderOption } from '@/types/folder'
-import { getFolderTree, getFolderOptions, updateFolder, deleteFolder, toggleFolderHide } from '@/api/user-folder'
+import {
+  getFolderTree,
+  getFolderOptions,
+  updateFolder,
+  deleteFolder,
+  toggleFolderHide,
+  toggleFolderPublic,
+} from '@/api/user-folder'
 import { getCollectStats } from '@/api/user-collect'
 import { useToast } from '@/composables/useToast'
 
@@ -104,10 +111,18 @@ export const useFolderStore = defineStore('folder', () => {
   const handleRenameCategory = async (id: number, newName: string) => {
     try {
       await updateFolder(id, { name: newName })
-      toast.add({ title: '重命名成功', description: `收藏夹已更名为「${newName}」`, type: 'success' })
+      toast.add({
+        title: '重命名成功',
+        description: `收藏夹已更名为「${newName}」`,
+        type: 'success',
+      })
       await loadFolderTree()
     } catch (e) {
-      toast.add({ title: '重命名失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
+      toast.add({
+        title: '重命名失败',
+        description: e instanceof Error ? e.message : '请稍后重试',
+        type: 'error',
+      })
     }
   }
 
@@ -120,7 +135,11 @@ export const useFolderStore = defineStore('folder', () => {
       toast.add({ title: '已删除', description: '收藏夹已删除', type: 'success' })
       await refreshFolderData()
     } catch (e) {
-      toast.add({ title: '删除失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
+      toast.add({
+        title: '删除失败',
+        description: e instanceof Error ? e.message : '请稍后重试',
+        type: 'error',
+      })
     }
   }
 
@@ -133,7 +152,11 @@ export const useFolderStore = defineStore('folder', () => {
       toast.add({ title: '已隐藏', description: '收藏夹及其内容已隐藏', type: 'success' })
       await loadFolderTree()
     } catch (e) {
-      toast.add({ title: '操作失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
+      toast.add({
+        title: '操作失败',
+        description: e instanceof Error ? e.message : '请稍后重试',
+        type: 'error',
+      })
     }
   }
 
@@ -146,7 +169,32 @@ export const useFolderStore = defineStore('folder', () => {
       toast.add({ title: '已恢复', description: '所有隐藏的收藏夹已恢复显示', type: 'success' })
       await loadFolderTree()
     } catch (e) {
-      toast.add({ title: '操作失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
+      toast.add({
+        title: '操作失败',
+        description: e instanceof Error ? e.message : '请稍后重试',
+        type: 'error',
+      })
+    }
+  }
+
+  /**
+   * 切换收藏夹对外可见性（user-15 公开收藏夹）。
+   */
+  const handleTogglePublic = async (id: number, isPublic: boolean) => {
+    try {
+      await toggleFolderPublic(id, isPublic)
+      toast.add({
+        title: isPublic ? '已公开' : '已设为私密',
+        description: isPublic ? '该收藏夹在其他用户主页可见' : '仅本人可见',
+        type: 'success',
+      })
+      await loadFolderTree()
+    } catch (e) {
+      toast.add({
+        title: '操作失败',
+        description: e instanceof Error ? e.message : '请稍后重试',
+        type: 'error',
+      })
     }
   }
 
@@ -166,5 +214,6 @@ export const useFolderStore = defineStore('folder', () => {
     handleDeleteFolder,
     handleHideFolder,
     handleShowHiddenFolders,
+    handleTogglePublic,
   }
 })

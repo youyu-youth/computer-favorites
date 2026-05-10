@@ -51,6 +51,12 @@ public class UserFolder {
     @TableField("is_hide")
     private Integer isHide;
 
+    /**
+     * 是否对其他用户可见：0-私密(默认)，1-公开
+     */
+    @TableField("is_public")
+    private Integer isPublic;
+
     @TableField("is_default")
     private Integer isDefault;
 

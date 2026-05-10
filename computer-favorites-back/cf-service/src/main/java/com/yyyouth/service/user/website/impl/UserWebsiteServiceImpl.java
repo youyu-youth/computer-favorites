@@ -202,6 +202,7 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
         );
         detailVO.setTags(userWebsiteTagSupport.buildWebsiteTagItems(website.getTags(), tagItemMap));
         detailVO.setProviderName(resolveProviderName(website));
+        detailVO.setProviderUsername(resolveProviderUsername(website));
         detailVO.setIsCollected(resolveIsCollected(websiteId));
         detailVO.setIsLiked(resolveIsLiked(websiteId));
         detailVO.setUserScore(resolveUserScore(websiteId));
@@ -369,6 +370,23 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
             return "";
         }
         return resolveAccountDisplayName(adminAccount.getNickname(), adminAccount.getUsername());
+    }
+
+    private String resolveProviderUsername(Website website) {
+        Long submitterId = website.getSubmitterId();
+        Integer source = website.getSource();
+        if (Objects.equals(source, ADMIN_SOURCE) || submitterId == null || submitterId <= 0) {
+            return "";
+        }
+
+        UserAccount userAccount = userAccountMapper.selectOne(new LambdaQueryWrapper<UserAccount>()
+                .eq(UserAccount::getId, submitterId)
+                .eq(UserAccount::getDeleted, NOT_DELETED)
+                .last("limit 1"));
+        if (userAccount == null || !StringUtils.hasText(userAccount.getUsername())) {
+            return "";
+        }
+        return userAccount.getUsername().trim();
     }
 
     /**

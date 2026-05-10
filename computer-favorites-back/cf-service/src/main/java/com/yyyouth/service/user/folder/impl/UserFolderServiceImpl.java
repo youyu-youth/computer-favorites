@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yyyouth.common.constants.HttpStatus;
+import com.yyyouth.common.constants.RedisConstant;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.UserFolderCreateDTO;
 import com.yyyouth.model.dto.user.UserFolderUpdateDTO;
@@ -14,6 +15,7 @@ import com.yyyouth.model.vo.user.UserFolderCreateVO;
 import com.yyyouth.model.vo.user.UserFolderOptionsVO;
 import com.yyyouth.model.vo.user.UserFolderTreeVO;
 import com.yyyouth.service.mapper.user.UserCollectMapper;
+import com.yyyouth.service.redis.RedisCache;
 import com.yyyouth.service.mapper.user.UserFolderMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.common.AuthContext;
@@ -55,12 +57,15 @@ public class UserFolderServiceImpl implements UserFolderService {
     private static final int MIN_FOLDER_DEPTH = 1;
     private static final int NOT_HIDE = 0;
     private static final int IS_HIDE = 1;
+    private static final int NOT_PUBLIC = 0;
+    private static final int IS_PUBLIC = 1;
     private static final int IS_DEFAULT = 1;
 
     private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
 
     private final UserFolderMapper userFolderMapper;
     private final UserAccountMapper userAccountMapper;
+    private final RedisCache redisCache;
     private final UserCollectMapper userCollectMapper;
     private final AuthContext authContext;
 
@@ -98,6 +103,8 @@ public class UserFolderServiceImpl implements UserFolderService {
 
         log.info("用户收藏夹创建成功，userId={}, folderId={}, name={}, parentId={}",
                 userId, folder.getId(), normalizedName, folder.getParentId());
+
+        evictPublicFolderCache(userId);
 
         return UserFolderCreateVO.builder()
                 .id(folder.getId())
@@ -157,6 +164,7 @@ public class UserFolderServiceImpl implements UserFolderService {
         }
 
         log.info("收藏夹更新成功，userId={}, folderId={}", userId, folderId);
+        evictPublicFolderCache(userId);
     }
 
     @Override
@@ -193,6 +201,7 @@ public class UserFolderServiceImpl implements UserFolderService {
         }
 
         log.info("收藏夹删除成功，userId={}, folderId={}", userId, folderId);
+        evictPublicFolderCache(userId);
     }
 
     @Override
@@ -215,6 +224,30 @@ public class UserFolderServiceImpl implements UserFolderService {
         }
 
         log.info("收藏夹隐藏状态变更，userId={}, folderId={}, isHide={}", userId, folderId, isHide);
+        evictPublicFolderCache(userId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void toggleFolderPublic(Long folderId, boolean isPublic) {
+        Long userId = getCurrentUserId();
+
+        UserFolder folder = getOwnedFolder(userId, folderId);
+
+        int targetPublic = isPublic ? IS_PUBLIC : NOT_PUBLIC;
+        if (folder.getIsPublic() != null && folder.getIsPublic() == targetPublic) {
+            return;
+        }
+
+        int updated = userFolderMapper.update(null, new LambdaUpdateWrapper<UserFolder>()
+                .eq(UserFolder::getId, folderId)
+                .set(UserFolder::getIsPublic, targetPublic));
+        if (updated != 1) {
+            throw new BusinessException(HttpStatus.ERROR, "操作失败，请稍后重试");
+        }
+
+        log.info("收藏夹对外可见性变更，userId={}, folderId={}, isPublic={}", userId, folderId, isPublic);
+        evictPublicFolderCache(userId);
     }
 
     @Override
@@ -268,6 +301,24 @@ public class UserFolderServiceImpl implements UserFolderService {
         return authContext.getCurrentUserId();
     }
 
+    /**
+     * 清空该用户的公开收藏夹相关缓存（顶层 / 子项 / 全量树）。
+     * 任何写入点（create/update/delete/toggleHide/togglePublic）都应调用。
+     * 仅 log warn，不影响主流程。
+     */
+    private void evictPublicFolderCache(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        try {
+            redisCache.evictByPattern(RedisConstant.PUBLIC_FOLDER_TOP_PREFIX + userId + ":*");
+            redisCache.evictByPattern(RedisConstant.PUBLIC_FOLDER_CHILDREN_PREFIX + userId + ":*");
+            redisCache.evict(RedisConstant.PUBLIC_FOLDER_TREE_PREFIX + userId);
+        } catch (Exception e) {
+            log.warn("[public-folder] evict cache fail userId={}, err={}", userId, e.getMessage());
+        }
+    }
+
     private UserFolder getOwnedFolder(Long userId, Long folderId) {
         UserFolder folder = userFolderMapper.selectOne(new LambdaQueryWrapper<UserFolder>()
                 .eq(UserFolder::getId, folderId)
@@ -291,6 +342,7 @@ public class UserFolderServiceImpl implements UserFolderService {
                 .sort(folder.getSort())
                 .websiteCount(folder.getWebsiteCount())
                 .isHide(folder.getIsHide())
+                .isPublic(folder.getIsPublic())
                 .isDefault(folder.getIsDefault())
                 .children(new ArrayList<>())
                 .build();

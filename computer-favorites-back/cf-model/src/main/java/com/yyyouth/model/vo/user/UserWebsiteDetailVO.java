@@ -126,6 +126,11 @@ public class UserWebsiteDetailVO {
     private String providerName;
 
     /**
+     * 提供者用户名
+     */
+    private String providerUsername;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;

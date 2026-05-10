@@ -6,6 +6,9 @@ import com.yyyouth.model.vo.userstats.CategoryDistributionVO;
 import com.yyyouth.model.vo.userstats.ContributionGraphVO;
 import com.yyyouth.model.vo.userstats.DashboardOverviewVO;
 import com.yyyouth.model.vo.userstats.ProfilePublicVO;
+import com.yyyouth.model.vo.userstats.PublicFolderChildrenVO;
+import com.yyyouth.model.vo.userstats.PublicFolderItemVO;
+import com.yyyouth.model.vo.userstats.PublicFolderTreeVO;
 import com.yyyouth.model.vo.userstats.TechRadarVO;
 import com.yyyouth.model.vo.userstats.TrendSeriesVO;
 import com.yyyouth.model.vo.userstats.UploadImpactVO;
@@ -14,10 +17,16 @@ import com.yyyouth.service.ratelimit.annotation.RateLimit;
 import com.yyyouth.service.user.userstats.ProfileDashboardService;
 import com.yyyouth.service.user.userstats.ProfilePublicService;
 import com.yyyouth.service.user.userstats.ProfilePublicService.ProfileVisibilityCheckResult;
+import com.yyyouth.service.user.userstats.PublicFolderService;
 import com.yyyouth.service.user.userstats.UploadImpactService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,6 +69,7 @@ public class ProfilePublicController {
     private final ProfilePublicService profilePublicService;
     private final ProfileDashboardService profileDashboardService;
     private final UploadImpactService uploadImpactService;
+    private final PublicFolderService publicFolderService;
 
     /**
      * 公开主页基础资料。
@@ -83,7 +93,7 @@ public class ProfilePublicController {
      */
     @ApiOperation(value = "公开主页看板 section")
     @GetMapping("/{username}/dashboard/{section}")
-    @RateLimit(key = "profile:dashboard:public:#{#username}:#{#section}:#{#loginId}", limit = 5, window = 1)
+    @RateLimit(key = "profile:dashboard:public:#{#username}:#{#section}:#{#loginId}", limit = 30, window = 1)
     @AuditLog(action = "public-dashboard", description = "查询公开主页看板，username=#{#username}，section=#{#section}")
     public HttpResult getPublicDashboardSection(
             @PathVariable("username") @NotBlank String username,
@@ -135,6 +145,57 @@ public class ProfilePublicController {
             }
             default -> HttpResult.error(400, "未知 section：" + section + "（支持 overview / contribution-graph / category-distribution / tech-radar / trend-series / upload-impact）");
         };
+    }
+
+    /**
+     * 公开主页顶层收藏夹列表（user-15 公开收藏夹）。
+     * 默认返回最多 5 个，他人视图过滤 is_hide=1 / is_public=0 / 空夹。
+     */
+    @ApiOperation(value = "公开主页顶层收藏夹列表")
+    @GetMapping("/{username}/folders")
+    @RateLimit(key = "profile:folders:#{#username}:#{#loginId}", limit = 30, window = 1)
+    @AuditLog(action = "public-folders", description = "查询公开主页顶层收藏夹列表，username=#{#username}")
+    public HttpResult getPublicFolders(
+            @PathVariable("username") @NotBlank String username,
+            @RequestParam(value = "limit", defaultValue = "5") @Min(1) @Max(50) Integer limit) {
+        Long currentUserId = currentUserIdOrNull();
+        log.info("[public-folders] viewer={} target={} limit={}", currentUserId, username, limit);
+        List<PublicFolderItemVO> data = publicFolderService.getTopFolders(username, currentUserId, limit);
+        return HttpResult.success(data);
+    }
+
+    /**
+     * 公开主页单收藏夹一层子项（对话框使用）。
+     */
+    @ApiOperation(value = "公开主页单收藏夹一层子项")
+    @GetMapping("/{username}/folders/{folderId}/children")
+    @RateLimit(key = "profile:folder-children:#{#username}:#{#folderId}:#{#loginId}", limit = 30, window = 1)
+    @AuditLog(action = "public-folder-children", description = "查询公开收藏夹子项，username=#{#username}, folderId=#{#folderId}")
+    public HttpResult getPublicFolderChildren(
+            @PathVariable("username") @NotBlank String username,
+            @PathVariable("folderId") @Positive Long folderId,
+            @RequestParam(value = "pageNum", defaultValue = "1") @Min(1) Integer pageNum,
+            @RequestParam(value = "pageSize", defaultValue = "12") @Min(1) @Max(50) Integer pageSize) {
+        Long currentUserId = currentUserIdOrNull();
+        log.info("[public-folder-children] viewer={} target={} folderId={} page={}/{}",
+                currentUserId, username, folderId, pageNum, pageSize);
+        PublicFolderChildrenVO data = publicFolderService.getFolderChildren(
+                username, currentUserId, folderId, pageNum, pageSize);
+        return HttpResult.success(data);
+    }
+
+    /**
+     * 公开主页全量公开收藏夹树（"查看全部"页用）。
+     */
+    @ApiOperation(value = "公开主页全量收藏夹树")
+    @GetMapping("/{username}/folders/tree")
+    @RateLimit(key = "profile:folders-tree:#{#username}:#{#loginId}", limit = 30, window = 1)
+    @AuditLog(action = "public-folders-tree", description = "查询公开收藏夹全量树，username=#{#username}")
+    public HttpResult getPublicFolderTree(@PathVariable("username") @NotBlank String username) {
+        Long currentUserId = currentUserIdOrNull();
+        log.info("[public-folders-tree] viewer={} target={}", currentUserId, username);
+        PublicFolderTreeVO data = publicFolderService.getPublicFolderTree(username, currentUserId);
+        return HttpResult.success(data);
     }
 
     /**

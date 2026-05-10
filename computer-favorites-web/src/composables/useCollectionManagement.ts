@@ -56,13 +56,15 @@ export function useCollectionManagement() {
       (w) =>
         w.websiteName.toLowerCase().includes(keyword) ||
         (w.websiteSummary && w.websiteSummary.toLowerCase().includes(keyword)) ||
-        (w.websiteTags && w.websiteTags.some(t => t.name.toLowerCase().includes(keyword))),
+        (w.websiteTags && w.websiteTags.some((t) => t.name.toLowerCase().includes(keyword))),
     )
   })
 
   const totalCount = computed(() => totalCollectCount.value)
   const selectedCount = computed(() => (selectedWebsite.value ? 1 : 0))
-  const storagePercent = computed(() => Math.min(100, Math.round((folderStore.collectStats.collectCount / COLLECT_LIMIT) * 100)))
+  const storagePercent = computed(() =>
+    Math.min(100, Math.round((folderStore.collectStats.collectCount / COLLECT_LIMIT) * 100)),
+  )
 
   const breadcrumbPath = computed(() => {
     const parts = ['Home']
@@ -82,7 +84,10 @@ export function useCollectionManagement() {
     return parts
   })
 
-  const findCategoryById = (cats: CollectionCategory[], id: number): CollectionCategory | undefined => {
+  const findCategoryById = (
+    cats: CollectionCategory[],
+    id: number,
+  ): CollectionCategory | undefined => {
     for (const cat of cats) {
       if (cat.id === id) return cat
       const found = findCategoryById(cat.children || [], id)
@@ -168,7 +173,11 @@ export function useCollectionManagement() {
       toast.add({ title: '取消收藏', description: '已取消收藏', type: 'success' })
       refreshAll()
     } catch (e) {
-      toast.add({ title: '操作失败', description: e instanceof Error ? e.message : '请稍后重试', type: 'error' })
+      toast.add({
+        title: '操作失败',
+        description: e instanceof Error ? e.message : '请稍后重试',
+        type: 'error',
+      })
     }
   }
 
@@ -221,6 +230,7 @@ export function useCollectionManagement() {
     handleDeleteFolder: folderStore.handleDeleteFolder,
     handleHideFolder: folderStore.handleHideFolder,
     handleShowHiddenFolders: folderStore.handleShowHiddenFolders,
+    handleTogglePublic: folderStore.handleTogglePublic,
     handleVerifyPassword,
     handleFolderCreated: folderStore.handleFolderCreated,
     refreshAll,

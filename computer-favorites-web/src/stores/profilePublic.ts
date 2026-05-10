@@ -1,6 +1,11 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { getPublicProfile, type ProfilePublicResponse } from '@/api/user-profile-public'
+import {
+  getPublicFolders,
+  getPublicProfile,
+  type ProfilePublicResponse,
+  type PublicFolderItem,
+} from '@/api/user-profile-public'
 import type { ProfileData, ProfileSiteItem, ProfileSkill, ProfileSocialLink } from '@/types/profile'
 
 import githubIcon from '@/assets/icons/svg/github.svg'
@@ -212,6 +217,11 @@ export const useProfilePublicStore = defineStore('profilePublic', () => {
   const errorCode = ref<number | null>(null)
   const errorMessage = ref('')
 
+  // user-15 公开收藏夹须属于当前 username 上下文，同 store 管理避免切用户时脱同
+  const publicFolders = ref<PublicFolderItem[]>([])
+  const publicFoldersLoading = ref(false)
+  const publicFoldersError = ref('')
+
   const profileData = computed(() => (rawProfile.value ? mapToProfileData(rawProfile.value) : null))
   const isOwn = computed(() => rawProfile.value?.isOwn === true)
   const privacy = computed(() => rawProfile.value?.privacy ?? null)
@@ -225,6 +235,8 @@ export const useProfilePublicStore = defineStore('profilePublic', () => {
     rawProfile.value = null
     errorCode.value = null
     errorMessage.value = ''
+    publicFolders.value = []
+    publicFoldersError.value = ''
   }
 
   const load = async (username: string) => {
@@ -241,6 +253,24 @@ export const useProfilePublicStore = defineStore('profilePublic', () => {
     }
   }
 
+  /**
+   * 加载公开主页顶层收藏夹列表（user-15）。
+   * 隐私头抵在后端：非本人 + showCollections=0 会抛 PROFILE_PRIVATE，
+   * 这里仅记录到 publicFoldersError，不影响主 profile 路径。
+   */
+  const loadPublicFolders = async (username: string, limit = 5) => {
+    publicFoldersLoading.value = true
+    publicFoldersError.value = ''
+    try {
+      publicFolders.value = await getPublicFolders(username, limit)
+    } catch (error) {
+      publicFolders.value = []
+      publicFoldersError.value = error instanceof Error ? error.message : '获取公开收藏夹失败'
+    } finally {
+      publicFoldersLoading.value = false
+    }
+  }
+
   return {
     rawProfile,
     profileData,
@@ -254,7 +284,11 @@ export const useProfilePublicStore = defineStore('profilePublic', () => {
     isPrivate,
     isLoginRequired,
     isNotFound,
+    publicFolders,
+    publicFoldersLoading,
+    publicFoldersError,
     load,
+    loadPublicFolders,
     reset,
   }
 })

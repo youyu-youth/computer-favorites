@@ -155,6 +155,13 @@ const router = createRouter({
           meta: { requiresAuth: false },
         },
         {
+          path: 'profile/:username/collections',
+          name: 'profilePublicCollections',
+          component: () => import('@/views/user/PublicCollectionView.vue'),
+          props: true,
+          meta: { requiresAuth: false, title: '公开收藏夹' },
+        },
+        {
           path: 'settings',
           name: 'settings',
           component: SettingsView,

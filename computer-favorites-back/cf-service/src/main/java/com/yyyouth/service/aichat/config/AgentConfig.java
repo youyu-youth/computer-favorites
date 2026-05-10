@@ -11,6 +11,7 @@ import org.springframework.ai.chat.client.advisor.StructuredOutputValidationAdvi
 import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.deepseek.DeepSeekChatModel;
+import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -45,6 +46,7 @@ public class AgentConfig {
 
     private final ToolCallback[] toolCallback;
 
+    private final SyncMcpToolCallbackProvider mcpToolCallbackProvider;
 
 
     @Bean(name = "nolChatClient")
@@ -52,6 +54,7 @@ public class AgentConfig {
         log.info("nolChatClient !~!!!!!");
         ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)  // 设置默认系统提示
+                .defaultToolCallbacks(mcpToolCallbackProvider)  // 添加mcp服务
                 .build();
         return chatClient;
     }

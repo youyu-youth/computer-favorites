@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class UserWebsiteDetailControllerIntegrationTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
     private MockMvc mockMvc;
 
@@ -51,9 +52,12 @@ class UserWebsiteDetailControllerIntegrationTest {
      */
     @BeforeEach
     void setUp() {
+        LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+        validator.afterPropertiesSet();
         this.mockMvc = MockMvcBuilders.standaloneSetup(userWebsiteDetailController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .setValidator(validator)
                 .build();
     }
 
@@ -72,6 +76,7 @@ class UserWebsiteDetailControllerIntegrationTest {
         detailVO.setIsRecommend(1);
         detailVO.setSubmitterId(101L);
         detailVO.setProviderName("前端架构师");
+        detailVO.setProviderUsername("frontend_pro");
         detailVO.setShelfTime(LocalDateTime.of(2026, 4, 5, 9, 30, 0));
 
         UserWebsiteTagItemVO primeVueTag = new UserWebsiteTagItemVO();
@@ -97,6 +102,7 @@ class UserWebsiteDetailControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.isRecommend").value(1))
                 .andExpect(jsonPath("$.data.submitterId").value(101))
                 .andExpect(jsonPath("$.data.providerName").value("前端架构师"))
+                .andExpect(jsonPath("$.data.providerUsername").value("frontend_pro"))
                 .andExpect(jsonPath("$.data.shelfTime").exists())
                 .andExpect(jsonPath("$.data.tags[1].name").value("UI"))
                 .andExpect(jsonPath("$.data.tags[1].color").value("#334155"));

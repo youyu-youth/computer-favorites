@@ -130,6 +130,24 @@ public class UserFolderController {
     }
 
     /**
+     * 切换收藏夹对外可见性（user-15 公开收藏夹）
+     *
+     * @param id       文件夹ID
+     * @param isPublic 是否对外公开
+     * @return 操作结果
+     */
+    @ApiOperation(value = "切换收藏夹对外可见性")
+    @PutMapping("/{id}/public")
+    @SaCheckLogin
+    public HttpResult togglePublic(@PathVariable @NotNull @Positive Long id,
+                                   @RequestParam boolean isPublic) {
+        log.info("收到收藏夹对外公开切换请求，id={}, isPublic={}", id, isPublic);
+        userFolderService.toggleFolderPublic(id, isPublic);
+        log.info("收藏夹对外公开切换成功，id={}, isPublic={}", id, isPublic);
+        return HttpResult.success(isPublic ? "已对外公开" : "已对外私密");
+    }
+
+    /**
      * 获取文件夹下拉选项
      *
      * @return 文件夹选项列表

@@ -1,5 +1,6 @@
 package com.yyyouth.service.user.website;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yyyouth.common.exception.BusinessException;
@@ -14,17 +15,22 @@ import com.yyyouth.model.vo.user.UserWebsiteDetailVO;
 import com.yyyouth.model.vo.user.UserWebsitePageVO;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
+import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
-import com.yyyouth.service.mapper.website.TagMapper;
+import com.yyyouth.service.mapper.website.WebsiteLikeMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
+import com.yyyouth.service.mapper.website.WebsiteScoreMapper;
 import com.yyyouth.service.user.website.impl.UserWebsiteServiceImpl;
+import com.yyyouth.service.user.website.support.UserWebsiteTagSupport;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -32,6 +38,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,13 +63,22 @@ class UserWebsiteServiceImplTest {
     private CategoryMapper categoryMapper;
 
     @Mock
-    private TagMapper tagMapper;
-
-    @Mock
     private UserAccountMapper userAccountMapper;
 
     @Mock
     private AdminAccountMapper adminAccountMapper;
+
+    @Mock
+    private UserCollectMapper userCollectMapper;
+
+    @Mock
+    private WebsiteLikeMapper websiteLikeMapper;
+
+    @Mock
+    private WebsiteScoreMapper websiteScoreMapper;
+
+    @Mock
+    private UserWebsiteTagSupport userWebsiteTagSupport;
 
     @InjectMocks
     private UserWebsiteServiceImpl userWebsiteService;
@@ -109,25 +125,22 @@ class UserWebsiteServiceImplTest {
         category.setId(10L);
         category.setName("Web & Frontend Development");
 
-        Tag vueTag = new Tag();
-        vueTag.setId(101L);
-        vueTag.setName("Vue3");
-        vueTag.setColor("#42B883");
-
-        Tag tailwindTag = new Tag();
-        tailwindTag.setId(105L);
-        tailwindTag.setName("Tailwind");
-        tailwindTag.setColor("#38BDF8");
-
-        Tag viteTag = new Tag();
-        viteTag.setId(106L);
-        viteTag.setName("Vite");
-        viteTag.setColor("#646CFF");
+        UserWebsiteTagItemVO vueTag = buildTagItem(101L, "Vue3", "#42B883");
+        UserWebsiteTagItemVO tailwindTag = buildTagItem(105L, "Tailwind", "#38BDF8");
+        UserWebsiteTagItemVO viteTag = buildTagItem(106L, "Vite", "#646CFF");
+        Map<Long, UserWebsiteTagItemVO> tagItemMap = Map.of(
+                101L, vueTag,
+                105L, tailwindTag,
+                106L, viteTag
+        );
 
         when(websiteMapper.selectCount(any())).thenReturn(1L);
-        when(tagMapper.selectList(any())).thenReturn(List.of(vueTag, tailwindTag, viteTag));
         when(websiteMapper.selectList(any())).thenReturn(List.of(website));
         when(categoryMapper.selectBatchIds(any())).thenReturn(List.of(category));
+        when(userWebsiteTagSupport.parseTagIds(website.getTags())).thenReturn(List.of(101L, 105L, 106L));
+        when(userWebsiteTagSupport.buildTagItemMap(Set.of(101L, 105L, 106L))).thenReturn(tagItemMap);
+        when(userWebsiteTagSupport.buildWebsiteTagItems(website.getTags(), tagItemMap))
+                .thenReturn(List.of(vueTag, tailwindTag, viteTag));
 
         UserWebsitePageVO pageVO = userWebsiteService.queryWebsitePage(queryDTO);
 
@@ -198,20 +211,14 @@ class UserWebsiteServiceImplTest {
         submitter.setUsername("frontend_pro");
         submitter.setDeleted(0);
 
-        Tag primeVueTag = new Tag();
-        primeVueTag.setId(205L);
-        primeVueTag.setName("PrimeVue");
-        primeVueTag.setColor("#10B981");
-
-        Tag uiTag = new Tag();
-        uiTag.setId(206L);
-        uiTag.setName("UI");
-        uiTag.setColor("#334155");
-
-        Tag componentTag = new Tag();
-        componentTag.setId(207L);
-        componentTag.setName("Component");
-        componentTag.setColor("#0EA5E9");
+        UserWebsiteTagItemVO primeVueTag = buildTagItem(205L, "PrimeVue", "#10B981");
+        UserWebsiteTagItemVO uiTag = buildTagItem(206L, "UI", "#334155");
+        UserWebsiteTagItemVO componentTag = buildTagItem(207L, "Component", "#0EA5E9");
+        Map<Long, UserWebsiteTagItemVO> tagItemMap = Map.of(
+                205L, primeVueTag,
+                206L, uiTag,
+                207L, componentTag
+        );
 
         WebsiteCategory category = new WebsiteCategory();
         category.setId(30L);
@@ -219,10 +226,17 @@ class UserWebsiteServiceImplTest {
 
         when(websiteMapper.selectOne(any())).thenReturn(website);
         when(categoryMapper.selectOne(any())).thenReturn(category);
-        when(tagMapper.selectList(any())).thenReturn(List.of(primeVueTag, uiTag, componentTag));
         when(userAccountMapper.selectOne(any())).thenReturn(submitter);
+        when(userWebsiteTagSupport.parseTagIds(website.getTags())).thenReturn(List.of(205L, 206L, 207L));
+        when(userWebsiteTagSupport.buildTagItemMap(List.of(205L, 206L, 207L))).thenReturn(tagItemMap);
+        when(userWebsiteTagSupport.buildWebsiteTagItems(website.getTags(), tagItemMap))
+                .thenReturn(List.of(primeVueTag, uiTag, componentTag));
 
-        UserWebsiteDetailVO detailVO = userWebsiteService.queryWebsiteDetail(100L);
+        UserWebsiteDetailVO detailVO;
+        try (MockedStatic<StpUtil> stpUtilMock = Mockito.mockStatic(StpUtil.class)) {
+            stpUtilMock.when(StpUtil::isLogin).thenReturn(false);
+            detailVO = userWebsiteService.queryWebsiteDetail(100L);
+        }
 
         assertThat(detailVO.getId()).isEqualTo(100L);
         assertThat(detailVO.getCategoryName()).isEqualTo("UI Library");
@@ -230,6 +244,7 @@ class UserWebsiteServiceImplTest {
         assertThat(detailVO.getIsRecommend()).isEqualTo(1);
         assertThat(detailVO.getSubmitterId()).isEqualTo(101L);
         assertThat(detailVO.getProviderName()).isEqualTo("前端架构师");
+        assertThat(detailVO.getProviderUsername()).isEqualTo("frontend_pro");
         assertThat(detailVO.getShelfTime()).isEqualTo(LocalDateTime.of(2026, 4, 5, 9, 30, 0));
         assertThat(detailVO.getTags())
             .extracting(UserWebsiteTagItemVO::getId, UserWebsiteTagItemVO::getName, UserWebsiteTagItemVO::getColor)
@@ -252,17 +267,27 @@ class UserWebsiteServiceImplTest {
         website.setCategoryId(30L);
         website.setSource(0);
         website.setSubmitterId(0L);
+        website.setTags("");
 
         WebsiteCategory category = new WebsiteCategory();
         category.setId(30L);
         category.setName("后端框架");
+        Map<Long, UserWebsiteTagItemVO> tagItemMap = Map.of();
 
         when(websiteMapper.selectOne(any())).thenReturn(website);
         when(categoryMapper.selectOne(any())).thenReturn(category);
+        when(userWebsiteTagSupport.parseTagIds(website.getTags())).thenReturn(List.of());
+        when(userWebsiteTagSupport.buildTagItemMap(List.of())).thenReturn(tagItemMap);
+        when(userWebsiteTagSupport.buildWebsiteTagItems(website.getTags(), tagItemMap)).thenReturn(List.of());
 
-        UserWebsiteDetailVO detailVO = userWebsiteService.queryWebsiteDetail(200L);
+        UserWebsiteDetailVO detailVO;
+        try (MockedStatic<StpUtil> stpUtilMock = Mockito.mockStatic(StpUtil.class)) {
+            stpUtilMock.when(StpUtil::isLogin).thenReturn(false);
+            detailVO = userWebsiteService.queryWebsiteDetail(200L);
+        }
 
         assertThat(detailVO.getProviderName()).isEqualTo("管理员");
+        assertThat(detailVO.getProviderUsername()).isEmpty();
     }
 
     /**
@@ -277,5 +302,13 @@ class UserWebsiteServiceImplTest {
                 .hasMessage("网站不存在或已下架");
 
         verify(websiteMapper).selectOne(any());
+    }
+
+    private static UserWebsiteTagItemVO buildTagItem(Long id, String name, String color) {
+        UserWebsiteTagItemVO tagItemVO = new UserWebsiteTagItemVO();
+        tagItemVO.setId(id);
+        tagItemVO.setName(name);
+        tagItemVO.setColor(color);
+        return tagItemVO;
     }
 }

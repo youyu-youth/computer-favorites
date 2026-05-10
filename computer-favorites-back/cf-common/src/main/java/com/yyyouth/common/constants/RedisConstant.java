@@ -53,6 +53,25 @@ public class RedisConstant {
     public static final String USER_PROFILE_PUBLIC_PREFIX = "user:profile:public:";
 
     /**
+     * 公开主页顶层收藏夹列表（user-15 公开收藏夹）
+     * 格式: user:profile:public-folders:{userId}:top:{limit}:{own|visitor}
+     * 失效时机：folder 写操作 / collect 写操作 / 隐私设置变更
+     */
+    public static final String PUBLIC_FOLDER_TOP_PREFIX = "user:profile:public-folders:";
+
+    /**
+     * 公开主页单收藏夹一层子项（对话框使用）
+     * 格式: user:profile:public-folder-children:{userId}:{folderId}:{pageNum}:{pageSize}:{own|visitor}
+     */
+    public static final String PUBLIC_FOLDER_CHILDREN_PREFIX = "user:profile:public-folder-children:";
+
+    /**
+     * 公开主页全量公开收藏夹树（查看全部页用）
+     * 格式: user:profile:public-folder-tree:{userId}:{own|visitor}
+     */
+    public static final String PUBLIC_FOLDER_TREE_PREFIX = "user:profile:public-folder-tree:";
+
+    /**
      * 用户行为事件幂等去重前缀（消费端 SETNX，TTL 24h）
      * 格式: user:stats:event:{eventId}
      */

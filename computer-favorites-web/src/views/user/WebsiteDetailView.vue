@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   SquareTerminal,
   ThumbsUp,
@@ -34,6 +34,7 @@ import type { ReportFormData } from '@/types/report'
 import { buildTagColorStyle, normalizeTagColor } from '@/utils/tag-color'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const message = useMessage()
 
@@ -164,6 +165,10 @@ const providerText = computed(() => {
   }
   return String(submitterId)
 })
+
+const providerUsername = computed(() => detail.value?.providerUsername?.trim() || '')
+
+const canNavigateProviderProfile = computed(() => Boolean(providerUsername.value))
 
 const formatDate = (dateStr?: string | null): string => {
   if (!dateStr) return '-'
@@ -315,6 +320,16 @@ const handleCollectConfirm = (_folderId: number, _wid: number) => {
 
 const handleReportClick = () => {
   showReportDialog.value = true
+}
+
+const handleProviderClick = () => {
+  if (!providerUsername.value) {
+    return
+  }
+  void router.push({
+    name: 'profilePublic',
+    params: { username: providerUsername.value },
+  })
 }
 
 const handleReportSubmit = (data: ReportFormData) => {
@@ -536,9 +551,15 @@ watch(
           <div
             class="order-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-500 sm:text-xs md:order-2 md:gap-4 md:pb-3 dark:text-gray-400"
           >
-            <span
-              class="flex items-center gap-1.5 cursor-pointer hover:text-primary-500 transition-colors"
+            <button
+              v-if="canNavigateProviderProfile"
+              type="button"
+              class="flex items-center gap-1.5 cursor-pointer transition-colors hover:text-primary-500"
+              @click="handleProviderClick"
             >
+              提供者: <span class="text-primary-500">{{ providerText }}</span>
+            </button>
+            <span v-else class="flex items-center gap-1.5">
               提供者: <span class="text-primary-500">{{ providerText }}</span>
             </span>
             <span class="flex items-center gap-1.5"

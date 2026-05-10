@@ -37,6 +37,8 @@ export interface CollectionCategory {
   sort: number
   websiteCount: number
   isHide: number
+  /** 是否对外公开（user-15）：0-私密(默认)，1-公开 */
+  isPublic: number
   isDefault: number
   children: CollectionCategory[]
 }

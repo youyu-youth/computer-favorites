@@ -13,6 +13,8 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.ParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -21,7 +23,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
-import java.time.Duration;
+import java.util.Collections;
 
 /**
  * @author yyyouth zg
@@ -38,6 +40,25 @@ public class RateLimitAspect {
     private static final ParserContext TEMPLATE_PARSER_CONTEXT = ParserContext.TEMPLATE_EXPRESSION;
 
     private static final String KEY_PREFIX = "rate:limit:";
+
+    /**
+     * 原子限流 Lua 脚本（固定窗口）。
+     * KEYS[1] = 限流 key
+     * ARGV[1] = 窗口秒数
+     * ARGV[2] = 窗口内允许次数 limit
+     * 返回值：1 = 放行，0 = 被限流
+     *
+     * 原子语义：
+     *  - INCR 后如果是首次创建，同一调用中设 EXPIRE（不会出现 INCR 成功但 EXPIRE 失败导致永不过期的 bug）
+     *  - 超过 limit 返回 0，切面在 Java 侧拋限流异常
+     */
+    private static final RedisScript<Long> RATE_LIMIT_SCRIPT = new DefaultRedisScript<>(
+            "local current = redis.call('INCR', KEYS[1]) " +
+                    "if current == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end " +
+                    "if current > tonumber(ARGV[2]) then return 0 end " +
+                    "return 1",
+            Long.class
+    );
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -58,17 +79,21 @@ public class RateLimitAspect {
         String key = buildKey(joinPoint, rateLimit);
         long windowSeconds = Math.max(1L, rateLimit.unit().toSeconds(rateLimit.window()));
         try {
-            Long current = stringRedisTemplate.opsForValue().increment(key);
-            if (current != null && current == 1L) {
-                stringRedisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
-            }
-            if (current != null && current > rateLimit.limit()) {
-                log.warn("接口触发限流，key={}, current={}, limit={}", key, current, rateLimit.limit());
+            // Lua 原子执行：INCR + 首次 EXPIRE + 阈值判断三合一，根除跨调用原子性 bug
+            Long allowed = stringRedisTemplate.execute(
+                    RATE_LIMIT_SCRIPT,
+                    Collections.singletonList(key),
+                    String.valueOf(windowSeconds),
+                    String.valueOf(rateLimit.limit())
+            );
+            if (allowed != null && allowed == 0L) {
+                log.warn("接口触发限流，key={}, limit={}, window={}s", key, rateLimit.limit(), windowSeconds);
                 throw new BusinessException(HttpStatus.BAD_REQUEST, rateLimit.message());
             }
         } catch (BusinessException ex) {
             throw ex;
         } catch (Exception ex) {
+            // Redis 不可用时降级放行，不阻断业务主路径
             log.warn("限流组件异常，降级放行，key={}, error={}", key, ex.getMessage());
         }
         return joinPoint.proceed();

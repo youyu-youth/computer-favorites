@@ -12,12 +12,14 @@ import {
   EyeOff,
   Trash2,
   Eye,
+  Lock,
+  Globe,
   type LucideIcon,
 } from 'lucide-vue-next'
 
 export interface MenuItem {
   label: string
-  icon?: 'folder-plus' | 'pencil' | 'eye-off' | 'trash-2' | 'eye'
+  icon?: 'folder-plus' | 'pencil' | 'eye-off' | 'trash-2' | 'eye' | 'lock' | 'globe'
   danger?: boolean
   divider?: boolean
   onClick: () => void
@@ -45,6 +47,8 @@ const iconMap: Record<string, LucideIcon> = {
   'eye-off': EyeOff,
   'trash-2': Trash2,
   eye: Eye,
+  lock: Lock,
+  globe: Globe,
 }
 
 const closeMenu = () => {
@@ -121,11 +125,7 @@ onBeforeUnmount(() => {
         leave-from-class="opacity-100 scale-100"
         leave-to-class="opacity-0 scale-95"
       >
-        <div
-          v-if="visible"
-          class="fixed inset-0 z-[200]"
-          @click.self="handleBackdropClick"
-        >
+        <div v-if="visible" class="fixed inset-0 z-[200]" @click.self="handleBackdropClick">
           <div
             ref="menuRef"
             class="ctx-menu-panel absolute min-w-[180px] overflow-hidden rounded-xl py-1.5"
@@ -133,19 +133,12 @@ onBeforeUnmount(() => {
             @click.stop
           >
             <template v-for="(item, idx) in items" :key="idx">
-              <div
-                v-if="item.divider"
-                class="ctx-divider my-1 border-t"
-              />
+              <div v-if="item.divider" class="ctx-divider my-1 border-t" />
               <button
                 v-else
                 type="button"
                 class="ctx-item w-full flex items-center gap-2.5 px-3.5 py-2 text-sm transition-all duration-150 cursor-pointer"
-                :class="[
-                  item.danger
-                    ? 'ctx-item-danger'
-                    : 'ctx-item-default',
-                ]"
+                :class="[item.danger ? 'ctx-item-danger' : 'ctx-item-default']"
                 @click="handleItemClick(item)"
               >
                 <component
@@ -192,19 +185,12 @@ onBeforeUnmount(() => {
         >
           <div class="ctx-sheet-handle mx-auto mb-3 h-1 w-10 rounded-full" />
           <template v-for="(item, idx) in items" :key="idx">
-            <div
-              v-if="item.divider"
-              class="ctx-divider my-1 border-t"
-            />
+            <div v-if="item.divider" class="ctx-divider my-1 border-t" />
             <button
               v-else
               type="button"
               class="ctx-item w-full flex items-center gap-3 px-4 py-3.5 text-[15px] font-medium transition-all duration-150 cursor-pointer rounded-lg"
-              :class="[
-                item.danger
-                  ? 'ctx-item-danger'
-                  : 'ctx-item-default',
-              ]"
+              :class="[item.danger ? 'ctx-item-danger' : 'ctx-item-default']"
               @click="handleItemClick(item)"
             >
               <component

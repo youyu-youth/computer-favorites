@@ -55,6 +55,14 @@ public interface UserFolderService {
     void toggleFolderHide(Long folderId, boolean isHide);
 
     /**
+     * 切换收藏夹对外可见性（user-15 公开收藏夹）
+     *
+     * @param folderId 文件夹ID
+     * @param isPublic 是否对外公开：true=对外公开，false=对外私密
+     */
+    void toggleFolderPublic(Long folderId, boolean isPublic);
+
+    /**
      * 获取文件夹下拉选项
      *
      * @return 文件夹选项列表

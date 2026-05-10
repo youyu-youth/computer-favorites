@@ -83,6 +83,7 @@ export interface PublicWebsiteDetail {
   isRecommend?: number
   submitterId?: number
   providerName?: string
+  providerUsername?: string
   createTime?: string
   shelfTime?: string
   updateTime?: string

@@ -22,6 +22,7 @@ import {
 } from 'lucide-vue-next'
 import StatCard from './dashboard/StatCard.vue'
 import type { ProfileData } from '@/types/profile'
+import type { PublicFolderItem } from '@/api/user-profile-public'
 import catPlayingAnimation from '@/assets/animation/Cat playing animation.lottie?url'
 
 withDefaults(
@@ -29,12 +30,22 @@ withDefaults(
     profile: ProfileData
     isOwn?: boolean
     showCollections?: boolean
+    /** user-15 公开主页顶层收藏夹列表（本人会看到全部，访客仅看到公开的） */
+    publicFolders?: PublicFolderItem[]
+    publicFoldersLoading?: boolean
   }>(),
   {
     isOwn: true,
     showCollections: true,
+    publicFolders: () => [],
+    publicFoldersLoading: false,
   },
 )
+
+const emit = defineEmits<{
+  (e: 'open-folder', folder: PublicFolderItem): void
+  (e: 'view-all'): void
+}>()
 
 const router = useRouter()
 
@@ -96,7 +107,9 @@ const buildWebsiteHref = (websiteId?: number): string =>
       <StatCard dense>
         <div class="space-y-2">
           <div class="flex items-start gap-3">
-            <div class="relative aspect-square w-28 shrink-0 overflow-hidden rounded-sm border border-black/5 dark:border-white/[0.06]">
+            <div
+              class="relative aspect-square w-28 shrink-0 overflow-hidden rounded-sm border border-black/5 dark:border-white/[0.06]"
+            >
               <img
                 :src="profile.avatarUrl"
                 :alt="profile.name"
@@ -107,10 +120,14 @@ const buildWebsiteHref = (websiteId?: number): string =>
 
             <div class="flex min-h-28 min-w-0 flex-1 flex-col justify-between">
               <div class="space-y-1.5">
-                <h2 class="truncate text-base font-semibold tracking-tight text-gray-900 dark:text-white">
+                <h2
+                  class="truncate text-base font-semibold tracking-tight text-gray-900 dark:text-white"
+                >
                   {{ profile.name }}
                 </h2>
-                <div class="flex items-center gap-1.5 font-mono text-[11.5px] text-gray-500 dark:text-gray-400">
+                <div
+                  class="flex items-center gap-1.5 font-mono text-[11.5px] text-gray-500 dark:text-gray-400"
+                >
                   <MapPin class="size-3.5 shrink-0 text-amber-500" :stroke-width="2" />
                   <span class="truncate">{{ profile.location }}</span>
                 </div>
@@ -179,12 +196,17 @@ const buildWebsiteHref = (websiteId?: number): string =>
       <StatCard dense>
         <template #header>
           <div class="flex w-full items-center justify-between gap-2">
-            <span class="flex items-center gap-1.5 text-[12.5px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+            <span
+              class="flex items-center gap-1.5 text-[12.5px] font-semibold tracking-tight text-gray-900 dark:text-gray-100"
+            >
               <FolderTree class="size-3.5 text-amber-500" :stroke-width="2" />
               上传网站（文件夹）
             </span>
             <span class="font-mono text-[10.5px] text-gray-500 dark:text-gray-400">
-              {{ profile.uploadedProjects.length >= 5 ? '5+' : profile.uploadedProjects.length }} 个网站
+              {{
+                profile.uploadedProjects.length >= 5 ? '5+' : profile.uploadedProjects.length
+              }}
+              个网站
             </span>
           </div>
         </template>
@@ -197,7 +219,11 @@ const buildWebsiteHref = (websiteId?: number): string =>
               :rel="item.websiteId ? 'noopener noreferrer' : undefined"
               :title="item.name"
               class="flex items-start gap-1.5 rounded-sm border border-black/5 bg-black/[0.02] p-1.5 transition-colors dark:border-white/[0.06] dark:bg-white/[0.02]"
-              :class="item.websiteId ? 'cursor-pointer hover:border-amber-500/30 hover:bg-amber-500/5 dark:hover:border-amber-400/30 dark:hover:bg-amber-400/5' : ''"
+              :class="
+                item.websiteId
+                  ? 'cursor-pointer hover:border-amber-500/30 hover:bg-amber-500/5 dark:hover:border-amber-400/30 dark:hover:bg-amber-400/5'
+                  : ''
+              "
             >
               <img
                 v-if="shouldUseRemoteIcon(item.iconUrl)"
@@ -212,7 +238,9 @@ const buildWebsiteHref = (websiteId?: number): string =>
                 <p class="truncate text-[12.5px] font-semibold text-gray-900 dark:text-gray-100">
                   {{ item.name }}
                 </p>
-                <p class="break-all font-mono text-[11px] leading-5 text-gray-500 dark:text-gray-400">
+                <p
+                  class="break-all font-mono text-[11px] leading-5 text-gray-500 dark:text-gray-400"
+                >
                   {{ item.description }}
                 </p>
               </div>
@@ -227,7 +255,7 @@ const buildWebsiteHref = (websiteId?: number): string =>
         </ul>
         <router-link
           v-if="isOwn && profile.uploadedProjects.length"
-          to="/computer/website/submissions"
+          :to="{ name: 'websitesUpload' }"
           class="mt-2 inline-flex items-center gap-1 font-mono text-[11px] text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
         >
           查看全部 →
@@ -237,38 +265,60 @@ const buildWebsiteHref = (websiteId?: number): string =>
       <StatCard v-if="isOwn || showCollections" dense>
         <template #header>
           <div class="flex w-full items-center justify-between gap-2">
-            <span class="flex items-center gap-1.5 text-[12.5px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-              <Star class="size-3.5 text-amber-500" :stroke-width="2" />
-              收藏网站
+            <span
+              class="flex items-center gap-1.5 text-[12.5px] font-semibold tracking-tight text-gray-900 dark:text-gray-100"
+            >
+              <FolderTree class="size-3.5 text-amber-500" :stroke-width="2" />
+              {{ isOwn ? '收藏夹' : '公开收藏夹' }}
             </span>
             <span class="font-mono text-[10.5px] text-gray-500 dark:text-gray-400">
-              {{ profile.favoriteSites.length }} 个收藏
+              {{ publicFolders.length }} 个
             </span>
           </div>
         </template>
-        <ul class="space-y-1.5">
+
+        <ul v-if="publicFoldersLoading" class="space-y-1.5">
           <li
-            v-for="item in profile.favoriteSites"
-            :key="item.name"
-            class="flex items-start gap-1.5 rounded-sm border border-black/5 bg-black/[0.02] p-1.5 dark:border-white/[0.06] dark:bg-white/[0.02]"
-          >
-            <Star class="mt-0.5 size-3.5 shrink-0 text-amber-500" :stroke-width="2" />
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-[12.5px] font-semibold text-gray-900 dark:text-gray-100">
-                {{ item.name }}
-              </p>
-              <p class="break-all font-mono text-[11px] leading-5 text-gray-500 dark:text-gray-400">
-                {{ item.description }}
-              </p>
-            </div>
-          </li>
-          <li
-            v-if="!profile.favoriteSites.length"
-            class="font-mono text-[12px] text-gray-500 dark:text-gray-400"
-          >
-            暂无收藏网站
+            v-for="i in 3"
+            :key="i"
+            class="h-9 animate-pulse rounded-sm bg-black/[0.04] dark:bg-white/[0.04]"
+          />
+        </ul>
+
+        <ul v-else-if="publicFolders.length" class="space-y-1.5">
+          <li v-for="folder in publicFolders" :key="folder.id">
+            <button
+              type="button"
+              class="group flex w-full cursor-pointer items-start gap-1.5 rounded-sm border border-black/5 bg-black/[0.02] p-1.5 text-left transition hover:border-amber-300 hover:bg-amber-50/60 dark:border-white/[0.06] dark:bg-white/[0.02] dark:hover:border-amber-500/40 dark:hover:bg-amber-950/20"
+              @click="emit('open-folder', folder)"
+            >
+              <Folder class="mt-0.5 size-3.5 shrink-0 text-amber-500" :stroke-width="2" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-[12.5px] font-semibold text-gray-900 dark:text-gray-100">
+                  {{ folder.name }}
+                </p>
+                <p class="font-mono text-[10.5px] leading-5 text-gray-500 dark:text-gray-400">
+                  {{ folder.websiteCount }} 个网站<span v-if="folder.childrenCount > 0">
+                    · {{ folder.childrenCount }} 个子夹</span
+                  >
+                </p>
+              </div>
+            </button>
           </li>
         </ul>
+
+        <p v-else class="font-mono text-[12px] leading-6 text-gray-500 dark:text-gray-400">
+          {{ isOwn ? '暂无公开收藏夹，可在收藏夹页设为公开' : '该用户未公开收藏夹' }}
+        </p>
+
+        <button
+          v-if="publicFolders.length"
+          type="button"
+          class="mt-2 inline-flex cursor-pointer items-center gap-1 font-mono text-[11px] text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+          @click="emit('view-all')"
+        >
+          查看全部 →
+        </button>
       </StatCard>
     </div>
   </aside>
@@ -276,11 +326,14 @@ const buildWebsiteHref = (websiteId?: number): string =>
 
 <style scoped>
 .profile-tag {
-  font-family: 'Caveat', 'Segoe Script', 'Comic Sans MS', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+  font-family:
+    'Caveat', 'Segoe Script', 'Comic Sans MS', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    system-ui, sans-serif;
   background-color: hsla(var(--tag-hue), 75%, 55%, 0.12);
   color: hsla(var(--tag-hue), 65%, 32%, 1);
-  transition: background-color 200ms ease, color 200ms ease;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
 }
 
 .profile-tag:hover {

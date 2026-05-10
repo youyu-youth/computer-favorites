@@ -8,6 +8,16 @@ spring:
       api-key: ${model.api-key.dashboard:sk-placeholder}
     deepseek:
       api-key: ${model.api-key.deepseek}
+    mcp:
+      client:
+        enabled: true
+        type: SYNC
+        request-timeout: 30s
+        streamable-http:
+          connections:
+            tavily:
+              url: https://mcp.tavily.com
+              endpoint: /mcp/?tavilyApiKey=${tavily.api-key}
     chat:
       memory:
         repository:

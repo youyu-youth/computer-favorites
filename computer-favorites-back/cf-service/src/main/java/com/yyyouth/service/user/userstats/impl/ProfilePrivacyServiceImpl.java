@@ -100,6 +100,10 @@ public class ProfilePrivacyServiceImpl implements ProfilePrivacyService {
                 redisCache.evict(RedisConstant.USER_PROFILE_PUBLIC_PREFIX + username);
             }
             redisCache.evictByPattern(RedisConstant.USER_PROFILE_DASHBOARD_PREFIX + userId + ":*");
+            // user-15 公开收藏夹：隐私设置变更（visibility / show_collections）后立即同步失效
+            redisCache.evictByPattern(RedisConstant.PUBLIC_FOLDER_TOP_PREFIX + userId + ":*");
+            redisCache.evictByPattern(RedisConstant.PUBLIC_FOLDER_CHILDREN_PREFIX + userId + ":*");
+            redisCache.evict(RedisConstant.PUBLIC_FOLDER_TREE_PREFIX + userId);
         } catch (Exception ex) {
             log.warn("[privacy] evict cache fail userId={}, username={}: {}",
                     userId, username, ex.getMessage());

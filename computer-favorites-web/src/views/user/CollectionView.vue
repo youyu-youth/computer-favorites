@@ -60,6 +60,7 @@ const {
   handleDeleteFolder: apiDeleteFolder,
   handleHideFolder: apiHideFolder,
   handleShowHiddenFolders,
+  handleTogglePublic,
   handleVerifyPassword,
   handleFolderCreated,
   loadFolderOptions,
@@ -163,7 +164,11 @@ const passwordDialogDesc = ref('')
 const passwordDialogLoading = ref(false)
 let passwordConfirmCallback: ((pwd: string) => void) | null = null
 
-const openPasswordDialog = (title: string, description: string, onConfirm: (pwd: string) => void) => {
+const openPasswordDialog = (
+  title: string,
+  description: string,
+  onConfirm: (pwd: string) => void,
+) => {
   passwordDialogTitle.value = title
   passwordDialogDesc.value = description
   passwordConfirmCallback = onConfirm
@@ -212,7 +217,16 @@ const buildFolderMenuItems = (category: CollectionCategory): MenuItem[] => {
     {
       label: '重命名',
       icon: 'pencil',
-      onClick: () => { editingCategoryId.value = category.id },
+      onClick: () => {
+        editingCategoryId.value = category.id
+      },
+    },
+    {
+      label: category.isPublic ? '设为对外私密' : '设为对外公开',
+      icon: category.isPublic ? 'lock' : 'globe',
+      onClick: () => {
+        handleTogglePublic(category.id, !category.isPublic)
+      },
     },
     {
       label: category.isHide ? '显示' : '隐藏',
@@ -236,13 +250,9 @@ const buildFolderMenuItems = (category: CollectionCategory): MenuItem[] => {
       icon: 'trash-2',
       danger: true,
       onClick: () => {
-        openPasswordDialog(
-          '删除收藏夹',
-          `请输入登录密码以删除「${category.name}」`,
-          () => {
-            handleDeleteFolder(category.id)
-          },
-        )
+        openPasswordDialog('删除收藏夹', `请输入登录密码以删除「${category.name}」`, () => {
+          handleDeleteFolder(category.id)
+        })
       },
     },
   ]
@@ -253,13 +263,9 @@ const buildFolderMenuItems = (category: CollectionCategory): MenuItem[] => {
       label: '显示收藏夹',
       icon: 'eye',
       onClick: () => {
-        openPasswordDialog(
-          '显示收藏夹',
-          '请输入登录密码以恢复所有隐藏的收藏夹',
-          () => {
-            handleShowHiddenFolders(hiddenIds)
-          },
-        )
+        openPasswordDialog('显示收藏夹', '请输入登录密码以恢复所有隐藏的收藏夹', () => {
+          handleShowHiddenFolders(hiddenIds)
+        })
       },
     })
   }
@@ -282,13 +288,9 @@ const buildEmptyMenuItems = (): MenuItem[] => {
       label: '显示隐藏收藏夹',
       icon: 'eye',
       onClick: () => {
-        openPasswordDialog(
-          '显示隐藏收藏夹',
-          '请输入登录密码以恢复所有隐藏的收藏夹',
-          () => {
-            handleShowHiddenFolders(hiddenIds)
-          },
-        )
+        openPasswordDialog('显示隐藏收藏夹', '请输入登录密码以恢复所有隐藏的收藏夹', () => {
+          handleShowHiddenFolders(hiddenIds)
+        })
       },
     })
   }
@@ -455,7 +457,11 @@ const drawerSidebarEvents: Record<string, any> = {
               v-else-if="filteredResources.length > 0"
               class="grid gap-3"
               :class="gridColsClass"
-              :style="viewMode === 'grid' ? { transform: `scale(${cardScale})`, transformOrigin: 'top left' } : {}"
+              :style="
+                viewMode === 'grid'
+                  ? { transform: `scale(${cardScale})`, transformOrigin: 'top left' }
+                  : {}
+              "
             >
               <CollectionWebsiteCard
                 v-for="item in filteredResources"
@@ -469,10 +475,7 @@ const drawerSidebarEvents: Record<string, any> = {
             </div>
 
             <!-- 空状态 -->
-            <div
-              v-else
-              class="py-20 text-center text-[#9ca3af] dark:text-[#4b5563]"
-            >
+            <div v-else class="py-20 text-center text-[#9ca3af] dark:text-[#4b5563]">
               <i class="fas fa-inbox text-4xl mb-4 text-[#d1d5db] dark:text-[#374151]"></i>
               <p>未找到符合条件的资源</p>
             </div>

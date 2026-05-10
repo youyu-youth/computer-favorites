@@ -31,6 +31,9 @@ public class UserFolderTreeVO {
 
     private Integer isHide;
 
+    /** 是否对外公开：0-私密(默认)，1-公开 */
+    private Integer isPublic;
+
     private Integer isDefault;
 
     private List<UserFolderTreeVO> children;

@@ -51,7 +51,7 @@ public class ProfileDashboardController {
     @ApiOperation(value = "贡献概览")
     @GetMapping("/overview")
     @SaCheckLogin
-    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 5, window = 1)
+    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 30, window = 1)
     @AuditLog(action = "overview", description = "查询用户主页贡献概览")
     public HttpResult overview() {
         Long userId = StpUtil.getLoginIdAsLong();
@@ -67,7 +67,7 @@ public class ProfileDashboardController {
     @ApiOperation(value = "贡献热力图")
     @GetMapping("/contribution-graph")
     @SaCheckLogin
-    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 5, window = 1)
+    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 30, window = 1)
     @AuditLog(action = "contribution-graph", description = "查询用户主页贡献热力图，year=#{#year}")
     public HttpResult contributionGraph(
             @RequestParam(value = "year", required = false) Integer year) {
@@ -83,7 +83,7 @@ public class ProfileDashboardController {
     @ApiOperation(value = "分类偏好分布")
     @GetMapping("/category-distribution")
     @SaCheckLogin
-    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 5, window = 1)
+    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 30, window = 1)
     @AuditLog(action = "category-distribution", description = "查询用户主页分类偏好分布")
     public HttpResult categoryDistribution() {
         Long userId = StpUtil.getLoginIdAsLong();
@@ -97,7 +97,7 @@ public class ProfileDashboardController {
     @ApiOperation(value = "技术雷达")
     @GetMapping("/tech-radar")
     @SaCheckLogin
-    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 5, window = 1)
+    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 30, window = 1)
     @AuditLog(action = "tech-radar", description = "查询用户主页技术雷达")
     public HttpResult techRadar() {
         Long userId = StpUtil.getLoginIdAsLong();
@@ -114,7 +114,7 @@ public class ProfileDashboardController {
     @ApiOperation(value = "趋势折线")
     @GetMapping("/trend-series")
     @SaCheckLogin
-    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 5, window = 1)
+    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 30, window = 1)
     @AuditLog(action = "trend-series", description = "查询用户主页趋势折线，range=#{#range}，metric=#{#metric}")
     public HttpResult trendSeries(
             @RequestParam(value = "range", required = false, defaultValue = "30d") String range,
@@ -132,7 +132,7 @@ public class ProfileDashboardController {
     @ApiOperation(value = "上传网站影响力")
     @GetMapping("/upload-impact")
     @SaCheckLogin
-    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 5, window = 1)
+    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 30, window = 1)
     @AuditLog(action = "upload-impact", description = "查询上传网站影响力，range=#{#range}")
     public HttpResult uploadImpact(
             @RequestParam(value = "range", required = false, defaultValue = "30d") String range) {
