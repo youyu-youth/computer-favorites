@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 type SiteKey = 'github' | 'stackoverflow' | 'vue' | 'skills'
 
@@ -53,8 +54,13 @@ const sites: SiteItem[] = [
 
 const defaultSite = sites[0] as SiteItem
 
+const router = useRouter()
 const hoverId = ref<SiteKey>('github')
 const active = computed(() => sites.find((s) => s.id === hoverId.value) ?? defaultSite)
+
+const visitAsGuest = () => {
+  void router.push({ name: 'home' })
+}
 
 const iconColor = (id: SiteKey) => {
   if (id === 'stackoverflow') return 'text-amber-700 dark:text-amber-300'
@@ -310,6 +316,47 @@ const cardBgClass = (id: SiteKey) => {
               <div class="mt-4 flex items-center gap-2">
                 <div class="h-2 w-2 rounded-full bg-emerald-500/80" />
                 <div class="text-xs text-slate-500 dark:text-slate-400">悬停卡片查看预览</div>
+              </div>
+
+              <div
+                class="mt-6 flex min-h-[140px] flex-col justify-between rounded-xl border border-emerald-500/20 bg-white/75 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] dark:border-white/10 dark:bg-black/30"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <div class="text-sm font-semibold text-slate-900 dark:text-white">访客模式</div>
+                    <p class="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400">
+                      无需登录，先浏览公开资源、网站详情和平台公告。
+                    </p>
+                  </div>
+                  <div
+                    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200"
+                  >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M13 5l7 7-7 7M5 12h14"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="mt-5 inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 active:scale-[0.98] dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                  aria-label="以访客身份浏览网站"
+                  @click="visitAsGuest"
+                >
+                  <span>以访客身份浏览</span>
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 12h14M13 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
