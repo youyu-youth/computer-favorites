@@ -1,4 +1,5 @@
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, toValue, type MaybeRefOrGetter } from 'vue'
+import { getPublicApprovedSubmissions } from '@/api/user-profile-public'
 import { getMyWebsiteSubmissionPage } from '@/api/user-website-submission'
 import type { UserWebsiteSubmissionListItem } from '@/types/user-website-submission'
 import type { ProfileSiteItem } from '@/types/profile'
@@ -12,12 +13,14 @@ import type { ProfileSiteItem } from '@/types/profile'
 export interface UseUserApprovedSubmissionsOptions {
   /** 拉取条数，默认 5 */
   limit?: number
+  username?: MaybeRefOrGetter<string | undefined>
 }
 
 const APPROVED_AUDIT_STATUS = 1
 
 const mapToProfileSiteItem = (record: UserWebsiteSubmissionListItem): ProfileSiteItem => {
-  const description = record.summary?.trim() || record.url?.trim() || record.categoryName?.trim() || ''
+  const description =
+    record.summary?.trim() || record.url?.trim() || record.categoryName?.trim() || ''
   const iconUrl = record.icon?.trim() || ''
   return {
     name: record.name,
@@ -42,11 +45,14 @@ export function useUserApprovedSubmissions(options: UseUserApprovedSubmissionsOp
     loading.value = true
     error.value = null
     try {
-      const page = await getMyWebsiteSubmissionPage({
-        pageNum: 1,
-        pageSize,
-        auditStatus: APPROVED_AUDIT_STATUS,
-      })
+      const username = toValue(options.username)?.trim()
+      const page = username
+        ? await getPublicApprovedSubmissions(username, pageSize)
+        : await getMyWebsiteSubmissionPage({
+            pageNum: 1,
+            pageSize,
+            auditStatus: APPROVED_AUDIT_STATUS,
+          })
       items.value = (page.records || []).map(mapToProfileSiteItem)
       total.value = page.total ?? items.value.length
     } catch (err) {

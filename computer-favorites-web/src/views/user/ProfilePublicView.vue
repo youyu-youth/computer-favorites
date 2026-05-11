@@ -10,9 +10,11 @@ import ProfileSidebarCard from '@/components/user/profile/ProfileSidebarCard.vue
 import ProfileSkillsSection from '@/components/user/profile/ProfileSkillsSection.vue'
 import PublicFolderDialog from '@/components/user/profile/PublicFolderDialog.vue'
 import ProfilePrivateView from '@/views/user/ProfilePrivateView.vue'
+import { useUserApprovedSubmissions } from '@/composables/useUserApprovedSubmissions'
 import { useProfileDashboardStore } from '@/stores/profileDashboard'
 import { useProfilePublicStore } from '@/stores/profilePublic'
 import type { PublicFolderItem } from '@/api/user-profile-public'
+import type { ProfileData } from '@/types/profile'
 
 const props = defineProps<{
   username: string
@@ -21,6 +23,10 @@ const props = defineProps<{
 const publicStore = useProfilePublicStore()
 const dashboardStore = useProfileDashboardStore()
 const router = useRouter()
+const approvedSubmissions = useUserApprovedSubmissions({
+  limit: 5,
+  username: computed(() => props.username),
+})
 const {
   profileData,
   loading,
@@ -57,12 +63,24 @@ const emptyReason = computed(() => {
   return 'error'
 })
 
-const canRenderProfile = computed(() => Boolean(profileData.value))
+const displayProfile = computed<ProfileData | null>(() => {
+  if (!profileData.value) {
+    return null
+  }
+  return {
+    ...profileData.value,
+    uploadedProjects: approvedSubmissions.items.value,
+  }
+})
+
+const canRenderProfile = computed(() => Boolean(displayProfile.value))
 
 const loadPublicProfile = async () => {
   dashboardStore.reset()
+  approvedSubmissions.reset()
   try {
     await publicStore.load(props.username)
+    void approvedSubmissions.load()
     // 主 profile 加载后并发拉公开收藏夹（showCollections=0 时后端会抛错，store 内部 swallow）
     if (isOwn.value || showCollections.value) {
       void publicStore.loadPublicFolders(props.username, 5)
@@ -104,11 +122,11 @@ watch(
       </div>
 
       <div
-        v-else-if="canRenderProfile && profileData"
+        v-else-if="canRenderProfile && displayProfile"
         class="flex flex-col gap-4 lg:flex-row lg:gap-5"
       >
         <ProfileSidebarCard
-          :profile="profileData"
+          :profile="displayProfile"
           :is-own="isOwn"
           :show-collections="showCollections"
           :public-folders="publicFolders"
@@ -136,7 +154,7 @@ watch(
           >
             该用户已关闭贡献数据展示。
           </section>
-          <ProfileSkillsSection :skills="profileData.skills" />
+          <ProfileSkillsSection :skills="displayProfile.skills" />
           <ProfileDashboardSummary v-if="showContribution" />
         </main>
       </div>

@@ -17,9 +17,11 @@ import com.yyyouth.model.vo.user.UserWebsiteSubmissionIconUploadVO;
 import com.yyyouth.model.vo.user.UserWebsiteSubmissionListItemVO;
 import com.yyyouth.model.vo.user.UserWebsiteSubmissionPageVO;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
+import com.yyyouth.model.vo.userstats.ProfilePublicVO;
 import com.yyyouth.service.file.MinioFileService;
 import com.yyyouth.service.mapper.website.CategoryMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
+import com.yyyouth.service.user.userstats.ProfilePublicService;
 import com.yyyouth.service.user.website.UserWebsiteSubmissionService;
 import com.yyyouth.service.user.website.support.UserWebsiteTagSupport;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +56,8 @@ public class UserWebsiteSubmissionServiceImpl implements UserWebsiteSubmissionSe
 
     private static final int OFFLINE_STATUS = 0;
 
+    private static final int ONLINE_STATUS = 1;
+
     private static final int AUDIT_PENDING_STATUS = 0;
 
     private static final int AUDIT_APPROVED_STATUS = 1;
@@ -82,6 +86,10 @@ public class UserWebsiteSubmissionServiceImpl implements UserWebsiteSubmissionSe
 
     private static final int DEFAULT_PAGE_SIZE = 12;
 
+    private static final int DEFAULT_PUBLIC_PAGE_SIZE = 5;
+
+    private static final int MAX_PUBLIC_PAGE_SIZE = 50;
+
     private static final int DEFAULT_AUDIT_ADMIN_ID = 0;
 
     private static final int BOOLEAN_NO = 0;
@@ -93,6 +101,8 @@ public class UserWebsiteSubmissionServiceImpl implements UserWebsiteSubmissionSe
     private final MinioFileService minioFileService;
 
     private final UserWebsiteTagSupport userWebsiteTagSupport;
+
+    private final ProfilePublicService profilePublicService;
 
     /**
      * 上传投稿网站图标
@@ -211,26 +221,38 @@ public class UserWebsiteSubmissionServiceImpl implements UserWebsiteSubmissionSe
                 .orderByDesc(Website::getUpdateTime)
                 .last("limit " + offset + "," + pageSize));
 
-        Map<Long, String> categoryNameMap = buildCategoryNameMap(websiteList);
-        Set<Long> tagIds = websiteList.stream()
-            .flatMap(website -> userWebsiteTagSupport.parseTagIds(website.getTags()).stream())
-            .collect(Collectors.toSet());
-        Map<Long, UserWebsiteTagItemVO> tagItemMap = userWebsiteTagSupport.buildTagItemMap(tagIds);
+        pageVO.setRecords(buildSubmissionListItems(websiteList));
+        return pageVO;
+    }
 
-        List<UserWebsiteSubmissionListItemVO> records = websiteList.stream()
-                .map(website -> {
-                UserWebsiteSubmissionListItemVO itemVO = BeanUtil.copyProperties(
-                    website,
-                    UserWebsiteSubmissionListItemVO.class,
-                    "tags"
-                );
-                    itemVO.setCategoryName(categoryNameMap.getOrDefault(website.getCategoryId(), ""));
-                itemVO.setTags(userWebsiteTagSupport.buildWebsiteTagItems(website.getTags(), tagItemMap));
-                    return itemVO;
-                })
-                .toList();
+    @Override
+    public UserWebsiteSubmissionPageVO queryPublicApprovedSubmissionPage(String username, Long currentUserId, Integer limit) {
+        ProfilePublicVO publicVO = profilePublicService.getPublicProfile(username, currentUserId);
+        if (publicVO == null || publicVO.getUser() == null || publicVO.getUser().getId() == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "公开主页用户不存在");
+        }
 
-        pageVO.setRecords(records);
+        Long targetUserId = publicVO.getUser().getId();
+        int pageSize = normalizePublicPageSize(limit);
+        LambdaQueryWrapper<Website> queryWrapper = buildPublicApprovedSubmissionQueryWrapper(targetUserId);
+        long total = websiteMapper.selectCount(queryWrapper);
+
+        UserWebsiteSubmissionPageVO pageVO = new UserWebsiteSubmissionPageVO();
+        pageVO.setTotal(total);
+        pageVO.setPageNum(DEFAULT_PAGE_NUM);
+        pageVO.setPageSize(pageSize);
+        pageVO.setTotalPages(calcTotalPages(total, pageSize));
+
+        if (total == 0L) {
+            pageVO.setRecords(Collections.emptyList());
+            return pageVO;
+        }
+
+        List<Website> websiteList = websiteMapper.selectList(buildPublicApprovedSubmissionQueryWrapper(targetUserId)
+                .orderByDesc(Website::getUpdateTime)
+                .last("limit " + pageSize));
+
+        pageVO.setRecords(buildSubmissionListItems(websiteList));
         return pageVO;
     }
 
@@ -463,6 +485,47 @@ public class UserWebsiteSubmissionServiceImpl implements UserWebsiteSubmissionSe
             throw new BusinessException(HttpStatus.BAD_REQUEST, "投稿不存在或无权限操作");
         }
         return website;
+    }
+
+    private LambdaQueryWrapper<Website> buildPublicApprovedSubmissionQueryWrapper(Long targetUserId) {
+        return new LambdaQueryWrapper<Website>()
+                .eq(Website::getDeleted, NOT_DELETED)
+                .eq(Website::getStatus, ONLINE_STATUS)
+                .eq(Website::getSource, USER_SOURCE)
+                .eq(Website::getSubmitterId, targetUserId)
+                .eq(Website::getAuditStatus, AUDIT_APPROVED_STATUS);
+    }
+
+    private List<UserWebsiteSubmissionListItemVO> buildSubmissionListItems(List<Website> websiteList) {
+        if (CollUtil.isEmpty(websiteList)) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, String> categoryNameMap = buildCategoryNameMap(websiteList);
+        Set<Long> tagIds = websiteList.stream()
+                .flatMap(website -> userWebsiteTagSupport.parseTagIds(website.getTags()).stream())
+                .collect(Collectors.toSet());
+        Map<Long, UserWebsiteTagItemVO> tagItemMap = userWebsiteTagSupport.buildTagItemMap(tagIds);
+
+        return websiteList.stream()
+                .map(website -> {
+                    UserWebsiteSubmissionListItemVO itemVO = BeanUtil.copyProperties(
+                            website,
+                            UserWebsiteSubmissionListItemVO.class,
+                            "tags"
+                    );
+                    itemVO.setCategoryName(categoryNameMap.getOrDefault(website.getCategoryId(), ""));
+                    itemVO.setTags(userWebsiteTagSupport.buildWebsiteTagItems(website.getTags(), tagItemMap));
+                    return itemVO;
+                })
+                .toList();
+    }
+
+    private int normalizePublicPageSize(Integer limit) {
+        if (limit == null || limit < 1) {
+            return DEFAULT_PUBLIC_PAGE_SIZE;
+        }
+        return Math.min(limit, MAX_PUBLIC_PAGE_SIZE);
     }
 
     /**

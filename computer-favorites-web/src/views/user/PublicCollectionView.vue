@@ -1,27 +1,23 @@
 <script setup lang="ts">
 /**
  * @author yyyouth zg
- * @date 2026-05-10
+ * @date 2026-05-11
  *
  * 公开主页"查看全部公开收藏夹"页面（user-15）。
  *
- * 路径：/computer/u/:username/collections
- * 数据：getPublicProfile（hero）+ getPublicFolderTree（左侧树）+ getPublicFolderChildren（右侧选中夹）
- * 行为：左侧树折叠/展开/选中、选中后右侧分页（pageSize=12）；
- *      visibility=PRIVATE 或 showCollections=0 由 hero 段落给出空态提示。
- *
- * 视觉重设计要点（2026-05-10 美化）：
- *   - 编辑式排版：左侧树用 folder.png + 选中立柱；右侧内容用大尺寸 folder.png 作为标题装饰。
- *   - 网站卡片改为单列横排，复用 user-website-click/like/collection svg + lucide Star 显示统计。
- *   - 启用错落 fade-in-up 动画；hover 时整卡微抬升 + 琥珀色描边。
- *   - 移动端：树折叠为顶部水平滑动 chip 行；卡片单列堆叠；分页按钮全宽。
- *   - 深浅模式：浅色暖灰底 + 米白卡；深色纯黑底 + #0c0c10 卡，避免塑料化高饱和。
  */
 
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ExternalLink, Loader2, Lock, ArrowLeft, Star } from 'lucide-vue-next'
-import UButton from '@/components/ui-adapter/UButton.vue'
+import {
+  ExternalLink,
+  Lock,
+  ArrowLeft,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Star,
+} from 'lucide-vue-next'
 import FolderTreeRow from '@/components/user/profile/FolderTreeRow.vue'
 import folderIcon from '@/assets/icons/png/folder.png'
 import websiteClickIcon from '@/assets/icons/svg/user-website-click.svg'
@@ -64,6 +60,15 @@ const childrenData = ref<PublicFolderChildrenResponse | null>(null)
 const childrenLoading = ref(false)
 const childrenErrorMsg = ref('')
 const pageNum = ref(1)
+
+/**
+ * 请求序号：切换收藏夹/翻页时自增，loadChildren 内部只有序号一致的响应才会写入 state；
+ * 配合同步的 `resetChildrenState()` 消除"旧数据在新响应前闪一下"的根因。
+ */
+let childrenReqSeq = 0
+
+/** 骨架最短展示时长（ms）：防止缓存/极速响应时 skeleton → content 闪烁。 */
+const MIN_SKELETON_MS = 180
 
 const isPrivate = computed(() => profileErrorCode.value === PROFILE_PRIVATE_CODE)
 const isLoginRequired = computed(() => profileErrorCode.value === PROFILE_LOGIN_REQUIRED_CODE)
@@ -130,6 +135,7 @@ const loadTree = async () => {
     if (firstId !== null) {
       selectedId.value = firstId
       pageNum.value = 1
+      resetChildrenState()
       void loadChildren()
     }
   } catch (err) {
@@ -140,20 +146,46 @@ const loadTree = async () => {
   }
 }
 
+/**
+ * 同步重置右侧内容 state：立刻清空旧数据并进入 loading 态。
+ *
+ * 这是"切夹闪白"修复的关键 —— 在任何 `loadChildren` 调用**之前**，
+ * 同一个 tick 内把 `childrenData` 设为 null、`childrenLoading` 设为 true，
+ * 避免 Vue 批处理把旧数据 + 新 key 扔进 transition-group diff。
+ */
+const resetChildrenState = () => {
+  childrenData.value = null
+  childrenErrorMsg.value = ''
+  childrenLoading.value = true
+}
+
 const loadChildren = async () => {
   if (!username.value || selectedId.value === null) return
-  childrenLoading.value = true
+  const mySeq = ++childrenReqSeq
+  // 保险：调用方可能没调 resetChildrenState（例如初始 mount），这里兜底打 loading
+  if (!childrenLoading.value) childrenLoading.value = true
   childrenErrorMsg.value = ''
+  const startedAt = Date.now()
   try {
-    childrenData.value = await getPublicFolderChildren(username.value, selectedId.value, {
+    const data = await getPublicFolderChildren(username.value, selectedId.value, {
       pageNum: pageNum.value,
       pageSize: PAGE_SIZE,
     })
+    if (mySeq !== childrenReqSeq) return // 已有更新的请求，丢弃该响应
+    const elapsed = Date.now() - startedAt
+    if (elapsed < MIN_SKELETON_MS) {
+      await new Promise((r) => setTimeout(r, MIN_SKELETON_MS - elapsed))
+      if (mySeq !== childrenReqSeq) return
+    }
+    childrenData.value = data
   } catch (err) {
+    if (mySeq !== childrenReqSeq) return
     childrenData.value = null
     childrenErrorMsg.value = err instanceof Error ? err.message : '加载收藏夹内容失败'
   } finally {
-    childrenLoading.value = false
+    if (mySeq === childrenReqSeq) {
+      childrenLoading.value = false
+    }
   }
 }
 
@@ -171,12 +203,31 @@ const handleSelect = (node: PublicFolderTreeNode) => {
   if (selectedId.value === node.id) return
   selectedId.value = node.id
   pageNum.value = 1
+  resetChildrenState()
+  void loadChildren()
+}
+
+/**
+ * 子收藏夹按钮跳转（原本内联在 template 里，抽成方法以便统一走 resetChildrenState，
+ * 避免遗漏闪白修复）。
+ */
+const jumpToSubFolder = (sf: { id: number; parentId: number }) => {
+  if (selectedId.value === sf.id) return
+  selectedId.value = sf.id
+  pageNum.value = 1
+  if (!expandedIds.value.has(sf.parentId)) {
+    const next = new Set(expandedIds.value)
+    next.add(sf.parentId)
+    expandedIds.value = next
+  }
+  resetChildrenState()
   void loadChildren()
 }
 
 const handlePageChange = (num: number) => {
   if (num < 1 || num > totalPages.value || num === pageNum.value) return
   pageNum.value = num
+  resetChildrenState()
   void loadChildren()
 }
 
@@ -190,26 +241,26 @@ const goBackToProfile = () => {
 const formatScore = (score: PublicFolderWebsite['score']) =>
   score === null || score === undefined ? '—' : Number(score).toFixed(1)
 
+/**
+ * stats 列数字格式化：>= 10000 -> "1.2k"；保持窄列对齐 + 不溢出。
+ */
+const formatCount = (n: number | null | undefined): string => {
+  const v = Number(n ?? 0)
+  if (!Number.isFinite(v) || v <= 0) return '0'
+  if (v >= 10000) return `${(v / 1000).toFixed(v >= 100000 ? 0 : 1)}k`
+  if (v >= 1000) return `${(v / 1000).toFixed(1)}k`
+  return String(Math.trunc(v))
+}
+
 const websitePlaceholder = (title: string) =>
   `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(title)}&backgroundType=gradientLinear&backgroundColor=fbbf24,f59e0b`
 
-/**
- * 提取 URL 的可读 host（用于网站卡片右侧显示），失败时回退原 URL。
- */
-const extractHost = (url: string): string => {
-  if (!url) return ''
-  try {
-    const u = new URL(url)
-    return u.host.replace(/^www\./, '')
-  } catch {
-    return (
-      url
-        .replace(/^https?:\/\//, '')
-        .replace(/^www\./, '')
-        .split('/')[0] ?? url
-    )
-  }
-}
+/** 递归汇总树中所有公开网站总数（hero 右侧统计用） */
+const totalSiteCount = computed(() => {
+  const sum = (nodes: PublicFolderTreeNode[]): number =>
+    nodes.reduce((acc, n) => acc + n.websiteCount + (n.children?.length ? sum(n.children) : 0), 0)
+  return treeData.value ? sum(treeData.value.roots) : 0
+})
 
 /**
  * 移动端用顶部 chip 选择器：仅展示根节点，深层通过右侧"子收藏夹"区下钻，避免移动端树嵌套体验差。
@@ -227,6 +278,9 @@ watch(
       profile.value = null
       treeData.value = null
       childrenData.value = null
+      childrenErrorMsg.value = ''
+      childrenLoading.value = false
+      childrenReqSeq += 1 // 作废上一用户的任何在途请求
       selectedId.value = null
       expandedIds.value = new Set()
       pageNum.value = 1
@@ -238,111 +292,140 @@ watch(
 </script>
 
 <template>
-  <div class="cf-public-collection mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-    <!-- 顶部返回 -->
+  <div class="cf-public-collection mx-auto w-full max-w-[1400px] px-4 pb-12 pt-6 sm:px-8 sm:pt-8">
+    <!-- 顶部返回（更克制；纯 mono、hover 仅文字色） -->
     <button
       type="button"
-      class="cf-fade-in group mb-5 inline-flex cursor-pointer items-center gap-1.5 font-mono text-[12px] tracking-wide text-gray-500 transition-colors hover:text-amber-600 dark:text-gray-400 dark:hover:text-amber-400"
+      class="cf-fade-in group mb-7 inline-flex cursor-pointer items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-amber-600 active:scale-[0.98] dark:text-zinc-500 dark:hover:text-amber-400"
       @click="goBackToProfile"
     >
       <ArrowLeft
         class="size-3.5 transition-transform duration-200 group-hover:-translate-x-0.5"
         :stroke-width="2"
       />
-      返回 {{ username }} 的公开主页
+      <span>Back · {{ username }}</span>
     </button>
 
-    <!-- Hero -->
+    <!-- Hero · 编辑式不对称版面：左标题/右统计列 + hairline 分隔，无卡片框 -->
     <header
-      class="cf-fade-in cf-hero relative mb-6 overflow-hidden rounded-2xl border border-black/[0.06] bg-[rgb(var(--cf-color-surface-card-rgb))] p-5 sm:p-7 dark:border-white/[0.06]"
+      class="cf-fade-in mb-10 grid grid-cols-1 gap-6 border-b border-zinc-200 pb-8 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-12 dark:border-zinc-900"
       style="animation-delay: 40ms"
     >
-      <div class="relative z-10 flex items-start gap-4 sm:gap-5">
+      <!-- 左：mono eyebrow + 大字标题 + 用户元 -->
+      <div class="flex min-w-0 flex-col gap-3">
         <div
-          class="cf-hero-avatar size-16 shrink-0 overflow-hidden rounded-full ring-1 ring-black/[0.06] sm:size-20 dark:ring-white/[0.08]"
+          class="flex items-center gap-3 font-mono text-[10.5px] uppercase tracking-[0.28em] text-amber-600 dark:text-amber-400"
         >
-          <img
-            v-if="profile?.user?.avatar"
-            :src="profile.user.avatar"
-            :alt="profile.user.username"
-            class="h-full w-full object-cover"
-            referrerpolicy="no-referrer"
-          />
-          <div
-            v-else
-            class="flex h-full w-full items-center justify-center bg-amber-50 font-mono text-xl font-semibold text-amber-600 dark:bg-amber-500/[0.08] dark:text-amber-300"
-          >
-            {{ (username[0] || '?').toUpperCase() }}
-          </div>
+          <span class="inline-block h-px w-8 bg-amber-500/70 dark:bg-amber-400/70" />
+          <span>Public · Collections</span>
         </div>
-        <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-          <div
-            class="font-mono text-[10.5px] uppercase tracking-[0.2em] text-amber-600/80 dark:text-amber-400/80"
+        <h1
+          class="cf-hero-title min-w-0 break-words text-[2.5rem] font-bold leading-[1.02] text-zinc-900 sm:text-5xl lg:text-[3.75rem] dark:text-zinc-50"
+        >
+          <span class="block">{{ profile?.user?.nickname || username }}</span>
+          <span class="block text-zinc-400 dark:text-zinc-600" style="letter-spacing: -0.025em">
+            的<span class="text-amber-500 dark:text-amber-400">公开</span>收藏夹
+          </span>
+        </h1>
+        <div class="flex items-center gap-3 text-[13px] text-zinc-500 dark:text-zinc-400">
+          <!-- 头像作为细节而非主体 -->
+          <span
+            class="inline-flex size-7 shrink-0 overflow-hidden rounded-full ring-1 ring-zinc-200 dark:ring-zinc-800"
           >
-            Public Collections
-          </div>
-          <h1
-            class="truncate text-xl font-bold text-gray-900 sm:text-2xl dark:text-white"
-            style="letter-spacing: -0.01em"
-          >
-            {{ profile?.user?.nickname || username }}
-            <span class="text-gray-500 dark:text-gray-400">的公开收藏夹</span>
-          </h1>
-          <p
-            class="flex flex-wrap items-center gap-2 text-[12.5px] text-gray-500 dark:text-gray-400"
-          >
-            <span class="font-mono">@{{ username }}</span>
+            <img
+              v-if="profile?.user?.avatar"
+              :src="profile.user.avatar"
+              :alt="profile.user.username"
+              class="h-full w-full object-cover"
+              referrerpolicy="no-referrer"
+            />
             <span
-              v-if="isOwn"
-              class="inline-flex items-center rounded-full border border-amber-300/60 bg-amber-100/80 px-2 py-0.5 font-mono text-[10.5px] tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/[0.1] dark:text-amber-300"
+              v-else
+              class="flex h-full w-full items-center justify-center bg-amber-100 font-mono text-[11px] font-semibold text-amber-700 dark:bg-amber-500/[0.1] dark:text-amber-300"
             >
-              本人视图
+              {{ (username[0] || '?').toUpperCase() }}
             </span>
-            <span
-              v-if="treeData?.roots.length"
-              class="inline-flex items-center gap-1 rounded-full bg-black/[0.03] px-2 py-0.5 font-mono text-[10.5px] text-gray-500 dark:bg-white/[0.05] dark:text-gray-400"
-            >
-              <img :src="folderIcon" alt="" aria-hidden="true" class="size-3" />
-              {{ treeData.roots.length }} 个公开收藏夹
-            </span>
-          </p>
+          </span>
+          <span class="font-mono">@{{ username }}</span>
+          <span
+            v-if="isOwn"
+            class="font-mono text-[10.5px] uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400"
+          >
+            · Owner
+          </span>
         </div>
       </div>
 
-      <!-- 装饰：右上角放置一个超大半透明 folder.png 作为版式锚点 -->
-      <img
-        :src="folderIcon"
-        alt=""
-        aria-hidden="true"
-        class="cf-hero-deco pointer-events-none absolute -right-6 -top-6 size-40 select-none opacity-[0.05] sm:opacity-[0.07] dark:opacity-[0.06]"
-      />
+      <!-- 右：3 条 mono 数字统计列（替代原渐变装饰） -->
+      <dl
+        class="flex shrink-0 divide-x divide-zinc-200 self-stretch text-left lg:self-end dark:divide-zinc-900"
+      >
+        <div class="flex flex-col gap-1 pr-6">
+          <dt
+            class="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600"
+          >
+            Folders
+          </dt>
+          <dd class="font-mono text-3xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+            {{ treeData?.roots.length ?? 0 }}
+          </dd>
+        </div>
+        <div class="flex flex-col gap-1 px-6">
+          <dt
+            class="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600"
+          >
+            Sources
+          </dt>
+          <dd class="font-mono text-3xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+            {{ formatCount(totalSiteCount) }}
+          </dd>
+        </div>
+        <div class="flex flex-col gap-1 pl-6">
+          <dt
+            class="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600"
+          >
+            Selected
+          </dt>
+          <dd
+            class="font-mono text-3xl font-semibold tabular-nums text-amber-500 dark:text-amber-400"
+          >
+            {{ selectedNode?.websiteCount ?? '—' }}
+          </dd>
+        </div>
+      </dl>
     </header>
 
-    <!-- 隐私拦截态 -->
-    <div
-      v-if="isNotFound"
-      class="cf-fade-in rounded-2xl border border-black/[0.06] bg-[rgb(var(--cf-color-surface-card-rgb))] p-10 text-center dark:border-white/[0.06]"
-    >
-      <Lock class="mx-auto mb-3 size-9 text-gray-400" :stroke-width="1.4" />
-      <p class="font-mono text-[13px] text-gray-500 dark:text-gray-400">用户不存在或已停用</p>
+    <!-- 隐私拦截态：编辑式空态，无卡片背景，居中 mono 文案 + 锁图标 -->
+    <div v-if="isNotFound" class="cf-fade-in flex flex-col items-center gap-4 py-20 text-center">
+      <Lock class="size-10 text-zinc-300 dark:text-zinc-700" :stroke-width="1.25" />
+      <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-500">
+        User · Not Found
+      </p>
+      <p class="text-[13px] text-zinc-600 dark:text-zinc-400">用户不存在或已停用</p>
     </div>
     <div
       v-else-if="isLoginRequired"
-      class="cf-fade-in rounded-2xl border border-black/[0.06] bg-[rgb(var(--cf-color-surface-card-rgb))] p-10 text-center dark:border-white/[0.06]"
+      class="cf-fade-in flex flex-col items-center gap-4 py-20 text-center"
     >
-      <Lock class="mx-auto mb-3 size-9 text-gray-400" :stroke-width="1.4" />
-      <p class="font-mono text-[13px] text-gray-500 dark:text-gray-400">需要登录后查看</p>
+      <Lock class="size-10 text-zinc-300 dark:text-zinc-700" :stroke-width="1.25" />
+      <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-500">
+        Sign In · Required
+      </p>
+      <p class="text-[13px] text-zinc-600 dark:text-zinc-400">需要登录后查看</p>
     </div>
     <div
       v-else-if="isPrivate || (!showCollections && !isOwn)"
-      class="cf-fade-in rounded-2xl border border-black/[0.06] bg-[rgb(var(--cf-color-surface-card-rgb))] p-10 text-center dark:border-white/[0.06]"
+      class="cf-fade-in flex flex-col items-center gap-4 py-20 text-center"
     >
-      <Lock class="mx-auto mb-3 size-9 text-gray-400" :stroke-width="1.4" />
-      <p class="font-mono text-[13px] text-gray-500 dark:text-gray-400">该用户的收藏夹不公开</p>
+      <Lock class="size-10 text-zinc-300 dark:text-zinc-700" :stroke-width="1.25" />
+      <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-500">
+        Private · Collections
+      </p>
+      <p class="text-[13px] text-zinc-600 dark:text-zinc-400">该用户的收藏夹不公开</p>
     </div>
 
-    <!-- 主体：左树 + 右内容 -->
-    <div v-else class="grid grid-cols-1 gap-5 lg:grid-cols-[280px_1fr]">
+    <!-- 主体：左树 + 右内容（去除 rounded 卡片框；用 divide-x + 内边距分栏） -->
+    <div v-else class="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr] lg:gap-10">
       <!-- 移动端：水平 chip 选择器（root 列表） -->
       <div
         v-if="mobileRootList.length"
@@ -354,12 +437,12 @@ watch(
             v-for="(root, idx) in mobileRootList"
             :key="root.id"
             type="button"
-            class="cf-chip group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-full border border-black/[0.08] bg-[rgb(var(--cf-color-surface-card-rgb))] px-3.5 py-2 text-[12.5px] font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-300 dark:border-white/[0.08] dark:hover:border-amber-400/40"
-            :class="
+            :class="[
+              'cf-chip group inline-flex shrink-0 cursor-pointer items-center gap-2 border border-zinc-200 bg-white px-3.5 py-2 text-[12.5px] font-medium transition-colors duration-200 active:scale-[0.97] dark:border-zinc-800 dark:bg-transparent',
               selectedId === root.id
-                ? 'border-amber-300 bg-amber-50 text-amber-800 shadow-[0_4px_14px_-6px_rgba(245,158,11,0.5)] dark:border-amber-400/40 dark:bg-amber-500/[0.08] dark:text-amber-200'
-                : 'text-gray-700 dark:text-gray-300'
-            "
+                ? 'border-amber-500 text-amber-700 dark:border-amber-400 dark:text-amber-300'
+                : 'text-zinc-700 hover:border-zinc-300 dark:text-zinc-300 dark:hover:border-zinc-700',
+            ]"
             :style="{ animationDelay: `${idx * 40 + 100}ms` }"
             @click="handleSelect(root)"
           >
@@ -370,48 +453,53 @@ watch(
               class="size-5 transition-transform duration-200 group-hover:scale-110"
               :class="selectedId === root.id ? 'scale-110' : ''"
             />
-            <span class="truncate max-w-[140px]">{{ root.name }}</span>
-            <span
-              class="rounded-full bg-black/[0.05] px-1.5 py-0.5 font-mono text-[10.5px] tabular-nums leading-none dark:bg-white/[0.06]"
-            >
+            <span class="max-w-[140px] truncate">{{ root.name }}</span>
+            <span class="font-mono text-[10.5px] tabular-nums opacity-60">
               {{ root.websiteCount }}
             </span>
           </button>
         </div>
       </div>
 
-      <!-- 左侧树（桌面） -->
+      <!-- 左侧树（桌面）：完全无卡片框；section 标签 + divide-y 行 -->
       <aside
-        class="cf-fade-in hidden self-start rounded-2xl border border-black/[0.06] bg-[rgb(var(--cf-color-surface-card-rgb))] p-3.5 lg:block dark:border-white/[0.06]"
+        class="cf-fade-in hidden self-start lg:block lg:border-r lg:border-zinc-200 lg:pr-6 dark:lg:border-zinc-900"
         style="animation-delay: 80ms"
       >
-        <div class="mb-3 flex items-center justify-between px-2">
+        <div
+          class="mb-4 flex items-center justify-between border-b border-zinc-200 pb-2.5 dark:border-zinc-900"
+        >
           <h2
-            class="font-mono text-[10.5px] uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500"
+            class="font-mono text-[10.5px] uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400"
           >
-            All Folders
+            Index
           </h2>
-          <span class="font-mono text-[10.5px] text-gray-400 dark:text-gray-500">
+          <span class="font-mono text-[10.5px] tabular-nums text-zinc-400 dark:text-zinc-600">
             {{ treeData?.roots.length ?? 0 }}
           </span>
         </div>
 
-        <div v-if="treeLoading" class="flex h-32 items-center justify-center text-gray-400">
-          <Loader2 class="size-5 animate-spin" :stroke-width="2" />
-        </div>
+        <!-- skeleton loading -->
+        <ul v-if="treeLoading" class="space-y-1">
+          <li v-for="i in 6" :key="i" class="cf-skeleton flex items-center gap-3 py-2.5">
+            <span class="h-3 w-5 bg-zinc-200/70 dark:bg-zinc-800/70" />
+            <span class="size-7 rounded bg-zinc-200/70 dark:bg-zinc-800/70" />
+            <span class="h-3 flex-1 bg-zinc-200/70 dark:bg-zinc-800/70" />
+          </li>
+        </ul>
         <div
           v-else-if="treeErrorMsg"
-          class="rounded-lg border border-red-200/70 bg-red-50/70 p-2.5 font-mono text-[11.5px] text-red-600 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400"
+          class="border-l-2 border-red-500 bg-transparent py-2 pl-3 font-mono text-[11.5px] text-red-600 dark:border-red-400 dark:text-red-400"
         >
           {{ treeErrorMsg }}
         </div>
         <div
           v-else-if="!treeData?.roots.length"
-          class="px-2 py-6 text-center font-mono text-[12px] text-gray-400 dark:text-gray-500"
+          class="py-6 text-center font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-400 dark:text-zinc-600"
         >
-          暂无公开收藏夹
+          Empty · No Folders
         </div>
-        <ul v-else class="space-y-1">
+        <ul v-else class="divide-y divide-zinc-100 dark:divide-zinc-900/80">
           <li v-for="(node, idx) in treeData.roots" :key="node.id">
             <FolderTreeRow
               :node="node"
@@ -425,296 +513,356 @@ watch(
         </ul>
       </aside>
 
-      <!-- 右侧内容 -->
-      <main
-        class="cf-fade-in min-h-[420px] rounded-2xl border border-black/[0.06] bg-[rgb(var(--cf-color-surface-card-rgb))] p-4 sm:p-5 dark:border-white/[0.06]"
-        style="animation-delay: 120ms"
-      >
+      <!-- 右侧内容（无卡片框；section 用 mono 标签 + divide-y 行流） -->
+      <main class="cf-fade-in min-h-[420px]" style="animation-delay: 120ms">
+        <!-- 选中夹标题区：超大 folder.png + 大字标题 + mono 副标题，hairline 分隔 -->
         <header
-          class="mb-5 flex items-center gap-3.5 border-b border-black/[0.06] pb-4 dark:border-white/[0.06]"
+          class="mb-7 flex items-end gap-4 border-b border-zinc-200 pb-5 sm:gap-5 dark:border-zinc-900"
         >
-          <span
-            class="cf-folder-badge relative flex size-12 shrink-0 items-center justify-center sm:size-14"
-          >
-            <img
-              :src="folderIcon"
-              alt=""
-              aria-hidden="true"
-              class="size-12 sm:size-14 drop-shadow-[0_4px_10px_rgba(245,158,11,0.25)]"
-              loading="lazy"
-            />
-          </span>
-          <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+          <img
+            :src="folderIcon"
+            alt=""
+            aria-hidden="true"
+            class="cf-header-folder size-14 shrink-0 sm:size-16"
+            loading="lazy"
+          />
+          <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span
+              class="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-600 dark:text-amber-400"
+            >
+              Folder
+            </span>
             <h2
-              class="truncate text-[16px] font-bold text-gray-900 sm:text-[17px] dark:text-white"
-              style="letter-spacing: -0.005em"
+              class="truncate text-[1.5rem] font-bold leading-tight text-zinc-900 sm:text-[1.75rem] dark:text-zinc-50"
+              style="letter-spacing: -0.015em"
             >
               {{ selectedNode?.name || '请选择收藏夹' }}
             </h2>
             <p
-              class="flex items-center gap-2 font-mono text-[11px] text-gray-500 dark:text-gray-400"
+              class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10.5px] uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-500"
             >
-              <span v-if="selectedNode">{{ selectedNode.websiteCount }} 个网站</span>
-              <span v-else>从左侧选择一个收藏夹查看内容</span>
-              <span v-if="childrenData?.subFolders.length" class="text-gray-400 dark:text-gray-500">
-                · {{ childrenData.subFolders.length }} 个子收藏夹
+              <span v-if="selectedNode" class="tabular-nums">
+                {{ selectedNode.websiteCount }} sources
+              </span>
+              <span v-else>Select a folder</span>
+              <span v-if="childrenData?.subFolders.length" class="tabular-nums">
+                · {{ childrenData.subFolders.length }} sub-folders
               </span>
             </p>
           </div>
         </header>
 
-        <div v-if="childrenLoading" class="flex h-48 items-center justify-center text-gray-400">
-          <Loader2 class="size-6 animate-spin" :stroke-width="2" />
-        </div>
-        <div
-          v-else-if="childrenErrorMsg"
-          class="rounded-lg border border-red-200/70 bg-red-50/70 p-3 font-mono text-[12.5px] text-red-600 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400"
-        >
-          {{ childrenErrorMsg }}
-        </div>
-        <template v-else-if="childrenData">
-          <!-- 子文件夹 -->
-          <section v-if="childrenData.subFolders.length" class="mb-6 space-y-3">
-            <h3
-              class="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500"
-            >
-              <span class="h-px w-6 bg-gradient-to-r from-amber-400/60 to-transparent" />
-              子收藏夹
-            </h3>
-            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-              <button
-                v-for="(sf, idx) in childrenData.subFolders"
-                :key="sf.id"
-                type="button"
-                class="cf-subfolder group flex cursor-pointer items-center gap-2.5 rounded-xl border border-black/[0.06] bg-[rgb(var(--cf-color-surface-card-rgb))] p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-300/80 hover:shadow-[0_8px_20px_-12px_rgba(245,158,11,0.4)] dark:border-white/[0.06] dark:hover:border-amber-400/40 dark:hover:shadow-[0_8px_20px_-12px_rgba(0,0,0,0.6)]"
-                :style="{ animationDelay: `${idx * 35}ms` }"
-                @click="
-                  () => {
-                    selectedId = sf.id
-                    pageNum = 1
-                    if (!expandedIds.has(sf.parentId)) {
-                      const next = new Set(expandedIds)
-                      next.add(sf.parentId)
-                      expandedIds = next
-                    }
-                    void loadChildren()
-                  }
-                "
+        <!-- 内容切换用 out-in 过渡：确保 skeleton/错误/内容三态彻底顺序交接，根除闪白 -->
+        <Transition name="cf-content" mode="out-in">
+          <!-- skeleton loading: 4 行，shimmer -->
+          <ul
+            v-if="childrenLoading"
+            key="skeleton"
+            class="divide-y divide-zinc-100 dark:divide-zinc-900/80"
+          >
+            <li v-for="i in 4" :key="i" class="cf-skeleton flex items-center gap-4 py-5">
+              <span class="size-12 shrink-0 rounded bg-zinc-200/70 dark:bg-zinc-800/70" />
+              <span class="flex flex-1 flex-col gap-2">
+                <span class="h-4 w-1/3 bg-zinc-200/70 dark:bg-zinc-800/70" />
+                <span class="h-3 w-2/3 bg-zinc-200/70 dark:bg-zinc-800/70" />
+              </span>
+              <span class="hidden gap-6 sm:flex">
+                <span class="h-3 w-10 bg-zinc-200/70 dark:bg-zinc-800/70" />
+                <span class="h-3 w-10 bg-zinc-200/70 dark:bg-zinc-800/70" />
+                <span class="h-3 w-10 bg-zinc-200/70 dark:bg-zinc-800/70" />
+                <span class="h-3 w-10 bg-zinc-200/70 dark:bg-zinc-800/70" />
+              </span>
+            </li>
+          </ul>
+
+          <div
+            v-else-if="childrenErrorMsg"
+            key="error"
+            class="border-l-2 border-red-500 py-2 pl-3 font-mono text-[12px] text-red-600 dark:border-red-400 dark:text-red-400"
+          >
+            {{ childrenErrorMsg }}
+          </div>
+
+          <!-- 内容区：整块用 selectedId-pageNum 作 key，确保切夹/翻页都是干净的 unmount→mount -->
+          <div
+            v-else-if="childrenData"
+            :key="`content-${selectedId}-${pageNum}`"
+            class="cf-content-block"
+          >
+            <!-- 子收藏夹（横向滚动 chip 行，无卡片网格） -->
+            <section v-if="childrenData.subFolders.length" class="mb-8">
+              <h3
+                class="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-500"
               >
+                <span class="h-px w-6 bg-zinc-300 dark:bg-zinc-700" />
+                Sub-Folders
+              </h3>
+              <div class="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+                <div class="flex min-w-min gap-2 pb-1">
+                  <button
+                    v-for="(sf, idx) in childrenData.subFolders"
+                    :key="sf.id"
+                    type="button"
+                    class="cf-subfolder group inline-flex shrink-0 cursor-pointer items-center gap-2.5 border border-zinc-200 bg-transparent px-3.5 py-2 text-left transition-colors duration-200 hover:border-amber-500 active:scale-[0.98] dark:border-zinc-800 dark:hover:border-amber-400"
+                    :style="{ animationDelay: `${idx * 35}ms` }"
+                    @click="jumpToSubFolder(sf)"
+                  >
+                    <img
+                      :src="folderIcon"
+                      alt=""
+                      aria-hidden="true"
+                      class="size-7 shrink-0 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-[-4deg]"
+                      loading="lazy"
+                    />
+                    <span class="flex min-w-0 flex-col">
+                      <span
+                        class="max-w-[160px] truncate text-[12.5px] font-medium text-zinc-800 group-hover:text-amber-700 dark:text-zinc-200 dark:group-hover:text-amber-300"
+                      >
+                        {{ sf.name }}
+                      </span>
+                      <span
+                        class="font-mono text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600"
+                      >
+                        <span class="tabular-nums">{{ sf.websiteCount }}</span>
+                        sources
+                      </span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <!-- 网站列表（divide-y 行流；右侧 4 列 mono stats 替代 URL） -->
+            <section>
+              <h3
+                class="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-500"
+              >
+                <span class="h-px w-6 bg-zinc-300 dark:bg-zinc-700" />
+                Sources
+                <span class="text-zinc-400 dark:text-zinc-600">·</span>
+                <span class="tabular-nums text-zinc-700 dark:text-zinc-300">
+                  {{ childrenData.websites.total }}
+                </span>
+              </h3>
+
+              <!-- 网站行：不再用 transition-group（避免 absolute-leave 浮层遮盖新内容造成闪白）。
+                 父级已被 <Transition> + :key 包裹，整块会干净重挂载；
+                 每个 <li> 用 cfFadeInUp CSS 动画做级联入场，动画 delay 即 stagger。 -->
+              <ul
+                v-if="childrenData.websites.list.length"
+                class="divide-y divide-zinc-100 dark:divide-zinc-900/80"
+              >
+                <li
+                  v-for="(site, idx) in childrenData.websites.list"
+                  :key="site.id"
+                  class="cf-card-item relative"
+                  :style="{ animationDelay: `${Math.min(idx * 40, 360)}ms` }"
+                >
+                  <a
+                    :href="site.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="cf-website-row group relative flex flex-col gap-3 px-3 py-4 transition-colors duration-200 hover:bg-zinc-100/60 active:scale-[0.995] sm:grid sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-5 sm:px-4 sm:py-5 dark:hover:bg-white/[0.025]"
+                  >
+                    <!-- 编辑式 mono 索引（仅桌面） -->
+                    <span
+                      class="hidden shrink-0 self-start pt-1.5 font-mono text-[10.5px] tabular-nums tracking-wider text-zinc-300 transition-colors group-hover:text-amber-500 sm:block dark:text-zinc-700 dark:group-hover:text-amber-400"
+                    >
+                      {{ String((pageNum - 1) * PAGE_SIZE + idx + 1).padStart(2, '0') }}
+                    </span>
+
+                    <!-- 标题 + 描述（移动端图标内联在标题左侧） -->
+                    <div class="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
+                      <span
+                        class="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded border border-zinc-200 bg-white sm:size-12 dark:border-zinc-800 dark:bg-zinc-950"
+                      >
+                        <img
+                          :src="site.cover || websitePlaceholder(site.title)"
+                          :alt="site.title"
+                          class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          referrerpolicy="no-referrer"
+                          loading="lazy"
+                        />
+                      </span>
+                      <div class="flex min-w-0 flex-1 flex-col gap-1">
+                        <div class="flex items-center gap-2">
+                          <h4
+                            class="truncate text-[15px] font-semibold leading-tight text-zinc-900 transition-colors group-hover:text-amber-700 dark:text-zinc-50 dark:group-hover:text-amber-300"
+                            style="letter-spacing: -0.005em"
+                          >
+                            {{ site.title }}
+                          </h4>
+                          <span
+                            v-if="site.categoryName"
+                            class="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-600 sm:inline-flex dark:text-amber-400"
+                          >
+                            · {{ site.categoryName }}
+                          </span>
+                        </div>
+                        <p
+                          v-if="site.description"
+                          class="line-clamp-1 max-w-[65ch] text-[12.5px] leading-5 text-zinc-500 dark:text-zinc-400"
+                        >
+                          {{ site.description }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- 右侧 stats：4 列等宽 mono 数字（评分/点赞/收藏/浏览），完全取代 URL -->
+                    <dl
+                      class="grid grid-cols-4 gap-x-3 gap-y-1 border-t border-zinc-100 pt-3 sm:gap-x-5 sm:border-0 sm:pt-0 dark:border-zinc-900/80"
+                    >
+                      <div class="flex flex-col items-end gap-0.5">
+                        <dt
+                          class="font-mono text-[9.5px] uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-600"
+                        >
+                          Score
+                        </dt>
+                        <dd
+                          class="inline-flex items-center gap-1 font-mono text-[13px] font-semibold tabular-nums text-zinc-900 dark:text-zinc-100"
+                        >
+                          <Star
+                            class="size-3.5 fill-amber-400 text-amber-400"
+                            :stroke-width="1.5"
+                          />
+                          {{ formatScore(site.score) }}
+                        </dd>
+                      </div>
+                      <div class="flex flex-col items-end gap-0.5">
+                        <dt
+                          class="font-mono text-[9.5px] uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-600"
+                        >
+                          Likes
+                        </dt>
+                        <dd
+                          class="inline-flex items-center gap-1 font-mono text-[13px] font-medium tabular-nums text-zinc-700 dark:text-zinc-300"
+                        >
+                          <img
+                            :src="websiteLikeIcon"
+                            alt=""
+                            aria-hidden="true"
+                            class="size-3.5 opacity-80"
+                          />
+                          {{ formatCount(site.likeCount) }}
+                        </dd>
+                      </div>
+                      <div class="flex flex-col items-end gap-0.5">
+                        <dt
+                          class="font-mono text-[9.5px] uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-600"
+                        >
+                          Saves
+                        </dt>
+                        <dd
+                          class="inline-flex items-center gap-1 font-mono text-[13px] font-medium tabular-nums text-zinc-700 dark:text-zinc-300"
+                        >
+                          <img
+                            :src="websiteCollectionIcon"
+                            alt=""
+                            aria-hidden="true"
+                            class="size-3.5 opacity-80"
+                          />
+                          {{ formatCount(site.collectCount) }}
+                        </dd>
+                      </div>
+                      <div class="flex flex-col items-end gap-0.5">
+                        <dt
+                          class="font-mono text-[9.5px] uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-600"
+                        >
+                          Views
+                        </dt>
+                        <dd
+                          class="inline-flex items-center gap-1 font-mono text-[13px] font-medium tabular-nums text-zinc-700 dark:text-zinc-300"
+                        >
+                          <img
+                            :src="websiteClickIcon"
+                            alt=""
+                            aria-hidden="true"
+                            class="size-3.5 opacity-80"
+                          />
+                          {{ formatCount(site.clickCount) }}
+                        </dd>
+                      </div>
+                    </dl>
+
+                    <!-- 末端：极简外链箭头 -->
+                    <span
+                      class="hidden shrink-0 items-center justify-center self-stretch text-zinc-300 transition-all duration-200 group-hover:text-amber-500 sm:flex dark:text-zinc-700 dark:group-hover:text-amber-400"
+                    >
+                      <ArrowUpRight
+                        class="size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                        :stroke-width="2"
+                      />
+                    </span>
+
+                    <!-- 移动端外链小图标固定在右上 -->
+                    <ExternalLink
+                      class="absolute right-3 top-4 size-3.5 text-zinc-300 transition-colors group-hover:text-amber-500 sm:hidden dark:text-zinc-700"
+                      :stroke-width="2"
+                    />
+                  </a>
+                </li>
+              </ul>
+
+              <!-- 空态：编辑式无卡片 -->
+              <div v-else class="flex flex-col items-center justify-center gap-4 py-16 text-center">
                 <img
                   :src="folderIcon"
                   alt=""
                   aria-hidden="true"
-                  class="size-8 shrink-0 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-[-4deg]"
-                  loading="lazy"
+                  class="size-12 opacity-30 grayscale"
                 />
-                <div class="flex min-w-0 flex-1 flex-col">
-                  <span
-                    class="truncate text-[12.5px] font-semibold text-gray-800 dark:text-gray-100"
-                  >
-                    {{ sf.name }}
-                  </span>
-                  <span class="font-mono text-[10.5px] text-gray-400 dark:text-gray-500">
-                    {{ sf.websiteCount }} 个网站
-                  </span>
-                </div>
-              </button>
-            </div>
-          </section>
-
-          <!-- 网站列表 -->
-          <section class="space-y-3">
-            <h3
-              class="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500"
-            >
-              <span class="h-px w-6 bg-gradient-to-r from-amber-400/60 to-transparent" />
-              网站
-              <span class="text-gray-400 dark:text-gray-500">·</span>
-              <span class="tabular-nums">{{ childrenData.websites.total }}</span>
-            </h3>
-
-            <transition-group
-              v-if="childrenData.websites.list.length"
-              tag="ul"
-              name="cf-card-list"
-              class="flex flex-col gap-2"
-            >
-              <li
-                v-for="(site, idx) in childrenData.websites.list"
-                :key="`${selectedId}-${pageNum}-${site.id}`"
-                class="cf-card-item"
-                :style="{ animationDelay: `${Math.min(idx * 40, 360)}ms` }"
-              >
-                <a
-                  :href="site.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="cf-website-card group relative flex flex-col gap-3 overflow-hidden rounded-xl border border-black/[0.06] bg-[rgb(var(--cf-color-surface-card-rgb))] p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-300/80 hover:bg-amber-50/40 hover:shadow-[0_10px_30px_-15px_rgba(245,158,11,0.45)] sm:flex-row sm:items-center sm:gap-4 dark:border-white/[0.06] dark:hover:border-amber-400/40 dark:hover:bg-amber-500/[0.04] dark:hover:shadow-[0_10px_30px_-15px_rgba(0,0,0,0.7)]"
+                <p
+                  class="font-mono text-[10.5px] uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-500"
                 >
-                  <!-- 网站封面/图标 -->
-                  <div
-                    class="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-black/[0.06] bg-gradient-to-br from-amber-50 to-white sm:size-14 dark:border-white/[0.06] dark:from-amber-500/[0.04] dark:to-transparent"
-                  >
-                    <img
-                      :src="site.cover || websitePlaceholder(site.title)"
-                      :alt="site.title"
-                      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      referrerpolicy="no-referrer"
-                      loading="lazy"
-                    />
-                  </div>
+                  Empty · No Sources
+                </p>
+              </div>
 
-                  <!-- 中部：标题 / 描述 / 统计 -->
-                  <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <div class="flex items-center gap-1.5">
-                      <h4
-                        class="truncate text-[14px] font-semibold text-gray-900 transition-colors group-hover:text-amber-700 dark:text-gray-100 dark:group-hover:text-amber-300"
-                      >
-                        {{ site.title }}
-                      </h4>
-                      <span
-                        v-if="site.categoryName"
-                        class="hidden shrink-0 rounded-md bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] tracking-wide text-amber-700 sm:inline-flex dark:bg-amber-500/[0.08] dark:text-amber-300"
-                      >
-                        {{ site.categoryName }}
-                      </span>
-                    </div>
-                    <p
-                      v-if="site.description"
-                      class="line-clamp-1 text-[12px] leading-5 text-gray-500 dark:text-gray-400"
-                    >
-                      {{ site.description }}
-                    </p>
-
-                    <!-- 统计行：评分 / 点赞 / 收藏 / 浏览 -->
-                    <div
-                      class="flex flex-wrap items-center gap-x-3.5 gap-y-1 font-mono text-[11px] text-gray-500 dark:text-gray-400"
-                    >
-                      <span class="inline-flex items-center gap-1">
-                        <Star class="size-3.5 fill-amber-400 text-amber-400" :stroke-width="1.5" />
-                        <span class="font-semibold tabular-nums text-gray-700 dark:text-gray-200">
-                          {{ formatScore(site.score) }}
-                        </span>
-                      </span>
-                      <span class="inline-flex items-center gap-1">
-                        <img
-                          :src="websiteLikeIcon"
-                          alt=""
-                          aria-hidden="true"
-                          class="size-3.5 opacity-80"
-                        />
-                        <span class="tabular-nums">{{ site.likeCount }}</span>
-                      </span>
-                      <span class="inline-flex items-center gap-1">
-                        <img
-                          :src="websiteCollectionIcon"
-                          alt=""
-                          aria-hidden="true"
-                          class="size-3.5 opacity-80"
-                        />
-                        <span class="tabular-nums">{{ site.collectCount }}</span>
-                      </span>
-                      <span class="inline-flex items-center gap-1">
-                        <img
-                          :src="websiteClickIcon"
-                          alt=""
-                          aria-hidden="true"
-                          class="size-3.5 opacity-80"
-                        />
-                        <span class="tabular-nums">{{ site.clickCount }}</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- 右侧：URL host + 外链 -->
-                  <div
-                    class="hidden shrink-0 items-center gap-2 self-stretch border-l border-black/[0.06] pl-4 sm:flex dark:border-white/[0.06]"
-                  >
-                    <span
-                      class="max-w-[180px] truncate font-mono text-[11.5px] text-gray-500 transition-colors group-hover:text-amber-600 dark:text-gray-400 dark:group-hover:text-amber-400"
-                    >
-                      {{ extractHost(site.url) }}
-                    </span>
-                    <span
-                      class="flex size-7 items-center justify-center rounded-md border border-black/[0.06] text-gray-400 transition-all duration-200 group-hover:border-amber-300 group-hover:bg-amber-50 group-hover:text-amber-600 dark:border-white/[0.06] dark:group-hover:border-amber-400/40 dark:group-hover:bg-amber-500/[0.08] dark:group-hover:text-amber-300"
-                    >
-                      <ExternalLink class="size-3.5" :stroke-width="2" />
-                    </span>
-                  </div>
-
-                  <!-- 移动端：URL 外链行（行底） -->
-                  <div
-                    class="flex items-center justify-between gap-2 border-t border-black/[0.06] pt-2 sm:hidden dark:border-white/[0.06]"
-                  >
-                    <span
-                      v-if="site.categoryName"
-                      class="rounded-md bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] text-amber-700 dark:bg-amber-500/[0.08] dark:text-amber-300"
-                    >
-                      {{ site.categoryName }}
-                    </span>
-                    <span class="ml-auto inline-flex items-center gap-1.5">
-                      <span
-                        class="max-w-[160px] truncate font-mono text-[11px] text-gray-500 dark:text-gray-400"
-                      >
-                        {{ extractHost(site.url) }}
-                      </span>
-                      <ExternalLink
-                        class="size-3.5 text-gray-400 group-hover:text-amber-500"
-                        :stroke-width="2"
-                      />
-                    </span>
-                  </div>
-
-                  <!-- 底部 hover 强调线 -->
-                  <span
-                    class="pointer-events-none absolute inset-x-0 bottom-0 h-px scale-x-0 bg-gradient-to-r from-transparent via-amber-400/70 to-transparent transition-transform duration-300 group-hover:scale-x-100"
+              <!-- 分页：极简 mono pager -->
+              <nav
+                v-if="showPagination"
+                class="mt-6 flex items-center justify-between border-t border-zinc-200 pt-5 dark:border-zinc-900"
+                aria-label="分页"
+              >
+                <button
+                  type="button"
+                  class="group inline-flex cursor-pointer items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-amber-600 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-zinc-500 dark:text-zinc-400 dark:hover:text-amber-400 dark:disabled:hover:text-zinc-400"
+                  :disabled="pageNum <= 1"
+                  @click="handlePageChange(pageNum - 1)"
+                >
+                  <ChevronLeft
+                    class="size-3.5 transition-transform duration-200 group-hover:-translate-x-0.5 group-disabled:transition-none"
+                    :stroke-width="2"
                   />
-                </a>
-              </li>
-            </transition-group>
-
-            <div
-              v-else
-              class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-black/[0.08] py-12 dark:border-white/[0.08]"
-            >
-              <img
-                :src="folderIcon"
-                alt=""
-                aria-hidden="true"
-                class="size-14 opacity-40 grayscale"
-              />
-              <p class="font-mono text-[12.5px] text-gray-400 dark:text-gray-500">暂无网站</p>
-            </div>
-
-            <!-- 分页 -->
-            <div
-              v-if="showPagination"
-              class="mt-5 flex flex-col items-stretch gap-2 border-t border-black/[0.06] pt-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 dark:border-white/[0.06]"
-            >
-              <UButton
-                variant="ghost"
-                class="h-8 px-3 text-[12px]"
-                :disabled="pageNum <= 1"
-                @click="handlePageChange(pageNum - 1)"
-              >
-                上一页
-              </UButton>
-              <span
-                class="text-center font-mono text-[11.5px] tabular-nums text-gray-500 dark:text-gray-400"
-              >
-                {{ pageNum }} / {{ totalPages }}
-              </span>
-              <UButton
-                variant="ghost"
-                class="h-8 px-3 text-[12px]"
-                :disabled="pageNum >= totalPages"
-                @click="handlePageChange(pageNum + 1)"
-              >
-                下一页
-              </UButton>
-            </div>
-          </section>
-        </template>
+                  Prev
+                </button>
+                <span
+                  class="font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-500"
+                >
+                  <span class="tabular-nums text-zinc-900 dark:text-zinc-100">
+                    {{ String(pageNum).padStart(2, '0') }}
+                  </span>
+                  <span class="mx-1 text-zinc-300 dark:text-zinc-700">/</span>
+                  <span class="tabular-nums">
+                    {{ String(totalPages).padStart(2, '0') }}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  class="group inline-flex cursor-pointer items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-amber-600 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-zinc-500 dark:text-zinc-400 dark:hover:text-amber-400 dark:disabled:hover:text-zinc-400"
+                  :disabled="pageNum >= totalPages"
+                  @click="handlePageChange(pageNum + 1)"
+                >
+                  Next
+                  <ChevronRight
+                    class="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-disabled:transition-none"
+                    :stroke-width="2"
+                  />
+                </button>
+              </nav>
+            </section>
+          </div>
+        </Transition>
       </main>
     </div>
   </div>
@@ -722,13 +870,13 @@ watch(
 
 <style scoped>
 .cf-fade-in {
-  animation: cfFadeInUp 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: cfFadeInUp 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes cfFadeInUp {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -736,58 +884,95 @@ watch(
   }
 }
 
-.cf-hero {
-  background-image:
-    radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.06), transparent 55%),
-    radial-gradient(circle at 0% 100%, rgba(217, 119, 6, 0.04), transparent 55%);
+/* hero 主标题：极轻微 letter-spacing tighten（编辑式） */
+.cf-hero-title {
+  letter-spacing: -0.025em;
 }
 
-:global(html.dark) .cf-hero {
-  background-image:
-    radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.05), transparent 55%),
-    radial-gradient(circle at 0% 100%, rgba(217, 119, 6, 0.04), transparent 55%);
-}
-
-.cf-hero-deco {
-  filter: saturate(0.9);
-  transform: rotate(-12deg);
+/* 选中夹标题旁的 folder.png：去除"塑料光泽"，仅做无渲染滤镜的尺寸放大 */
+.cf-header-folder {
+  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.04));
 }
 
 .cf-subfolder {
-  animation: cfFadeInUp 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: cfFadeInUp 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .cf-card-item {
-  animation: cfFadeInUp 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: cfFadeInUp 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .cf-chip {
-  animation: cfFadeInUp 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: cfFadeInUp 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* TransitionGroup move（翻页/切换收藏夹时的位置过渡） */
-.cf-card-list-move {
-  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.cf-card-list-leave-active {
-  position: absolute;
+/*
+ * 内容区 out-in 过渡：修复切换收藏夹/翻页时右侧出现旧数据一闪的根因。
+ * - enter-active 略慢一点，避免和 li 级 cfFadeInUp cascade 叠加显突兀
+ * - leave 较快，让 skeleton 或下一内容尽快入场
+ * - mode="out-in" 保证上一内容完全退出后新内容才进入，彻底无重叠
+ */
+.cf-content-enter-active {
   transition:
-    opacity 200ms ease,
-    transform 200ms ease;
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.cf-card-list-enter-from,
-.cf-card-list-leave-to {
+.cf-content-leave-active {
+  transition:
+    opacity 140ms ease-in,
+    transform 160ms ease-in;
+}
+.cf-content-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(6px);
+}
+.cf-content-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* skeleton：低饱和 shimmer，不抢视觉 */
+.cf-skeleton > * {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.cf-skeleton > *::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 100%
+  );
+  animation: cfShimmer 1.6s ease-in-out infinite;
+}
+:global(html.dark) .cf-skeleton > *::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    transparent 100%
+  );
+}
+@keyframes cfShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* 移动端水平滚动条样式 */
 .cf-public-collection .overflow-x-auto::-webkit-scrollbar {
-  height: 4px;
+  height: 3px;
 }
 .cf-public-collection .overflow-x-auto::-webkit-scrollbar-thumb {
-  background: rgba(245, 158, 11, 0.25);
-  border-radius: 2px;
+  background: rgba(245, 158, 11, 0.28);
+  border-radius: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -795,8 +980,9 @@ watch(
   .cf-card-item,
   .cf-subfolder,
   .cf-chip,
-  .cf-card-list-move,
-  .cf-card-list-leave-active {
+  .cf-content-enter-active,
+  .cf-content-leave-active,
+  .cf-skeleton > *::after {
     animation: none !important;
     transition: none !important;
   }

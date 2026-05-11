@@ -9,6 +9,7 @@ import type {
   TrendRange,
   TrendSeries,
 } from '@/api/user-profile-dashboard'
+import type { UserWebsiteSubmissionPage } from '@/types/user-website-submission'
 
 export type ProfileVisibility = 'public' | 'logged' | 'private'
 
@@ -96,6 +97,19 @@ export async function getPublicDashboard(
   const res = await getJson<ApiResult<PublicDashboardResponse>>(url)
   if (res.code !== 200 || !res.data) {
     throw Object.assign(new Error(res.msg || '获取公开主页看板失败'), { code: res.code })
+  }
+  return res.data
+}
+
+export async function getPublicApprovedSubmissions(
+  username: string,
+  limit = 5,
+): Promise<UserWebsiteSubmissionPage> {
+  const safeUsername = encodeURIComponent(username)
+  const url = `/api/user/profile/public/${safeUsername}/approved-submissions?limit=${limit}`
+  const res = await getJson<ApiResult<UserWebsiteSubmissionPage>>(url)
+  if (res.code !== 200 || !res.data) {
+    throw Object.assign(new Error(res.msg || '获取公开投稿列表失败'), { code: res.code })
   }
   return res.data
 }

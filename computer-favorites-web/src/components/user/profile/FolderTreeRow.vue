@@ -45,9 +45,7 @@ const hasChildren = computed(() => !!(props.node.children && props.node.children
 const isRoot = computed(() => props.depth === 0)
 
 /** 根级行展示 mono 编号 "01." "02."；子级用空白对齐保持网格感 */
-const indexLabel = computed(() =>
-  isRoot.value ? String(props.index + 1).padStart(2, '0') : '',
-)
+const indexLabel = computed(() => (isRoot.value ? String(props.index + 1).padStart(2, '0') : ''))
 
 const enterDelayMs = computed(() => Math.min(props.index * 36, 320))
 
@@ -83,9 +81,7 @@ const handleToggle = (ev: Event) => {
         v-if="indexLabel"
         :class="[
           'w-6 shrink-0 font-mono text-[10.5px] tabular-nums tracking-wider transition-colors',
-          isSelected
-            ? 'text-amber-500 dark:text-amber-400'
-            : 'text-zinc-400 dark:text-zinc-600',
+          isSelected ? 'text-amber-500 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-600',
         ]"
       >
         {{ indexLabel }}
@@ -125,9 +121,7 @@ const handleToggle = (ev: Event) => {
       <span
         :class="[
           'shrink-0 font-mono text-[11px] tabular-nums leading-none transition-colors',
-          isSelected
-            ? 'text-amber-500 dark:text-amber-400'
-            : 'text-zinc-400 dark:text-zinc-600',
+          isSelected ? 'text-amber-500 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-600',
         ]"
       >
         {{ node.websiteCount }}

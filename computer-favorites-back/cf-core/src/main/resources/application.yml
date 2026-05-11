@@ -11,6 +11,7 @@ spring:
     mcp:
       client:
         enabled: true
+        # 异步模式
         type: SYNC
         request-timeout: 30s
         streamable-http:

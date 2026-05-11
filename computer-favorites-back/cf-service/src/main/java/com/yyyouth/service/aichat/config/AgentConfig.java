@@ -6,6 +6,8 @@ import com.yyyouth.service.aichat.demo.domain.MyResponseType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.StructuredOutputValidationAdvisor;
 import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
@@ -13,7 +15,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.deepseek.DeepSeekChatModel;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.tool.ToolCallback;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -64,7 +66,7 @@ public class AgentConfig {
         log.info("创建deepseekChatClient !~!!!!!");
         ChatClient chatClient = ChatClient.builder(deepSeekChatModel)
                 .defaultSystem(SYSTEM_PROMPT)  // 设置默认系统提示
-                .defaultAdvisors(PromptChatMemoryAdvisor.builder(jdbcChatMemory).build())
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(jdbcChatMemory).build())
                 .defaultToolCallbacks(toolCallback) // 设置工具回调
                 .build();
         return chatClient;
@@ -76,7 +78,7 @@ public class AgentConfig {
         log.info("创建dashscopeChatClient !~!!!!!");
         ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)  // 设置默认系统提示
-                .defaultAdvisors(PromptChatMemoryAdvisor.builder(jdbcChatMemory).build())
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(jdbcChatMemory).build())
                 .defaultToolCallbacks(toolCallback) // 设置工具回调
                 .build();
         return chatClient;

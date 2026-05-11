@@ -2,6 +2,7 @@ package com.yyyouth.web.controller.user;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.yyyouth.common.web.HttpResult;
+import com.yyyouth.model.vo.user.UserWebsiteSubmissionPageVO;
 import com.yyyouth.model.vo.userstats.CategoryDistributionVO;
 import com.yyyouth.model.vo.userstats.ContributionGraphVO;
 import com.yyyouth.model.vo.userstats.DashboardOverviewVO;
@@ -19,6 +20,7 @@ import com.yyyouth.service.user.userstats.ProfilePublicService;
 import com.yyyouth.service.user.userstats.ProfilePublicService.ProfileVisibilityCheckResult;
 import com.yyyouth.service.user.userstats.PublicFolderService;
 import com.yyyouth.service.user.userstats.UploadImpactService;
+import com.yyyouth.service.user.website.UserWebsiteSubmissionService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.constraints.Max;
@@ -70,6 +72,7 @@ public class ProfilePublicController {
     private final ProfileDashboardService profileDashboardService;
     private final UploadImpactService uploadImpactService;
     private final PublicFolderService publicFolderService;
+    private final UserWebsiteSubmissionService userWebsiteSubmissionService;
 
     /**
      * 公开主页基础资料。
@@ -82,6 +85,20 @@ public class ProfilePublicController {
         log.info("[public-profile] viewer={} target={}", currentUserId, username);
         ProfilePublicVO vo = profilePublicService.getPublicProfile(username, currentUserId);
         return HttpResult.success(vo);
+    }
+
+    @ApiOperation(value = "公开主页审核通过投稿列表")
+    @GetMapping("/{username}/approved-submissions")
+    @RateLimit(key = "profile:approved-submissions:#{#username}:#{#loginId}", limit = 30, window = 1)
+    @AuditLog(action = "public-approved-submissions", description = "查询公开主页审核通过投稿，username=#{#username}")
+    public HttpResult getPublicApprovedSubmissions(
+            @PathVariable("username") @NotBlank String username,
+            @RequestParam(value = "limit", defaultValue = "5") @Min(1) @Max(50) Integer limit) {
+        Long currentUserId = currentUserIdOrNull();
+        log.info("[public-approved-submissions] viewer={} target={} limit={}", currentUserId, username, limit);
+        UserWebsiteSubmissionPageVO data = userWebsiteSubmissionService.queryPublicApprovedSubmissionPage(
+                username, currentUserId, limit);
+        return HttpResult.success(data);
     }
 
     /**

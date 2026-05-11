@@ -46,6 +46,8 @@ public interface UserWebsiteSubmissionService {
      */
     UserWebsiteSubmissionPageVO queryMySubmissionPage(UserWebsiteSubmissionQueryDTO queryDTO);
 
+    UserWebsiteSubmissionPageVO queryPublicApprovedSubmissionPage(String username, Long currentUserId, Integer limit);
+
     /**
      * 查询我的投稿详情
      *
