@@ -40,15 +40,98 @@
         <druid.version>1.2.23</druid.version>
         <redisson.version>3.45.0</redisson.version>
         <validator.version>3.4.12</validator.version>
-        <spring-ai.version>1.0.0</spring-ai.version>
+        <spring-ai.version>1.1.5</spring-ai.version>
         <lombok.version>1.18.38</lombok.version>
         <sensitive-word.version>0.29.3</sensitive-word.version>
+        <weaviate.version>6.2.0</weaviate.version>
+        <spring-ai-alibaba.agent.version>1.1.2.0</spring-ai-alibaba.agent.version>
+        <spring-ai-alibaba.dashboard.version>1.1.2.0</spring-ai-alibaba.dashboard.version>
     </properties>
 
     <dependencyManagement>
 
 
         <dependencies>
+
+
+
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-starter-vector-store-pinecone</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-starter-vector-store-milvus</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
+<!--         weaviate向量数据库   -->
+            <dependency>
+                <groupId>io.weaviate</groupId>
+                <artifactId>client6</artifactId>
+                <version>${weaviate.version}</version> <!-- Check latest version: https://github.com/weaviate/java-client -->
+            </dependency>
+            <!--         spring ai 相关-->
+
+
+<!--            weaviate 向量库-->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-weaviate-store</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
+
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-starter-model-deepseek</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-starter-mcp-client-webflux</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-markdown-document-reader</artifactId>
+                <version>${spring-ai.version}</version>
+
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-advisors-vector-store</artifactId>
+                <version>${spring-ai.version}</version>
+
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-starter-model-chat-memory-repository-jdbc</artifactId>
+                <version>${spring-ai.version}</version>
+
+            </dependency>
+
+
+            <!-- Spring AI Alibaba Agent Framework -->
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-agent-framework</artifactId>
+                <version>${spring-ai-alibaba.agent.version}</version>
+            </dependency>
+
+            <!-- DashScope ChatModel 支持（如果使用其他模型，请跳转 Spring AI 文档选择对应的 starter） -->
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
+                <version>${spring-ai-alibaba.dashboard.version}</version>
+            </dependency>
+
 
             <!-- 敏感词检测框架 -->
             <dependency>

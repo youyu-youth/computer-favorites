@@ -6,6 +6,10 @@ spring:
   ai:
     dash scope:
       api-key: ${model.api-key.dashboard:sk-placeholder}
+      #向量模型
+#      embedding:
+#        options:
+#          model: text-embedding-v4
     deepseek:
       api-key: ${model.api-key.deepseek}
     mcp:
@@ -25,6 +29,11 @@ spring:
           jdbc:
             initialize-schema: always
             schema: classpath:/sql/schema-mysql.sql
+    vectorstore:
+      pinecone:
+        api-key: ${cf.ai.pinecone.api-key}
+        index-name: ${cf.ai.pinecone.index-name}
+
   mail:
     host: ${CF_MAIL_HOST:127.0.0.1}
     port: ${CF_MAIL_PORT:25}
