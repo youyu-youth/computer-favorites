@@ -203,9 +203,7 @@ const buildWebsiteHref = (websiteId?: number): string =>
               上传网站（文件夹）
             </span>
             <span class="font-mono text-[10.5px] text-gray-500 dark:text-gray-400">
-              {{
-                profile.uploadedProjects.length >= 5 ? '5+' : profile.uploadedProjects.length
-              }}
+              {{ profile.uploadedProjects.length >= 5 ? '5+' : profile.uploadedProjects.length }}
               个网站
             </span>
           </div>
