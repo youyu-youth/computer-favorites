@@ -92,6 +92,20 @@ public class ProfileDashboardController {
     }
 
     /**
+     * 本人投稿分类分布
+     */
+    @ApiOperation(value = "投稿分类分布")
+    @GetMapping("/submitted-category-distribution")
+    @SaCheckLogin
+    @RateLimit(key = "profile:dashboard:#{#loginId}", limit = 30, window = 1)
+    @AuditLog(action = "submitted-category-distribution", description = "查询用户主页投稿分类分布")
+    public HttpResult submittedCategoryDistribution() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        log.info("[dashboard] submittedCategoryDistribution userId={}", userId);
+        return HttpResult.success(profileDashboardService.getSubmittedCategoryDistribution(userId));
+    }
+
+    /**
      * 技术雷达（6 维 + 语言占比）
      */
     @ApiOperation(value = "技术雷达")
