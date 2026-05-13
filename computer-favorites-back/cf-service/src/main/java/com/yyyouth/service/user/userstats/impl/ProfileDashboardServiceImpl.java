@@ -77,6 +77,7 @@ public class ProfileDashboardServiceImpl implements ProfileDashboardService {
     private static final long TTL_CATEGORY_SECONDS = 900L;
     private static final long TTL_RADAR_SECONDS = 1800L;
     private static final long TTL_TREND_SECONDS = 600L;
+    private static final long TTL_SUBMITTED_CATEGORY_SECONDS = 900L;
 
     private static final long JITTER_60_SECONDS = 60L;
     private static final long JITTER_120_SECONDS = 120L;
@@ -170,9 +171,9 @@ public class ProfileDashboardServiceImpl implements ProfileDashboardService {
     @Override
     public CategoryDistributionVO getSubmittedCategoryDistribution(Long userId) {
         validateUserId(userId);
-        String key = RedisConstant.USER_PROFILE_DASHBOARD_PREFIX + userId + ":submitted_category";
+        String key = RedisConstant.USER_PROFILE_DASHBOARD_PREFIX + userId + ":category:submitted";
         return redisCache.getOrLoad(key, CategoryDistributionVO.class,
-                TTL_CATEGORY_SECONDS, JITTER_60_SECONDS,
+                TTL_SUBMITTED_CATEGORY_SECONDS, JITTER_60_SECONDS,
                 () -> loadSubmittedCategoryDistribution(userId));
     }
 
