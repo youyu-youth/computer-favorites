@@ -15,6 +15,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
   getCategoryDistribution,
+  getSubmittedCategoryDistribution,
   getContributionGraph,
   getDashboardOverview,
   getTechRadar,
@@ -47,6 +48,7 @@ export const useProfileDashboardStore = defineStore('profileDashboard', () => {
   const category = ref<SectionState<CategoryDistribution>>(initial())
   const radar = ref<SectionState<TechRadar>>(initial())
   const trend = ref<SectionState<TrendSeries>>(initial())
+  const submittedCategory = ref<SectionState<CategoryDistribution>>(initial())
 
   const currentYear = ref<number>(new Date().getFullYear())
   const trendRange = ref<TrendRange>('30d')
@@ -74,7 +76,12 @@ export const useProfileDashboardStore = defineStore('profileDashboard', () => {
   }
 
   const setContext = (context?: DashboardRequestContext) => {
-    requestContext.value = context?.username ? { username: context.username } : {}
+    const nextUsername = context?.username
+    const prevUsername = requestContext.value.username
+    if (nextUsername !== prevUsername) {
+      submittedCategory.value = initial()
+    }
+    requestContext.value = nextUsername ? { username: nextUsername } : {}
   }
 
   const buildInitialCacheKey = (context?: DashboardRequestContext) =>
@@ -88,6 +95,12 @@ export const useProfileDashboardStore = defineStore('profileDashboard', () => {
 
   const loadOverview = () => handle(overview, () => getDashboardOverview(requestContext.value))
   const loadCategory = () => handle(category, () => getCategoryDistribution(requestContext.value))
+
+  const loadSubmittedCategory = () =>
+    handle(submittedCategory, () =>
+      getSubmittedCategoryDistribution(requestContext.value),
+    )
+
   const loadRadar = () => handle(radar, () => getTechRadar(requestContext.value))
 
   const loadGraph = (year?: number) => {
@@ -130,6 +143,7 @@ export const useProfileDashboardStore = defineStore('profileDashboard', () => {
     category.value = initial()
     radar.value = initial()
     trend.value = initial()
+    submittedCategory.value = initial()
     currentYear.value = new Date().getFullYear()
     trendRange.value = '30d'
     trendMetric.value = 'pv'
@@ -144,6 +158,7 @@ export const useProfileDashboardStore = defineStore('profileDashboard', () => {
     category,
     radar,
     trend,
+    submittedCategory,
     currentYear,
     trendRange,
     trendMetric,
@@ -154,6 +169,7 @@ export const useProfileDashboardStore = defineStore('profileDashboard', () => {
     setContext,
     loadOverview,
     loadCategory,
+    loadSubmittedCategory,
     loadRadar,
     loadGraph,
     loadTrend,
