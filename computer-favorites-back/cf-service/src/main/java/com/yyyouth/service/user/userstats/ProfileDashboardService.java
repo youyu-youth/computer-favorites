@@ -34,6 +34,14 @@ public interface ProfileDashboardService {
     CategoryDistributionVO getCategoryDistribution(Long userId);
 
     /**
+     * 投稿分类分布（仅 source=1 + audit_status=1 + deleted=0，按 category_id 分组 TOP8+其他）
+     *
+     * @param userId 用户 ID
+     * @return 投稿分类分布 VO
+     */
+    CategoryDistributionVO getSubmittedCategoryDistribution(Long userId);
+
+    /**
      * 技术雷达（6 维能力 + 用户技术栈语言占比）
      */
     TechRadarVO getTechRadar(Long userId);

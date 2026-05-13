@@ -168,6 +168,15 @@ public class ProfileDashboardServiceImpl implements ProfileDashboardService {
     }
 
     @Override
+    public CategoryDistributionVO getSubmittedCategoryDistribution(Long userId) {
+        validateUserId(userId);
+        String key = RedisConstant.USER_PROFILE_DASHBOARD_PREFIX + userId + ":submitted_category";
+        return redisCache.getOrLoad(key, CategoryDistributionVO.class,
+                TTL_CATEGORY_SECONDS, JITTER_60_SECONDS,
+                () -> loadSubmittedCategoryDistribution(userId));
+    }
+
+    @Override
     public TechRadarVO getTechRadar(Long userId) {
         validateUserId(userId);
         String key = RedisConstant.USER_PROFILE_DASHBOARD_PREFIX + userId + ":radar";
