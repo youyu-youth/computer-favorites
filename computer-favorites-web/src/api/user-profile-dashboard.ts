@@ -155,6 +155,19 @@ export async function getCategoryDistribution(
   return res.data
 }
 
+/** 查询本人投稿分类分布 */
+export async function getSubmittedCategoryDistribution(
+  context?: DashboardRequestContext,
+): Promise<CategoryDistribution> {
+  const res = await getJson<ApiResult<CategoryDistribution>>(
+    buildDashboardUrl('submitted-category-distribution', context),
+  )
+  if (res.code !== 200 || !res.data) {
+    throw new Error(res.msg || '查询投稿分类失败')
+  }
+  return res.data
+}
+
 /** 查询技术雷达 */
 export async function getTechRadar(context?: DashboardRequestContext): Promise<TechRadar> {
   const res = await getJson<ApiResult<TechRadar>>(buildDashboardUrl('tech-radar', context))
