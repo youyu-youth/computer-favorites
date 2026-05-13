@@ -67,6 +67,7 @@ public class ProfilePublicController {
     private static final String SECTION_RADAR = "tech-radar";
     private static final String SECTION_TREND = "trend-series";
     private static final String SECTION_UPLOAD_IMPACT = "upload-impact";
+    private static final String SECTION_SUBMITTED_CATEGORY = "submitted-category-distribution";
 
     private final ProfilePublicService profilePublicService;
     private final ProfileDashboardService profileDashboardService;
@@ -156,11 +157,15 @@ public class ProfilePublicController {
                 TrendSeriesVO data = profileDashboardService.getTrendSeries(targetUserId, range, metric);
                 yield HttpResult.success(data);
             }
+            case SECTION_SUBMITTED_CATEGORY -> {
+                CategoryDistributionVO data = profileDashboardService.getSubmittedCategoryDistribution(targetUserId);
+                yield HttpResult.success(data);
+            }
             case SECTION_UPLOAD_IMPACT -> {
                 UploadImpactVO data = uploadImpactService.getUploadImpact(targetUserId, range);
                 yield HttpResult.success(data);
             }
-            default -> HttpResult.error(400, "未知 section：" + section + "（支持 overview / contribution-graph / category-distribution / tech-radar / trend-series / upload-impact）");
+            default -> HttpResult.error(400, "未知 section：" + section + "（支持 overview / contribution-graph / category-distribution / submitted-category-distribution / tech-radar / trend-series / upload-impact）");
         };
     }
 
