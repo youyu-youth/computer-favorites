@@ -1,6 +1,5 @@
 package com.yyyouth.service.user.folder.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yyyouth.common.constants.HttpStatus;
@@ -15,7 +14,7 @@ import com.yyyouth.model.vo.user.UserFolderCreateVO;
 import com.yyyouth.model.vo.user.UserFolderOptionsVO;
 import com.yyyouth.model.vo.user.UserFolderTreeVO;
 import com.yyyouth.service.mapper.user.UserCollectMapper;
-import com.yyyouth.service.redis.RedisCache;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.mapper.user.UserFolderMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.common.AuthContext;

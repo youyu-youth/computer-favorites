@@ -6,7 +6,7 @@ import com.yyyouth.model.enums.UserActivityType;
 import com.yyyouth.service.mapper.user.UserStatsDailyMapper;
 import com.yyyouth.service.mapper.user.UserStatsOverviewMapper;
 import com.yyyouth.service.mapper.user.UserTagAffinityMapper;
-import com.yyyouth.service.redis.RedisCache;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.user.userstats.UserStatsAggregateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

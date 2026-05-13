@@ -22,7 +22,7 @@ import com.yyyouth.model.vo.user.UserCollectStatsVO;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
 import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.UserFolderMapper;
-import com.yyyouth.service.redis.RedisCache;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
 import com.yyyouth.service.notification.MessageNotifyService;

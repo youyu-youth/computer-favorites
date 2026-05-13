@@ -1,12 +1,11 @@
 package com.yyyouth.service.user.userstats;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.yyyouth.model.pojo.user.UserStatsDaily;
 import com.yyyouth.model.pojo.user.UserStatsOverview;
 import com.yyyouth.service.mapper.user.UserStatsAggregateMapper;
 import com.yyyouth.service.mapper.user.UserStatsDailyMapper;
 import com.yyyouth.service.mapper.user.UserStatsOverviewMapper;
-import com.yyyouth.service.redis.RedisCache;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.user.userstats.impl.UserStatsRecomputeServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +26,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

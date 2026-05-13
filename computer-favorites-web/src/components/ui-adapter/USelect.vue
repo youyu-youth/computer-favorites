@@ -43,17 +43,18 @@ const wrapperClass = computed(() => [attrs.class])
 const ptConfig = computed(() => ({
   root: {
     class:
-      'cf-select-root relative inline-flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-colors duration-150 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/40 dark:border-white/[0.10] dark:bg-[#16161d] dark:text-white dark:focus-within:border-amber-400/60 dark:focus-within:bg-[#1c1c25] dark:focus-within:ring-amber-400/30',
+      'cf-select-root relative inline-flex w-full items-center gap-2 rounded-md border border-black/5 bg-white px-3 py-2 font-mono text-[12px] text-gray-900 transition-all duration-200 focus-within:border-amber-500/40 dark:border-white/[0.06] dark:bg-black dark:text-white dark:focus-within:border-amber-400/40',
   },
   label: {
-    class: 'flex-1 text-sm leading-6 outline-none',
+    class: 'flex-1 leading-6 outline-none',
   },
   dropdown: {
-    class: 'flex h-5 w-5 items-center justify-center text-slate-400 dark:text-slate-500',
+    class:
+      'flex h-4 w-4 items-center justify-center text-gray-400 transition-transform duration-200 group-data-[p-open]:rotate-180 dark:text-gray-500',
   },
   overlay: {
     class:
-      'cf-select-overlay z-[200] mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 dark:border-white/[0.12] dark:bg-[#1c1c25] dark:shadow-black/60 dark:ring-white/5',
+      'cf-select-overlay z-[200] mt-1 overflow-hidden rounded-md border border-black/5 bg-white shadow-[0_4px_12px_-6px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.03] dark:border-white/[0.06] dark:bg-black dark:shadow-[0_4px_12px_-6px_rgba(0,0,0,0.5)] dark:ring-white/[0.03]',
   },
   listContainer: {
     class: 'max-h-60 overflow-auto py-1',
@@ -63,10 +64,10 @@ const ptConfig = computed(() => ({
   },
   option: {
     class:
-      'cursor-pointer px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-amber-50 hover:text-amber-700 data-[p-highlight=true]:bg-amber-100/70 data-[p-highlight=true]:text-amber-700 dark:text-slate-200 dark:hover:bg-amber-500/10 dark:hover:text-amber-300 dark:data-[p-highlight=true]:bg-amber-500/15 dark:data-[p-highlight=true]:text-amber-300',
+      'cursor-pointer px-3 py-2 font-mono text-[12px] text-gray-700 transition-all duration-150 active:scale-[0.98] hover:bg-amber-50 hover:text-amber-700 data-[p-highlight=true]:bg-amber-100/70 data-[p-highlight=true]:text-amber-700 dark:text-gray-300 dark:hover:bg-amber-500/10 dark:hover:text-amber-300 dark:data-[p-highlight=true]:bg-amber-500/15 dark:data-[p-highlight=true]:text-amber-300',
   },
   emptyMessage: {
-    class: 'px-3 py-2 text-sm text-slate-500 dark:text-slate-400',
+    class: 'px-3 py-2 text-[12px] text-gray-400 dark:text-gray-500',
   },
 }))
 </script>
@@ -90,13 +91,18 @@ const ptConfig = computed(() => ({
   cursor: pointer;
 }
 
+:deep(.cf-select-root:active) {
+  transform: scale(0.99);
+}
+
 :deep(.cf-select-root[data-p-disabled='true']) {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: not-allowed;
+  transform: none;
 }
 
 :deep(.cf-select-root .p-select-label-empty) {
-  color: rgb(148 163 184);
+  color: rgb(156 163 175);
 }
 
 .dark :deep(.cf-select-root .p-select-label-empty) {
@@ -104,17 +110,18 @@ const ptConfig = computed(() => ({
 }
 
 :deep(.cf-select-overlay) {
-  animation: cfSelectOverlayIn 140ms ease-out;
+  animation: cfSelectOverlayIn 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top center;
 }
 
 @keyframes cfSelectOverlayIn {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(-6px) scale(0.97);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 </style>

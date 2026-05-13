@@ -10,7 +10,7 @@ import com.yyyouth.model.vo.userstats.UploadImpactVO.MetricGroupVO;
 import com.yyyouth.service.mapper.user.UploadImpactMapper;
 import com.yyyouth.service.mapper.user.dto.DateCountRow;
 import com.yyyouth.service.mapper.user.dto.WebsiteCounterRow;
-import com.yyyouth.service.redis.RedisCache;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.user.userstats.UploadImpactService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

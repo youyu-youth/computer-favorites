@@ -1,6 +1,7 @@
 package com.yyyouth.service.user.userstats;
 
 import com.yyyouth.model.dto.userstats.UserActivityEvent;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.mapper.user.UserStatsDailyMapper;
 import com.yyyouth.service.mapper.user.UserStatsOverviewMapper;
 import com.yyyouth.service.mapper.user.UserTagAffinityMapper;
@@ -12,7 +13,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.Cursor;
-import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
@@ -69,7 +69,7 @@ class UserStatsAggregateServiceImplTest {
     private Cursor cursor;
 
     @Mock
-    private com.yyyouth.service.redis.RedisCache redisCache;
+    private RedisCache redisCache;
 
     private UserStatsAggregateServiceImpl service;
 

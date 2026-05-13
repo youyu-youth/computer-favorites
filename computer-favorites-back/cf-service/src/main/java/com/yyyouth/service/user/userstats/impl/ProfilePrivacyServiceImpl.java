@@ -9,7 +9,7 @@ import com.yyyouth.model.pojo.auth.UserAccount;
 import com.yyyouth.model.pojo.user.UserSetting;
 import com.yyyouth.service.mapper.user.UserSettingMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
-import com.yyyouth.service.redis.RedisCache;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.user.userstats.ProfilePrivacyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

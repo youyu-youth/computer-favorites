@@ -1,4 +1,4 @@
-package com.yyyouth.service.redis;
+package com.yyyouth.service.config.redis;
 
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;

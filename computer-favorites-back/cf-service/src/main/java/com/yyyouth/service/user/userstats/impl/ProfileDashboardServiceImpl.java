@@ -30,7 +30,7 @@ import com.yyyouth.service.mapper.user.UserStatsOverviewMapper;
 import com.yyyouth.service.mapper.user.UserTagAffinityMapper;
 import com.yyyouth.service.mapper.website.CategoryMapper;
 import com.yyyouth.service.mapper.website.WebsiteMapper;
-import com.yyyouth.service.redis.RedisCache;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.user.userstats.ProfileDashboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

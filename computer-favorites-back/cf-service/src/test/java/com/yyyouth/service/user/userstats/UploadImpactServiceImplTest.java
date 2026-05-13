@@ -5,7 +5,7 @@ import com.yyyouth.model.vo.userstats.UploadImpactVO;
 import com.yyyouth.service.mapper.user.UploadImpactMapper;
 import com.yyyouth.service.mapper.user.dto.DateCountRow;
 import com.yyyouth.service.mapper.user.dto.WebsiteCounterRow;
-import com.yyyouth.service.redis.RedisCache;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.user.userstats.impl.UploadImpactServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

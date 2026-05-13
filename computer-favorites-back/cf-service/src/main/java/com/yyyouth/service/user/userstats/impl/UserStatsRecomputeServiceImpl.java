@@ -6,7 +6,7 @@ import com.yyyouth.model.pojo.user.UserStatsOverview;
 import com.yyyouth.service.mapper.user.UserStatsAggregateMapper;
 import com.yyyouth.service.mapper.user.UserStatsDailyMapper;
 import com.yyyouth.service.mapper.user.UserStatsOverviewMapper;
-import com.yyyouth.service.redis.RedisCache;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.user.userstats.UserStatsRecomputeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

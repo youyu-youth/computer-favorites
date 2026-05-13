@@ -17,7 +17,7 @@ import com.yyyouth.model.vo.userstats.PublicFolderTreeVO;
 import com.yyyouth.model.vo.userstats.PublicFolderWebsiteVO;
 import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.UserFolderMapper;
-import com.yyyouth.service.redis.RedisCache;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.user.userstats.ProfilePublicService;
 import com.yyyouth.service.user.userstats.PublicFolderService;
 import lombok.RequiredArgsConstructor;
