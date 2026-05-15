@@ -23,11 +23,11 @@
 
 | 文件 | 核心内容 |
 |------|---------|
-| `./rules/back-end.md` | DDD/TDD 方法论、技术栈版本、Maven 模块结构、包结构、注入/分层/权限规范 |
-| `./rules/back-coding-standards.md` | REST 接口规范、Jakarta Validation、@Builder、行尾注释禁令、类职责拆分 |
-| `./rules/bakc-ddd.md` | 领域模型组织、分层架构、统一语言、领域事件 |
-| `./rules/front-end.md` | 响应式/暗黑模式/PrimeVue+Tailwind 规范、技术栈、目录结构、主题规范 |
-| `./rules/redis-coding-standards.md` | Cache-Aside 模式、TTL+抖动/空值缓存/互斥锁/序列化、键设计 |
+| `.claude/rules/back-end.md` | DDD/TDD 方法论、技术栈版本、Maven 模块结构、包结构、注入/分层/权限规范 |
+| `.claude/rules/back-coding-standards.md` | REST 接口规范、Jakarta Validation、@Builder、行尾注释禁令、类职责拆分 |
+| `.claude/rules/bakc-ddd.md` | 领域模型组织、分层架构、统一语言、领域事件 |
+| `.claude/rules/front-end.md` | 响应式/暗黑模式/PrimeVue+Tailwind 规范、技术栈、目录结构、主题规范 |
+| `.claude/rules/redis-coding-standards.md` | Cache-Aside 模式、TTL+抖动/空值缓存/互斥锁/序列化、键设计 |
 
 ## 常用命令
 
