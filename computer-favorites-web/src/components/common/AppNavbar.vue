@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import PrimeButton from 'primevue/button'
-import Avatar from 'primevue/avatar'
 import FeedbackDialog from '@/components/user/FeedbackDialog.vue'
 import { logout as logoutApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
@@ -38,18 +37,35 @@ const logoutLoading = ref(false)
 const mobileMenuOpen = ref(false)
 const feedbackDialogOpen = ref(false)
 const createFolderDialogOpen = ref(false)
+const avatarLoadFailed = ref(false)
 const { unreadMessageCount, hasUnreadMessage, refreshUnreadCount, clearUnreadCount } =
   useUserMessageUnread()
 
 const displayName = computed(() => authStore.userSnapshot.nickname || t('user.profile.title'))
-const defaultAvatar = computed(
-  () => `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(displayName.value)}`,
-)
-const avatarSrc = computed(() => authStore.userSnapshot.avatar || defaultAvatar.value)
+const avatarSrc = computed(() => {
+  if (avatarLoadFailed.value) return undefined
+  const url = authStore.userSnapshot.avatar
+  return url || undefined
+})
 const initials = computed(() => {
   const text = displayName.value.trim()
   return text ? text.slice(0, 2).toUpperCase() : 'ME'
 })
+const avatarFallbackBg = computed(() => {
+  const colors = [
+    'bg-amber-500', 'bg-blue-500', 'bg-emerald-500', 'bg-rose-500',
+    'bg-violet-500', 'bg-cyan-500', 'bg-orange-500', 'bg-pink-500',
+  ]
+  let hash = 0
+  for (let i = 0; i < displayName.value.length; i++) {
+    hash = displayName.value.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return colors[Math.abs(hash) % colors.length]
+})
+
+const handleAvatarError = () => {
+  avatarLoadFailed.value = true
+}
 const isHomeRoute = computed(() => route.name === 'home')
 
 const goToLogin = () => {
@@ -220,6 +236,13 @@ watch(
   () => {
     profileMenuOpen.value = false
     mobileMenuOpen.value = false
+  },
+)
+
+watch(
+  () => authStore.userSnapshot.userId,
+  () => {
+    avatarLoadFailed.value = false
   },
 )
 
@@ -412,65 +435,77 @@ onBeforeUnmount(() => {
               class="grid h-9 w-9 cursor-pointer place-items-center rounded-full text-sm text-zinc-700 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:scale-[0.96] dark:text-zinc-300 dark:focus-visible:ring-offset-black"
               @click.stop="toggleProfileMenu"
             >
-              <Avatar
-                :image="avatarSrc"
-                shape="circle"
-                size="small"
-                class="h-8 w-8 overflow-hidden rounded-full ring-1 ring-inset ring-zinc-900/[0.08] dark:ring-white/10"
+              <img
+                v-if="avatarSrc"
+                :src="avatarSrc"
+                :alt="displayName"
+                class="h-8 w-8 rounded-full object-cover ring-1 ring-inset ring-zinc-900/[0.08] dark:ring-white/10"
+                @error="handleAvatarError"
+              />
+              <div
+                v-else
+                class="grid h-8 w-8 place-items-center rounded-full text-xs font-semibold text-white ring-1 ring-inset ring-zinc-900/[0.08] dark:ring-white/10"
+                :class="avatarFallbackBg"
               >
-                <span class="text-xs font-semibold">{{ initials }}</span>
-              </Avatar>
+                {{ initials }}
+              </div>
             </button>
             <Transition name="fade">
               <div
                 v-if="profileMenuOpen"
-                data-testid="profile-dropdown"
-                class="absolute right-0 mt-3 w-56 overflow-hidden rounded-2xl bg-white/95 p-1.5 ring-1 ring-zinc-900/[0.06] shadow-[0_20px_44px_-18px_rgba(15,23,42,0.22),0_2px_6px_-2px_rgba(15,23,42,0.08)] backdrop-blur-xl backdrop-saturate-150 dark:bg-zinc-950/85 dark:ring-white/[0.08] dark:shadow-[0_20px_44px_-18px_rgba(0,0,0,0.7)]"
+                class="absolute right-0 top-[100%]"
               >
-                <button type="button" class="cf-menu-item" @click="goToProfile">
-                  <User class="size-4" />
-                  {{ t('user.profile.title') }}
-                </button>
-                <button type="button" class="cf-menu-item" @click="goToWebsiteSubmissions">
-                  <FolderOpen class="size-4" />
-                  {{ t('user.profile.mySubmissions') }}
-                </button>
-                <button type="button" class="cf-menu-item" @click="goToCollection">
-                  <Bookmark class="size-4" />
-                  我的收藏夹
-                </button>
-                <button type="button" class="cf-menu-item" @click="openCreateFolderDialog">
-                  <FolderPlus class="size-4" />
-                  创建收藏夹
-                </button>
-                <button type="button" class="cf-menu-item" @click="goToMessageCenter">
-                  <Bell class="size-4" />
-                  消息通知
-                  <span
-                    v-if="hasUnreadMessage"
-                    class="ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-semibold leading-none text-white ring-2 ring-white dark:ring-zinc-950"
+                <div class="pt-3">
+                  <div
+                    data-testid="profile-dropdown"
+                    class="w-56 overflow-hidden rounded-2xl bg-white/95 p-1.5 ring-1 ring-zinc-900/[0.06] shadow-[0_20px_44px_-18px_rgba(15,23,42,0.22),0_2px_6px_-2px_rgba(15,23,42,0.08)] backdrop-blur-xl backdrop-saturate-150 dark:bg-zinc-950/85 dark:ring-white/[0.08] dark:shadow-[0_20px_44px_-18px_rgba(0,0,0,0.7)]"
                   >
-                    {{ unreadMessageCount > 99 ? '99+' : unreadMessageCount }}
-                  </span>
-                </button>
-                <button type="button" class="cf-menu-item" @click="goToSettings">
-                  <Settings class="size-4" />
-                  {{ t('settings.title') }}
-                </button>
-                <button type="button" class="cf-menu-item" @click="goToAccount">
-                  <IdCard class="size-4" />
-                  {{ t('settings.sidebar.account') }}
-                </button>
-                <div class="my-1 h-px bg-zinc-900/[0.06] dark:bg-white/[0.06]"></div>
-                <button
-                  type="button"
-                  :disabled="logoutLoading"
-                  class="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-rose-600 transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-rose-500/[0.08] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-500/[0.12]"
-                  @click="logout"
-                >
-                  <LogOut class="size-4" />
-                  {{ logoutLoading ? t('common.loading') : t('auth.logout.button') }}
-                </button>
+                    <button type="button" class="cf-menu-item" @click="goToProfile">
+                      <User class="size-4" />
+                      {{ t('user.profile.title') }}
+                    </button>
+                    <button type="button" class="cf-menu-item" @click="goToWebsiteSubmissions">
+                      <FolderOpen class="size-4" />
+                      {{ t('user.profile.mySubmissions') }}
+                    </button>
+                    <button type="button" class="cf-menu-item" @click="goToCollection">
+                      <Bookmark class="size-4" />
+                      我的收藏夹
+                    </button>
+                    <button type="button" class="cf-menu-item" @click="openCreateFolderDialog">
+                      <FolderPlus class="size-4" />
+                      创建收藏夹
+                    </button>
+                    <button type="button" class="cf-menu-item" @click="goToMessageCenter">
+                      <Bell class="size-4" />
+                      消息通知
+                      <span
+                        v-if="hasUnreadMessage"
+                        class="ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-semibold leading-none text-white ring-2 ring-white dark:ring-zinc-950"
+                      >
+                        {{ unreadMessageCount > 99 ? '99+' : unreadMessageCount }}
+                      </span>
+                    </button>
+                    <button type="button" class="cf-menu-item" @click="goToSettings">
+                      <Settings class="size-4" />
+                      {{ t('settings.title') }}
+                    </button>
+                    <button type="button" class="cf-menu-item" @click="goToAccount">
+                      <IdCard class="size-4" />
+                      {{ t('settings.sidebar.account') }}
+                    </button>
+                    <div class="my-1 h-px bg-zinc-900/[0.06] dark:bg-white/[0.06]"></div>
+                    <button
+                      type="button"
+                      :disabled="logoutLoading"
+                      class="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-rose-600 transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-rose-500/[0.08] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-500/[0.12]"
+                      @click="logout"
+                    >
+                      <LogOut class="size-4" />
+                      {{ logoutLoading ? t('common.loading') : t('auth.logout.button') }}
+                    </button>
+                  </div>
+                </div>
               </div>
             </Transition>
           </div>

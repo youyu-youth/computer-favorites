@@ -363,6 +363,7 @@ public class UserCollectServiceImpl implements UserCollectService {
                 .eq(Website::getId, websiteId)
                 .gt(Website::getCollectCount, -1)
                 .setSql("collect_count = collect_count + 1"));
+        evictWebsiteListCache();
     }
 
     /**
@@ -375,6 +376,18 @@ public class UserCollectServiceImpl implements UserCollectService {
                 .eq(Website::getId, websiteId)
                 .gt(Website::getCollectCount, 0)
                 .setSql("collect_count = collect_count - 1"));
+        evictWebsiteListCache();
+    }
+
+    /**
+     * 淘汰所有网站列表缓存（收藏量变更影响排序）
+     */
+    private void evictWebsiteListCache() {
+        try {
+            redisCache.evictByPattern(RedisConstant.WEBSITE_LIST_CACHE + ":*");
+        } catch (Exception e) {
+            log.warn("[website-list] evict cache fail, err={}", e.getMessage());
+        }
     }
 
     private UserCollectItemVO buildCollectItemVO(UserCollect collect, Map<Long, Website> websiteMap, Map<Long, UserWebsiteTagItemVO> tagItemMap) {

@@ -54,6 +54,15 @@ const websiteTags = ref<PublicWebsiteTagItem[]>([])
 const selectedTagIds = ref<number[]>([])
 const isTagLoading = ref(false)
 
+const SORT_OPTIONS = [
+  { label: '收藏量', value: 'collectCount' },
+  { label: '点击量', value: 'clickCount' },
+  { label: '上架时间', value: 'shelfTime' },
+]
+
+const sortField = ref<'collectCount' | 'clickCount' | 'shelfTime'>('collectCount')
+const sortOrder = ref<-1 | 1>(-1)
+
 const currentPage = ref(1)
 const pageSize = ref(20)
 const totalPages = ref(1)
@@ -167,6 +176,8 @@ const loadWebsiteData = async () => {
       categoryId: activeCategoryId.value > 0 ? activeCategoryId.value : undefined,
       keyword: keywordForQuery.value || undefined,
       tagIds: selectedTagIds.value.length > 0 ? selectedTagIds.value : undefined,
+      sortField: sortField.value,
+      sortOrder: sortOrder.value,
     })
 
     if (requestId !== latestRequestId) {
@@ -193,6 +204,14 @@ const loadWebsiteData = async () => {
 }
 
 watch(activeCategoryId, () => {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+    return
+  }
+  void loadWebsiteData()
+})
+
+watch([sortField, sortOrder], () => {
   if (currentPage.value !== 1) {
     currentPage.value = 1
     return
@@ -410,16 +429,33 @@ onUnmounted(() => {
                   class="bg-transparent border-none outline-none w-full text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:ring-0"
                 />
               </div>
-              <div class="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
+              <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                <USelect
+                  v-model="sortField"
+                  :options="SORT_OPTIONS"
+                  placeholder="排序"
+                  class="w-28"
+                />
                 <button
-                  class="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-1 text-gray-900 dark:text-white"
+                  type="button"
+                  class="cursor-pointer hover:text-amber-500 dark:hover:text-amber-400 transition-colors flex items-center justify-center w-7 h-7 rounded shrink-0"
+                  :title="sortOrder === -1 ? '降序' : '升序'"
+                  @click="sortOrder = sortOrder === -1 ? 1 : -1"
                 >
-                  点击量 ↓
-                </button>
-                <button
-                  class="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-                >
-                  收藏量
+                  <svg
+                    class="w-4 h-4 transition-transform duration-200"
+                    :class="{ 'rotate-180': sortOrder === 1 }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
                 </button>
               </div>
             </div>

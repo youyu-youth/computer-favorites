@@ -2,6 +2,7 @@ package com.yyyouth.model.dto.user;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -34,6 +35,19 @@ public class UserWebsiteQueryDTO {
      */
     @Size(max = 20, message = "标签筛选数量不能超过20")
     private List<@Positive(message = "标签ID必须为正数") Long> tagIds;
+
+    /**
+     * 排序字段：collectCount / clickCount / shelfTime
+     */
+    @Pattern(regexp = "^(collectCount|clickCount|shelfTime)$", message = "排序字段不合法")
+    private String sortField;
+
+    /**
+     * 排序方式：-1 降序 / 1 升序
+     */
+    @Min(value = -1, message = "排序方式不合法")
+    @Max(value = 1, message = "排序方式不合法")
+    private Integer sortOrder;
 
     /**
      * 页码

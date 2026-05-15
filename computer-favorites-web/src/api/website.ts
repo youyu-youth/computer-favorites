@@ -32,6 +32,14 @@ function buildListQueryString(query: PublicWebsiteListQuery): string {
     }
   }
 
+  if (query.sortField) {
+    params.set('sortField', query.sortField)
+  }
+
+  if (typeof query.sortOrder === 'number') {
+    params.set('sortOrder', String(query.sortOrder))
+  }
+
   return params.toString()
 }
 

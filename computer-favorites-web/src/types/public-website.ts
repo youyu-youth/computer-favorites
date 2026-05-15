@@ -4,6 +4,8 @@ export interface PublicWebsiteListQuery {
   categoryId?: number
   keyword?: string
   tagIds?: number[]
+  sortField?: 'collectCount' | 'clickCount' | 'shelfTime'
+  sortOrder?: -1 | 1
 }
 
 export type PublicWebsiteTagSortField =

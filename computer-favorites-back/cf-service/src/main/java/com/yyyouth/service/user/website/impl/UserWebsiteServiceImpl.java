@@ -3,10 +3,13 @@ package com.yyyouth.service.user.website.impl;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.yyyouth.common.constants.HttpStatus;
+import com.yyyouth.common.constants.RedisConstant;
 import com.yyyouth.common.exception.BusinessException;
 import com.yyyouth.model.dto.user.UserWebsiteQueryDTO;
 import com.yyyouth.model.pojo.admin.AdminAccount;
@@ -21,6 +24,7 @@ import com.yyyouth.model.vo.user.UserWebsiteDetailVO;
 import com.yyyouth.model.vo.user.UserWebsiteListItemVO;
 import com.yyyouth.model.vo.user.UserWebsitePageVO;
 import com.yyyouth.model.vo.user.UserWebsiteTagItemVO;
+import com.yyyouth.service.config.redis.RedisCache;
 import com.yyyouth.service.mapper.admin.auth.AdminAccountMapper;
 import com.yyyouth.service.mapper.user.UserCollectMapper;
 import com.yyyouth.service.mapper.user.auth.UserAccountMapper;
@@ -31,6 +35,7 @@ import com.yyyouth.service.mapper.website.WebsiteScoreMapper;
 import com.yyyouth.service.user.website.UserWebsiteService;
 import com.yyyouth.service.user.website.support.UserWebsiteTagSupport;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
@@ -50,6 +55,7 @@ import java.util.stream.Collectors;
  *
  * 用户端网站资源服务实现
  */
+@Slf4j
 @Service
 @Validated
 @RequiredArgsConstructor
@@ -73,6 +79,16 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
 
     private static final int DEFAULT_PAGE_SIZE = 12;
 
+    private static final String DEFAULT_SORT_FIELD = "collectCount";
+
+    private static final int DEFAULT_SORT_ORDER = -1;
+
+    /** 网站列表缓存 TTL：3 分钟 */
+    private static final long LIST_CACHE_TTL_SECONDS = 180L;
+
+    /** 网站列表缓存 TTL 抖动：±30 秒 */
+    private static final long LIST_CACHE_JITTER_SECONDS = 30L;
+
     private final WebsiteMapper websiteMapper;
 
     private final CategoryMapper categoryMapper;
@@ -89,14 +105,38 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
 
     private final UserWebsiteTagSupport userWebsiteTagSupport;
 
+    private final RedisCache redisCache;
+
     /**
-     * 查询网站分页列表
+     * 查询网站分页列表（Redis 缓存）
      *
      * @param queryDTO 查询参数
      * @return 分页结果
      */
     @Override
     public UserWebsitePageVO queryWebsitePage(UserWebsiteQueryDTO queryDTO) {
+        String sortField = queryDTO.getSortField() != null ? queryDTO.getSortField() : DEFAULT_SORT_FIELD;
+        int sortOrder = queryDTO.getSortOrder() != null ? queryDTO.getSortOrder() : DEFAULT_SORT_ORDER;
+
+        String cacheKey = buildListCacheKey(queryDTO, sortField, sortOrder);
+        log.debug("[website-list] 查询缓存 key={}, sortField={}, sortOrder={}", cacheKey, sortField, sortOrder);
+        return redisCache.getOrLoad(cacheKey, UserWebsitePageVO.class,
+            LIST_CACHE_TTL_SECONDS, LIST_CACHE_JITTER_SECONDS,
+            () -> {
+                log.debug("[website-list] 缓存未命中，回源数据库 sortField={}, sortOrder={}", sortField, sortOrder);
+                return queryWebsitePageFromDb(queryDTO, sortField, sortOrder);
+            });
+    }
+
+    /**
+     * 从数据库查询网站分页列表
+     *
+     * @param queryDTO 查询参数
+     * @param sortField 排序字段
+     * @param sortOrder 排序方向（-1 降序 / 1 升序）
+     * @return 分页结果
+     */
+    private UserWebsitePageVO queryWebsitePageFromDb(UserWebsiteQueryDTO queryDTO, String sortField, int sortOrder) {
         int pageNum = queryDTO.getPageNum() == null ? DEFAULT_PAGE_NUM : queryDTO.getPageNum();
         int pageSize = queryDTO.getPageSize() == null ? DEFAULT_PAGE_SIZE : queryDTO.getPageSize();
 
@@ -116,8 +156,15 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
         int offset = (pageNum - 1) * pageSize;
         LambdaQueryWrapper<Website> listQueryWrapper = buildPublishedWebsiteQueryWrapper(queryDTO)
                 .orderByDesc(Website::getIsTop)
-                .orderByAsc(Website::getSort)
-                .orderByDesc(Website::getUpdateTime)
+                .orderByAsc(Website::getSort);
+
+        SFunction<Website, ?> sortColumn = getSortColumn(sortField);
+        if (sortOrder >= 0) {
+            listQueryWrapper.orderByAsc(sortColumn);
+        } else {
+            listQueryWrapper.orderByDesc(sortColumn);
+        }
+        listQueryWrapper.orderByDesc(Website::getUpdateTime)
                 .last("limit " + offset + "," + pageSize);
 
         List<Website> websiteList = websiteMapper.selectList(listQueryWrapper);
@@ -250,6 +297,7 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
                 .eq(Website::getStatus, ONLINE_STATUS)
                 .eq(Website::getAuditStatus, AUDIT_APPROVED_STATUS)
                 .setSql("click_count = click_count + 1"));
+        evictWebsiteListCache();
     }
 
     /**
@@ -604,6 +652,55 @@ public class UserWebsiteServiceImpl implements UserWebsiteService {
             return Long.parseLong(valueText);
         } catch (NumberFormatException ex) {
             return null;
+        }
+    }
+
+    /**
+     * 构建网站列表缓存 key
+     *
+     * @param queryDTO 查询参数
+     * @param sortField 排序字段
+     * @param sortOrder 排序方向
+     * @return 缓存 key
+     */
+    private String buildListCacheKey(UserWebsiteQueryDTO queryDTO, String sortField, int sortOrder) {
+        StringBuilder raw = new StringBuilder();
+        raw.append(sortField).append(":");
+        raw.append(sortOrder).append(":");
+        raw.append(queryDTO.getCategoryId() != null ? queryDTO.getCategoryId() : 0).append(":");
+        raw.append(queryDTO.getKeyword() != null ? queryDTO.getKeyword().trim() : "").append(":");
+        if (CollUtil.isNotEmpty(queryDTO.getTagIds())) {
+            raw.append(queryDTO.getTagIds().stream().sorted().map(String::valueOf).collect(java.util.stream.Collectors.joining(",")));
+        }
+        raw.append(":");
+        raw.append(queryDTO.getPageNum() != null ? queryDTO.getPageNum() : 1).append(":");
+        raw.append(queryDTO.getPageSize() != null ? queryDTO.getPageSize() : DEFAULT_PAGE_SIZE);
+
+        return RedisConstant.WEBSITE_LIST_CACHE + ":" + DigestUtil.md5Hex(raw.toString());
+    }
+
+    /**
+     * 根据排序字段名获取 MyBatis-Plus 列映射
+     *
+     * @param sortField 排序字段名
+     * @return 列映射
+     */
+    private SFunction<Website, ?> getSortColumn(String sortField) {
+        return switch (sortField) {
+            case "clickCount" -> Website::getClickCount;
+            case "shelfTime" -> Website::getShelfTime;
+            default -> Website::getCollectCount;
+        };
+    }
+
+    /**
+     * 淘汰所有网站列表缓存
+     */
+    private void evictWebsiteListCache() {
+        try {
+            redisCache.evictByPattern(RedisConstant.WEBSITE_LIST_CACHE + ":*");
+        } catch (Exception e) {
+            log.warn("[website-list] evict cache fail, err={}", e.getMessage());
         }
     }
 }

@@ -82,4 +82,13 @@ public class RedisConstant {
      * 格式: lock:job:{jobName}
      */
     public static final String JOB_LOCK_PREFIX = "lock:job:";
+
+    // ========== 网站列表 ==========
+
+    /**
+     * 用户端网站列表分页缓存前缀
+     * 格式: website:list:{filterMd5}
+     * TTL: 3min +- 30s
+     */
+    public static final String WEBSITE_LIST_CACHE = "website:list";
 }
