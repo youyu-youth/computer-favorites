@@ -1,8 +1,8 @@
 package com.yyyouth.web.controller.agent;
 
-import cn.dev33.satoken.stp.StpAdminUtil;
 import com.yyyouth.model.dto.agent.AgentChatRequest;
 import com.yyyouth.service.aichat.chat.ChatOrchestrator;
+import com.yyyouth.service.user.auth.support.StpAdminUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -21,17 +21,18 @@ import org.springframework.web.bind.annotation.*;
 public class AgentPlanController {
 
     @PostMapping("/plan/confirm")
-    public HttpResult<AgentPlanVO> confirmPlan(@RequestBody @Valid AgentPlanConfirmRequest request) {
+    public HttpResult  confirmPlan(@RequestBody @Valid AgentPlanConfirmRequest request) {
         log.info("确认执行计划: planId={}", request.getPlanId());
         AgentPlanVO vo = AgentPlanVO.builder()
                 .planId(request.getPlanId())
                 .status("executed")
                 .build();
+
         return HttpResult.success(vo);
     }
 
     @PostMapping("/plan/reject")
-    public HttpResult<AgentPlanVO> rejectPlan(@RequestBody @Valid AgentPlanConfirmRequest request) {
+    public HttpResult rejectPlan(@RequestBody @Valid AgentPlanConfirmRequest request) {
         log.info("拒绝执行计划: planId={}", request.getPlanId());
         AgentPlanVO vo = AgentPlanVO.builder()
                 .planId(request.getPlanId())

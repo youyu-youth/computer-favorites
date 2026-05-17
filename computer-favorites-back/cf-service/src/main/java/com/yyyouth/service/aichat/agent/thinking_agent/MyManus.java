@@ -4,12 +4,13 @@ import com.yyyouth.service.aichat.agent.advisor.LoggerAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 @Component
 public class MyManus extends ToolCallAgent {
 
-    public MyManus(ToolCallback[] allTools, ChatModel dashscopeChatModel) {
+    public MyManus(ToolCallback[] allTools, @Qualifier("dashScopeChatModel") ChatModel dashscopeChatModel) {
         super(allTools);
         this.setAgentName("MyManus");
         String SYSTEM_PROMPT = """
