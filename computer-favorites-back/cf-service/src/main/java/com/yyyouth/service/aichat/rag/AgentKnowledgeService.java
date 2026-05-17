@@ -14,12 +14,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @author yyyouth zg
- * @date 2026-05-17
- *
- * 知识库管理服务：文档切片到 Pinecone 向量同步
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -36,9 +30,8 @@ public class AgentKnowledgeService {
             log.warn("知识文档不存在: docId={}", docId);
             return;
         }
-
         String content = "文档内容加载（后续接入文件读取）";
-        List<Document> chunks = tokenTextSplitter.apply(List.of(new Document(content)));
+        List<Document> chunks = tokenTextSplitter.splitWithBuilder(List.of(new Document(content)));
         log.info("文档切片完成: docId={}, chunks={}", docId, chunks.size());
 
         List<Document> pineconeDocs = chunks.stream().map(chunk -> {

@@ -1,6 +1,6 @@
 package com.yyyouth.service.aichat.skill;
 
-import com.alibaba.fastjson2.JSON;
+import cn.hutool.json.JSONUtil;
 import com.yyyouth.model.pojo.agent.AgentSkill;
 import com.yyyouth.service.mapper.AgentSkillMapper;
 import jakarta.annotation.PostConstruct;
@@ -14,19 +14,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/**
- * @author yyyouth zg
- * @date 2026-05-17
- *
- * 技能加载器：从 DB 加载技能定义，维护内存缓存，支持定时刷新
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SkillLoader {
 
     private final AgentSkillMapper agentSkillMapper;
-
     private final Map<String, SkillDefinition> skillCache = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -39,12 +32,10 @@ public class SkillLoader {
         List<AgentSkill> skills = agentSkillMapper.selectList(
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<AgentSkill>()
                         .eq(AgentSkill::getEnabled, 1));
-
         skillCache.clear();
         for (AgentSkill skill : skills) {
-            List<String> toolAllowlist = JSON.parseArray(skill.getToolAllowlistJson(), String.class);
-            List<String> mcpAllowlist = JSON.parseArray(skill.getMcpAllowlistJson(), String.class);
-
+            List<String> toolAllowlist = JSONUtil.toList(skill.getToolAllowlistJson(), String.class);
+            List<String> mcpAllowlist = JSONUtil.toList(skill.getMcpAllowlistJson(), String.class);
             SkillDefinition def = SkillDefinition.builder()
                     .skillCode(skill.getSkillCode())
                     .name(skill.getName())

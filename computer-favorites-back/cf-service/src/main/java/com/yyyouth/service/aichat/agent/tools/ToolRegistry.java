@@ -4,6 +4,7 @@ import com.yyyouth.model.enums.ai.RiskLevel;
 import com.yyyouth.model.enums.ai.ToolType;
 import com.yyyouth.model.pojo.agent.AgentToolDef;
 import com.yyyouth.service.mapper.AgentToolDefMapper;
+import io.modelcontextprotocol.spec.McpSchema;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,26 +15,16 @@ import jakarta.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * @author yyyouth zg
- * @date 2026-05-17
- *
- * Agent 工具注册表：内存中维护工具定义、@Tool 方法引用、ToolCallback
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ToolRegistry {
 
     private final AgentToolDefMapper agentToolDefMapper;
-
     private final Map<String, ToolCallback> allToolCallbacks;
-
     private final Map<String, RuntimeToolDef> runtimeTools = new ConcurrentHashMap<>();
+    private final Map<String, McpSchema.Tool> mcpTools = new ConcurrentHashMap<>();
 
-    /**
-     * 运行时工具定义：DB 元数据 + ToolCallback
-     */
     @Data
     public static class RuntimeToolDef {
         private AgentToolDef meta;
@@ -48,7 +39,6 @@ public class ToolRegistry {
         List<AgentToolDef> dbTools = agentToolDefMapper.selectList(
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<AgentToolDef>()
                         .eq(AgentToolDef::getEnabled, 1));
-
         for (AgentToolDef dbTool : dbTools) {
             ToolCallback callback = allToolCallbacks.get(dbTool.getToolCode());
             if (callback == null) {
@@ -69,6 +59,22 @@ public class ToolRegistry {
         log.info("ToolRegistry 初始化完成，已注册 {} 个工具", runtimeTools.size());
     }
 
+    public void updateTools(List<McpSchema.Tool> updatedTools) {
+        mcpTools.clear();
+        for (McpSchema.Tool tool : updatedTools) {
+            mcpTools.put(tool.name(), tool);
+        }
+        log.info("MCP 工具更新: {}", mcpTools.keySet());
+    }
+
+    public McpSchema.Tool getMcpTool(String name) {
+        return mcpTools.get(name);
+    }
+
+    public Collection<McpSchema.Tool> getAllMcpTools() {
+        return mcpTools.values();
+    }
+
     public RuntimeToolDef get(String toolCode) {
         return runtimeTools.get(toolCode);
     }
@@ -77,9 +83,6 @@ public class ToolRegistry {
         return runtimeTools.values();
     }
 
-    /**
-     * 根据白名单过滤出允许使用的 ToolCallback 数组
-     */
     public ToolCallback[] getFilteredCallbacks(List<String> allowlist) {
         if (allowlist == null || allowlist.isEmpty()) {
             return new ToolCallback[0];
@@ -91,9 +94,6 @@ public class ToolRegistry {
                 .toArray(ToolCallback[]::new);
     }
 
-    /**
-     * 获取工具的风险等级
-     */
     public RiskLevel getRiskLevel(String toolCode) {
         RuntimeToolDef rt = runtimeTools.get(toolCode);
         return rt != null ? rt.getRiskLevel() : RiskLevel.LOW;
