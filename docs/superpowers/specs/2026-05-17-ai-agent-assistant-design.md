@@ -394,10 +394,180 @@ Phase 1 知识库类型：`website`（网站描述辅助搜索）、`audit_polic
 | `TavilyMcpClientHandlers` | 保留，细节完善 |
 | `AdvisorConfig.java` | 完善 `RetrievalAugmentationAdvisor` Bean |
 
-## 12. 不在 Phase 1 范围
+## 12. 前端 AI 对话界面
 
-- 前端 AI 聊天 UI 页面
+### 12.1 用户交互决策
+
+| 决策项 | 选择 |
+|--------|------|
+| 交互形态 | 独立对话页 `/computer/agent` |
+| 页面布局 | 桌面双栏（左侧会话列表 + 右侧对话区）；移动端全屏 + 抽屉式会话列表 |
+| 思考过程 | 默认折叠为一行提示（"▶ 思考过程 · N步 · 工具调用 N次"），点击展开查看详情 |
+| 技能选择 | 默认"通用助手"技能，对话顶部可随时切换下拉选择 |
+| 输入能力 | 多行文本输入 + 代码块快捷插入按钮 + 文件/图片上传 |
+| 会话列表功能 | 重命名、删除、搜索过滤、置顶 |
+| 消息操作 | 复制、重新生成、编辑已发送消息、点赞/踩 |
+
+### 12.2 路由设计
+
+```
+/computer/agent              — 用户端 AI 对话页（需登录，StpUtil）
+/computer/admin/agent        — 管理端 AI 对话页（需管理登录，StpAdminUtil）
+```
+
+### 12.3 前端文件结构
+
+```
+src/
+├── api/
+│   └── agent.ts                    — SSE 连接 + 会话/配额 REST API
+├── stores/
+│   └── agentChat.ts                — Pinia store：消息列表、连接状态、当前会话
+├── composables/
+│   └── useAgentChat.ts             — SSE 事件解析 + 连接生命周期管理
+├── components/
+│   └── agent/
+│       ├── AgentSessionList.vue    — 会话列表（搜索/新建/重命名/删除/置顶）
+│       ├── AgentSessionItem.vue    — 单条会话项（含右键菜单）
+│       ├── AgentChatView.vue       — 对话主区域（消息列表 + 输入区）
+│       ├── AgentMessageBubble.vue  — 单条消息气泡（用户/AI 两种样式 + 操作栏）
+│       ├── AgentThinkingSteps.vue  — 思考过程折叠面板（thinking/tool_call/tool_result）
+│       ├── AgentInputArea.vue      — 输入区（textarea + 代码块按钮 + 文件上传 + 技能下拉）
+│       ├── AgentCodeEditor.vue     — 代码块插入弹窗（语言选择 + 语法高亮）
+│       ├── AgentWelcomeScreen.vue  — 空状态欢迎页（无消息时展示）
+│       └── AgentPlanCard.vue       — 计划确认卡片（高风险操作需用户确认）
+├── views/
+│   └── user/
+│       └── AgentView.vue           — 用户端对话页面（组装 Sidebar + ChatView）
+│   └── admin/
+│       └── AdminAgentView.vue      — 管理端对话页面
+└── router/
+    └── index.ts                    — 新增 /agent 和 /admin/agent 路由
+```
+
+### 12.4 页面布局规范
+
+**桌面端（≥768px）**：
+
+```
+┌──────────────┬──────────────────────────────────┐
+│  会话列表      │  顶部栏: 会话标题 + 技能下拉 + 更多菜单 │
+│  (280px)     │──────────────────────────────────│
+│  [+ 新对话]   │                                  │
+│  [搜索...]    │   消息区域                         │
+│              │   - 用户消息（橙色气泡，右对齐）       │
+│  📌 会话1     │   - AI 消息（灰色气泡，左对齐）       │
+│  会话2        │     · 思考过程折叠条                │
+│  会话3 ← 当前  │     · 文本内容                    │
+│  会话4        │     · 操作栏（复制/重新生成/点赞）    │
+│              │                                  │
+│              │──────────────────────────────────│
+│  配额: 18/50  │  输入区                           │
+│              │  [技能下拉] [textarea] [代码][上传][发送]│
+└──────────────┴──────────────────────────────────┘
+```
+
+**移动端（<768px）**：
+
+```
+┌────────────────────┐
+│ ☰ 会话标题  [技能▼] │  ← 顶部栏，☰ 打开会话抽屉
+├────────────────────┤
+│                    │
+│   消息区域（全屏）   │
+│                    │
+├────────────────────┤
+│ [{ }] [📎] [___] ↑ │  ← 紧凑输入区
+└────────────────────┘
+       ↓ 抽屉层
+┌────────────┐
+│ [+ 新对话]  │
+│ [搜索...]   │
+│ 会话列表    │
+│ 配额信息    │
+└────────────┘
+```
+
+### 12.5 SSE 事件 → 前端映射
+
+| SSE 事件 | 前端行为 |
+|---------|---------|
+| `heartbeat` | 连接保活，忽略（或更新连接状态指示灯） |
+| `thinking` | 在 AI 消息气泡内追加/更新可折叠的"思考中..."条目 |
+| `message` | 流式追加文本 delta 到当前 AI 消息气泡（打字机效果） |
+| `tool_call` | 在思考面板中新增"🔧 调用工具: {toolName}"条目 |
+| `tool_result` | 更新对应工具调用条目的结果为 "✅/❌" |
+| `plan` | 在消息列表中插入 `AgentPlanCard` 组件（确认/拒绝按钮） |
+| `done` | 结束流式输出，最终化消息内容，记录 sessionId |
+| `error` | 显示错误提示 Toast + 消息气泡内错误状态 |
+| `quota_exceeded` | 禁用输入区 + 显示配额耗尽提示 |
+
+### 12.6 状态管理（Pinia Store）
+
+```typescript
+// agentChat.ts — Composition API
+interface AgentChatState {
+  sessions: AgentSession[]           // 会话列表
+  currentSessionId: string | null    // 当前会话
+  messages: AgentMessage[]           // 当前会话消息列表
+  connectionState: 'idle' | 'connecting' | 'streaming' | 'done' | 'error'
+  currentSkillCode: string           // 当前选中技能
+  quota: AgentQuota | null           // 配额信息
+  thinkingSteps: ThinkingStep[]      // 当前正在构建的思考步骤
+}
+```
+
+### 12.7 API 设计
+
+```typescript
+// src/api/agent.ts
+
+// SSE 对话连接（使用 fetch + ReadableStream，POST 不支持 EventSource）
+function chatStream(request: AgentChatRequest): ReadableStream
+
+// 会话管理
+function getSessions(): Promise<AgentSessionVO[]>
+function renameSession(id: string, title: string): Promise<void>
+function deleteSession(id: string): Promise<void>
+function pinSession(id: string, pinned: boolean): Promise<void>
+
+// 计划确认
+function confirmPlan(planId: string): Promise<void>
+function rejectPlan(planId: string): Promise<void>
+
+// 配额查询
+function getQuota(): Promise<AgentQuotaVO>
+```
+
+### 12.8 后端需新增的 REST API
+
+前端会话列表/配额等功能需要以下 REST 接口（`UserAgentController` + `AdminAgentController`）：
+
+```
+GET    /api/agent/sessions              → 当前用户会话列表（支持搜索参数 ?keyword=xx）
+GET    /api/agent/sessions/{id}         → 单会话详情（含消息历史）
+PUT    /api/agent/sessions/{id}         → 重命名会话 { title }
+DELETE /api/agent/sessions/{id}         → 删除会话（设置 status=archived）
+PUT    /api/agent/sessions/{id}/pin     → 切换置顶 { pinned: boolean }
+GET    /api/agent/quota                 → 当前用户配额信息
+```
+
+实体变更：`t_agent_session` 表需增加 `pinned TINYINT DEFAULT 0` 字段（如尚未存在）。
+
+### 12.9 技术实现要点
+
+1. **SSE 连接**：使用 `fetch` + `ReadableStream` 读取 POST SSE 响应（浏览器 `EventSource` 不支持 POST）。解析 `data:` 行，按事件类型分发到 store
+2. **打字机效果**：`message` 事件携带 `delta`，逐字追加到对应消息的 `content` 字段，触发 Vue 响应式更新
+3. **移动端适配**：Tailwind `md:` 断点区分桌面/移动布局；移动端会话列表用 `<Teleport>` + 遮罩层实现抽屉
+4. **暗黑模式**：复用现有主题系统（`data-cf-theme="user"` + `.dark` class），所有组件使用 Tailwind `dark:` 变体
+5. **认证头**：使用 `localStorage.tokenName` → `satoken` header；管理端额外带 `X-CF-Skip-Auth`
+6. **错误处理**：网络断开自动重连（指数退避 1s/2s/4s，最多 3 次）；SSE 超时 5 分钟后自动关闭
+
+## 13. 不在范围
+
 - 大模型多供应商切换
 - 管理员动态配置 Skill/Tool
 - 对话多模态（图片识别）
 - AI 生成网站截图/摘要等富内容
+- 对话分享功能
+- 语音输入
