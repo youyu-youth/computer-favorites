@@ -54,8 +54,14 @@
       </div>
 
       <!-- 错误状态 -->
-      <div v-if="store.connectionState === 'error'" class="text-center text-sm text-red-500 py-4">
-        连接出错，请重试
+      <div v-if="store.connectionState === 'error'" class="text-center py-4 px-4">
+        <p class="text-sm text-red-500">{{ store.errorMessage || '连接出错，请重试' }}</p>
+        <button
+          class="mt-2 text-xs text-amber-500 hover:text-amber-600 cursor-pointer underline"
+          @click="store.connectionState = 'idle'; store.errorMessage = null"
+        >
+          关闭
+        </button>
       </div>
 
       <!-- 配额用尽 -->

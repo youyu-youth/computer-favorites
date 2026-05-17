@@ -46,6 +46,7 @@ export async function getQuota(): Promise<AgentQuota> {
 /**
  * SSE 流式对话
  * 使用 fetch + ReadableStream（EventSource 不支持 POST）
+ * 直接读取 response.body 流，不做额外包装
  */
 export function chatStream(
   request: AgentChatRequest,
@@ -61,51 +62,51 @@ export function chatStream(
     headers[tokenName] = token
   }
 
-  let body: ReadableStream<Uint8Array> | null = null
+  // 先发起 fetch，拿到 response 后直接返回 response.body
+  const fetchPromise = fetch(`${BASE}/chat`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(request),
+    signal: controller.signal,
+  })
 
-  const getStream = async (): Promise<ReadableStream<Uint8Array>> => {
-    const response = await fetch(`${BASE}/chat`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(request),
-      signal: controller.signal,
-    })
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    if (!response.body) {
-      throw new Error('浏览器不支持 ReadableStream')
-    }
-    body = response.body
-    return body
-  }
-
-  return {
-    stream: new ReadableStream<Uint8Array>({
-      async start(controller) {
-        try {
-          const realStream = await getStream()
-          const reader = realStream.getReader()
-          const pump = async () => {
-            try {
-              while (true) {
-                const { done, value } = await reader.read()
-                if (done) {
-                  controller.close()
-                  break
-                }
-                controller.enqueue(value)
-              }
-            } catch {
-              controller.close()
-            }
-          }
-          await pump()
-        } catch (e) {
-          controller.error(e)
+  const stream = new ReadableStream<Uint8Array>({
+    async start(streamController) {
+      try {
+        const response = await fetchPromise
+        if (!response.ok) {
+          // 尝试读取后端返回的错误信息
+          let errorBody = ''
+          try {
+            errorBody = await response.text()
+          } catch { /* ignore */ }
+          const msg = errorBody || `HTTP ${response.status}: ${response.statusText}`
+          streamController.error(new Error(msg))
+          return
         }
-      },
-    }),
-    abort: () => controller.abort(),
-  }
+        if (!response.body) {
+          streamController.error(new Error('浏览器不支持 ReadableStream'))
+          return
+        }
+        const reader = response.body.getReader()
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) {
+            streamController.close()
+            break
+          }
+          streamController.enqueue(value)
+        }
+      } catch (e: any) {
+        // AbortError 正常关闭，其他错误上报
+        if (e.name === 'AbortError') {
+          streamController.close()
+        } else {
+          streamController.error(e)
+        }
+      }
+    },
+  })
+
+  return { stream, abort: () => controller.abort() }
 }

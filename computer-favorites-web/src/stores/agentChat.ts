@@ -45,6 +45,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
   const currentSkillCode = ref<string>('general_assistant')
   const messages = ref<AgentMessage[]>([])
   const connectionState = ref<ConnectionState>('idle')
+  const errorMessage = ref<string | null>(null)
 
   const pendingThinkingSteps = ref<ThinkingStep[]>([])
 
@@ -186,6 +187,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
     currentSkillCode,
     messages,
     connectionState,
+    errorMessage,
     pendingThinkingSteps,
     startNewChat,
     switchToSession,

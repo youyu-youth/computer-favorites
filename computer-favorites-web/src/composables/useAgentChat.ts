@@ -81,10 +81,12 @@ export function useAgentChat() {
 
       case 'error':
         store.connectionState = 'error'
-        throw new Error((data.msg as string) || '对话出错')
+        store.errorMessage = (data.msg as string) || '对话出错'
+        throw new Error(store.errorMessage)
 
       case 'quota_exceeded':
         store.connectionState = 'error'
+        store.errorMessage = `今日配额已用完（${data.limit ?? '?'}条）`
         store.quota = {
           dailyMessageLimit: data.limit as number,
           usedMessageCount: data.used as number,
@@ -108,6 +110,7 @@ export function useAgentChat() {
     if (!store.hasQuota) return
 
     store.connectionState = 'connecting'
+    store.errorMessage = null
     store.addUserMessage(message)
 
     try {
@@ -173,6 +176,7 @@ export function useAgentChat() {
         return
       }
       store.connectionState = 'error'
+      store.errorMessage = e.message || '未知错误'
       throw e
     } finally {
       store.loadQuota()
