@@ -66,6 +66,10 @@ public class AgentSession {
      */
     private String status;
 
+    /** 是否置顶 0否 1是 */
+    @TableField("pinned")
+    private Integer pinned;
+
     /**
      * 模型供应商：deepseek/dashscope
      */
