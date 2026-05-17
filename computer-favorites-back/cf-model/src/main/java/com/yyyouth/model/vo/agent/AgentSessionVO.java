@@ -21,4 +21,7 @@ public class AgentSessionVO {
     private String status;
     private LocalDateTime lastMessageAt;
     private LocalDateTime createTime;
+    private Integer pinned;
+    private String ownerType;
+    private Long ownerId;
 }
