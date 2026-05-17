@@ -42,7 +42,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
   // === 当前对话 ===
   const currentSessionId = ref<number | null>(null)
   const currentConversationId = ref<string | null>(null)
-  const currentSkillCode = ref<string>('general_assistant')
+  const currentSkillCode = ref<string>('website_submit_assistant')
   const messages = ref<AgentMessage[]>([])
   const connectionState = ref<ConnectionState>('idle')
   const errorMessage = ref<string | null>(null)
@@ -154,14 +154,12 @@ export const useAgentChatStore = defineStore('agentChat', () => {
 
   // === 技能列表 ===
   const skills = ref<{ code: string; name: string }[]>([
-    { code: 'general_assistant', name: '通用助手' },
-    { code: 'code_assistant', name: '编程助手' },
-    { code: 'website_assistant', name: '网站推荐' },
+    { code: 'website_submit_assistant', name: '网站投稿助手' },
   ])
 
   const currentSkillName = computed(() => {
     const s = skills.value.find((s) => s.code === currentSkillCode.value)
-    return s?.name ?? '通用助手'
+    return s?.name ?? '网站投稿助手'
   })
 
   // === 计算属性 ===
