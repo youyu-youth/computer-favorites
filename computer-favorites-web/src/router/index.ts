@@ -104,6 +104,12 @@ const router = createRouter({
           component: () => import('@/views/admin/AdminProfileView.vue'),
           meta: { requiresAdminAuth: true, title: '个人资料', hideAdminSidebar: true },
         },
+        {
+          path: 'agent',
+          name: 'adminAgent',
+          component: () => import('@/views/admin/AdminAgentView.vue'),
+          meta: { requiresAdminAuth: true, title: 'AI 管理助手' },
+        },
       ],
     },
     {
@@ -220,6 +226,12 @@ const router = createRouter({
           name: 'announcement',
           component: () => import('@/views/user/AnnouncementView.vue'),
           meta: { requiresAuth: false },
+        },
+        {
+          path: 'agent',
+          name: 'agent',
+          component: () => import('@/views/user/AgentView.vue'),
+          meta: { requiresAuth: true, title: 'AI 助手' },
         },
       ],
     },
