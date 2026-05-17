@@ -1,0 +1,56 @@
+<h2>AI 思考过程 — 可见性方案</h2>
+<p class="subtitle">后端会推送 thinking / tool_call / tool_result / message / plan 等 SSE 事件。这些中间过程要不要展示？</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>完整透明 — 展示所有中间过程</h3>
+      <p>思考步骤、工具调用、检索过程全部可见。适合让 CS 学习者理解 AI 的工作原理，增加教育价值。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>可折叠 — 默认折叠，可展开查看</h3>
+      <p>中间过程折叠成一行小字（如 "🔍 正在查询 Pinecone 向量库..."），用户可点击展开。平衡信息量与界面整洁。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>仅显示最终结果 — 隐藏中间过程</h3>
+      <p>只展示 AI 的文本回复，thinking/tool_call 等完全不可见。最简洁的体验，类似 ChatGPT。</p>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top: 32px;">
+  <div class="mockup-header">预览：方案 B — 可折叠中间过程</div>
+  <div class="mockup-body" style="padding: 20px;">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <!-- AI message with thinking steps -->
+      <div style="display: flex; gap: 12px;">
+        <div style="width: 32px; height: 32px; background: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; flex-shrink: 0;">AI</div>
+        <div style="flex: 1;">
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+            <div style="font-size: 12px; color: var(--text-secondary); cursor: pointer; user-select: none;">
+              ▼ 思考步骤 (2步) · 工具调用 (1次)
+            </div>
+            <div style="margin-top: 8px; padding: 8px; background: var(--bg-primary); border-radius: 4px; font-size: 13px;">
+              <div style="color: var(--accent); margin-bottom: 4px;">🧠 第1步：分析用户问题...</div>
+              <div style="color: var(--text-secondary); margin-bottom: 8px;">用户想知道如何优化这段 Java 代码的时间复杂度，需要识别当前算法的复杂度并给出改进建议。</div>
+              <div style="color: var(--accent); margin-bottom: 4px;">🔧 工具调用: code_analyzer</div>
+              <div style="color: var(--text-secondary); margin-bottom: 4px; font-family: monospace; font-size: 12px;">输入: {"code": "for(int i=0;i&lt;n;i++){for(int j=i;j&lt;n;j++){...}}"}</div>
+              <div style="color: #22c55e; margin-bottom: 4px;">✅ 结果: O(n²) 时间复杂度</div>
+              <div style="color: var(--accent);">🧠 第2步：生成优化建议...</div>
+            </div>
+          </div>
+          <div style="margin-top: 8px; line-height: 1.6; font-size: 14px;">
+            这段代码的时间复杂度是 <strong>O(n²)</strong>。可以通过使用 HashMap 将内层循环优化掉，降为 <strong>O(n)</strong>。具体做法是...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

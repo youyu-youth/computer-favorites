@@ -1,0 +1,54 @@
+<h2>输入区设计 — 功能范围</h2>
+<p class="subtitle">对话输入框需要哪些能力？CS 学习场景下常见需求：文本、代码块、文件、快捷指令</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="text">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>纯文本输入</h3>
+      <p>多行 textarea，支持 Shift+Enter 换行、Enter 发送。最简方案。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="code">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>代码块快捷插入</h3>
+      <p>输入框旁有"插入代码"按钮，弹出代码编辑器（语言选择 + 语法高亮），插入后以 Markdown 代码块发送。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="file">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>文件/图片上传</h3>
+      <p>支持拖拽/粘贴上传文件（代码文件 .java/.py 等）或截图，AI 可分析文件内容或图片。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="quick">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>快捷指令菜单</h3>
+      <p>输入框左侧 "/" 按钮唤起指令面板：/explain（解释代码）、/optimize（优化）、/review（代码审查）、/translate（翻译）等。</p>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top: 32px;">
+  <div class="mockup-header">预览：包含 B+D 的输入区</div>
+  <div class="mockup-body" style="padding: 16px;">
+    <div style="border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--bg-secondary);">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 12px; color: var(--text-secondary); padding: 2px 8px; background: var(--bg-primary); border-radius: 4px; border: 1px solid var(--border);">✨ 编程助手</span>
+        <span style="font-size: 12px; color: var(--text-secondary);">·</span>
+        <span style="font-size: 12px; color: var(--text-secondary);">配额 18/50</span>
+      </div>
+      <textarea placeholder="输入问题，或按 / 使用快捷指令..." style="width: 100%; min-height: 60px; border: none; background: transparent; resize: none; font-size: 14px; outline: none; font-family: inherit;"></textarea>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+        <div style="display: flex; gap: 4px;">
+          <button class="mock-button" style="font-size: 12px; padding: 4px 8px;">{ } 插入代码</button>
+          <button class="mock-button" style="font-size: 12px; padding: 4px 8px;">📎 上传</button>
+        </div>
+        <button class="mock-button" style="background: var(--accent); color: white; border: none;">发送</button>
+      </div>
+    </div>
+  </div>
+</div>

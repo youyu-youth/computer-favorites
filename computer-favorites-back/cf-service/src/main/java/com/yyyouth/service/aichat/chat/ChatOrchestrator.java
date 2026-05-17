@@ -53,11 +53,24 @@ public class ChatOrchestrator {
 
     private void simpleStream(AgentStreamSink sink, SkillDefinition skill, String message, AgentSession session) {
         try {
+            log.info("simpleStream 开始: sessionId={}", session.getId());
             Flux<String> flux = dashscopeChatClient.prompt()
                     .system(skill.getSystemPrompt()).user(message).stream().content();
-            flux.doOnNext(sink::message).doOnComplete(() -> sink.done(session.getId()))
-                    .doOnError(e -> sink.error("STREAM_ERROR", e.getMessage())).subscribe();
+            flux.doOnNext(delta -> {
+                        log.debug("simpleStream delta: {}", delta);
+                        sink.message(delta);
+                    })
+                    .doOnComplete(() -> {
+                        log.info("simpleStream 完成: sessionId={}", session.getId());
+                        sink.done(session.getId());
+                    })
+                    .doOnError(e -> {
+                        log.error("simpleStream 异常: {}", e.getMessage(), e);
+                        sink.error("STREAM_ERROR", e.getMessage());
+                    })
+                    .subscribe();
         } catch (Exception e) {
+            log.error("simpleStream 启动失败", e);
             sink.error("CHAT_ERROR", e.getMessage());
         }
     }
@@ -65,11 +78,24 @@ public class ChatOrchestrator {
     private void reactiveStream(AgentStreamSink sink, SkillDefinition skill, String message,
                                  ToolCallback[] tools, AgentSession session) {
         try {
+            log.info("reactiveStream 开始: sessionId={}, tools={}", session.getId(), tools.length);
             Flux<String> flux = dashscopeChatClient.prompt()
                     .system(skill.getSystemPrompt()).user(message).tools(tools).stream().content();
-            flux.doOnNext(sink::message).doOnComplete(() -> sink.done(session.getId()))
-                    .doOnError(e -> sink.error("STREAM_ERROR", e.getMessage())).subscribe();
+            flux.doOnNext(delta -> {
+                        log.debug("reactiveStream delta: {}", delta);
+                        sink.message(delta);
+                    })
+                    .doOnComplete(() -> {
+                        log.info("reactiveStream 完成: sessionId={}", session.getId());
+                        sink.done(session.getId());
+                    })
+                    .doOnError(e -> {
+                        log.error("reactiveStream 异常: {}", e.getMessage(), e);
+                        sink.error("STREAM_ERROR", e.getMessage());
+                    })
+                    .subscribe();
         } catch (Exception e) {
+            log.error("reactiveStream 启动失败", e);
             sink.error("CHAT_ERROR", e.getMessage());
         }
     }

@@ -57,7 +57,9 @@ public class AgentStreamSink {
         try {
             emitter.send(SseEmitter.event().name(name).data(data));
         } catch (IOException e) {
-            // SSE 连接可能已关闭
+            log.warn("SSE 发送失败 event={}: {}", name, e.getMessage());
         }
     }
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AgentStreamSink.class);
 }
