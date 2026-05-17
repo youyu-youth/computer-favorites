@@ -192,7 +192,8 @@ export function useAgentChat() {
   /** 重新生成最后一条 AI 回复 */
   async function regenerate(message: string) {
     const msgs = store.messages
-    if (msgs.length > 0 && msgs[msgs.length - 1].role === 'assistant') {
+    const lastMsg = msgs[msgs.length - 1]
+    if (lastMsg && lastMsg.role === 'assistant') {
       msgs.pop()
     }
     await sendMessage(message)

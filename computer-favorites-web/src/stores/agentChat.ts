@@ -31,7 +31,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
   const updateSession = (id: number, patch: Partial<AgentSession>) => {
     const idx = sessions.value.findIndex((s) => s.id === id)
     if (idx !== -1) {
-      sessions.value[idx] = { ...sessions.value[idx], ...patch }
+      sessions.value[idx] = { ...sessions.value[idx], ...patch } as AgentSession
     }
   }
 
