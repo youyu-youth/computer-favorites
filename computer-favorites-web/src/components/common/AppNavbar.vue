@@ -67,6 +67,7 @@ const handleAvatarError = () => {
   avatarLoadFailed.value = true
 }
 const isHomeRoute = computed(() => route.name === 'home')
+const isAgentRoute = computed(() => route.name === 'agent')
 
 const goToLogin = () => {
   mobileMenuOpen.value = false
@@ -348,6 +349,17 @@ onBeforeUnmount(() => {
           <RouterLink :to="{ name: 'announcement' }" class="cf-nav-link">
             <span class="cf-nav-link-label">平台公告</span>
           </RouterLink>
+          <RouterLink
+            :to="{ name: 'agent' }"
+            class="cf-nav-link"
+            :class="isAgentRoute ? 'cf-nav-link-active' : ''"
+          >
+            <svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+            <span class="cf-nav-link-label">AI 助手</span>
+          </RouterLink>
         </nav>
 
         <div class="flex items-center gap-2 sm:gap-3 justify-self-end">
@@ -620,6 +632,17 @@ onBeforeUnmount(() => {
           @click="mobileMenuOpen = false"
         >
           平台公告
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'agent' }"
+          class="!mb-1 !flex !w-full !cursor-pointer !items-center !gap-2 !justify-start !rounded-lg !px-3 !py-2 !text-sm !font-medium !text-gray-600 transition-colors hover:!text-primary-500 dark:!text-gray-300 dark:hover:!text-primary-400"
+          @click="mobileMenuOpen = false"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+          AI 助手
         </RouterLink>
         <PrimeButton
           v-if="!authStore.isSessionValid"
