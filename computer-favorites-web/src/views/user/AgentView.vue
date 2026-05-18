@@ -1,7 +1,9 @@
 <template>
-  <div class="flex h-screen">
+  <div class="flex h-screen overflow-hidden bg-stone-50 text-stone-900 dark:bg-black dark:text-stone-200">
     <!-- Desktop sidebar -->
-    <aside class="hidden md:flex flex-col w-72 shrink-0 border-r border-gray-200 dark:border-gray-700">
+    <aside
+      class="hidden w-72 shrink-0 flex-col border-r border-stone-200/80 bg-stone-100 md:flex dark:border-white/10 dark:bg-[#100f0d]"
+    >
       <AgentSessionList @new-chat="handleNewChat" />
     </aside>
 
@@ -12,15 +14,15 @@
         class="fixed inset-0 z-50 md:hidden"
         @click.self="mobileSidebarOpen = false"
       >
-        <div class="absolute inset-0 bg-black/40" />
-        <div class="absolute left-0 top-0 bottom-0 w-80 bg-white dark:bg-gray-950 shadow-xl">
+        <div class="absolute inset-0 bg-stone-950/30 dark:bg-black/80" />
+        <div class="absolute bottom-0 left-0 top-0 w-72 bg-stone-100 shadow-2xl dark:bg-[#100f0d]">
           <AgentSessionList @new-chat="handleNewChat" />
         </div>
       </div>
     </Teleport>
 
     <!-- Main chat area -->
-    <main class="flex-1 min-w-0">
+    <main class="min-w-0 flex-1 bg-stone-50 dark:bg-black">
       <AgentChatUserView @toggle-sidebar="mobileSidebarOpen = !mobileSidebarOpen" />
     </main>
   </div>

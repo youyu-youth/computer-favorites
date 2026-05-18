@@ -1,10 +1,17 @@
 <template>
-  <div class="cf-chat-shell relative flex h-full flex-col overflow-hidden bg-gradient-to-b from-stone-50 to-stone-100 dark:from-stone-950 dark:to-[#141110]">
+  <div
+    class="cf-chat-shell relative flex h-full flex-col overflow-hidden bg-gradient-to-b from-stone-50 to-stone-100 dark:from-stone-950 dark:to-[#141110]"
+  >
     <!-- 装饰：背景柔光斑 -->
-    <div class="cf-chat-aura pointer-events-none absolute -left-32 top-20 h-[460px] w-[460px] rounded-full" aria-hidden="true" />
+    <div
+      class="cf-chat-aura pointer-events-none absolute -left-32 top-20 h-[460px] w-[460px] rounded-full"
+      aria-hidden="true"
+    />
 
     <!-- 顶部栏：liquid glass -->
-    <header class="cf-chat-topbar relative z-10 flex items-center gap-3 px-4 md:px-6 py-3 shrink-0 bg-white/60 dark:bg-stone-950/55 backdrop-blur-[18px] backdrop-saturate-[1.6]">
+    <header
+      class="cf-chat-topbar relative z-10 flex items-center gap-3 px-4 md:px-6 py-3 shrink-0 bg-white/60 dark:bg-stone-950/55 backdrop-blur-[18px] backdrop-saturate-[1.6]"
+    >
       <button
         type="button"
         class="md:hidden grid h-8 w-8 place-items-center rounded-lg text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100 hover:bg-stone-900/[0.04] dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
@@ -20,10 +27,14 @@
           class="h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-300"
           :class="connectionDotClass"
         />
-        <h2 class="text-[13px] font-semibold tracking-tight text-stone-800 dark:text-stone-100 truncate">
+        <h2
+          class="text-[13px] font-semibold tracking-tight text-stone-800 dark:text-stone-100 truncate"
+        >
           {{ currentTitle }}
         </h2>
-        <span class="hidden sm:inline-flex items-center text-[10px] font-medium tracking-[0.08em] uppercase text-stone-400 dark:text-stone-500">
+        <span
+          class="hidden sm:inline-flex items-center text-[10px] font-medium tracking-[0.08em] uppercase text-stone-400 dark:text-stone-500"
+        >
           {{ connectionLabel }}
         </span>
       </div>
@@ -48,16 +59,23 @@
         <AgentMessageBubble
           v-else
           :msg="msg"
-          :is-streaming="store.connectionState === 'streaming'
-            && msg.role === 'assistant'
-            && msg === store.messages[store.messages.length - 1]"
+          :is-streaming="
+            store.connectionState === 'streaming' &&
+            msg.role === 'assistant' &&
+            msg === store.messages[store.messages.length - 1]
+          "
           @regenerate="handleRegenerate"
           @edit-resend="handleEditResend"
         />
       </template>
 
-      <div v-if="store.connectionState === 'connecting'" class="cf-connecting flex items-start gap-3 pl-1">
-        <span class="cf-ai-avatar grid h-8 w-8 shrink-0 place-items-center rounded-full text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_8px_18px_-8px_rgb(var(--cf-color-primary-500-rgb)/0.5)]">
+      <div
+        v-if="store.connectionState === 'connecting'"
+        class="cf-connecting flex items-start gap-3 pl-1"
+      >
+        <span
+          class="cf-ai-avatar grid h-8 w-8 shrink-0 place-items-center rounded-full text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_8px_18px_-8px_rgb(var(--cf-color-primary-500-rgb)/0.5)]"
+        >
           <Sparkles :size="14" :stroke-width="2" />
         </span>
         <div class="flex flex-col gap-1.5 pt-1">
@@ -70,7 +88,10 @@
         v-if="store.connectionState === 'error'"
         class="cf-error relative flex items-start gap-3 rounded-xl bg-rose-500/[0.06] dark:bg-rose-500/[0.1] px-4 py-3 ring-1 ring-inset ring-rose-500/15"
       >
-        <span class="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-rose-500" aria-hidden="true" />
+        <span
+          class="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-rose-500"
+          aria-hidden="true"
+        />
         <AlertTriangle class="mt-0.5 shrink-0 text-rose-500" :size="14" :stroke-width="1.75" />
         <div class="flex-1 min-w-0">
           <p class="text-[13px] text-rose-700 dark:text-rose-300 leading-relaxed">
@@ -79,7 +100,7 @@
           <button
             type="button"
             class="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors cursor-pointer"
-            @click="store.connectionState = 'idle'; store.errorMessage = null"
+            @click="clearError"
           >
             知道了
           </button>
@@ -90,7 +111,10 @@
         v-if="!store.hasQuota && store.quotaRemaining === 0"
         class="cf-quota-end relative flex items-center gap-2 rounded-xl bg-primary-500/[0.06] px-4 py-3 ring-1 ring-inset ring-primary-500/15"
       >
-        <span class="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-primary-500" aria-hidden="true" />
+        <span
+          class="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-primary-500"
+          aria-hidden="true"
+        />
         <Sparkles class="shrink-0 text-primary-500" :size="14" :stroke-width="1.75" />
         <p class="text-[13px] text-stone-700 dark:text-stone-200">今日对话配额已用完，请明天再来</p>
       </div>
@@ -143,10 +167,14 @@ const connectionDotClass = computed(() => {
 /** 状态文案 */
 const connectionLabel = computed(() => {
   switch (store.connectionState) {
-    case 'streaming': return '生成中'
-    case 'connecting': return '连接中'
-    case 'error': return '已断开'
-    default: return '在线'
+    case 'streaming':
+      return '生成中'
+    case 'connecting':
+      return '连接中'
+    case 'error':
+      return '已断开'
+    default:
+      return '在线'
   }
 })
 
@@ -202,6 +230,11 @@ function handleQuickPrompt(prompt: string) {
   handleSend(prompt, [])
 }
 
+function clearError() {
+  store.connectionState = 'idle'
+  store.errorMessage = null
+}
+
 /**
  * 确认执行计划
  * TODO: 待后端 API 就绪后替换为真实接口调用
@@ -234,7 +267,11 @@ async function handlePlanReject(planId: string) {
 
 /* 装饰光斑：基于主色 token，单一不透明度在浅 / 深底色上都自然 */
 .cf-chat-aura {
-  background: radial-gradient(closest-side, rgb(var(--cf-color-primary-500-rgb) / 0.16), transparent 70%);
+  background: radial-gradient(
+    closest-side,
+    rgb(var(--cf-color-primary-500-rgb) / 0.16),
+    transparent 70%
+  );
   filter: blur(2px);
   z-index: 0;
 }
@@ -259,8 +296,13 @@ async function handlePlanReject(planId: string) {
   box-shadow: 0 0 0 0 rgb(var(--cf-color-primary-500-rgb) / 0.55);
 }
 @keyframes cf-state-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--cf-color-primary-500-rgb) / 0.55); }
-  60% { box-shadow: 0 0 0 6px rgb(var(--cf-color-primary-500-rgb) / 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--cf-color-primary-500-rgb) / 0.55);
+  }
+  60% {
+    box-shadow: 0 0 0 6px rgb(var(--cf-color-primary-500-rgb) / 0);
+  }
 }
 
 /* 连接中 skeleton 行：使用 stone-500 半透明，浅 / 深底色都自然 */
@@ -278,8 +320,12 @@ async function handlePlanReject(planId: string) {
   animation-delay: calc(var(--cf-i, 0) * 120ms);
 }
 @keyframes cf-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .cf-connecting,
@@ -288,8 +334,14 @@ async function handlePlanReject(planId: string) {
   animation: cf-msg-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes cf-msg-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .cf-ai-avatar {
