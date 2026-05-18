@@ -5,15 +5,22 @@
 html {
   overflow-y: auto;
   scrollbar-gutter: stable;
+  background-color: rgb(var(--cf-color-surface-page-rgb) / 1);
+  color: rgb(var(--cf-color-text-primary-rgb) / 1);
+  scrollbar-color: rgb(75 85 99 / 1) rgb(var(--cf-color-surface-page-rgb) / 1);
+}
+
+body,
+#app {
+  background-color: rgb(var(--cf-color-surface-page-rgb) / 1);
+  color: rgb(var(--cf-color-text-primary-rgb) / 1);
+  min-height: 100vh;
 }
 
 body {
-  background-color: rgb(var(--cf-color-surface-page-rgb) / 1);
-  color: rgb(var(--cf-color-text-primary-rgb) / 1);
   transition:
     color var(--cf-motion-page) var(--cf-ease-standard),
     background-color var(--cf-motion-page) var(--cf-ease-standard);
-  min-height: 100vh;
 }
 
 ::-webkit-scrollbar {
@@ -21,7 +28,7 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgb(var(--cf-color-surface-page-rgb) / 1);
 }
 ::-webkit-scrollbar-thumb {
   background: #4b5563;
@@ -333,7 +340,7 @@ body.email-modal-scroll-lock {
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgb(var(--cf-color-surface-page-rgb) / 1);
 }
 
 ::-webkit-scrollbar-thumb {

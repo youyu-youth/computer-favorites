@@ -1,102 +1,122 @@
 <template>
-  <div class="cf-chat-shell relative flex h-full flex-col overflow-hidden bg-gradient-to-b from-stone-50 to-stone-100 dark:from-stone-950 dark:to-[#141110]">
-    <!-- 装饰：背景柔光斑 -->
-    <div class="cf-chat-aura pointer-events-none absolute -left-32 top-20 h-[460px] w-[460px] rounded-full" aria-hidden="true" />
-
-    <!-- 顶部栏：liquid glass -->
-    <header class="cf-chat-topbar relative z-10 flex items-center gap-3 px-4 md:px-6 py-3 shrink-0 bg-white/60 dark:bg-stone-950/55 backdrop-blur-[18px] backdrop-saturate-[1.6]">
+  <div
+    class="cf-chat-shell relative flex h-full flex-col overflow-hidden bg-[#000000] text-stone-200"
+  >
+    <header
+      class="cf-chat-topbar z-10 flex shrink-0 items-center gap-3 border-b border-white/10 bg-[#050505] px-4 py-3 md:px-6"
+    >
       <button
         type="button"
-        class="md:hidden grid h-8 w-8 place-items-center rounded-lg text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100 hover:bg-stone-900/[0.04] dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+        class="grid h-8 w-8 cursor-pointer place-items-center rounded-lg text-stone-400 transition-colors hover:bg-white/[0.06] hover:text-stone-100 md:hidden"
         aria-label="切换会话列表"
         @click="$emit('toggleSidebar')"
       >
-        <Menu :size="16" :stroke-width="1.75" />
+        <Menu :size="18" :stroke-width="1.75" />
       </button>
 
-      <div class="flex items-center gap-2 min-w-0 flex-1">
+      <div class="flex min-w-0 flex-1 items-center gap-2">
         <span
           aria-hidden="true"
           class="h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-300"
           :class="connectionDotClass"
         />
-        <h2 class="text-[13px] font-semibold tracking-tight text-stone-800 dark:text-stone-100 truncate">
-          {{ currentTitle }}
-        </h2>
-        <span class="hidden sm:inline-flex items-center text-[10px] font-medium tracking-[0.08em] uppercase text-stone-400 dark:text-stone-500">
+        <h1
+          class="m-0 flex min-w-0 items-center gap-2 truncate text-[15px] font-semibold text-stone-100"
+        >
+          <span class="truncate">{{ currentTitle }}</span>
+        </h1>
+        <span
+          class="hidden items-center text-[10px] font-medium tracking-[0.08em] text-stone-600 sm:inline-flex"
+        >
           {{ connectionLabel }}
         </span>
       </div>
     </header>
 
-    <!-- 消息区域 -->
     <div
       ref="messageListRef"
-      class="cf-chat-messages relative z-0 flex-1 overflow-y-auto cf-scroll px-4 md:px-8 py-6 space-y-6"
+      class="cf-chat-messages cf-scroll relative z-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8"
     >
       <div v-if="store.messages.length === 0" class="h-full">
         <AgentWelcomeScreen @quick-prompt="handleQuickPrompt" />
       </div>
 
-      <template v-for="msg in store.messages" :key="msg.id">
-        <AgentPlanCard
-          v-if="msg.role === 'plan' && msg.plan"
-          :plan="msg.plan"
-          @confirm="handlePlanConfirm"
-          @reject="handlePlanReject"
-        />
-        <AgentMessageBubble
-          v-else
-          :msg="msg"
-          :is-streaming="store.connectionState === 'streaming'
-            && msg.role === 'assistant'
-            && msg === store.messages[store.messages.length - 1]"
-          @regenerate="handleRegenerate"
-          @edit-resend="handleEditResend"
-        />
-      </template>
+      <div v-else class="mx-auto max-w-4xl space-y-8">
+        <template v-for="msg in store.messages" :key="msg.id">
+          <AgentPlanCard
+            v-if="msg.role === 'plan' && msg.plan"
+            :plan="msg.plan"
+            @confirm="handlePlanConfirm"
+            @reject="handlePlanReject"
+          />
+          <AgentMessageBubble
+            v-else
+            :msg="msg"
+            :is-streaming="
+              store.connectionState === 'streaming' &&
+              msg.role === 'assistant' &&
+              msg === store.messages[store.messages.length - 1]
+            "
+            @regenerate="handleRegenerate"
+            @edit-resend="handleEditResend"
+          />
+        </template>
 
-      <div v-if="store.connectionState === 'connecting'" class="cf-connecting flex items-start gap-3 pl-1">
-        <span class="cf-ai-avatar grid h-8 w-8 shrink-0 place-items-center rounded-full text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_8px_18px_-8px_rgb(var(--cf-color-primary-500-rgb)/0.5)]">
-          <Sparkles :size="14" :stroke-width="2" />
-        </span>
-        <div class="flex flex-col gap-1.5 pt-1">
-          <span class="cf-skel-line h-2.5 w-[180px] rounded-full" />
-          <span class="cf-skel-line h-2.5 w-[120px] rounded-full" style="--cf-i: 1" />
-        </div>
-      </div>
-
-      <div
-        v-if="store.connectionState === 'error'"
-        class="cf-error relative flex items-start gap-3 rounded-xl bg-rose-500/[0.06] dark:bg-rose-500/[0.1] px-4 py-3 ring-1 ring-inset ring-rose-500/15"
-      >
-        <span class="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-rose-500" aria-hidden="true" />
-        <AlertTriangle class="mt-0.5 shrink-0 text-rose-500" :size="14" :stroke-width="1.75" />
-        <div class="flex-1 min-w-0">
-          <p class="text-[13px] text-rose-700 dark:text-rose-300 leading-relaxed">
-            {{ store.errorMessage || '连接出错，请重试' }}
-          </p>
-          <button
-            type="button"
-            class="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors cursor-pointer"
-            @click="store.connectionState = 'idle'; store.errorMessage = null"
+        <div
+          v-if="store.connectionState === 'connecting'"
+          class="cf-connecting flex items-start gap-3 sm:gap-4"
+        >
+          <span
+            class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-primary-500/50 bg-primary-500/[0.12] text-primary-400 sm:h-9 sm:w-9"
           >
-            知道了
-          </button>
+            <Sparkles :size="16" :stroke-width="2" />
+          </span>
+          <div class="flex flex-col gap-2 pt-2">
+            <span class="cf-skel-line h-2.5 w-[180px] rounded-full" />
+            <span class="cf-skel-line h-2.5 w-[120px] rounded-full" style="--cf-i: 1" />
+          </div>
         </div>
-      </div>
 
-      <div
-        v-if="!store.hasQuota && store.quotaRemaining === 0"
-        class="cf-quota-end relative flex items-center gap-2 rounded-xl bg-primary-500/[0.06] px-4 py-3 ring-1 ring-inset ring-primary-500/15"
-      >
-        <span class="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-primary-500" aria-hidden="true" />
-        <Sparkles class="shrink-0 text-primary-500" :size="14" :stroke-width="1.75" />
-        <p class="text-[13px] text-stone-700 dark:text-stone-200">今日对话配额已用完，请明天再来</p>
+        <div
+          v-if="store.connectionState === 'error'"
+          class="cf-error relative flex items-start gap-3 rounded-xl border border-rose-500/15 bg-rose-500/[0.08] px-4 py-3"
+        >
+          <span
+            class="absolute bottom-3 left-0 top-3 w-[3px] rounded-r-full bg-rose-500"
+            aria-hidden="true"
+          />
+          <AlertTriangle class="mt-0.5 shrink-0 text-rose-500" :size="15" :stroke-width="1.75" />
+          <div class="min-w-0 flex-1">
+            <p class="m-0 text-[13px] leading-relaxed text-rose-300">
+              {{ store.errorMessage || '连接出错，请重试' }}
+            </p>
+            <button
+              type="button"
+              class="mt-1 inline-flex cursor-pointer items-center gap-1 text-[11px] font-medium text-rose-400 transition-colors hover:text-rose-300"
+              @click="clearError"
+            >
+              知道了
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-if="!store.hasQuota && store.quotaRemaining === 0"
+          class="cf-quota-end relative flex items-center gap-2 rounded-xl border border-primary-500/15 bg-primary-500/[0.08] px-4 py-3"
+        >
+          <span
+            class="absolute bottom-3 left-0 top-3 w-[3px] rounded-r-full bg-primary-500"
+            aria-hidden="true"
+          />
+          <Sparkles class="shrink-0 text-primary-400" :size="15" :stroke-width="1.75" />
+          <p class="m-0 text-[13px] text-stone-300">今日对话配额已用完，请明天再来</p>
+        </div>
       </div>
     </div>
 
-    <AgentInputArea @send="handleSend" />
+    <div class="shrink-0 bg-[#000000]">
+      <AgentInputArea @send="handleSend" />
+    </div>
   </div>
 </template>
 
@@ -136,17 +156,21 @@ const connectionDotClass = computed(() => {
     case 'error':
       return 'bg-rose-500'
     default:
-      return 'bg-stone-300 dark:bg-stone-600'
+      return 'bg-stone-600'
   }
 })
 
 /** 状态文案 */
 const connectionLabel = computed(() => {
   switch (store.connectionState) {
-    case 'streaming': return '生成中'
-    case 'connecting': return '连接中'
-    case 'error': return '已断开'
-    default: return '在线'
+    case 'streaming':
+      return '生成中'
+    case 'connecting':
+      return '连接中'
+    case 'error':
+      return '已断开'
+    default:
+      return '在线'
   }
 })
 
@@ -202,6 +226,11 @@ function handleQuickPrompt(prompt: string) {
   handleSend(prompt, [])
 }
 
+function clearError() {
+  store.connectionState = 'idle'
+  store.errorMessage = null
+}
+
 /**
  * 确认执行计划
  * TODO: 待后端 API 就绪后替换为真实接口调用
@@ -220,23 +249,8 @@ async function handlePlanReject(planId: string) {
 </script>
 
 <style scoped>
-/* 顶部 liquid glass：仅保留 inset hairline，背景由 Tailwind dark: 工具类驱动 */
 .cf-chat-topbar {
-  box-shadow:
-    inset 0 -1px 0 0 rgb(15 23 42 / 0.06),
-    inset 0 1px 0 0 rgb(255 255 255 / 0.55);
-}
-:global(html.dark) .cf-chat-topbar {
-  box-shadow:
-    inset 0 -1px 0 0 rgb(255 255 255 / 0.05),
-    inset 0 1px 0 0 rgb(255 255 255 / 0.04);
-}
-
-/* 装饰光斑：基于主色 token，单一不透明度在浅 / 深底色上都自然 */
-.cf-chat-aura {
-  background: radial-gradient(closest-side, rgb(var(--cf-color-primary-500-rgb) / 0.16), transparent 70%);
-  filter: blur(2px);
-  z-index: 0;
+  box-shadow: inset 0 -1px 0 0 rgb(255 255 255 / 0.05);
 }
 
 .cf-scroll {
@@ -259,27 +273,28 @@ async function handlePlanReject(planId: string) {
   box-shadow: 0 0 0 0 rgb(var(--cf-color-primary-500-rgb) / 0.55);
 }
 @keyframes cf-state-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--cf-color-primary-500-rgb) / 0.55); }
-  60% { box-shadow: 0 0 0 6px rgb(var(--cf-color-primary-500-rgb) / 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--cf-color-primary-500-rgb) / 0.55);
+  }
+  60% {
+    box-shadow: 0 0 0 6px rgb(var(--cf-color-primary-500-rgb) / 0);
+  }
 }
 
-/* 连接中 skeleton 行：使用 stone-500 半透明，浅 / 深底色都自然 */
 .cf-skel-line {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(
-    90deg,
-    rgb(120 113 108 / 0.14) 0%,
-    rgb(120 113 108 / 0.26) 50%,
-    rgb(120 113 108 / 0.14) 100%
-  );
-  background-size: 200% 100%;
-  animation: cf-shimmer 1.6s linear infinite;
+  background-color: rgb(255 255 255 / 0.08);
+  animation: cf-skel-pulse 1.4s ease-in-out infinite;
   animation-delay: calc(var(--cf-i, 0) * 120ms);
 }
-@keyframes cf-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+@keyframes cf-skel-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .cf-connecting,
@@ -288,17 +303,14 @@ async function handlePlanReject(planId: string) {
   animation: cf-msg-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes cf-msg-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.cf-ai-avatar {
-  background: linear-gradient(
-    135deg,
-    rgb(var(--cf-color-primary-400-rgb) / 1) 0%,
-    rgb(var(--cf-color-primary-500-rgb) / 1) 50%,
-    rgb(var(--cf-color-primary-600-rgb) / 1) 100%
-  );
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
