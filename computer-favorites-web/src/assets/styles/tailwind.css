@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './theme-tokens.css';
+@import 'markstream-vue/index.css';
 @config '../../../tailwind.config.js';
 
 html {

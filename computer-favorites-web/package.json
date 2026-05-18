@@ -23,6 +23,7 @@
     "lucide-vue-next": "^0.525.0",
     "marked": "^17.0.5",
     "marked-highlight": "^2.2.3",
+    "markstream-vue": "^1.0.0",
     "pinia": "^3.0.4",
     "primeicons": "^7.0.0",
     "primevue": "^4.5.4",

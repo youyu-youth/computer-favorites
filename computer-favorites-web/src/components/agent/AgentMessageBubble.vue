@@ -34,15 +34,12 @@
       <!-- 气泡主体 -->
       <div
         v-if="msg.content"
-        class="cf-bubble-content text-[14px] leading-relaxed whitespace-pre-wrap break-words"
+        class="cf-bubble-content text-[14px] leading-relaxed break-words"
         :class="msg.role === 'user' ? 'cf-bubble--user' : 'cf-bubble--assistant'"
       >
-        {{ msg.content }}
-        <!-- Streaming cursor：1px brand 高光条，平滑闪烁 -->
-        <span
-          v-if="isStreaming && msg.role === 'assistant'"
-          aria-hidden="true"
-          class="cf-stream-cursor"
+        <MarkdownRender
+          :content="msg.content"
+          custom-id="agent-bubble"
         />
       </div>
 
@@ -103,6 +100,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
 import { Sparkles, UserRound, Copy, Check, RotateCcw, ThumbsUp, ThumbsDown, Pencil } from 'lucide-vue-next'
+import MarkdownRender from 'markstream-vue'
 import type { AgentMessage } from '@/types/agent'
 import AgentThinkingSteps from '@/components/agent/AgentThinkingSteps.vue'
 
@@ -212,21 +210,6 @@ function confirmEdit() {
     0 14px 28px -16px rgba(0, 0, 0, 0.55);
 }
 
-/* 流式光标：1.5px 高亮条 + 平滑闪烁 */
-.cf-stream-cursor {
-  display: inline-block;
-  width: 1.5px;
-  height: 1em;
-  margin-left: 2px;
-  vertical-align: text-bottom;
-  background-color: rgb(var(--cf-color-primary-500-rgb) / 1);
-  border-radius: 999px;
-  animation: cf-stream-cursor 1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-@keyframes cf-stream-cursor {
-  0%, 100% { opacity: 1; transform: scaleY(1); }
-  50% { opacity: 0.25; transform: scaleY(0.8); }
-}
 
 /* AI 头像：brand 渐变 */
 .cf-ai-avatar {
@@ -345,11 +328,195 @@ function confirmEdit() {
 
 @media (prefers-reduced-motion: reduce) {
   .cf-bubble,
-  .cf-stream-cursor,
   .cf-ai-avatar--breathing::after {
     animation: none;
     opacity: 1;
     transform: none;
   }
+}
+</style>
+
+<!-- markstream-vue 内容主题覆盖：非 scoped 块以穿透动态渲染的 DOM -->
+<style>
+[data-custom-id='agent-bubble'] {
+  color: inherit;
+}
+
+/* 标题层级 */
+[data-custom-id='agent-bubble'] h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: inherit;
+}
+[data-custom-id='agent-bubble'] h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1.1rem;
+  margin-bottom: 0.45rem;
+  color: inherit;
+}
+[data-custom-id='agent-bubble'] h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
+  color: inherit;
+}
+[data-custom-id='agent-bubble'] h4,
+[data-custom-id='agent-bubble'] h5,
+[data-custom-id='agent-bubble'] h6 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-top: 0.85rem;
+  margin-bottom: 0.35rem;
+  color: inherit;
+}
+
+/* 段落 */
+[data-custom-id='agent-bubble'] p {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+[data-custom-id='agent-bubble'] p:last-child {
+  margin-bottom: 0;
+}
+
+/* 行内代码 */
+[data-custom-id='agent-bubble'] code:not(pre code) {
+  padding: 0.12em 0.4em;
+  font-size: 0.9em;
+  border-radius: 0.375rem;
+  background-color: rgb(231 229 228 / 0.55);
+  color: rgb(41 37 36 / 0.95);
+}
+html.dark [data-custom-id='agent-bubble'] code:not(pre code) {
+  background-color: rgb(41 37 36 / 0.6);
+  color: rgb(231 229 228 / 0.95);
+}
+
+/* 用户气泡内的行内代码 */
+.cf-bubble--user [data-custom-id='agent-bubble'] code:not(pre code) {
+  background-color: rgb(255 255 255 / 0.2);
+  color: rgb(255 255 255 / 0.9);
+}
+
+/* 代码块 */
+[data-custom-id='agent-bubble'] pre {
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background-color: rgb(245 245 244 / 0.9);
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+html.dark [data-custom-id='agent-bubble'] pre {
+  background-color: rgb(28 25 23 / 0.7);
+}
+/* 用户气泡的代码块继承其渐变底色氛围 */
+.cf-bubble--user [data-custom-id='agent-bubble'] pre {
+  background-color: rgb(0 0 0 / 0.12);
+}
+
+[data-custom-id='agent-bubble'] pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* 链接 */
+[data-custom-id='agent-bubble'] a {
+  color: rgb(var(--cf-color-primary-500-rgb) / 1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 160ms ease;
+}
+[data-custom-id='agent-bubble'] a:hover {
+  opacity: 0.8;
+}
+/* 用户气泡内链接反白 */
+.cf-bubble--user [data-custom-id='agent-bubble'] a {
+  color: rgb(255 255 255 / 0.9);
+}
+
+/* 引用块 */
+[data-custom-id='agent-bubble'] blockquote {
+  margin: 0.5rem 0;
+  padding: 0.35rem 0 0.35rem 0.75rem;
+  border-left: 3px solid rgb(var(--cf-color-primary-500-rgb) / 0.5);
+  background-color: rgb(0 0 0 / 0.02);
+  border-radius: 0 0.375rem 0.375rem 0;
+  color: rgb(82 82 91 / 0.9);
+}
+html.dark [data-custom-id='agent-bubble'] blockquote {
+  border-left-color: rgb(var(--cf-color-primary-500-rgb) / 0.4);
+  background-color: rgb(255 255 255 / 0.02);
+  color: rgb(168 162 158 / 0.9);
+}
+
+/* 无序/有序列表 */
+[data-custom-id='agent-bubble'] ul,
+[data-custom-id='agent-bubble'] ol {
+  margin: 0.35rem 0;
+  padding-left: 1.35rem;
+}
+[data-custom-id='agent-bubble'] li {
+  margin-bottom: 0.15rem;
+}
+[data-custom-id='agent-bubble'] ul {
+  list-style-type: disc;
+}
+[data-custom-id='agent-bubble'] ol {
+  list-style-type: decimal;
+}
+
+/* 水平线 */
+[data-custom-id='agent-bubble'] hr {
+  margin: 0.75rem 0;
+  border: none;
+  border-top: 1px solid rgb(168 162 158 / 0.2);
+}
+html.dark [data-custom-id='agent-bubble'] hr {
+  border-top-color: rgb(255 255 255 / 0.08);
+}
+
+/* 表格 */
+[data-custom-id='agent-bubble'] table {
+  width: 100%;
+  margin: 0.5rem 0;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+[data-custom-id='agent-bubble'] th,
+[data-custom-id='agent-bubble'] td {
+  padding: 0.4rem 0.65rem;
+  text-align: left;
+  border: 1px solid rgb(168 162 158 / 0.18);
+}
+[data-custom-id='agent-bubble'] th {
+  font-weight: 600;
+  background-color: rgb(0 0 0 / 0.03);
+}
+html.dark [data-custom-id='agent-bubble'] th {
+  background-color: rgb(255 255 255 / 0.04);
+}
+html.dark [data-custom-id='agent-bubble'] th,
+html.dark [data-custom-id='agent-bubble'] td {
+  border-color: rgb(255 255 255 / 0.07);
+}
+
+/* 强调 */
+[data-custom-id='agent-bubble'] strong {
+  font-weight: 600;
+}
+
+/* 图片 */
+[data-custom-id='agent-bubble'] img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
 }
 </style>
