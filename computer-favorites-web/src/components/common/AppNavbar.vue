@@ -24,6 +24,38 @@ import {
 import CreateFolderDialog from '@/components/user/CreateFolderDialog.vue'
 import { useFolderStore } from '@/stores/folder'
 
+const props = withDefaults(
+  defineProps<{
+    /** 启用「鼠标移到顶部时下拉显示」的隐藏动画 */
+    autoHide?: boolean
+  }>(),
+  { autoHide: false },
+)
+
+/** autoHide 模式下的导航栏显隐状态 */
+const navbarRevealed = ref(false)
+
+/** mouseleave 防抖句柄，避免鼠标在子元素之间快速穿越导致抖动 */
+let navbarLeaveTimer: ReturnType<typeof setTimeout> | null = null
+
+const handleNavbarMouseEnter = () => {
+  if (!props.autoHide) return
+  if (navbarLeaveTimer) {
+    clearTimeout(navbarLeaveTimer)
+    navbarLeaveTimer = null
+  }
+  navbarRevealed.value = true
+}
+
+const handleNavbarMouseLeave = () => {
+  if (!props.autoHide) return
+  if (navbarLeaveTimer) clearTimeout(navbarLeaveTimer)
+  navbarLeaveTimer = setTimeout(() => {
+    navbarRevealed.value = false
+    navbarLeaveTimer = null
+  }, 120)
+}
+
 const { t } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
@@ -291,13 +323,31 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('click', closeProfileMenuByOutside)
+  if (navbarLeaveTimer) {
+    clearTimeout(navbarLeaveTimer)
+    navbarLeaveTimer = null
+  }
 })
 </script>
 
 <template>
+  <!-- autoHide 模式下的顶部热感应区：导航收起时仍可触发下拉 -->
+  <div
+    v-if="autoHide"
+    aria-hidden="true"
+    class="cf-navbar-hot-zone fixed inset-x-0 top-0 z-40"
+    @mouseenter="handleNavbarMouseEnter"
+  />
+
   <header
     data-testid="navbar-root"
     class="cf-navbar fixed inset-x-0 top-0 z-50 bg-white/65 backdrop-blur-xl backdrop-saturate-150 transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] supports-[backdrop-filter]:bg-white/50 dark:bg-black/55 dark:supports-[backdrop-filter]:bg-black/40"
+    :class="[
+      autoHide ? 'cf-navbar--auto-hide' : '',
+      autoHide && !navbarRevealed ? 'cf-navbar--collapsed' : '',
+    ]"
+    @mouseenter="handleNavbarMouseEnter"
+    @mouseleave="handleNavbarMouseLeave"
   >
     <div class="h-16 w-full px-2 sm:px-4 lg:px-6">
       <div class="grid h-full grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3">
@@ -819,5 +869,25 @@ onBeforeUnmount(() => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-4px) scale(0.99);
+}
+
+/* autoHide 模式：默认隐藏，鼠标移入顶部时下拉显示 */
+.cf-navbar--auto-hide {
+  transition:
+    transform 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.cf-navbar--collapsed {
+  transform: translateY(-100%);
+}
+
+/* 顶部 14px 热感应区：默认透明、可被指针命中 */
+.cf-navbar-hot-zone {
+  height: 14px;
+  pointer-events: auto;
 }
 </style>

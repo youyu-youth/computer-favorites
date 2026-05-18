@@ -1,38 +1,65 @@
 <template>
-  <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-950">
-    <!-- 新对话按钮 -->
-    <div class="px-4 py-3">
+  <div class="cf-session-panel relative flex h-full flex-col bg-stone-50/80 dark:bg-stone-950/80">
+    <!-- Top brand row -->
+    <div class="px-4 pt-4 pb-2">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="grid h-7 w-7 place-items-center rounded-lg bg-primary-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_6px_14px_-6px_rgb(var(--cf-color-primary-500-rgb)/0.6)]">
+          <Sparkles :size="14" :stroke-width="2" />
+        </span>
+        <span class="text-[13px] font-semibold tracking-tight text-stone-900 dark:text-stone-100">CS Copilot</span>
+        <span class="ml-auto text-[10px] font-medium tracking-[0.08em] text-stone-400 uppercase">对话</span>
+      </div>
+
+      <!-- 新对话 CTA -->
       <button
-        class="w-full px-4 py-2.5 text-sm rounded-lg bg-amber-500 text-white hover:bg-amber-600
-               transition-colors cursor-pointer font-medium"
+        type="button"
+        class="cf-new-chat-btn group relative flex w-full items-center justify-center gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px] font-medium text-white transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.985] active:translate-y-px"
         @click="$emit('newChat')"
       >
-        + 新对话
+        <Plus :size="15" :stroke-width="2" class="transition-transform duration-300 group-hover:rotate-90" />
+        新对话
       </button>
     </div>
 
-    <!-- 搜索 -->
-    <div class="px-4 pb-2">
-      <input
-        v-model="searchKeyword"
-        type="text"
-        placeholder="搜索会话..."
-        class="w-full text-xs px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700
-               bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200
-               placeholder-gray-400 dark:placeholder-gray-500
-               outline-none focus:border-amber-400 transition-colors"
-        @input="onSearchInput"
-      />
+    <!-- 搜索：嵌入式 inline icon -->
+    <div class="px-4 pb-3 pt-1">
+      <label class="cf-search-wrap relative block">
+        <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" :size="13" :stroke-width="1.75" />
+        <input
+          v-model="searchKeyword"
+          type="text"
+          placeholder="搜索会话"
+          class="block w-full rounded-lg bg-white/70 dark:bg-stone-900/60 pl-7 pr-2 py-1.5 text-xs text-stone-800 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 ring-1 ring-inset ring-stone-200/80 dark:ring-stone-700/70 outline-none transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:bg-white dark:focus:bg-stone-900 focus:ring-primary-400 focus:ring-2 focus:ring-offset-0"
+          @input="onSearchInput"
+        />
+      </label>
+    </div>
+
+    <!-- 分组头：仅装饰 -->
+    <div class="px-5 pb-1.5 text-[10px] font-medium tracking-[0.12em] uppercase text-stone-400 dark:text-stone-500">
+      最近会话
     </div>
 
     <!-- 会话列表 -->
-    <div class="flex-1 overflow-y-auto px-1">
-      <div v-if="store.sessionsLoading" class="px-3 py-8 text-center text-sm text-gray-400">
-        加载中...
+    <div class="flex-1 overflow-y-auto cf-scroll pb-2">
+      <!-- 骨架屏（加载中） -->
+      <div v-if="store.sessionsLoading" class="space-y-2 px-2 py-1">
+        <div v-for="n in 5" :key="n" class="cf-skeleton mx-2 h-9 rounded-xl" :style="{ '--cf-i': n }" />
       </div>
-      <div v-else-if="store.sessions.length === 0" class="px-3 py-8 text-center text-sm text-gray-400">
-        暂无对话
+
+      <!-- 空状态 -->
+      <div
+        v-else-if="store.sessions.length === 0"
+        class="mx-4 mt-4 flex flex-col items-start gap-2 rounded-2xl border border-dashed border-stone-300/80 dark:border-stone-700/70 bg-white/40 dark:bg-stone-900/30 px-4 py-5"
+      >
+        <span class="grid h-7 w-7 place-items-center rounded-lg bg-stone-900/[0.04] text-stone-400 dark:bg-white/[0.06] dark:text-stone-500">
+          <MessageSquareDashed :size="14" :stroke-width="1.75" />
+        </span>
+        <p class="text-[13px] font-medium text-stone-700 dark:text-stone-200 leading-snug">还没有对话</p>
+        <p class="text-[11px] text-stone-400 dark:text-stone-500 leading-relaxed">点击上方「新对话」开始你的第一次提问</p>
       </div>
+
+      <!-- 列表 -->
       <AgentSessionItem
         v-for="session in store.sessions"
         :key="session.id"
@@ -45,13 +72,21 @@
       />
     </div>
 
-    <!-- 配额底部信息 -->
-    <div v-if="store.quotaRemaining !== null" class="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-      <p class="text-xs text-gray-500 dark:text-gray-400">
-        今日配额:
-        <span class="text-amber-500 font-semibold">{{ store.quotaRemaining }}</span>
-        / {{ store.quota?.dailyMessageLimit ?? '-' }} 条消息
-      </p>
+    <!-- 配额：mono 数字 + progress bar -->
+    <div v-if="store.quotaRemaining !== null" class="px-4 py-3 border-t border-stone-200/70 dark:border-stone-800/70 bg-white/40 dark:bg-stone-950/60 backdrop-blur-sm">
+      <div class="flex items-baseline justify-between mb-1.5">
+        <span class="text-[10px] font-medium tracking-[0.1em] uppercase text-stone-400 dark:text-stone-500">今日配额</span>
+        <span class="text-[11px] tabular-nums font-medium text-stone-700 dark:text-stone-200">
+          <span class="text-primary-500">{{ store.quotaRemaining }}</span>
+          <span class="text-stone-400 dark:text-stone-500"> / {{ store.quota?.dailyMessageLimit ?? '—' }}</span>
+        </span>
+      </div>
+      <div class="h-[3px] w-full rounded-full bg-stone-900/[0.05] dark:bg-white/[0.06] overflow-hidden">
+        <div
+          class="h-full rounded-full bg-primary-500 transition-[width] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          :style="{ width: `${quotaPercent}%` }"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -63,7 +98,8 @@
  *
  * Agent 会话列表组件 — 左侧边栏会话管理面板
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { Sparkles, Plus, Search, MessageSquareDashed } from 'lucide-vue-next'
 import { useAgentChatStore } from '@/stores/agentChat'
 import { togglePin, deleteSession, renameSession } from '@/api/agent'
 import AgentSessionItem from '@/components/agent/AgentSessionItem.vue'
@@ -78,6 +114,17 @@ const store = useAgentChatStore()
 const searchKeyword = ref('')
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * 当日配额剩余百分比（0-100），用于配额进度条
+ * - 后端未返回 quota.dailyMessageLimit 时回退为 0%（避免 0/0 NaN）
+ */
+const quotaPercent = computed(() => {
+  const limit = store.quota?.dailyMessageLimit
+  const remaining = store.quotaRemaining
+  if (!limit || remaining == null) return 0
+  return Math.max(0, Math.min(100, Math.round((remaining / limit) * 100)))
+})
 
 /**
  * 搜索输入防抖处理，300ms 后触发会话列表加载
@@ -122,3 +169,79 @@ async function handleRename(id: number, title: string) {
   } catch { /* 忽略错误 */ }
 }
 </script>
+
+<style scoped>
+/* 主 CTA：内嵌高光 + 染色阴影，避免塑料色块 */
+.cf-new-chat-btn {
+  background-color: rgb(var(--cf-color-primary-500-rgb) / 1);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.08),
+    0 1px 2px 0 rgba(15, 23, 42, 0.08),
+    0 10px 22px -8px rgb(var(--cf-color-primary-500-rgb) / 0.45);
+}
+.cf-new-chat-btn:hover {
+  background-color: rgb(var(--cf-color-primary-600-rgb) / 1);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.12),
+    0 2px 4px 0 rgba(15, 23, 42, 0.1),
+    0 14px 28px -10px rgb(var(--cf-color-primary-500-rgb) / 0.55);
+}
+
+/* 自定义滚动条，避免默认浏览器粗条带 */
+.cf-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(120 113 108 / 0.25) transparent;
+}
+.cf-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.cf-scroll::-webkit-scrollbar-thumb {
+  background-color: rgb(120 113 108 / 0.25);
+  border-radius: 999px;
+}
+.cf-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(120 113 108 / 0.4);
+}
+
+/* 骨架屏：错落 stagger + shimmer 动画 */
+.cf-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    rgb(168 162 158 / 0.08) 0%,
+    rgb(168 162 158 / 0.16) 50%,
+    rgb(168 162 158 / 0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation:
+    cf-shimmer 1.6s linear infinite,
+    cf-skeleton-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0s, calc(var(--cf-i, 0) * 60ms);
+}
+:global(html.dark) .cf-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.04) 0%,
+    rgb(255 255 255 / 0.08) 50%,
+    rgb(255 255 255 / 0.04) 100%
+  );
+  background-size: 200% 100%;
+}
+@keyframes cf-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes cf-skeleton-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-skeleton {
+    animation: none;
+  }
+}
+</style>

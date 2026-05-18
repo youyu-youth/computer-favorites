@@ -1,79 +1,65 @@
 <template>
   <div
-    class="group flex items-center gap-2 px-3 py-2.5 mx-1 rounded-lg cursor-pointer transition-colors text-sm"
+    class="cf-session-item group relative flex items-center gap-2 mx-2 px-3 py-2.5 rounded-xl cursor-pointer text-sm transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
     :class="isActive
-      ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'"
+      ? 'bg-stone-900/[0.04] text-stone-900 dark:bg-white/[0.06] dark:text-stone-50'
+      : 'text-stone-500 dark:text-stone-400 hover:bg-stone-900/[0.025] dark:hover:bg-white/[0.03] hover:text-stone-700 dark:hover:text-stone-200'"
+    :data-active="isActive ? 'true' : 'false'"
     @click="$emit('select')"
   >
-    <!-- Pin icon -->
-    <svg
-      v-if="session.pinned"
-      class="w-3 h-3 shrink-0 text-amber-500"
-      fill="currentColor" viewBox="0 0 24 24"
-    >
-      <path d="M16 9V4h1V2H7v2h1v5l-2 4v2h5v6l1 1 1-1v-6h5v-2l-2-4z" />
-    </svg>
+    <!-- 选中态左侧 brand rail -->
+    <span
+      v-if="isActive"
+      aria-hidden="true"
+      class="cf-session-rail absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r-full bg-primary-500"
+    />
 
-    <!-- Title or rename input -->
+    <!-- Pin badge（置顶标识） -->
+    <Pin
+      v-if="session.pinned"
+      class="shrink-0 text-primary-500"
+      :size="11"
+      :stroke-width="2.25"
+      fill="currentColor"
+    />
+
+    <!-- 标题 / 重命名输入 -->
     <input
       v-if="isRenaming"
       ref="renameInputRef"
       v-model="renameText"
-      class="flex-1 text-sm px-1.5 py-0.5 rounded bg-white dark:bg-gray-900
-             border border-amber-400 outline-none text-gray-800 dark:text-gray-200"
+      class="flex-1 text-sm px-1.5 py-0.5 rounded-md bg-white/95 dark:bg-stone-900 ring-1 ring-primary-400 outline-none text-stone-800 dark:text-stone-100 transition-shadow focus:ring-2 focus:ring-primary-500/40"
       @keydown.enter="confirmRename"
       @keydown.escape="cancelRename"
       @click.stop
     />
-    <span v-else class="flex-1 truncate">
+    <span
+      v-else
+      class="flex-1 truncate transition-colors"
+      :class="isActive ? 'font-medium' : ''"
+    >
       {{ session.title || '新对话' }}
     </span>
 
-    <!-- Hover actions -->
-    <div class="hidden group-hover:flex items-center gap-0.5 shrink-0">
-      <!-- Toggle pin -->
+    <!-- Hover 操作槽：滑入 + fade in -->
+    <div class="cf-session-actions pointer-events-none flex shrink-0 items-center gap-0.5 opacity-0 translate-x-1 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:pointer-events-auto group-hover:opacity-100 group-hover:translate-x-0">
+      <!-- Pin / Unpin -->
       <button
-        v-if="session.pinned"
-        class="p-0.5 text-amber-500 hover:text-amber-600 rounded cursor-pointer"
-        title="取消置顶"
-        @click.stop="$emit('togglePin', session.id, false)"
+        type="button"
+        class="cf-session-action"
+        :class="session.pinned ? 'text-primary-500 hover:text-primary-600' : 'hover:text-primary-500'"
+        :title="session.pinned ? '取消置顶' : '置顶'"
+        @click.stop="$emit('togglePin', session.id, !session.pinned)"
       >
-        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M16 9V4h1V2H7v2h1v5l-2 4v2h5v6l1 1 1-1v-6h5v-2l-2-4z" />
-        </svg>
-      </button>
-      <button
-        v-else
-        class="p-0.5 text-gray-400 hover:text-amber-500 rounded cursor-pointer"
-        title="置顶"
-        @click.stop="$emit('togglePin', session.id, true)"
-      >
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 15l7-7 7 7" />
-        </svg>
+        <Pin :size="13" :stroke-width="1.75" :fill="session.pinned ? 'currentColor' : 'none'" />
       </button>
       <!-- Rename -->
-      <button
-        class="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded cursor-pointer"
-        title="重命名"
-        @click.stop="startRename"
-      >
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-        </svg>
+      <button type="button" class="cf-session-action" title="重命名" @click.stop="startRename">
+        <Pencil :size="13" :stroke-width="1.75" />
       </button>
       <!-- Delete -->
-      <button
-        class="p-0.5 text-gray-400 hover:text-red-500 rounded cursor-pointer"
-        title="删除"
-        @click.stop="$emit('delete', session.id)"
-      >
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-        </svg>
+      <button type="button" class="cf-session-action hover:!text-rose-500" title="删除" @click.stop="$emit('delete', session.id)">
+        <Trash2 :size="13" :stroke-width="1.75" />
       </button>
     </div>
   </div>
@@ -81,6 +67,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
+import { Pin, Pencil, Trash2 } from 'lucide-vue-next'
 import type { AgentSession } from '@/types/agent'
 
 defineOptions({ name: 'AgentSessionItem' })
@@ -118,3 +105,47 @@ function cancelRename() {
   isRenaming.value = false
 }
 </script>
+
+<style scoped>
+.cf-session-action {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  color: rgb(168 162 158 / 1);
+  cursor: pointer;
+  transition:
+    color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cf-session-action:hover {
+  background-color: rgb(0 0 0 / 0.04);
+  color: rgb(63 63 70 / 1);
+}
+:global(html.dark) .cf-session-action {
+  color: rgb(120 113 108 / 1);
+}
+:global(html.dark) .cf-session-action:hover {
+  background-color: rgb(255 255 255 / 0.06);
+  color: rgb(231 229 228 / 1);
+}
+.cf-session-action:active {
+  transform: scale(0.92);
+}
+
+.cf-session-rail {
+  animation: cf-rail-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes cf-rail-in {
+  from {
+    transform: translate(-2px, -50%) scaleY(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: translate(0, -50%) scaleY(1);
+    opacity: 1;
+  }
+}
+</style>

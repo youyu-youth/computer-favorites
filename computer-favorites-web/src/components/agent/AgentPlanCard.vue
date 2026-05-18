@@ -1,43 +1,48 @@
 <template>
   <div class="flex justify-center my-4">
     <div
-      class="w-full max-w-md rounded-xl border overflow-hidden"
-      :class="riskBorderClass"
+      class="cf-plan-card group relative w-full max-w-md overflow-hidden rounded-2xl bg-white/95 dark:bg-stone-900/70 ring-1 ring-stone-200/80 dark:ring-stone-700/60 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_22px_44px_-22px_rgba(15,23,42,0.18)]"
     >
+      <!-- 左侧风险等级 rail（4px 高对比，避免一圈彩边） -->
+      <span aria-hidden="true" class="cf-plan-rail absolute left-0 top-0 bottom-0 w-[3px] rounded-r-full" :class="railClass" />
+
       <!-- Header -->
-      <div class="px-4 py-2.5 flex items-center gap-2" :class="riskBgClass">
-        <svg class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-        </svg>
-        <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">执行计划确认</span>
-        <span class="ml-auto text-xs px-1.5 py-0.5 rounded-full" :class="riskBadgeClass">
+      <div class="flex items-center gap-2.5 px-5 pt-4 pb-3">
+        <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg ring-1 ring-inset" :class="iconWrapClass">
+          <component :is="riskIcon" :size="14" :stroke-width="1.75" />
+        </span>
+        <div class="flex flex-1 items-baseline gap-2 min-w-0">
+          <span class="text-[13px] font-semibold tracking-tight text-stone-900 dark:text-stone-100">执行计划确认</span>
+          <span class="text-[10px] font-medium tracking-[0.08em] uppercase text-stone-400 dark:text-stone-500">Plan</span>
+        </div>
+        <span class="text-[11px] font-medium tabular-nums px-2 py-0.5 rounded-full ring-1 ring-inset" :class="badgeClass">
           {{ riskLabel }}
         </span>
       </div>
 
       <!-- Body -->
-      <div class="px-4 py-3 bg-white dark:bg-gray-900">
-        <p class="text-sm text-gray-700 dark:text-gray-300">{{ plan.summary }}</p>
+      <div class="px-5 pb-4">
+        <p class="text-[13px] text-stone-700 dark:text-stone-200 leading-relaxed">{{ plan.summary }}</p>
 
-        <div class="flex gap-2 mt-3" v-if="plan.status === 'wait_confirm'">
+        <div v-if="plan.status === 'wait_confirm'" class="mt-4 flex items-center gap-2">
           <button
-            class="px-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600
-                   text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800
-                   transition-colors cursor-pointer"
+            type="button"
+            class="cf-plan-btn cf-plan-btn--ghost"
             @click="$emit('reject', plan.planId)"
           >
             拒绝
           </button>
           <button
-            class="px-3 py-1.5 text-xs rounded-lg bg-green-500 text-white hover:bg-green-600
-                   transition-colors cursor-pointer"
+            type="button"
+            class="cf-plan-btn cf-plan-btn--primary"
             @click="$emit('confirm', plan.planId)"
           >
+            <Check :size="13" :stroke-width="2.25" />
             确认执行
           </button>
         </div>
-        <div v-else class="mt-2 text-xs text-gray-500">
+        <div v-else class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-stone-900/[0.04] dark:bg-white/[0.05] px-2.5 py-0.5 text-[11px] text-stone-500 dark:text-stone-400">
+          <span class="h-1.5 w-1.5 rounded-full" :class="plan.status === 'approved' ? 'bg-emerald-500' : 'bg-stone-400'" />
           {{ plan.status === 'approved' ? '已确认执行' : '已拒绝' }}
         </div>
       </div>
@@ -47,6 +52,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { ShieldCheck, ShieldAlert, AlertOctagon, Check } from 'lucide-vue-next'
 import type { AgentPlan } from '@/types/agent'
 
 defineOptions({ name: 'AgentPlanCard' })
@@ -69,30 +75,129 @@ const riskLabel = computed(() => {
   }
 })
 
-const riskBorderClass = computed(() => {
+/** 风险等级 → lucide 图标（绿盾 / 警示盾 / 八角警告） */
+const riskIcon = computed(() => {
   switch (props.plan.riskLevel) {
-    case 'high': return 'border-red-300 dark:border-red-700'
-    case 'medium': return 'border-amber-300 dark:border-amber-700'
-    case 'low': return 'border-green-300 dark:border-green-700'
-    default: return 'border-gray-300 dark:border-gray-700'
+    case 'high': return AlertOctagon
+    case 'medium': return ShieldAlert
+    case 'low': return ShieldCheck
+    default: return ShieldAlert
   }
 })
 
-const riskBgClass = computed(() => {
+/** 左侧 rail 颜色 */
+const railClass = computed(() => {
   switch (props.plan.riskLevel) {
-    case 'high': return 'bg-red-50 dark:bg-red-950/30'
-    case 'medium': return 'bg-amber-50 dark:bg-amber-950/30'
-    case 'low': return 'bg-green-50 dark:bg-green-950/30'
-    default: return 'bg-gray-50 dark:bg-gray-800'
+    case 'high': return 'bg-rose-500'
+    case 'medium': return 'bg-amber-500'
+    case 'low': return 'bg-emerald-500'
+    default: return 'bg-stone-300'
   }
 })
 
-const riskBadgeClass = computed(() => {
+/** 图标包装：tinted bg + ring */
+const iconWrapClass = computed(() => {
   switch (props.plan.riskLevel) {
-    case 'high': return 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400'
-    case 'medium': return 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400'
-    case 'low': return 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400'
-    default: return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+    case 'high': return 'bg-rose-500/[0.08] text-rose-500 ring-rose-500/15'
+    case 'medium': return 'bg-amber-500/[0.08] text-amber-600 ring-amber-500/15 dark:text-amber-400'
+    case 'low': return 'bg-emerald-500/[0.08] text-emerald-600 ring-emerald-500/15 dark:text-emerald-400'
+    default: return 'bg-stone-500/[0.08] text-stone-500 ring-stone-500/15'
+  }
+})
+
+/** 风险 badge：tinted pill */
+const badgeClass = computed(() => {
+  switch (props.plan.riskLevel) {
+    case 'high': return 'bg-rose-500/[0.08] text-rose-600 ring-rose-500/15 dark:text-rose-400'
+    case 'medium': return 'bg-amber-500/[0.08] text-amber-700 ring-amber-500/15 dark:text-amber-400'
+    case 'low': return 'bg-emerald-500/[0.08] text-emerald-700 ring-emerald-500/15 dark:text-emerald-400'
+    default: return 'bg-stone-500/[0.08] text-stone-600 ring-stone-500/15'
   }
 })
 </script>
+
+<style scoped>
+.cf-plan-card {
+  animation: cf-plan-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes cf-plan-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cf-plan-rail {
+  animation: cf-rail-grow 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+}
+@keyframes cf-rail-grow {
+  from { transform: scaleY(0); opacity: 0; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+/* 计划卡按钮：以 brand 主色为唯一 accent，避免冲突的绿色 CTA */
+.cf-plan-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 1.875rem;
+  padding-inline: 0.875rem;
+  border-radius: 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cf-plan-btn:active {
+  transform: scale(0.97) translateY(1px);
+}
+
+.cf-plan-btn--ghost {
+  color: rgb(82 82 91 / 1);
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+}
+.cf-plan-btn--ghost:hover {
+  background-color: rgb(0 0 0 / 0.04);
+  color: rgb(24 24 27 / 1);
+}
+:global(html.dark) .cf-plan-btn--ghost {
+  color: rgb(168 162 158 / 1);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+}
+:global(html.dark) .cf-plan-btn--ghost:hover {
+  background-color: rgb(255 255 255 / 0.06);
+  color: rgb(231 229 228 / 1);
+}
+
+.cf-plan-btn--primary {
+  color: white;
+  background-color: rgb(var(--cf-color-primary-500-rgb) / 1);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.08),
+    0 1px 2px 0 rgba(15, 23, 42, 0.08),
+    0 8px 18px -6px rgb(var(--cf-color-primary-500-rgb) / 0.45);
+}
+.cf-plan-btn--primary:hover {
+  background-color: rgb(var(--cf-color-primary-600-rgb) / 1);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.12),
+    0 2px 4px 0 rgba(15, 23, 42, 0.1),
+    0 12px 24px -8px rgb(var(--cf-color-primary-500-rgb) / 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-plan-card,
+  .cf-plan-rail {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+</style>

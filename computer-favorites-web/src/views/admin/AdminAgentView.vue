@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-[calc(100vh-4rem)]">
+  <div class="flex h-screen">
     <aside class="hidden md:flex flex-col w-72 shrink-0 border-r border-gray-200 dark:border-gray-700">
       <AgentSessionList @new-chat="handleNewChat" />
     </aside>
@@ -18,7 +18,7 @@
     </Teleport>
 
     <main class="flex-1 min-w-0">
-      <AgentChatView @toggle-sidebar="mobileSidebarOpen = !mobileSidebarOpen" />
+      <AgentChatAdminView @toggle-sidebar="mobileSidebarOpen = !mobileSidebarOpen" />
     </main>
   </div>
 </template>
@@ -27,7 +27,7 @@
 import { ref, onMounted } from 'vue'
 import { useAgentChatStore } from '@/stores/agentChat'
 import AgentSessionList from '@/components/agent/AgentSessionList.vue'
-import AgentChatView from '@/components/agent/AgentChatView.vue'
+import AgentChatAdminView from '@/views/admin/AgentChatAdminView.vue'
 
 defineOptions({ name: 'AdminAgentView' })
 

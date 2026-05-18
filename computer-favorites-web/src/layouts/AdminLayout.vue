@@ -12,6 +12,9 @@ const showSidebar = computed(() => {
   return route.meta.hideAdminSidebar !== true
 })
 
+/** 路由 meta.headerAutoHide=true 时启用顶栏 hover-reveal 模式 */
+const headerAutoHide = computed(() => route.meta?.headerAutoHide === true)
+
 watch(
   () => route.meta.hideAdminSidebar,
   (hideSidebar) => {
@@ -28,7 +31,7 @@ watch(
     class="flex flex-col min-h-screen bg-gray-50 text-gray-900 dark:bg-dark-bg dark:text-gray-200 transition-colors duration-200 font-sans"
     data-cf-theme="admin"
   >
-    <AdminHeader />
+    <AdminHeader :auto-hide="headerAutoHide" />
     <div class="flex flex-1 min-h-0">
       <AdminSidebarTree v-if="showSidebar" />
       <div class="flex-1 min-w-0">

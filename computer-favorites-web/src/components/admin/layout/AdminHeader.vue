@@ -10,6 +10,38 @@ import Button from 'primevue/button'
 import { useToast } from '@/composables/useToast'
 import { buildAdminAuthHeaders } from '@/api/admin-auth-headers'
 
+const props = withDefaults(
+  defineProps<{
+    /** 启用「鼠标移到顶部时下拉显示」的隐藏动画 */
+    autoHide?: boolean
+  }>(),
+  { autoHide: false },
+)
+
+/** autoHide 模式下的顶栏显隐状态 */
+const headerRevealed = ref(false)
+
+/** mouseleave 防抖句柄 */
+let headerLeaveTimer: ReturnType<typeof setTimeout> | null = null
+
+const handleHeaderMouseEnter = () => {
+  if (!props.autoHide) return
+  if (headerLeaveTimer) {
+    clearTimeout(headerLeaveTimer)
+    headerLeaveTimer = null
+  }
+  headerRevealed.value = true
+}
+
+const handleHeaderMouseLeave = () => {
+  if (!props.autoHide) return
+  if (headerLeaveTimer) clearTimeout(headerLeaveTimer)
+  headerLeaveTimer = setTimeout(() => {
+    headerRevealed.value = false
+    headerLeaveTimer = null
+  }, 120)
+}
+
 const appStore = useAppStore()
 const adminAuthStore = useAdminAuthStore()
 const adminNavStore = useAdminNavStore()
@@ -294,12 +326,31 @@ onBeforeUnmount(() => {
   releaseAvatarObjectUrl()
   window.removeEventListener('click', closeProfileMenuByOutside)
   window.removeEventListener('keydown', closeProfileMenuByEsc)
+  if (headerLeaveTimer) {
+    clearTimeout(headerLeaveTimer)
+    headerLeaveTimer = null
+  }
 })
 </script>
 
 <template>
+  <!-- autoHide 模式下的顶部热感应区：导航收起时仍可触发下拉 -->
+  <div
+    v-if="autoHide"
+    aria-hidden="true"
+    class="cf-admin-header-hot-zone fixed inset-x-0 top-0 z-40"
+    @mouseenter="handleHeaderMouseEnter"
+  />
+
   <header
-    class="sticky top-0 z-50 bg-white/80 dark:bg-dark-bg/80 backdrop-blur-md border-b border-gray-200 dark:border-dark-border"
+    class="z-50 bg-white/80 dark:bg-dark-bg/80 backdrop-blur-md border-b border-gray-200 dark:border-dark-border"
+    :class="[
+      autoHide ? 'fixed inset-x-0 top-0' : 'sticky top-0',
+      autoHide ? 'cf-admin-header--auto-hide' : '',
+      autoHide && !headerRevealed ? 'cf-admin-header--collapsed' : '',
+    ]"
+    @mouseenter="handleHeaderMouseEnter"
+    @mouseleave="handleHeaderMouseLeave"
   >
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
@@ -537,5 +588,24 @@ onBeforeUnmount(() => {
 .fade-down-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+/* autoHide 模式：默认隐藏，鼠标移入顶部时下拉显示 */
+.cf-admin-header--auto-hide {
+  transition:
+    transform 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 300ms ease,
+    box-shadow 300ms ease;
+  will-change: transform;
+}
+
+.cf-admin-header--collapsed {
+  transform: translateY(-100%);
+}
+
+/* 顶部 14px 热感应区：默认透明、可被指针命中 */
+.cf-admin-header-hot-zone {
+  height: 14px;
+  pointer-events: auto;
 }
 </style>
