@@ -64,18 +64,32 @@
               class="absolute bottom-[calc(100%+6px)] left-0 z-30 min-w-[180px] rounded-xl bg-white/95 dark:bg-stone-900/95 backdrop-blur-xl ring-1 ring-stone-200/80 dark:ring-stone-700/70 shadow-[0_18px_36px_-12px_rgba(15,23,42,0.22)] dark:shadow-[0_24px_48px_-18px_rgba(0,0,0,0.7)] p-1.5"
             >
               <button
-                v-for="skill in store.skills"
-                :key="skill.code"
                 type="button"
                 class="cf-skill-option flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] font-medium tracking-tight transition-colors cursor-pointer"
-                :class="store.currentSkillCode === skill.code
+                :class="!store.currentSkillCode
                   ? 'bg-primary-500/[0.08] text-primary-600 dark:text-primary-400'
                   : 'text-stone-600 dark:text-stone-300 hover:bg-stone-900/[0.04] dark:hover:bg-white/[0.06]'"
-                @click="selectSkill(skill.code)"
+                @click="selectSkill('')"
               >
                 <span
                   class="h-1.5 w-1.5 rounded-full"
-                  :class="store.currentSkillCode === skill.code ? 'bg-primary-500' : 'bg-stone-300 dark:bg-stone-600'"
+                  :class="!store.currentSkillCode ? 'bg-primary-500' : 'bg-stone-300 dark:bg-stone-600'"
+                />
+                通用助手
+              </button>
+              <button
+                v-for="skill in store.skills"
+                :key="skill.skillCode"
+                type="button"
+                class="cf-skill-option flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] font-medium tracking-tight transition-colors cursor-pointer"
+                :class="store.currentSkillCode === skill.skillCode
+                  ? 'bg-primary-500/[0.08] text-primary-600 dark:text-primary-400'
+                  : 'text-stone-600 dark:text-stone-300 hover:bg-stone-900/[0.04] dark:hover:bg-white/[0.06]'"
+                @click="selectSkill(skill.skillCode)"
+              >
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="store.currentSkillCode === skill.skillCode ? 'bg-primary-500' : 'bg-stone-300 dark:bg-stone-600'"
                 />
                 {{ skill.name }}
               </button>
