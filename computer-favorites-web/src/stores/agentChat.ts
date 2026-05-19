@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type {
   AgentSession,
   AgentMessage,
+  AgentSkill,
   AgentQuota,
   AgentPlan,
   ThinkingStep,
@@ -42,7 +43,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
   // === 当前对话 ===
   const currentSessionId = ref<number | null>(null)
   const currentConversationId = ref<string | null>(null)
-  const currentSkillCode = ref<string>('website_submit_assistant')
+  const currentSkillCode = ref<string>('')
   const messages = ref<AgentMessage[]>([])
   const connectionState = ref<ConnectionState>('idle')
   const errorMessage = ref<string | null>(null)
@@ -52,7 +53,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
   const startNewChat = () => {
     currentSessionId.value = null
     currentConversationId.value = null
-    currentSkillCode.value = skills.value[0]?.skillCode || 'website_submit_assistant'
+    currentSkillCode.value = ''
     messages.value = []
     pendingThinkingSteps.value = []
     connectionState.value = 'idle'
@@ -61,7 +62,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
   const switchToSession = async (session: AgentSession) => {
     currentSessionId.value = session.id
     currentConversationId.value = session.conversationId
-    currentSkillCode.value = session.skillCode || 'website_submit_assistant'
+    currentSkillCode.value = session.skillCode || ''
     messages.value = []
     pendingThinkingSteps.value = []
     connectionState.value = 'idle'
@@ -166,22 +167,18 @@ export const useAgentChatStore = defineStore('agentChat', () => {
   }
 
   // === 技能列表 ===
-  const skills = ref<{ code: string; name: string }[]>([
-    { code: 'website_submit_assistant', name: '网站投稿助手' },
-  ])
+  const skills = ref<AgentSkill[]>([])
 
   const loadSkills = async () => {
     try {
       skills.value = await agentApi.getSkills()
-      if (skills.value.length > 0 && !skills.value.find(s => s.skillCode === currentSkillCode.value)) {
-        currentSkillCode.value = skills.value[0].skillCode
-      }
-    } catch { /* keep defaults */ }
+    } catch { /* keep empty, 前端用空技能列表 */ }
   }
 
   const currentSkillName = computed(() => {
+    if (!currentSkillCode.value) return '通用助手'
     const s = skills.value.find((s) => s.skillCode === currentSkillCode.value)
-    return s?.name ?? '网站投稿助手'
+    return s?.name ?? '通用助手'
   })
 
   // === 计算属性 ===
