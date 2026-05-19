@@ -5,6 +5,7 @@ import com.yyyouth.model.vo.agent.AgentQuotaVO;
 import com.yyyouth.service.aichat.agent.tools.ToolRegistry;
 import com.yyyouth.service.aichat.mcp.AgentMcpServerService;
 import com.yyyouth.service.aichat.quota.QuotaGuard;
+import com.yyyouth.service.aichat.skill.GeneralChatPrompt;
 import com.yyyouth.service.aichat.session.AgentSessionService;
 import com.yyyouth.service.aichat.skill.SkillDefinition;
 import com.yyyouth.service.aichat.skill.SkillLoader;
@@ -36,6 +37,7 @@ public class ChatOrchestrator {
     private final QuotaGuard quotaGuard;
     private final AgentSessionService sessionService;
     private final AgentMcpServerService mcpServerService;
+    private final IntentRouter intentRouter;
 
     public void handle(String ownerType, Long ownerId, String message, String skillCode,
                         String conversationId, SseEmitter emitter) {
@@ -52,13 +54,35 @@ public class ChatOrchestrator {
             return;
         }
 
-        SkillDefinition skill = skillLoader.get(skillCode);
-        log.info("[handle] 技能加载: skill={}", skill != null ? skill.getName() : "NULL");
-        if (skill == null) {
-            log.warn("[handle] 技能不存在: {}", skillCode);
-            sink.error("INVALID_SKILL", "技能编码无效: " + skillCode);
-            emitter.complete();
-            return;
+        // 意图路由：skillCode 为空时，LLM 判断闲聊还是功能请求
+        String effectiveSkillCode = skillCode;
+        if (skillCode == null || skillCode.isBlank()) {
+            String intent = intentRouter.classify(message);
+            log.info("[handle] 意图路由: intent={}", intent);
+            if ("functional".equals(intent)) {
+                SkillDefinition defaultSkill = skillLoader.getFirstForAudience(ownerType);
+                if (defaultSkill != null) {
+                    effectiveSkillCode = defaultSkill.getSkillCode();
+                    log.info("[handle] 功能意图，自动匹配技能: {}", effectiveSkillCode);
+                } else {
+                    log.warn("[handle] 功能意图但无可匹配技能，走闲聊");
+                }
+            }
+        }
+
+        // 加载技能
+        SkillDefinition skill = null;
+        if (effectiveSkillCode != null && !effectiveSkillCode.isBlank()) {
+            skill = skillLoader.get(effectiveSkillCode);
+            if (skill == null) {
+                log.warn("[handle] 技能不存在: {}", effectiveSkillCode);
+                sink.error("INVALID_SKILL", "技能编码无效: " + effectiveSkillCode);
+                emitter.complete();
+                return;
+            }
+            log.info("[handle] 技能加载: skill={}", skill.getName());
+        } else {
+            log.info("[handle] 无技能，进入通用闲聊模式");
         }
 
         log.info("[handle] 开始 getOrCreate 会话...");
@@ -66,7 +90,8 @@ public class ChatOrchestrator {
         try {
             long t0 = System.currentTimeMillis();
             session = sessionService.getOrCreate(
-                    conversationId, ownerType, ownerId, "default", skillCode, "dashscope", "qwen-plus");
+                    conversationId, ownerType, ownerId, "default",
+                    effectiveSkillCode, "dashscope", "qwen-plus");
             log.info("[handle] getOrCreate 耗时: {}ms", System.currentTimeMillis() - t0);
         } catch (Exception e) {
             log.error("[handle] getOrCreate 异常: conversationId={}, ownerType={}, ownerId={}",
@@ -76,12 +101,19 @@ public class ChatOrchestrator {
         }
         log.info("[handle] 会话就绪: sessionId={}, conversationId={}", session.getId(), session.getConversationId());
 
-        log.info("[handle] 获取工具: allowlist={}", skill.getToolAllowlist());
-        ToolCallback[] localTools = toolRegistry.getFilteredCallbacks(skill.getToolAllowlist());
-        log.info("[handle] 本地工具数: {}", localTools.length);
-        ToolCallback[] tools = mcpServerService.mergeTools(localTools, skill.getMcpAllowlist());
-        log.info("[handle] 合并后工具数: {} (本地{} + MCP白名单{})",
-                tools.length, localTools.length, skill.getMcpAllowlist());
+        // 工具加载
+        ToolCallback[] tools;
+        if (skill != null) {
+            log.info("[handle] 获取工具: allowlist={}", skill.getToolAllowlist());
+            ToolCallback[] localTools = toolRegistry.getFilteredCallbacks(skill.getToolAllowlist());
+            log.info("[handle] 本地工具数: {}", localTools.length);
+            tools = mcpServerService.mergeTools(localTools, skill.getMcpAllowlist());
+            log.info("[handle] 合并后工具数: {} (本地{} + MCP白名单{})",
+                    tools.length, localTools.length, skill.getMcpAllowlist());
+        } else {
+            tools = new ToolCallback[0];
+            log.info("[handle] 无技能，无工具");
+        }
 
         try {
             if (tools.length == 0) {
@@ -107,7 +139,7 @@ public class ChatOrchestrator {
         sink.thinking(1);
 
         dashscopeChatClient.prompt()
-                .system(skill.getSystemPrompt())
+                .system(skill != null ? skill.getSystemPrompt() : GeneralChatPrompt.SYSTEM_PROMPT)
                 .user(message)
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, session.getConversationId()))
                 .stream()
