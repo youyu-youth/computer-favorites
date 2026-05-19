@@ -130,6 +130,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { Menu, Sparkles, AlertTriangle } from 'lucide-vue-next'
 import { useAgentChatStore } from '@/stores/agentChat'
 import { useAgentChat } from '@/composables/useAgentChat'
+import { confirmPlan, rejectPlan } from '@/api/agent'
 import AgentWelcomeScreen from '@/components/agent/AgentWelcomeScreen.vue'
 import AgentMessageBubble from '@/components/agent/AgentMessageBubble.vue'
 import AgentPlanCard from '@/components/agent/AgentPlanCard.vue'
@@ -236,20 +237,24 @@ function clearError() {
   store.errorMessage = null
 }
 
-/**
- * 确认执行计划
- * TODO: 待后端 API 就绪后替换为真实接口调用
- */
 async function handlePlanConfirm(planId: string) {
-  console.log('confirmPlan:', planId)
+  try {
+    await confirmPlan(planId)
+    const msg = store.messages.find(m => m.role === 'plan' && m.plan?.planId === planId)
+    if (msg?.plan) msg.plan.status = 'approved'
+  } catch (e: any) {
+    store.errorMessage = e.message || '确认失败'
+  }
 }
 
-/**
- * 拒绝执行计划
- * TODO: 待后端 API 就绪后替换为真实接口调用
- */
 async function handlePlanReject(planId: string) {
-  console.log('rejectPlan:', planId)
+  try {
+    await rejectPlan(planId)
+    const msg = store.messages.find(m => m.role === 'plan' && m.plan?.planId === planId)
+    if (msg?.plan) msg.plan.status = 'rejected'
+  } catch (e: any) {
+    store.errorMessage = e.message || '拒绝失败'
+  }
 }
 </script>
 

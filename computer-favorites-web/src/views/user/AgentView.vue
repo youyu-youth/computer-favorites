@@ -40,7 +40,7 @@ const store = useAgentChatStore()
 const mobileSidebarOpen = ref(false)
 
 onMounted(async () => {
-  await Promise.all([store.loadSessions(), store.loadQuota()])
+  await Promise.all([store.loadSessions(), store.loadQuota(), store.loadSkills()])
 })
 
 function handleNewChat() {

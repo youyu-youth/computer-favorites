@@ -27,18 +27,23 @@ public class AgentSessionService {
     public AgentSession getOrCreate(String conversationId, String ownerType, Long ownerId,
                                      String agentCode, String skillCode, String modelProvider, String modelName) {
         if (conversationId != null && !conversationId.isBlank()) {
+            log.info("getOrCreate: 查询已有会话 conversationId={}", conversationId);
             AgentSession existing = agentSessionMapper.selectOne(
                     new LambdaQueryWrapper<AgentSession>()
                             .eq(AgentSession::getConversationId, conversationId));
             if (existing != null) {
+                log.info("getOrCreate: 找到已有会话 id={}", existing.getId());
                 existing.setLastMessageAt(LocalDateTime.now());
                 agentSessionMapper.updateById(existing);
                 return existing;
             }
+            log.info("getOrCreate: conversationId={} 未找到，将创建新会话", conversationId);
         }
 
+        log.info("getOrCreate: 开始创建新会话 ownerType={} ownerId={}", ownerType, ownerId);
         AgentSession session = new AgentSession();
-        session.setConversationId(UUID.fastUUID().toString());
+        String newConvId = UUID.fastUUID().toString();
+        session.setConversationId(newConvId);
         session.setOwnerType(ownerType);
         session.setOwnerId(ownerId);
         session.setAgentCode(agentCode);
@@ -47,7 +52,9 @@ public class AgentSessionService {
         session.setModelProvider(modelProvider);
         session.setModelName(modelName);
         session.setLastMessageAt(LocalDateTime.now());
+        log.info("getOrCreate: 准备 insert, conversationId={}", newConvId);
         agentSessionMapper.insert(session);
+        log.info("getOrCreate: insert 完成, id={}", session.getId());
 
         log.info("创建 Agent 会话: conversationId={}, ownerType={}, ownerId={}",
                 session.getConversationId(), ownerType, ownerId);

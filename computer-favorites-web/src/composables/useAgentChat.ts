@@ -77,6 +77,9 @@ export function useAgentChat() {
         if (data.sessionId) {
           store.currentSessionId = data.sessionId as number
         }
+        if (data.conversationId) {
+          store.currentConversationId = data.conversationId as string
+        }
         break
 
       case 'error':
@@ -107,21 +110,27 @@ export function useAgentChat() {
    */
   async function sendMessage(message: string): Promise<void> {
     if (!message.trim()) return
-    if (!store.hasQuota) return
+    if (!store.hasQuota) {
+      console.warn('[AgentChat] 配额不足，无法发送消息', store.quota)
+      store.errorMessage = '今日对话配额已用完，请明天再来'
+      return
+    }
 
+    console.log('[AgentChat] 发送消息:', message.substring(0, 50))
     store.connectionState = 'connecting'
     store.errorMessage = null
     store.addUserMessage(message)
 
     try {
-      const { stream, abort } = agentApi.chatStream({
+      console.log('[AgentChat] 发起 SSE 请求, conversationId:', store.currentConversationId || '(新会话)')
+      const { response, abort } = await agentApi.chatStream({
         conversationId: store.currentConversationId || undefined,
         message,
         skillCode: store.currentSkillCode,
       })
       abortController = { abort }
 
-      const reader = stream.getReader()
+      const reader = response.body!.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
       let currentEventName = ''
@@ -140,19 +149,20 @@ export function useAgentChat() {
         for (const rawLine of lines) {
           const line = rawLine.trim()
 
-          // 解析 "event: <name>" 行
           if (line.startsWith('event:')) {
             currentEventName = line.slice(6).trim()
             continue
           }
 
-          // 解析 "data: <json>" 行
           if (line.startsWith('data:')) {
             const dataStr = line.slice(5).trim()
             if (!dataStr) continue
 
             try {
               const data = JSON.parse(dataStr)
+              if (currentEventName !== 'message') {
+                console.log('[AgentChat] SSE event:', currentEventName, data)
+              }
               const result = handleSSEEvent(currentEventName, data, assistantMsgId)
               assistantMsgId = result.currentAssistantMsgId
               if (result.shouldStop) {
@@ -160,6 +170,7 @@ export function useAgentChat() {
                 return
               }
             } catch (e) {
+              console.error('[AgentChat] SSE 解析失败:', e)
               store.connectionState = 'error'
               throw e
             }
@@ -172,11 +183,21 @@ export function useAgentChat() {
       }
     } catch (e: any) {
       if (e.name === 'AbortError') {
+        console.log('[AgentChat] 用户取消请求')
         store.connectionState = 'idle'
         return
       }
+      if (e.name === 'TypeError' && e.message.includes('fetch')) {
+        console.error('[AgentChat] 网络连接失败:', e.message)
+        store.errorMessage = '网络连接失败，请检查网络后重试'
+      } else if (e.message && e.message.includes('HTTP')) {
+        console.error('[AgentChat] 服务器响应异常:', e.message)
+        store.errorMessage = `服务器异常 (${e.message})`
+      } else {
+        console.error('[AgentChat] SSE 连接异常:', e.name, e.message)
+        store.errorMessage = e.message || '对话出错，请重试'
+      }
       store.connectionState = 'error'
-      store.errorMessage = e.message || '未知错误'
       throw e
     } finally {
       store.loadQuota()

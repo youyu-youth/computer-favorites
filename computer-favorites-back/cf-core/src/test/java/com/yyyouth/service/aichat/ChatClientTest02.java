@@ -2,7 +2,6 @@ package com.yyyouth.service.aichat;
 
 import cn.hutool.core.lang.UUID;
 
-import com.yyyouth.service.aichat.agent.tools.AgentThinking;
 import com.yyyouth.service.aichat.agent.tools.CalculatorTools;
 import com.yyyouth.service.aichat.agent.tools.DateTimeTools;
 import jakarta.annotation.Resource;
@@ -18,8 +17,6 @@ import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.support.ToolCallbacks;
-import org.springframework.ai.tool.augment.AugmentedToolCallbackProvider;
-import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.ai.tool.method.MethodToolCallback;
 import org.springframework.ai.tool.support.ToolDefinitions;
@@ -52,32 +49,10 @@ public class ChatClientTest02 {
 
 
 
-    /**
-     * 工具调用思考过程：AgentThinking
-     * AugmentedToolCallbackProvider 测试
-     */
     @Test
     public void test05(){
 
-        AugmentedToolCallbackProvider<AgentThinking> augmentedToolCallbackProvider = AugmentedToolCallbackProvider.<AgentThinking>builder().toolObject(new CalculatorTools())
-                .argumentType(AgentThinking.class)
-                .argumentConsumer(event -> {
-                    AgentThinking thinking = event.arguments();
-                    ToolDefinition toolDefinition = event.toolDefinition();
-                    String description = toolDefinition.description();
-                    String input = event.rawInput();
-                    System.out.printf("工具: %s | 推理: %s | 信心: %s%n",
-                            event.toolDefinition().name(),
-                            thinking.innerThought(),
-                            thinking.confidence());
-                    System.out.println("工具描述: " + description);
-                    System.out.println("工具输入: " + input);
-                })
-                .removeExtraArgumentsAfterProcessing(true)
-                .build();
-
         String result = nolChatClient.prompt()
-                .toolCallbacks(augmentedToolCallbackProvider)
                 .user("6 * 8 + 7 等于多少?")
                 .call().chatResponse().getResult().getOutput().getText();
 

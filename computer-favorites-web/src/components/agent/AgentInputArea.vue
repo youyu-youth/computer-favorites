@@ -172,7 +172,7 @@ const disabled = computed(() => store.connectionState === 'streaming' || store.c
 
 /** 当前选中技能名（用于按钮标签显示） */
 const currentSkillName = computed(() => {
-  const cur = store.skills.find((s) => s.code === store.currentSkillCode)
+  const cur = store.skills.find((s) => s.skillCode === store.currentSkillCode)
   return cur?.name ?? '通用助手'
 })
 

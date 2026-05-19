@@ -9,13 +9,17 @@ import com.yyyouth.model.vo.agent.AgentSessionVO;
 import com.yyyouth.service.aichat.chat.ChatOrchestrator;
 import com.yyyouth.service.aichat.quota.QuotaGuard;
 import com.yyyouth.service.aichat.session.AgentSessionService;
+import com.yyyouth.service.aichat.skill.AgentSkillService;
+import com.yyyouth.service.aichat.skill.SkillDefinition;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -34,9 +38,13 @@ public class UserAgentController {
     private final ChatOrchestrator chatOrchestrator;
     private final AgentSessionService sessionService;
     private final QuotaGuard quotaGuard;
+    private final ChatMemory jdbcChatMemory;
+    private final AgentSkillService skillService;
 
-    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(value = "/chat")
     public SseEmitter chat(@RequestBody @Valid AgentChatRequest request) {
+        log.info("===== 收到 Agent 对话请求: skillCode={}, message={}, conversationId={} =====",
+                request.getSkillCode(), request.getMessage(), request.getConversationId());
         StpUtil.checkLogin();
         Long userId = StpUtil.getLoginIdAsLong();
 
@@ -45,8 +53,28 @@ public class UserAgentController {
 
         SseEmitter emitter = new SseEmitter(300_000L);
 
-        chatOrchestrator.handle("user", userId, request.getMessage(),
-                request.getSkillCode(), request.getConversationId(), emitter);
+        // 注册超时回调
+        emitter.onTimeout(() -> log.warn("SSE 连接超时: userId={}, conversationId={}",
+                userId, request.getConversationId()));
+
+        // 注册错误回调
+        emitter.onError(ex -> log.error("SSE 连接错误: userId={}", userId, ex));
+
+        try {
+            chatOrchestrator.handle("user", userId, request.getMessage(),
+                    request.getSkillCode(), request.getConversationId(), emitter);
+        } catch (Exception e) {
+            log.error("Agent 对话处理异常: userId={}, conversationId={}",
+                    userId, request.getConversationId(), e);
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data(Map.of("code", "INTERNAL_ERROR", "msg", e.getMessage())));
+            } catch (IOException ignored) {
+                // 连接已断开
+            }
+            emitter.complete();
+        }
 
         return emitter;
     }
@@ -120,6 +148,18 @@ public class UserAgentController {
     }
 
     /**
+     * 获取用户端可用技能列表（供前端动态加载）
+     */
+    @GetMapping("/skills")
+    public HttpResult getSkills() {
+        List<SkillDefinition> skills = skillService.listForAudience("user");
+        List<Map<String, String>> result = skills.stream()
+                .map(s -> Map.of("skillCode", s.getSkillCode(), "name", s.getName()))
+                .toList();
+        return HttpResult.success(result);
+    }
+
+    /**
      * 查询当前用户配额
      *
      * @return 配额信息
@@ -156,5 +196,26 @@ public class UserAgentController {
                 .createTime(session.getCreateTime())
                 .build();
         return HttpResult.success(vo);
+    }
+
+    /**
+     * 获取会话消息历史（用于页面刷新恢复）
+     *
+     * @param id 会话ID
+     * @return 消息列表
+     */
+    @GetMapping("/sessions/{id}/messages")
+    public HttpResult getSessionMessages(@PathVariable Long id) {
+        AgentSession session = sessionService.getById(id);
+        if (session == null) {
+            return HttpResult.error("会话不存在");
+        }
+        List<Message> messages = jdbcChatMemory.get(session.getConversationId());
+        List<Map<String, String>> result = messages.stream()
+                .map(m -> Map.of(
+                        "role", m.getMessageType().name().toLowerCase(),
+                        "content", m.getText()))
+                .toList();
+        return HttpResult.success(result);
     }
 }

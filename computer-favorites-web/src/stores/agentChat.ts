@@ -52,18 +52,31 @@ export const useAgentChatStore = defineStore('agentChat', () => {
   const startNewChat = () => {
     currentSessionId.value = null
     currentConversationId.value = null
+    currentSkillCode.value = skills.value[0]?.skillCode || 'website_submit_assistant'
     messages.value = []
     pendingThinkingSteps.value = []
     connectionState.value = 'idle'
   }
 
-  const switchToSession = (session: AgentSession) => {
+  const switchToSession = async (session: AgentSession) => {
     currentSessionId.value = session.id
     currentConversationId.value = session.conversationId
-    currentSkillCode.value = session.skillCode || 'general_assistant'
+    currentSkillCode.value = session.skillCode || 'website_submit_assistant'
     messages.value = []
     pendingThinkingSteps.value = []
     connectionState.value = 'idle'
+
+    try {
+      const msgs = await agentApi.getSessionMessages(session.id)
+      messages.value = msgs.map((m) => ({
+        id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+        thinkingSteps: [],
+        thinkingCollapsed: true,
+        createdAt: new Date().toISOString(),
+      }))
+    } catch { /* 消息历史加载失败不影响会话切换 */ }
   }
 
   const addUserMessage = (content: string): string => {
@@ -157,8 +170,17 @@ export const useAgentChatStore = defineStore('agentChat', () => {
     { code: 'website_submit_assistant', name: '网站投稿助手' },
   ])
 
+  const loadSkills = async () => {
+    try {
+      skills.value = await agentApi.getSkills()
+      if (skills.value.length > 0 && !skills.value.find(s => s.skillCode === currentSkillCode.value)) {
+        currentSkillCode.value = skills.value[0].skillCode
+      }
+    } catch { /* keep defaults */ }
+  }
+
   const currentSkillName = computed(() => {
-    const s = skills.value.find((s) => s.code === currentSkillCode.value)
+    const s = skills.value.find((s) => s.skillCode === currentSkillCode.value)
     return s?.name ?? '网站投稿助手'
   })
 
@@ -200,6 +222,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
     quota,
     loadQuota,
     skills,
+    loadSkills,
     currentSkillName,
     quotaRemaining,
     hasQuota,

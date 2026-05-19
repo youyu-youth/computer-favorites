@@ -1,19 +1,28 @@
 // src/api/agent.ts
-import { getJson, putJson, deleteJson } from '@/utils/http'
+import { getJson, postJson, putJson, deleteJson } from '@/utils/http'
 import type { ApiResult } from '@/api/types'
 import type {
   AgentSession,
   AgentQuota,
   AgentChatRequest,
+  AgentSkill,
 } from '@/types/agent'
 
 const BASE = '/api/agent/user'
+const PUBLIC_BASE = '/api/agent'
 
 /** 获取会话列表 */
 export async function getSessions(keyword?: string): Promise<AgentSession[]> {
   const params = keyword ? `?keyword=${encodeURIComponent(keyword)}` : ''
   const res = await getJson<ApiResult<AgentSession[]>>(`${BASE}/sessions${params}`)
   if (res.code !== 200) throw new Error(res.msg || '获取会话列表失败')
+  return res.data ?? []
+}
+
+/** 获取会话消息历史 */
+export async function getSessionMessages(sessionId: number): Promise<{ role: string; content: string }[]> {
+  const res = await getJson<ApiResult<{ role: string; content: string }[]>>(`${BASE}/sessions/${sessionId}/messages`)
+  if (res.code !== 200) throw new Error(res.msg || '获取消息失败')
   return res.data ?? []
 }
 
@@ -43,14 +52,32 @@ export async function getQuota(): Promise<AgentQuota> {
   return res.data
 }
 
+/** 获取可用技能列表 */
+export async function getSkills(): Promise<AgentSkill[]> {
+  const res = await getJson<ApiResult<AgentSkill[]>>(`${BASE}/skills`)
+  if (res.code !== 200) throw new Error(res.msg || '获取技能列表失败')
+  return res.data ?? []
+}
+
+/** 确认执行计划 */
+export async function confirmPlan(planId: string): Promise<void> {
+  const res = await postJson<ApiResult<null>>(`${PUBLIC_BASE}/plan/confirm`, { planId })
+  if (res.code !== 200) throw new Error(res.msg || '确认失败')
+}
+
+/** 拒绝执行计划 */
+export async function rejectPlan(planId: string): Promise<void> {
+  const res = await postJson<ApiResult<null>>(`${PUBLIC_BASE}/plan/reject`, { planId })
+  if (res.code !== 200) throw new Error(res.msg || '拒绝失败')
+}
+
 /**
- * SSE 流式对话
- * 使用 fetch + ReadableStream（EventSource 不支持 POST）
- * 直接读取 response.body 流，不做额外包装
+ * SSE 流式对话请求
+ * 返回 fetch Response 对象和 abort 方法，由调用方直接从 response.body 读取流
  */
-export function chatStream(
+export async function chatStream(
   request: AgentChatRequest,
-): { stream: ReadableStream<Uint8Array>; abort: () => void } {
+): Promise<{ response: Response; abort: () => void }> {
   const token = localStorage.getItem('accessToken')
   const tokenName = localStorage.getItem('tokenName') || 'satoken'
   const controller = new AbortController()
@@ -62,51 +89,35 @@ export function chatStream(
     headers[tokenName] = token
   }
 
-  // 先发起 fetch，拿到 response 后直接返回 response.body
-  const fetchPromise = fetch(`${BASE}/chat`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(request),
-    signal: controller.signal,
-  })
+  const url = `${BASE}/chat`
+  console.log('[AgentChat API] 发起请求:', url, JSON.stringify(request))
 
-  const stream = new ReadableStream<Uint8Array>({
-    async start(streamController) {
-      try {
-        const response = await fetchPromise
-        if (!response.ok) {
-          // 尝试读取后端返回的错误信息
-          let errorBody = ''
-          try {
-            errorBody = await response.text()
-          } catch { /* ignore */ }
-          const msg = errorBody || `HTTP ${response.status}: ${response.statusText}`
-          streamController.error(new Error(msg))
-          return
-        }
-        if (!response.body) {
-          streamController.error(new Error('浏览器不支持 ReadableStream'))
-          return
-        }
-        const reader = response.body.getReader()
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) {
-            streamController.close()
-            break
-          }
-          streamController.enqueue(value)
-        }
-      } catch (e: any) {
-        // AbortError 正常关闭，其他错误上报
-        if (e.name === 'AbortError') {
-          streamController.close()
-        } else {
-          streamController.error(e)
-        }
-      }
-    },
-  })
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      signal: controller.signal,
+    })
+  } catch (e: any) {
+    console.error('[AgentChat API] fetch 失败:', e.name, e.message)
+    throw e
+  }
 
-  return { stream, abort: () => controller.abort() }
+  console.log('[AgentChat API] 响应状态:', response.status, response.statusText)
+
+  if (!response.ok) {
+    let errorBody = ''
+    try { errorBody = await response.text() } catch { /* ignore */ }
+    console.error('[AgentChat API] 响应错误:', response.status, errorBody)
+    throw new Error(errorBody || `HTTP ${response.status}: ${response.statusText}`)
+  }
+
+  if (!response.body) {
+    throw new Error('浏览器不支持 ReadableStream')
+  }
+
+  console.log('[AgentChat API] 开始读取 SSE 流')
+  return { response, abort: () => controller.abort() }
 }

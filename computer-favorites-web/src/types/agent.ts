@@ -73,3 +73,8 @@ export interface AgentChatVO {
   sessionId: number
   skillName: string
 }
+
+export interface AgentSkill {
+  skillCode: string
+  name: string
+}

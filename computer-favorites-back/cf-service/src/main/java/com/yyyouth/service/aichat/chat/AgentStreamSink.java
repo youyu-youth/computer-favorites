@@ -37,12 +37,20 @@ public class AgentStreamSink {
         send("plan", Map.of("planId", planId, "summary", summary, "risk", risk));
     }
 
-    public void done(Long sessionId) {
-        send("done", Map.of("sessionId", sessionId));
+    public void done(Long sessionId, String conversationId) {
+        send("done", Map.of("sessionId", sessionId, "conversationId", conversationId));
+        try {
+            emitter.complete();
+        } catch (Exception ignored) {
+        }
     }
 
     public void error(String code, String msg) {
         send("error", Map.of("code", code, "msg", msg));
+        try {
+            emitter.complete();
+        } catch (Exception ignored) {
+        }
     }
 
     public void quotaExceeded(int limit, int used) {

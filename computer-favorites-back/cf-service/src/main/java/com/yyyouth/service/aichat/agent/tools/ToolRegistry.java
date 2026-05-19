@@ -3,6 +3,8 @@ package com.yyyouth.service.aichat.agent.tools;
 import com.yyyouth.model.enums.ai.RiskLevel;
 import com.yyyouth.model.enums.ai.ToolType;
 import com.yyyouth.model.pojo.agent.AgentToolDef;
+import com.yyyouth.service.aichat.plan.AgentPlanService;
+import com.yyyouth.service.aichat.tool.ConfirmableToolCallback;
 import com.yyyouth.service.mapper.AgentToolDefMapper;
 import io.modelcontextprotocol.spec.McpSchema;
 import lombok.Data;
@@ -21,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ToolRegistry {
 
     private final AgentToolDefMapper agentToolDefMapper;
+    private final AgentPlanService agentPlanService;
     private final Map<String, ToolCallback> allToolCallbacks;
     private final Map<String, RuntimeToolDef> runtimeTools = new ConcurrentHashMap<>();
     private final Map<String, McpSchema.Tool> mcpTools = new ConcurrentHashMap<>();
@@ -45,10 +48,15 @@ public class ToolRegistry {
                 log.warn("工具 {} 在 DB 中定义但未找到对应的 @Tool 方法", dbTool.getToolCode());
                 continue;
             }
+            RiskLevel riskLevel = RiskLevel.valueOf(dbTool.getRiskLevel().toUpperCase());
+            ToolCallback effectiveCallback = riskLevel == RiskLevel.HIGH
+                    ? new ConfirmableToolCallback(callback, dbTool.getToolCode(), riskLevel, agentPlanService)
+                    : callback;
+
             RuntimeToolDef rt = new RuntimeToolDef();
             rt.setMeta(dbTool);
-            rt.setToolCallback(callback);
-            rt.setRiskLevel(RiskLevel.valueOf(dbTool.getRiskLevel().toUpperCase()));
+            rt.setToolCallback(effectiveCallback);
+            rt.setRiskLevel(riskLevel);
             rt.setToolType(ToolType.valueOf(dbTool.getToolType().toUpperCase()));
             rt.setRequiredPermissionCodes(
                     dbTool.getPermissionCode() != null

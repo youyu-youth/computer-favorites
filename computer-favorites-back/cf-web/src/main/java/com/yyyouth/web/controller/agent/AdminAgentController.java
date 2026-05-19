@@ -3,19 +3,22 @@ package com.yyyouth.web.controller.agent;
 import com.yyyouth.common.web.HttpResult;
 import com.yyyouth.model.dto.agent.AgentChatRequest;
 import com.yyyouth.model.pojo.agent.AgentSession;
+import com.yyyouth.model.pojo.agent.AgentSkill;
 import com.yyyouth.model.vo.agent.AgentQuotaVO;
 import com.yyyouth.model.vo.agent.AgentSessionVO;
 import com.yyyouth.service.aichat.chat.ChatOrchestrator;
 import com.yyyouth.service.aichat.quota.QuotaGuard;
+import com.yyyouth.service.aichat.rag.AgentKnowledgeService;
 import com.yyyouth.service.aichat.session.AgentSessionService;
+import com.yyyouth.service.aichat.skill.AgentSkillService;
 import com.yyyouth.service.user.auth.support.StpAdminUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -34,8 +37,10 @@ public class AdminAgentController {
     private final ChatOrchestrator chatOrchestrator;
     private final AgentSessionService sessionService;
     private final QuotaGuard quotaGuard;
+    private final AgentSkillService skillService;
+    private final AgentKnowledgeService knowledgeService;
 
-    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(value = "/chat")
     public SseEmitter chat(@RequestBody @Valid AgentChatRequest request) {
         StpAdminUtil.checkLogin();
         Long adminId = StpAdminUtil.getLoginIdAsLong();
@@ -45,8 +50,24 @@ public class AdminAgentController {
 
         SseEmitter emitter = new SseEmitter(300_000L);
 
-        chatOrchestrator.handle("admin", adminId, request.getMessage(),
-                request.getSkillCode(), request.getConversationId(), emitter);
+        emitter.onTimeout(() -> log.warn("SSE 连接超时: adminId={}, conversationId={}",
+                adminId, request.getConversationId()));
+        emitter.onError(ex -> log.error("SSE 连接错误: adminId={}", adminId, ex));
+
+        try {
+            chatOrchestrator.handle("admin", adminId, request.getMessage(),
+                    request.getSkillCode(), request.getConversationId(), emitter);
+        } catch (Exception e) {
+            log.error("管理端 Agent 对话处理异常: adminId={}, conversationId={}",
+                    adminId, request.getConversationId(), e);
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data(Map.of("code", "INTERNAL_ERROR", "msg", e.getMessage())));
+            } catch (IOException ignored) {
+            }
+            emitter.complete();
+        }
 
         return emitter;
     }
@@ -156,5 +177,50 @@ public class AdminAgentController {
                 .createTime(session.getCreateTime())
                 .build();
         return HttpResult.success(vo);
+    }
+
+    /**
+     * 获取技能列表
+     */
+    @GetMapping("/skills")
+    public HttpResult getSkills() {
+        List<AgentSkill> skills = skillService.listAll();
+        return HttpResult.success(skills);
+    }
+
+    /**
+     * 新建技能
+     */
+    @PostMapping("/skills")
+    public HttpResult createSkill(@RequestBody AgentSkill skill) {
+        skillService.create(skill);
+        return HttpResult.success();
+    }
+
+    /**
+     * 编辑技能
+     */
+    @PutMapping("/skills/{id}")
+    public HttpResult updateSkill(@PathVariable Long id, @RequestBody AgentSkill skill) {
+        skillService.update(id, skill);
+        return HttpResult.success();
+    }
+
+    /**
+     * 启禁技能
+     */
+    @PutMapping("/skills/{id}/status")
+    public HttpResult toggleSkillStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> body) {
+        skillService.toggleStatus(id, body.getOrDefault("enabled", true));
+        return HttpResult.success();
+    }
+
+    /**
+     * 同步网站数据到 RAG 向量库
+     */
+    @PostMapping("/knowledge/sync")
+    public HttpResult syncKnowledge() {
+        int count = knowledgeService.syncWebsites();
+        return HttpResult.success(Map.of("syncedWebsites", count));
     }
 }

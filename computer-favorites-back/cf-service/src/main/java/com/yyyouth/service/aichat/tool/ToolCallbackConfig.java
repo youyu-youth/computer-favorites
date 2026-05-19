@@ -12,6 +12,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * @author yyyouth zg
+ * @date 2026-05-17
+ *
+ * 收集所有 @Tool Bean，构建 toolCode → ToolCallback 映射
+ */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
