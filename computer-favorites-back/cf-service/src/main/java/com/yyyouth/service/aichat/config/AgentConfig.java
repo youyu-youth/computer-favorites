@@ -31,4 +31,12 @@ public class AgentConfig {
                         MessageChatMemoryAdvisor.builder(jdbcChatMemory).build())
                 .build();
     }
+
+    /**
+     * 轻量 ChatClient（无 ChatMemory advisor），供 IntentRouter 分类使用
+     */
+    @Bean
+    public ChatClient plainDashscopeChatClient() {
+        return ChatClient.builder(dashscopeChatModel).build();
+    }
 }
