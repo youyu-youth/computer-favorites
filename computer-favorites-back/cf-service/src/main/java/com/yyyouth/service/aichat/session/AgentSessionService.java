@@ -52,6 +52,8 @@ public class AgentSessionService {
         session.setModelProvider(modelProvider);
         session.setModelName(modelName);
         session.setLastMessageAt(LocalDateTime.now());
+        session.setCreateTime(LocalDateTime.now());
+        session.setUpdateTime(LocalDateTime.now());
         log.info("getOrCreate: 准备 insert, conversationId={}", newConvId);
         agentSessionMapper.insert(session);
         log.info("getOrCreate: insert 完成, id={}", session.getId());
@@ -110,6 +112,19 @@ public class AgentSessionService {
      */
     public void delete(Long sessionId) {
         agentSessionMapper.deleteById(sessionId);
+    }
+
+    /**
+     * 回填会话的 skill_code（LLM 匹配技能后调用）
+     *
+     * @param sessionId 会话ID
+     * @param skillCode 技能编码
+     */
+    public void updateSkillCode(Long sessionId, String skillCode) {
+        AgentSession session = new AgentSession();
+        session.setId(sessionId);
+        session.setSkillCode(skillCode);
+        agentSessionMapper.updateById(session);
     }
 
     /**
