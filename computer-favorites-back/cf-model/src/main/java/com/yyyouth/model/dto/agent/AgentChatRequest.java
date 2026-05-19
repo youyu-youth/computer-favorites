@@ -16,6 +16,6 @@ public class AgentChatRequest {
     @NotBlank(message = "消息内容不能为空")
     private String message;
 
-    @NotBlank(message = "技能编码不能为空")
+    /** 技能编码（可选，为空时走意图路由自动判断） */
     private String skillCode;
 }
