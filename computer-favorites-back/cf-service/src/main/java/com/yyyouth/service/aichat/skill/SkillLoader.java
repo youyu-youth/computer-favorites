@@ -58,4 +58,17 @@ public class SkillLoader {
                 .filter(s -> s.getAudience().equals(ownerType) || s.getAudience().equals("both"))
                 .collect(Collectors.toList());
     }
+
+    /**
+     * 获取指定受众的第一个可用技能（意图路由为 functional 时使用）
+     *
+     * @param audience 受众类型 user/admin
+     * @return 第一个匹配的技能，无匹配时返回 null
+     */
+    public SkillDefinition getFirstForAudience(String audience) {
+        return skillCache.values().stream()
+                .filter(s -> s.getAudience().equals(audience) || s.getAudience().equals("both"))
+                .findFirst()
+                .orElse(null);
+    }
 }
