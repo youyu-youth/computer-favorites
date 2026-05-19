@@ -64,7 +64,7 @@ export interface AgentQuota {
 export interface AgentChatRequest {
   conversationId?: string
   message: string
-  skillCode: string
+  skillCode?: string
 }
 
 /** SSE 对话连接响应元信息 */
