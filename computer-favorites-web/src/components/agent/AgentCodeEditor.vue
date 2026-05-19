@@ -158,14 +158,6 @@ onMounted(() => {
   color: rgb(63 63 70 / 1);
   background-color: rgb(0 0 0 / 0.04);
 }
-:global(html.dark) .cf-code-lang {
-  color: rgb(168 162 158 / 1);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
-}
-:global(html.dark) .cf-code-lang:hover {
-  color: rgb(231 229 228 / 1);
-  background-color: rgb(255 255 255 / 0.05);
-}
 .cf-code-lang--active {
   color: white !important;
   background-color: rgb(var(--cf-color-primary-500-rgb) / 1);
@@ -199,14 +191,6 @@ onMounted(() => {
   background-color: rgb(0 0 0 / 0.04);
   color: rgb(24 24 27 / 1);
 }
-:global(html.dark) .cf-code-btn--ghost {
-  color: rgb(168 162 158 / 1);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
-}
-:global(html.dark) .cf-code-btn--ghost:hover {
-  background-color: rgb(255 255 255 / 0.06);
-  color: rgb(231 229 228 / 1);
-}
 .cf-code-btn--primary {
   color: white;
   background-color: rgb(var(--cf-color-primary-500-rgb) / 1);
@@ -229,5 +213,24 @@ onMounted(() => {
     opacity: 1;
     transform: none;
   }
+}
+</style>
+
+<style>
+html.dark .cf-code-lang {
+  color: rgb(168 162 158 / 1);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+html.dark .cf-code-lang:hover {
+  color: rgb(231 229 228 / 1);
+  background-color: rgb(255 255 255 / 0.05);
+}
+html.dark .cf-code-btn--ghost {
+  color: rgb(168 162 158 / 1);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+}
+html.dark .cf-code-btn--ghost:hover {
+  background-color: rgb(255 255 255 / 0.06);
+  color: rgb(231 229 228 / 1);
 }
 </style>

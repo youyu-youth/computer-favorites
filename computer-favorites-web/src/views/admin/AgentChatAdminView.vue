@@ -259,11 +259,6 @@ async function handlePlanReject(planId: string) {
     inset 0 -1px 0 0 rgb(15 23 42 / 0.06),
     inset 0 1px 0 0 rgb(255 255 255 / 0.55);
 }
-:global(html.dark) .cf-chat-topbar {
-  box-shadow:
-    inset 0 -1px 0 0 rgb(255 255 255 / 0.05),
-    inset 0 1px 0 0 rgb(255 255 255 / 0.04);
-}
 
 /* 装饰光斑：基于主色 token，单一不透明度在浅 / 深底色上都自然 */
 .cf-chat-aura {
@@ -363,5 +358,13 @@ async function handlePlanReject(planId: string) {
     opacity: 1;
     transform: none;
   }
+}
+</style>
+
+<style>
+html.dark .cf-chat-topbar {
+  box-shadow:
+    inset 0 -1px 0 0 rgb(255 255 255 / 0.05),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.04);
 }
 </style>

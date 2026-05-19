@@ -201,14 +201,6 @@ function confirmEdit() {
     inset 0 1px 0 0 rgba(255, 255, 255, 0.8),
     0 12px 24px -16px rgba(15, 23, 42, 0.18);
 }
-:global(html.dark) .cf-bubble--assistant {
-  color: rgb(231 229 228 / 1);
-  background-color: rgb(28 25 23 / 0.85);
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.06),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
-    0 14px 28px -16px rgba(0, 0, 0, 0.55);
-}
 
 
 /* AI 头像：brand 渐变 */
@@ -252,13 +244,6 @@ function confirmEdit() {
   color: rgb(63 63 70 / 1);
   background-color: rgb(0 0 0 / 0.04);
 }
-:global(html.dark) .cf-action {
-  color: rgb(120 113 108 / 1);
-}
-:global(html.dark) .cf-action:hover {
-  color: rgb(231 229 228 / 1);
-  background-color: rgb(255 255 255 / 0.06);
-}
 .cf-action:active {
   transform: scale(0.94);
 }
@@ -280,13 +265,6 @@ function confirmEdit() {
 .cf-edit-trigger:hover {
   color: rgb(63 63 70 / 1);
   background-color: rgb(0 0 0 / 0.04);
-}
-:global(html.dark) .cf-edit-trigger {
-  color: rgb(120 113 108 / 1);
-}
-:global(html.dark) .cf-edit-trigger:hover {
-  color: rgb(231 229 228 / 1);
-  background-color: rgb(255 255 255 / 0.06);
 }
 
 /* 编辑模式按钮 */
@@ -317,14 +295,6 @@ function confirmEdit() {
   background-color: rgb(0 0 0 / 0.04);
   color: rgb(24 24 27 / 1);
 }
-:global(html.dark) .cf-edit-btn--ghost {
-  color: rgb(168 162 158 / 1);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
-}
-:global(html.dark) .cf-edit-btn--ghost:hover {
-  background-color: rgb(255 255 255 / 0.06);
-  color: rgb(231 229 228 / 1);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .cf-bubble,
@@ -338,185 +308,235 @@ function confirmEdit() {
 
 <!-- markstream-vue 内容主题覆盖：非 scoped 块以穿透动态渲染的 DOM -->
 <style>
-[data-custom-id='agent-bubble'] {
-  color: inherit;
+/*
+ * 适配策略：用 [data-custom-id] 覆盖 markstream-vue 内部的全套 CSS 变量。
+ * markstream-vue 在 .markstream-vue 上定义主变量（--ms-*）和派生变量（--code-bg 等），
+ * 然后 .dark .markstream-vue 仅改写主变量。派生变量通过 var(--ms-*) 间接引用，
+ * 主变量改变后派生变量自动更新。我们通过更高特异性选择器全量覆盖这三层。
+ */
+
+/* ===== 根容器透明 ===== */
+[data-custom-id='agent-bubble'],
+[data-custom-id='agent-bubble'] .markdown-renderer,
+[data-custom-id='agent-bubble'] .markstream-vue {
+  background: transparent !important;
 }
 
-/* 标题层级 */
-[data-custom-id='agent-bubble'] h1 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-top: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: inherit;
+/* ===== 浅色模式 — 主变量 + 派生变量 (覆盖 markstream-vue 默认值) ===== */
+[data-custom-id='agent-bubble'] {
+  /* 主变量 */
+  --ms-background: 0 0% 100%;
+  --ms-foreground: 0 0% 10%;
+  --ms-muted: 0 0% 96.5%;
+  --ms-muted-foreground: 0 0% 55%;
+  --ms-secondary: 0 0% 91%;
+  --ms-accent: 0 0% 88%;
+  --ms-border: 0 0% 87%;
+  --ms-ring: 217 119 6;
+  --ms-info: 217 119 6;
+  --ms-success: 152 56% 39%;
+  --ms-warning: 38 64% 46%;
+  --ms-destructive: 0 62% 52%;
+  --ms-diff-added: 152 50% 36%;
+  --ms-diff-removed: 0 58% 48%;
+  --ms-highlight: 45 93% 57%;
+  --ms-popover: 0 0% 100%;
+  /* 派生变量 */
+  --inline-code-bg: hsl(var(--ms-secondary));
+  --inline-code-fg: hsl(var(--ms-foreground) / 0.75);
+  --code-bg: hsl(var(--ms-muted));
+  --code-fg: hsl(var(--ms-foreground));
+  --code-border: hsl(var(--ms-border));
+  --code-header-bg: hsl(var(--ms-secondary));
+  --code-action-fg: hsl(var(--ms-muted-foreground));
+  --code-action-hover-bg: hsl(var(--ms-accent));
+  --code-line-number: hsl(var(--ms-muted-foreground));
+  --table-border: hsl(var(--ms-border));
+  --table-header-bg: hsl(var(--ms-muted));
+  --blockquote-border: hsl(var(--ms-muted-foreground) / 0.2);
+  --blockquote-fg: hsl(var(--ms-muted-foreground));
+  --hr-border: hsl(var(--ms-border));
+  --highlight-bg: hsl(var(--ms-highlight) / 0.35);
+  --link-color: rgb(var(--cf-color-primary-500-rgb) / 1);
+  --list-marker: hsl(var(--ms-muted-foreground) / 0.5);
+  --list-counter-marker: hsl(var(--ms-muted-foreground));
+  --tooltip-bg: hsl(0 0% 18%);
+  --tooltip-fg: hsl(0 0% 88%);
+  --diagram-bg: hsl(var(--ms-muted));
+  --diagram-border: hsl(var(--ms-border));
+  --diagram-header-bg: hsl(var(--ms-muted));
+  --loading-shimmer: hsl(var(--ms-muted) / 0.5);
+  --loading-spinner: hsl(var(--ms-muted-foreground));
+  --focus-ring: hsl(var(--ms-ring));
 }
-[data-custom-id='agent-bubble'] h2 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-top: 1.1rem;
-  margin-bottom: 0.45rem;
-  color: inherit;
+
+/* ===== 暗黑模式 — 全量覆盖 ===== */
+html.dark [data-custom-id='agent-bubble'] {
+  /* 主变量 — 深色纸面调色 */
+  --ms-background: 0 0% 7%;
+  --ms-foreground: 0 0% 93%;
+  --ms-muted: 0 0% 12%;
+  --ms-muted-foreground: 0 0% 60%;
+  --ms-secondary: 0 0% 16%;
+  --ms-accent: 0 0% 22%;
+  --ms-border: 0 0% 20%;
+  --ms-ring: 245 158 11;
+  --ms-info: 245 158 11;
+  --ms-success: 152 48% 50%;
+  --ms-warning: 32 65% 54%;
+  --ms-destructive: 0 60% 50%;
+  --ms-diff-added: 152 42% 55%;
+  --ms-diff-removed: 0 58% 55%;
+  --ms-highlight: 48 65% 50%;
+  --ms-popover: 0 0% 9%;
+  /* 派生变量自动通过 var(--ms-*) 继承新值 */
+  --code-bg: hsl(var(--ms-muted));
+  --code-fg: hsl(var(--ms-foreground));
+  --code-border: hsl(var(--ms-border));
+  --code-header-bg: hsl(var(--ms-secondary));
+  --code-action-fg: hsl(var(--ms-muted-foreground));
+  --code-action-hover-bg: hsl(var(--ms-accent));
+  --code-line-number: hsl(var(--ms-muted-foreground));
+  --table-border: hsl(var(--ms-border));
+  --table-header-bg: hsl(var(--ms-muted));
+  --blockquote-border: hsl(var(--ms-muted-foreground) / 0.2);
+  --blockquote-fg: hsl(var(--ms-muted-foreground));
+  --hr-border: hsl(var(--ms-border));
+  --highlight-bg: hsl(var(--ms-highlight) / 0.28);
+  --list-marker: hsl(var(--ms-muted-foreground) / 0.5);
+  --list-counter-marker: hsl(var(--ms-muted-foreground));
+  --tooltip-bg: hsl(0 0% 12%);
+  --tooltip-fg: hsl(0 0% 72%);
+  --diagram-bg: hsl(var(--ms-muted));
+  --diagram-border: hsl(var(--ms-border));
+  --diagram-header-bg: hsl(var(--ms-muted));
+  --loading-shimmer: hsl(var(--ms-muted) / 0.5);
+  --loading-spinner: hsl(var(--ms-muted-foreground));
+  --focus-ring: hsl(var(--ms-ring));
+  /* 阴影：暗色模式更深 */
+  --ms-shadow-subtle: 0 1px 3px 0 hsl(0 0% 0% / 0.25);
+  --ms-shadow-popover: 0 4px 6px -1px hsl(0 0% 0% / 0.2), 0 2px 4px -2px hsl(0 0% 0% / 0.15);
+  --ms-shadow-modal: 0 10px 15px -3px hsl(0 0% 0% / 0.5), 0 4px 6px -4px hsl(0 0% 0% / 0.4);
 }
-[data-custom-id='agent-bubble'] h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin-top: 1rem;
-  margin-bottom: 0.4rem;
-  color: inherit;
+
+/* ===== 用户气泡（brand 渐变底 + 白字）===== */
+.cf-bubble--user [data-custom-id='agent-bubble'] {
+  --ms-background: 0 0% 10%;
+  --ms-foreground: 0 0% 100%;
+  --ms-muted: 0 0% 100% / 0.12;
+  --ms-muted-foreground: 0 0% 100% / 0.7;
+  --ms-secondary: 0 0% 100% / 0.1;
+  --ms-accent: 0 0% 100% / 0.18;
+  --ms-border: 0 0% 100% / 0.15;
+  --ms-ring: 255 255 255;
+  --ms-info: 245 158 11;
+  --ms-popover: 0 0% 10%;
+  --code-bg: hsl(var(--ms-muted));
+  --code-fg: hsl(var(--ms-foreground));
+  --code-border: hsl(var(--ms-border));
+  --code-header-bg: hsl(var(--ms-secondary));
+  --code-action-fg: hsl(var(--ms-muted-foreground));
+  --code-action-hover-bg: hsl(var(--ms-accent));
+  --code-line-number: hsl(var(--ms-muted-foreground));
+  --table-border: hsl(var(--ms-border));
+  --table-header-bg: hsl(var(--ms-muted));
+  --blockquote-border: hsl(var(--ms-muted-foreground) / 0.3);
+  --blockquote-fg: hsl(var(--ms-foreground) / 0.75);
+  --hr-border: hsl(var(--ms-border));
+  --highlight-bg: hsl(var(--ms-highlight) / 0.3);
+  --link-color: rgb(255 255 255 / 0.9);
+  --list-marker: hsl(var(--ms-muted-foreground) / 0.5);
+  --list-counter-marker: hsl(var(--ms-muted-foreground));
+  --tooltip-bg: hsl(0 0% 12%);
+  --tooltip-fg: hsl(0 0% 88%);
+  --diagram-bg: hsl(var(--ms-muted));
+  --diagram-border: hsl(var(--ms-border));
+  --diagram-header-bg: hsl(var(--ms-muted));
+  --loading-shimmer: hsl(var(--ms-muted) / 0.4);
+  --loading-spinner: hsl(var(--ms-muted-foreground));
+  --focus-ring: hsl(var(--ms-ring));
 }
+
+/* ===== 元素级覆盖 — 标题/段落/代码/链接/引用/列表/表格/图片 ===== */
+
+[data-custom-id='agent-bubble'] h1 { font-size:1.25rem; font-weight:600; margin:1.25rem 0 0.5rem; color:inherit; }
+[data-custom-id='agent-bubble'] h2 { font-size:1.125rem; font-weight:600; margin:1.1rem 0 0.45rem; color:inherit; }
+[data-custom-id='agent-bubble'] h3 { font-size:1.05rem; font-weight:600; margin:1rem 0 0.4rem; color:inherit; }
 [data-custom-id='agent-bubble'] h4,
 [data-custom-id='agent-bubble'] h5,
-[data-custom-id='agent-bubble'] h6 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  margin-top: 0.85rem;
-  margin-bottom: 0.35rem;
-  color: inherit;
-}
+[data-custom-id='agent-bubble'] h6 { font-size:0.95rem; font-weight:600; margin:0.85rem 0 0.35rem; color:inherit; }
 
-/* 段落 */
-[data-custom-id='agent-bubble'] p {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-}
-[data-custom-id='agent-bubble'] p:last-child {
-  margin-bottom: 0;
-}
+[data-custom-id='agent-bubble'] p { margin:0 0 0.5rem; color:inherit; }
+[data-custom-id='agent-bubble'] p:last-child { margin-bottom:0; }
 
-/* 行内代码 */
 [data-custom-id='agent-bubble'] code:not(pre code) {
-  padding: 0.12em 0.4em;
-  font-size: 0.9em;
-  border-radius: 0.375rem;
-  background-color: rgb(231 229 228 / 0.55);
-  color: rgb(41 37 36 / 0.95);
-}
-html.dark [data-custom-id='agent-bubble'] code:not(pre code) {
-  background-color: rgb(41 37 36 / 0.6);
-  color: rgb(231 229 228 / 0.95);
+  padding:0.12em 0.4em; font-size:0.9em; border-radius:0.375rem;
+  background-color:var(--inline-code-bg); color:var(--inline-code-fg);
 }
 
-/* 用户气泡内的行内代码 */
-.cf-bubble--user [data-custom-id='agent-bubble'] code:not(pre code) {
-  background-color: rgb(255 255 255 / 0.2);
-  color: rgb(255 255 255 / 0.9);
-}
-
-/* 代码块 */
 [data-custom-id='agent-bubble'] pre {
-  margin: 0.5rem 0;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  background-color: rgb(245 245 244 / 0.9);
-  overflow-x: auto;
-  font-size: 0.875rem;
-  line-height: 1.55;
+  margin:0.5rem 0; padding:0.75rem 1rem; border-radius:0.75rem;
+  background-color:var(--code-bg); overflow-x:auto; font-size:0.875rem; line-height:1.55;
 }
-html.dark [data-custom-id='agent-bubble'] pre {
-  background-color: rgb(28 25 23 / 0.7);
-}
-/* 用户气泡的代码块继承其渐变底色氛围 */
-.cf-bubble--user [data-custom-id='agent-bubble'] pre {
-  background-color: rgb(0 0 0 / 0.12);
-}
+[data-custom-id='agent-bubble'] pre code { background:none; padding:0; font-size:inherit; color:inherit; }
 
-[data-custom-id='agent-bubble'] pre code {
-  background: none;
-  padding: 0;
-  font-size: inherit;
-  color: inherit;
-}
+[data-custom-id='agent-bubble'] a { color:var(--link-color); text-decoration:underline; text-underline-offset:2px; transition:opacity 160ms ease; }
+[data-custom-id='agent-bubble'] a:hover { opacity:0.8; }
 
-/* 链接 */
-[data-custom-id='agent-bubble'] a {
-  color: rgb(var(--cf-color-primary-500-rgb) / 1);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: opacity 160ms ease;
-}
-[data-custom-id='agent-bubble'] a:hover {
-  opacity: 0.8;
-}
-/* 用户气泡内链接反白 */
-.cf-bubble--user [data-custom-id='agent-bubble'] a {
-  color: rgb(255 255 255 / 0.9);
-}
-
-/* 引用块 */
 [data-custom-id='agent-bubble'] blockquote {
-  margin: 0.5rem 0;
-  padding: 0.35rem 0 0.35rem 0.75rem;
-  border-left: 3px solid rgb(var(--cf-color-primary-500-rgb) / 0.5);
-  background-color: rgb(0 0 0 / 0.02);
-  border-radius: 0 0.375rem 0.375rem 0;
-  color: rgb(82 82 91 / 0.9);
-}
-html.dark [data-custom-id='agent-bubble'] blockquote {
-  border-left-color: rgb(var(--cf-color-primary-500-rgb) / 0.4);
-  background-color: rgb(255 255 255 / 0.02);
-  color: rgb(168 162 158 / 0.9);
+  margin:0.5rem 0; padding:0.35rem 0 0.35rem 0.75rem;
+  border-left:3px solid var(--blockquote-border); border-radius:0 0.375rem 0.375rem 0;
+  background-color:hsl(var(--ms-muted) / 0.3); color:var(--blockquote-fg);
 }
 
-/* 无序/有序列表 */
 [data-custom-id='agent-bubble'] ul,
-[data-custom-id='agent-bubble'] ol {
-  margin: 0.35rem 0;
-  padding-left: 1.35rem;
-}
-[data-custom-id='agent-bubble'] li {
-  margin-bottom: 0.15rem;
-}
-[data-custom-id='agent-bubble'] ul {
-  list-style-type: disc;
-}
-[data-custom-id='agent-bubble'] ol {
-  list-style-type: decimal;
-}
+[data-custom-id='agent-bubble'] ol { margin:0.35rem 0; padding-left:1.35rem; }
+[data-custom-id='agent-bubble'] li { margin-bottom:0.15rem; color:inherit; }
 
-/* 水平线 */
-[data-custom-id='agent-bubble'] hr {
-  margin: 0.75rem 0;
-  border: none;
-  border-top: 1px solid rgb(168 162 158 / 0.2);
-}
-html.dark [data-custom-id='agent-bubble'] hr {
-  border-top-color: rgb(255 255 255 / 0.08);
-}
+[data-custom-id='agent-bubble'] hr { margin:0.75rem 0; border:none; border-top:1px solid var(--hr-border); }
 
-/* 表格 */
-[data-custom-id='agent-bubble'] table {
-  width: 100%;
-  margin: 0.5rem 0;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
+[data-custom-id='agent-bubble'] table { width:100%; margin:0.5rem 0; border-collapse:collapse; font-size:0.875rem; }
 [data-custom-id='agent-bubble'] th,
-[data-custom-id='agent-bubble'] td {
-  padding: 0.4rem 0.65rem;
-  text-align: left;
-  border: 1px solid rgb(168 162 158 / 0.18);
-}
-[data-custom-id='agent-bubble'] th {
-  font-weight: 600;
-  background-color: rgb(0 0 0 / 0.03);
-}
-html.dark [data-custom-id='agent-bubble'] th {
-  background-color: rgb(255 255 255 / 0.04);
-}
-html.dark [data-custom-id='agent-bubble'] th,
-html.dark [data-custom-id='agent-bubble'] td {
-  border-color: rgb(255 255 255 / 0.07);
+[data-custom-id='agent-bubble'] td { padding:0.4rem 0.65rem; text-align:left; border:1px solid var(--table-border); background:transparent; }
+[data-custom-id='agent-bubble'] th { font-weight:600; background-color:var(--table-header-bg); }
+
+[data-custom-id='agent-bubble'] strong { font-weight:600; color:inherit; }
+[data-custom-id='agent-bubble'] img { max-width:100%; border-radius:0.5rem; margin:0.5rem 0; }
+
+[data-custom-id='agent-bubble'] .table { overflow-x:auto; }
+
+/* ===== 组件暗黑模式覆盖（Vue scoped 的 :global(html.dark) 编译有 bug, 移到非 scoped 块） ===== */
+html.dark .cf-bubble--assistant {
+  color: rgb(231 229 228 / 1);
+  background-color: rgb(28 25 23 / 0.85);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.06),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+    0 14px 28px -16px rgba(0, 0, 0, 0.55);
 }
 
-/* 强调 */
-[data-custom-id='agent-bubble'] strong {
-  font-weight: 600;
+html.dark .cf-action {
+  color: rgb(120 113 108 / 1);
+}
+html.dark .cf-action:hover {
+  color: rgb(231 229 228 / 1);
+  background-color: rgb(255 255 255 / 0.06);
 }
 
-/* 图片 */
-[data-custom-id='agent-bubble'] img {
-  max-width: 100%;
-  border-radius: 0.5rem;
-  margin: 0.5rem 0;
+html.dark .cf-edit-trigger {
+  color: rgb(120 113 108 / 1);
+}
+html.dark .cf-edit-trigger:hover {
+  color: rgb(231 229 228 / 1);
+  background-color: rgb(255 255 255 / 0.06);
+}
+
+html.dark .cf-edit-btn--ghost {
+  color: rgb(168 162 158 / 1);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+}
+html.dark .cf-edit-btn--ghost:hover {
+  background-color: rgb(255 255 255 / 0.06);
+  color: rgb(231 229 228 / 1);
 }
 </style>

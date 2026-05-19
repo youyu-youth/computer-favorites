@@ -282,13 +282,6 @@ function insertCodeBlock(code: string, language: string) {
   color: rgb(63 63 70 / 1);
   background-color: rgb(0 0 0 / 0.04);
 }
-:global(html.dark) .cf-tool-icon {
-  color: rgb(168 162 158 / 1);
-}
-:global(html.dark) .cf-tool-icon:hover {
-  color: rgb(231 229 228 / 1);
-  background-color: rgb(255 255 255 / 0.05);
-}
 .cf-tool-icon:active {
   transform: scale(0.94);
 }
@@ -337,10 +330,6 @@ function insertCodeBlock(code: string, language: string) {
   box-shadow: none;
   transform: none;
 }
-:global(html.dark) .cf-send-btn:disabled {
-  background-color: rgb(82 82 91 / 0.5);
-  color: rgb(255 255 255 / 0.5);
-}
 
 /* 技能 chip：禁用样式 */
 .cf-tool-chip:disabled {
@@ -367,5 +356,19 @@ function insertCodeBlock(code: string, language: string) {
   .cf-tool-icon {
     transition: none;
   }
+}
+</style>
+
+<style>
+html.dark .cf-tool-icon {
+  color: rgb(168 162 158 / 1);
+}
+html.dark .cf-tool-icon:hover {
+  color: rgb(231 229 228 / 1);
+  background-color: rgb(255 255 255 / 0.05);
+}
+html.dark .cf-send-btn:disabled {
+  background-color: rgb(82 82 91 / 0.5);
+  color: rgb(255 255 255 / 0.5);
 }
 </style>

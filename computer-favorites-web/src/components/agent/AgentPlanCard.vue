@@ -165,14 +165,6 @@ const badgeClass = computed(() => {
   background-color: rgb(0 0 0 / 0.04);
   color: rgb(24 24 27 / 1);
 }
-:global(html.dark) .cf-plan-btn--ghost {
-  color: rgb(168 162 158 / 1);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
-}
-:global(html.dark) .cf-plan-btn--ghost:hover {
-  background-color: rgb(255 255 255 / 0.06);
-  color: rgb(231 229 228 / 1);
-}
 
 .cf-plan-btn--primary {
   color: white;
@@ -199,5 +191,16 @@ const badgeClass = computed(() => {
     opacity: 1;
     transform: none;
   }
+}
+</style>
+
+<style>
+html.dark .cf-plan-btn--ghost {
+  color: rgb(168 162 158 / 1);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+}
+html.dark .cf-plan-btn--ghost:hover {
+  background-color: rgb(255 255 255 / 0.06);
+  color: rgb(231 229 228 / 1);
 }
 </style>

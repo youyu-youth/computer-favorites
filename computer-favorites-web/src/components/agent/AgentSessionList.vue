@@ -258,15 +258,6 @@ async function handleRename(id: number, title: string) {
     cf-skeleton-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: 0s, calc(var(--cf-i, 0) * 60ms);
 }
-:global(html.dark) .cf-skeleton {
-  background: linear-gradient(
-    90deg,
-    rgb(255 255 255 / 0.04) 0%,
-    rgb(255 255 255 / 0.08) 50%,
-    rgb(255 255 255 / 0.04) 100%
-  );
-  background-size: 200% 100%;
-}
 @keyframes cf-shimmer {
   0% {
     background-position: 200% 0;
@@ -290,5 +281,17 @@ async function handleRename(id: number, title: string) {
   .cf-skeleton {
     animation: none;
   }
+}
+</style>
+
+<style>
+html.dark .cf-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.04) 0%,
+    rgb(255 255 255 / 0.08) 50%,
+    rgb(255 255 255 / 0.04) 100%
+  );
+  background-size: 200% 100%;
 }
 </style>

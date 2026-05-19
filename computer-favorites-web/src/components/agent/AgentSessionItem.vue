@@ -124,13 +124,6 @@ function cancelRename() {
   background-color: rgb(0 0 0 / 0.04);
   color: rgb(63 63 70 / 1);
 }
-:global(html.dark) .cf-session-action {
-  color: rgb(120 113 108 / 1);
-}
-:global(html.dark) .cf-session-action:hover {
-  background-color: rgb(255 255 255 / 0.06);
-  color: rgb(231 229 228 / 1);
-}
 .cf-session-action:active {
   transform: scale(0.92);
 }
@@ -147,5 +140,15 @@ function cancelRename() {
     transform: translate(0, -50%) scaleY(1);
     opacity: 1;
   }
+}
+</style>
+
+<style>
+html.dark .cf-session-action {
+  color: rgb(120 113 108 / 1);
+}
+html.dark .cf-session-action:hover {
+  background-color: rgb(255 255 255 / 0.06);
+  color: rgb(231 229 228 / 1);
 }
 </style>
