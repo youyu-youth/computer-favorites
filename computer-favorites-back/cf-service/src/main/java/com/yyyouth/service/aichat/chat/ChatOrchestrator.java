@@ -168,7 +168,8 @@ public class ChatOrchestrator {
         sink.thinking(1);
 
         dashscopeChatClient.prompt()
-                .system(skill.getSystemPrompt())
+                .system(skill.getSystemPrompt() != null
+                        ? skill.getSystemPrompt() : GeneralChatPrompt.SYSTEM_PROMPT)
                 .user(message)
                 .tools(tools)
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, session.getConversationId()))
