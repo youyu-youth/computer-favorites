@@ -1,10 +1,10 @@
 <template>
   <div
-    class="cf-bubble group/bubble flex gap-3"
+    class="cf-bubble group/bubble flex items-start gap-3"
     :class="msg.role === 'user' ? 'flex-row-reverse' : ''"
   >
     <!-- Avatar -->
-    <div class="shrink-0">
+    <div class="cf-bubble-avatar shrink-0">
       <!-- User avatar：inset highlight 圆形纸面 -->
       <div
         v-if="msg.role === 'user'"
@@ -23,7 +23,10 @@
     </div>
 
     <!-- Message body -->
-    <div class="max-w-[78%] md:max-w-[70%] min-w-0">
+    <div
+      class="cf-bubble-body max-w-[82%] sm:max-w-[78%] md:max-w-[70%] min-w-0"
+      :class="msg.role === 'user' ? 'cf-bubble-body--user' : ''"
+    >
       <!-- Thinking steps (AI only) -->
       <AgentThinkingSteps
         v-if="msg.role === 'assistant' && msg.thinkingSteps.length > 0"
@@ -34,7 +37,7 @@
       <!-- 气泡主体 -->
       <div
         v-if="msg.content"
-        class="cf-bubble-content text-[14px] leading-relaxed break-words"
+        class="cf-bubble-content text-[14px] leading-[1.72] break-words"
         :class="msg.role === 'user' ? 'cf-bubble--user' : 'cf-bubble--assistant'"
       >
         <MarkdownRender
@@ -162,6 +165,7 @@ function confirmEdit() {
 <style scoped>
 /* 进场动画：所有气泡 fade-up */
 .cf-bubble {
+  align-items: flex-start;
   animation: cf-bubble-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes cf-bubble-in {
@@ -169,37 +173,87 @@ function confirmEdit() {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.cf-bubble-avatar {
+  display: grid;
+  place-items: start center;
+  padding-top: 0.125rem;
+  line-height: 0;
+}
+
+.cf-bubble-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.cf-bubble-body--user {
+  align-items: flex-end;
+}
+
 /* 气泡主体共用基底 */
 .cf-bubble-content {
   position: relative;
+  display: flow-root;
+  max-width: 100%;
   padding: 0.625rem 0.875rem;
+  isolation: isolate;
+  letter-spacing: 0;
+  transform-origin: top;
+  transition:
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cf-bubble-content:hover {
+  transform: translateY(-1px);
+}
+.cf-bubble-content::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.cf-bubble-content :where([data-custom-id='agent-bubble']) {
+  position: relative;
+  z-index: 1;
 }
 
 /* 用户气泡：brand 渐变 + 内嵌高光 + 染色阴影 + 不对称尾角 */
 .cf-bubble--user {
   color: white;
   border-radius: 1rem 1rem 0.375rem 1rem;
-  background: linear-gradient(
-    180deg,
-    rgb(var(--cf-color-primary-400-rgb) / 1) 0%,
-    rgb(var(--cf-color-primary-500-rgb) / 1) 60%,
-    rgb(var(--cf-color-primary-600-rgb) / 1) 100%
-  );
+  background:
+    radial-gradient(circle at 18% 0%, rgb(255 255 255 / 0.28), transparent 34%),
+    linear-gradient(
+      180deg,
+      rgb(var(--cf-color-primary-400-rgb) / 1) 0%,
+      rgb(var(--cf-color-primary-500-rgb) / 1) 58%,
+      rgb(var(--cf-color-primary-600-rgb) / 1) 100%
+    );
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.32),
     inset 0 -1px 0 0 rgba(0, 0, 0, 0.1),
     0 14px 28px -10px rgb(var(--cf-color-primary-500-rgb) / 0.45);
 }
+.cf-bubble--user::before {
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.16), transparent 42%);
+}
 
 /* 助手气泡：纸质 surface + ring + inset hairline + tinted shadow */
 .cf-bubble--assistant {
   color: rgb(41 37 36 / 1);
-  background-color: rgb(255 255 255 / 0.95);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.96), rgb(250 250 249 / 0.92));
   border-radius: 1rem 1rem 1rem 0.375rem;
   box-shadow:
     inset 0 0 0 1px rgb(0 0 0 / 0.05),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.8),
     0 12px 24px -16px rgba(15, 23, 42, 0.18);
+}
+.cf-bubble--assistant::before {
+  background:
+    linear-gradient(135deg, rgb(var(--cf-color-primary-500-rgb) / 0.08), transparent 34%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.5), transparent 40%);
 }
 
 
@@ -298,8 +352,10 @@ function confirmEdit() {
 
 @media (prefers-reduced-motion: reduce) {
   .cf-bubble,
+  .cf-bubble-content,
   .cf-ai-avatar--breathing::after {
     animation: none;
+    transition: none;
     opacity: 1;
     transform: none;
   }
@@ -320,10 +376,23 @@ function confirmEdit() {
 [data-custom-id='agent-bubble'] .markdown-renderer,
 [data-custom-id='agent-bubble'] .markstream-vue {
   background: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: inherit;
 }
 
 /* ===== 浅色模式 — 主变量 + 派生变量 (覆盖 markstream-vue 默认值) ===== */
 [data-custom-id='agent-bubble'] {
+  /* 聊天气泡内的 Markdown 间距要比正文文档更紧，首行才能贴近顶部。 */
+  --ms-text-body: 0.875rem;
+  --ms-leading-body: 1.72;
+  --ms-flow-paragraph-y: 0.2rem;
+  --ms-flow-list-y: 0.35rem;
+  --ms-flow-list-item-y: 0.08rem;
+  --ms-flow-blockquote-y: 0.45rem;
+  --ms-flow-codeblock-y: 0.5rem;
+  --ms-flow-table-y: 0.5rem;
+  --ms-flow-hr-y: 0.65rem;
   /* 主变量 */
   --ms-background: 0 0% 100%;
   --ms-foreground: 0 0% 10%;
@@ -459,6 +528,21 @@ html.dark [data-custom-id='agent-bubble'] {
 
 /* ===== 元素级覆盖 — 标题/段落/代码/链接/引用/列表/表格/图片 ===== */
 
+[data-custom-id='agent-bubble'] :is(.paragraph-node, .heading-node, .list-node, .blockquote, .code-block-container, .table-node-wrapper, .hr-node, .vmr-container):first-child,
+[data-custom-id='agent-bubble'] :is(.markdown-renderer, .markstream-vue, .node-slot, .node-content) > :is(.paragraph-node, .heading-node, .list-node, .blockquote, .code-block-container, .table-node-wrapper, .hr-node, .vmr-container):first-child {
+  margin-top: 0 !important;
+}
+
+[data-custom-id='agent-bubble'] :is(.paragraph-node, .heading-node, .list-node, .blockquote, .code-block-container, .table-node-wrapper, .hr-node, .vmr-container):last-child,
+[data-custom-id='agent-bubble'] :is(.markdown-renderer, .markstream-vue, .node-slot, .node-content) > :is(.paragraph-node, .heading-node, .list-node, .blockquote, .code-block-container, .table-node-wrapper, .hr-node, .vmr-container):last-child {
+  margin-bottom: 0 !important;
+}
+
+[data-custom-id='agent-bubble'] .paragraph-node {
+  margin: 0 0 0.5rem !important;
+  color: inherit;
+}
+
 [data-custom-id='agent-bubble'] h1 { font-size:1.25rem; font-weight:600; margin:1.25rem 0 0.5rem; color:inherit; }
 [data-custom-id='agent-bubble'] h2 { font-size:1.125rem; font-weight:600; margin:1.1rem 0 0.45rem; color:inherit; }
 [data-custom-id='agent-bubble'] h3 { font-size:1.05rem; font-weight:600; margin:1rem 0 0.4rem; color:inherit; }
@@ -508,11 +592,17 @@ html.dark [data-custom-id='agent-bubble'] {
 /* ===== 组件暗黑模式覆盖（Vue scoped 的 :global(html.dark) 编译有 bug, 移到非 scoped 块） ===== */
 html.dark .cf-bubble--assistant {
   color: rgb(231 229 228 / 1);
-  background-color: rgb(28 25 23 / 0.85);
+  background:
+    linear-gradient(180deg, rgb(33 30 28 / 0.94), rgb(22 20 19 / 0.9));
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.06),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.06),
     0 14px 28px -16px rgba(0, 0, 0, 0.55);
+}
+html.dark .cf-bubble--assistant::before {
+  background:
+    linear-gradient(135deg, rgb(var(--cf-color-primary-500-rgb) / 0.11), transparent 36%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), transparent 42%);
 }
 
 html.dark .cf-action {
