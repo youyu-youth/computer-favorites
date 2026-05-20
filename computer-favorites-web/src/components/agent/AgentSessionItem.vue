@@ -31,6 +31,7 @@
       class="flex-1 text-sm px-1.5 py-0.5 rounded-md bg-white/95 dark:bg-stone-900 ring-1 ring-primary-400 outline-none text-stone-800 dark:text-stone-100 transition-shadow focus:ring-2 focus:ring-primary-500/40"
       @keydown.enter="confirmRename"
       @keydown.escape="cancelRename"
+      @blur="confirmRename"
       @click.stop
     />
     <span

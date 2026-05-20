@@ -3,25 +3,6 @@
     class="cf-bubble group/bubble flex items-start gap-3"
     :class="msg.role === 'user' ? 'flex-row-reverse' : ''"
   >
-    <!-- Avatar -->
-    <div class="cf-bubble-avatar shrink-0">
-      <!-- User avatar：inset highlight 圆形纸面 -->
-      <div
-        v-if="msg.role === 'user'"
-        class="grid h-8 w-8 place-items-center rounded-full bg-stone-100 dark:bg-stone-800 ring-1 ring-inset ring-stone-900/[0.06] dark:ring-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-      >
-        <UserRound :size="14" :stroke-width="1.75" class="text-stone-500 dark:text-stone-400" />
-      </div>
-      <!-- AI avatar：呼吸态 + brand 渐变 -->
-      <div
-        v-else
-        class="cf-ai-avatar relative grid h-8 w-8 place-items-center rounded-full text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_8px_18px_-8px_rgb(var(--cf-color-primary-500-rgb)/0.5)]"
-        :class="{ 'cf-ai-avatar--breathing': isStreaming }"
-      >
-        <Sparkles :size="14" :stroke-width="2" />
-      </div>
-    </div>
-
     <!-- Message body -->
     <div
       class="cf-bubble-body max-w-[82%] sm:max-w-[78%] md:max-w-[70%] min-w-0"
@@ -102,7 +83,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
-import { Sparkles, UserRound, Copy, Check, RotateCcw, ThumbsUp, ThumbsDown, Pencil } from 'lucide-vue-next'
+import { Copy, Check, RotateCcw, ThumbsUp, ThumbsDown, Pencil } from 'lucide-vue-next'
 import MarkdownRender from 'markstream-vue'
 import type { AgentMessage } from '@/types/agent'
 import AgentThinkingSteps from '@/components/agent/AgentThinkingSteps.vue'
@@ -171,13 +152,6 @@ function confirmEdit() {
 @keyframes cf-bubble-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.cf-bubble-avatar {
-  display: grid;
-  place-items: start center;
-  padding-top: 0.125rem;
-  line-height: 0;
 }
 
 .cf-bubble-body {
@@ -257,29 +231,6 @@ function confirmEdit() {
 }
 
 
-/* AI 头像：brand 渐变 */
-.cf-ai-avatar {
-  background: linear-gradient(
-    135deg,
-    rgb(var(--cf-color-primary-400-rgb) / 1) 0%,
-    rgb(var(--cf-color-primary-500-rgb) / 1) 50%,
-    rgb(var(--cf-color-primary-600-rgb) / 1) 100%
-  );
-}
-/* 流式时呼吸 ring */
-.cf-ai-avatar--breathing::after {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 999px;
-  border: 1.5px solid rgb(var(--cf-color-primary-500-rgb) / 0.5);
-  animation: cf-breathe 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-@keyframes cf-breathe {
-  0%, 100% { opacity: 0; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.15); }
-}
-
 /* Action bar 圆形按钮 */
 .cf-action {
   display: inline-grid;
@@ -352,8 +303,7 @@ function confirmEdit() {
 
 @media (prefers-reduced-motion: reduce) {
   .cf-bubble,
-  .cf-bubble-content,
-  .cf-ai-avatar--breathing::after {
+  .cf-bubble-content {
     animation: none;
     transition: none;
     opacity: 1;

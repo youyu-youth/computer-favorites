@@ -47,6 +47,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
   const messages = ref<AgentMessage[]>([])
   const connectionState = ref<ConnectionState>('idle')
   const errorMessage = ref<string | null>(null)
+  const messagesLoading = ref(false)
 
   const pendingThinkingSteps = ref<ThinkingStep[]>([])
 
@@ -63,7 +64,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
     currentSessionId.value = session.id
     currentConversationId.value = session.conversationId
     currentSkillCode.value = session.skillCode || ''
-    messages.value = []
+    messagesLoading.value = true
     pendingThinkingSteps.value = []
     connectionState.value = 'idle'
 
@@ -77,7 +78,10 @@ export const useAgentChatStore = defineStore('agentChat', () => {
         thinkingCollapsed: true,
         createdAt: new Date().toISOString(),
       }))
-    } catch { /* 消息历史加载失败不影响会话切换 */ }
+    } catch {
+      messages.value = []
+    }
+    messagesLoading.value = false
   }
 
   const addUserMessage = (content: string): string => {
@@ -205,6 +209,7 @@ export const useAgentChatStore = defineStore('agentChat', () => {
     messages,
     connectionState,
     errorMessage,
+    messagesLoading,
     pendingThinkingSteps,
     startNewChat,
     switchToSession,
