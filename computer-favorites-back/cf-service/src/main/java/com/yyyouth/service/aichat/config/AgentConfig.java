@@ -8,6 +8,7 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 /**
  * @author yyyouth zg
@@ -23,6 +24,7 @@ public class AgentConfig {
     private final DashScopeChatModel dashscopeChatModel;
     private final ChatMemory jdbcChatMemory;
 
+    @Primary
     @Bean
     public ChatClient dashscopeChatClient() {
         log.info("创建 Agent DashScope ChatClient");
