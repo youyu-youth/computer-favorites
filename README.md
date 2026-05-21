@@ -323,42 +323,82 @@ cf-service/src/main/java/com/yyyouth/service/aichat/
 
 ### 5.1 用户端
 
+
+#### 登录页
+
+![登录页](./assets/ui/user/login.png)
+
+
 #### 首页 — 资源发现入口
 全屏 Hero 区 + 标签筛选栏 + 网站卡片网格。支持按分类、标签、技术栈筛选，顶部搜索框支持关键词检索。卡片展示网站名称、图标、简介、标签、收藏/点赞数。
 
-![首页](./docs/images/home.png)
+![首页](./assets/ui/user/home1.png)
+
+![首页](./assets/ui/user/home2.png)
+
+![首页](./assets/ui/user/home3.png)
+
 
 #### 网站详情页
 展示网站完整信息：名称、URL、图标、详细介绍、分类、标签、技术栈、GitHub 地址。右侧展示该网站的收藏/点赞/评论/评分统计面板。底部评论区和评分组件。
 
-![网站详情](./docs/images/website-detail.png)
+![网站详情页](./assets/ui/user/web-detail.png)
+
+![网站详情页](./assets/ui/user/web-detail2.png)
+
+
 
 #### 收藏夹 — 文件夹式管理
 多层级文件夹树 + 右侧网站卡片列表。支持创建/重命名/删除/移动文件夹，网站可拖拽到不同文件夹。支持设置文件夹为公开/私密，公开收藏夹可在用户主页被他人浏览。
 
-![收藏夹](./docs/images/collection.png)
+![收藏夹](./assets/ui/user/collection-ui1.png)
+
+![收藏夹](./assets/ui/user/collection-ui2.png)
 
 #### AI Agent 对话
 独立全屏对话页面（`/computer/agent`）。左侧会话列表 + 右侧对话区。支持多技能切换、思考过程可视化、工具调用展示、计划确认卡。SSE 实时流式输出。
 
-![AI 助手](./docs/images/agent.png)
+![Agent 对话](./assets/ui/user/ai-agent-ui1.png)
+
+![Agent 对话](./assets/ui/user/ai-agent-ui2.png)
+
+![Agent 对话](./assets/ui/user/ai-agent-ui3.png)
+
+
 
 #### 网站投稿
 用户填写网站名称、URL、分类、标签、简介等信息提交投稿。投稿后进入管理员审核流程，用户可在投稿列表页跟踪审核状态。
 
-![投稿](./docs/images/submission.png)
+![投稿](./assets/ui/user/upload-web-ui1.png)
+
+#### 网站投稿列表
+用户投稿的网站列表，支持搜索/筛选/批量操作。
+
+![投稿列表](./assets/ui/user/my-upload-ui1.png)
+
+![投稿列表](./assets/ui/user/my-upload-ui2.png)
 
 #### 用户主页
+
 GitHub 风格的个人主页：Hero 区（头像、昵称、技术栈）、贡献热力图、数据看板（收藏数/点赞数/投稿数/影响力评分）、技能雷达图、公开收藏夹展示。
 
-![用户主页](./docs/images/profile.png)
+![投稿列表](./assets/ui/user/user-profile-ui1.png)
+
+![投稿列表](./assets/ui/user/user-profile-ui2.png)
+
+![投稿列表](./assets/ui/user/user-profile-ui3.png)
 
 ### 5.2 管理端
+
+#### 登录页
+
+![登录页](./assets/ui/admin/login.png)
 
 #### 网站管理
 网站列表（表格视图）+ 搜索/筛选 + 批量操作。支持新增/编辑/上架/下架/删除。审核流：待审核 → 审核通过/驳回（含审核意见）。
 
-![网站管理](./docs/images/admin-websites.png)
+![网站管理](./assets/ui/admin/web-manage-ui1.png)
+![网站管理](./assets/ui/admin/web-manage-ui2.png)
 
 #### 数据看板（规划中）
 网站总数、用户总数、今日新增、待审核数等核心指标卡片 + 趋势图表。
@@ -371,7 +411,8 @@ GitHub 风格的个人主页：Hero 区（头像、昵称、技术栈）、贡�
 #### 用户管理
 用户列表（表格 + 搜索）+ 用户详情弹窗 + 编辑用户资料 + 状态切换 + 重置密码 + 踢会话。
 
-![用户管理](./docs/images/admin-users.png)
+![用户管理](./assets/ui/admin/user-manage-ui1.png)
+
 
 #### 评论管理
 评论列表 + 搜索筛选 + 详情查看 + 状态变更（通过/驳回/删除）+ 批量操作。
