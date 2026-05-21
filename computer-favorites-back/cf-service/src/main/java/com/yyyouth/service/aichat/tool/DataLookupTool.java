@@ -51,7 +51,7 @@ public class DataLookupTool {
     }
 
     @Tool(name = "list_tags",
-          description = "查询热门标签列表，返回标签名称和使用次数。投稿或搜索网站时可使用")
+          description = "查询热门标签列表，返回 id、name、useCount。投稿时 tags 参数使用标签 name 值（不是 id）")
     public String listTags() {
         List<Tag> list = tagMapper.selectList(
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Tag>()

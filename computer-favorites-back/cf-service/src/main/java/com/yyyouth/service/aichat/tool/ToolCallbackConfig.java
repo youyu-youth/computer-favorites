@@ -25,10 +25,11 @@ public class ToolCallbackConfig {
 
     private final UserWebsiteTool userWebsiteTool;
     private final AdminWebsiteTool adminWebsiteTool;
+    private final DataLookupTool dataLookupTool;
 
     @Bean
     public Map<String, ToolCallback> allToolCallbacks() {
-        ToolCallback[] callbacks = ToolCallbacks.from(userWebsiteTool, adminWebsiteTool);
+        ToolCallback[] callbacks = ToolCallbacks.from(userWebsiteTool, adminWebsiteTool, dataLookupTool);
         Map<String, ToolCallback> map = Stream.of(callbacks)
                 .collect(Collectors.toMap(
                         tc -> tc.getToolDefinition().name(),

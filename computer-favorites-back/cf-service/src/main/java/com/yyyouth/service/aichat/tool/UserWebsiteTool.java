@@ -16,7 +16,11 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import org.springframework.dao.DuplicateKeyException;
 
 /**
  * @author yyyouth zg
@@ -38,9 +42,9 @@ public class UserWebsiteTool {
     /** 投稿必填字段。summary 由后端从 description 自动截取，icon 自动从 URL 推断。 */
     private static final Set<String> REQUIRED_FIELDS = Set.of("name", "url", "description", "categoryId");
 
-    @Tool(name = "user_submit_website", description = "提交网站投稿。用户提供网站信息后创建投稿记录，待管理员审核")
+    @Tool(name = "user_submit_website", description = "提交网站投稿。先调用 list_tags 获取可用标签列表，tags 参数使用标签名称（不是ID），多个用逗号分隔")
     public String submitWebsiteDraft(
-            @ToolParam(description = "网站投稿信息，尽可能从对话中提取已提供的信息，不确定的字段可留空")
+            @ToolParam(description = "网站投稿信息。tags 字段填写标签名称而非ID（如'Java,Spring'），多个逗号分隔。不确定的字段留空")
             WebsiteDraftDTO dto) {
 
         log.info("UserWebsiteTool.submitWebsiteDraft: name={}, url={}", dto.getName(), dto.getUrl());
@@ -123,7 +127,7 @@ public class UserWebsiteTool {
         createDTO.setSummary(StrUtil.sub(dto.getDescription(), 0, 200));
         createDTO.setDescription(dto.getDescription());
         createDTO.setCategoryId(dto.getCategoryId());
-        createDTO.setTags(dto.getTags());
+        createDTO.setTags(resolveTagIds(dto.getTags()));
 
         Long submitterId = AgentRequestContext.getCurrentUserId();
         if (submitterId == null) {
@@ -137,5 +141,87 @@ public class UserWebsiteTool {
         log.info("网站投稿成功: websiteId={}, name={}", websiteId, dto.getName());
 
         return ToolResult.submitted(websiteId, dto.getName(), dto.getUrl()).toJson();
+    }
+
+    /**
+     * 将标签名称转换为标签ID。忽略大小写匹配，已是数字的值直接保留，
+     * 数据库不存在的名称自动创建为新标签。
+     *
+     * @param tags 逗号分隔的标签名称或ID
+     * @return 逗号分隔的标签ID
+     */
+    private String resolveTagIds(String tags) {
+        if (StrUtil.isBlank(tags)) {
+            return "";
+        }
+        List<Tag> allTags = tagMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Tag>()
+                        .eq(Tag::getDeleted, 0));
+        Map<String, Long> lowerNameToId = new HashMap<>();
+        for (Tag tag : allTags) {
+            if (StrUtil.isNotBlank(tag.getName())) {
+                lowerNameToId.put(tag.getName().toLowerCase(), tag.getId());
+            }
+        }
+
+        return Arrays.stream(tags.replace('，', ',').split(","))
+                .map(String::trim)
+                .filter(StrUtil::isNotBlank)
+                .map(part -> {
+                    try {
+                        Long.parseLong(part);
+                        return part;
+                    } catch (NumberFormatException ignored) {
+                    }
+                    Long id = lowerNameToId.get(part.toLowerCase());
+                    if (id != null) {
+                        return id.toString();
+                    }
+                    Long newId = autoCreateTag(part);
+                    if (newId != null) {
+                        lowerNameToId.put(part.toLowerCase(), newId);
+                        return newId.toString();
+                    }
+                    log.warn("标签自动创建失败，跳过: {}", part);
+                    return "";
+                })
+                .filter(StrUtil::isNotBlank)
+                .distinct()
+                .collect(Collectors.joining(","));
+    }
+
+    /**
+     * 自动创建新标签。捕获唯一约束冲突后重新查询获取已有ID
+     *
+     * @param tagName 标签名称
+     * @return 新标签ID，失败返回 null
+     */
+    private Long autoCreateTag(String tagName) {
+        try {
+            Tag newTag = new Tag();
+            newTag.setName(tagName);
+            newTag.setColor("#409EFF");
+            newTag.setUseCount(0);
+            newTag.setDeleted(0);
+            newTag.setCreateTime(LocalDateTime.now());
+            newTag.setUpdateTime(LocalDateTime.now());
+            int rows = tagMapper.insert(newTag);
+            if (rows == 1 && newTag.getId() != null) {
+                log.info("自动创建标签: id={}, name={}", newTag.getId(), tagName);
+                return newTag.getId();
+            }
+        } catch (DuplicateKeyException e) {
+            Tag existing = tagMapper.selectOne(
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Tag>()
+                            .eq(Tag::getName, tagName)
+                            .eq(Tag::getDeleted, 0));
+            if (existing != null) {
+                log.info("标签已存在（并发创建或大小写冲突）: id={}, name={}", existing.getId(), tagName);
+                return existing.getId();
+            }
+        } catch (Exception e) {
+            log.warn("创建标签失败: name={}, error={}", tagName, e.getMessage());
+        }
+        return null;
     }
 }
