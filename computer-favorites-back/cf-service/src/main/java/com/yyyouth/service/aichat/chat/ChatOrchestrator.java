@@ -15,6 +15,8 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
+import com.yyyouth.service.aichat.tool.PendingToolResultStore;
+import com.yyyouth.service.aichat.tool.ToolResultCaptureWrapper;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
@@ -38,6 +40,7 @@ public class ChatOrchestrator {
     private final AgentSessionService sessionService;
     private final AgentMcpServerService mcpServerService;
     private final IntentRouter intentRouter;
+    private final PendingToolResultStore pendingToolResultStore;
 
     public void handle(String ownerType, Long ownerId, String message, String skillCode,
                         String conversationId, SseEmitter emitter) {
@@ -157,22 +160,30 @@ public class ChatOrchestrator {
     }
 
     /**
-     * 工具编排模式：Spring AI 自动执行工具循环，ConfirmableToolCallback 在工具执行层拦截高风险工具。
-     * 注意：由于 Flux 在 Reactor 线程上异步执行，AgentSseContext (ThreadLocal) 无法跨线程传递，
-     * 因此 ConfirmableToolCallback 中通过 AgentSseContext.get() 获取 sink 始终为 null。
-     * SSE plan 事件推送暂不可用，但 CompletableFuture 阻塞等待机制仍正常工作。
+     * 工具编排模式：Spring AI 自动执行工具循环。
+     * 通过 ToolResultCaptureWrapper 拦截工具返回值，
+     * 若 incomplete 则暂存到 PendingToolResultStore，
+     * 在 doOnComplete 中通过 done 事件携带给前端。
      */
     private void orchestrate(AgentStreamSink sink, SkillDefinition skill, String message,
                              ToolCallback[] tools, AgentSession session) {
         log.info("orchestrate 开始: sessionId={}, tools={}", session.getId(), tools.length);
         sink.thinking(1);
 
+        String conversationId = session.getConversationId();
+        Long ownerId = session.getOwnerId();
+        ToolCallback[] capturingTools = new ToolCallback[tools.length];
+        for (int i = 0; i < tools.length; i++) {
+            capturingTools[i] = new ToolResultCaptureWrapper(
+                    tools[i], pendingToolResultStore, conversationId, ownerId);
+        }
+
         dashscopeChatClient.prompt()
                 .system(skill.getSystemPrompt() != null
                         ? skill.getSystemPrompt() : GeneralChatPrompt.SYSTEM_PROMPT)
                 .user(message)
-                .tools(tools)
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, session.getConversationId()))
+                .toolCallbacks(capturingTools)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .stream()
                 .content()
                 .doOnNext(delta -> {
@@ -181,10 +192,12 @@ public class ChatOrchestrator {
                 })
                 .doOnComplete(() -> {
                     log.info("orchestrate 完成: sessionId={}", session.getId());
-                    sink.done(session.getId(), session.getConversationId());
+                    String pendingResult = pendingToolResultStore.getAndClear(conversationId);
+                    sink.done(session.getId(), conversationId, pendingResult);
                 })
                 .doOnError(e -> {
                     log.error("orchestrate 异常: sessionId={}", session.getId(), e);
+                    pendingToolResultStore.getAndClear(conversationId);
                     sink.error("STREAM_ERROR", e.getMessage());
                 })
                 .subscribe();

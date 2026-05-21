@@ -80,6 +80,7 @@
               "
               @regenerate="handleRegenerate"
               @edit-resend="handleEditResend"
+              @completion-submit="handleSend($event, [])"
             />
           </template>
 

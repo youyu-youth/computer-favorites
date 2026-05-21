@@ -38,7 +38,18 @@ public class AgentStreamSink {
     }
 
     public void done(Long sessionId, String conversationId) {
-        send("done", Map.of("sessionId", sessionId, "conversationId", conversationId));
+        done(sessionId, conversationId, null);
+    }
+
+    /** done 事件，可附带 pendingToolResult（incomplete 工具返回的 JSON） */
+    public void done(Long sessionId, String conversationId, String pendingToolResult) {
+        var data = new java.util.HashMap<String, Object>();
+        data.put("sessionId", sessionId);
+        data.put("conversationId", conversationId);
+        if (pendingToolResult != null) {
+            data.put("pendingToolResult", pendingToolResult);
+        }
+        send("done", data);
         try {
             emitter.complete();
         } catch (Exception ignored) {

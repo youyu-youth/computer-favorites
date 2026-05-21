@@ -80,6 +80,21 @@ export function useAgentChat() {
         if (data.conversationId) {
           store.currentConversationId = data.conversationId as string
         }
+        // 检查 pending tool incomplete 数据
+        if (data.pendingToolResult) {
+          try {
+            const toolData = typeof data.pendingToolResult === 'string'
+              ? JSON.parse(data.pendingToolResult)
+              : data.pendingToolResult
+            if (toolData.status === 'incomplete' && msgId) {
+              const msgs = store.messages
+              const lastMsg = msgs[msgs.length - 1]
+              if (lastMsg && lastMsg.role === 'assistant') {
+                lastMsg.toolIncomplete = toolData
+              }
+            }
+          } catch { /* JSON 解析失败则忽略 */ }
+        }
         break
 
       case 'error':

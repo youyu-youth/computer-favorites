@@ -155,7 +155,19 @@ public class UserWebsiteSubmissionServiceImpl implements UserWebsiteSubmissionSe
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long submitWebsite(UserWebsiteSubmissionCreateDTO createDTO) {
-        Long userId = getCurrentUserId();
+        return submitWebsite(createDTO, getCurrentUserId());
+    }
+
+    /**
+     * 提交网站投稿（显式传递 userId，供 Agent tool 等非 HTTP 线程调用）
+     *
+     * @param createDTO 投稿参数
+     * @param submitterId 提交用户ID
+     * @return 网站ID
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long submitWebsite(UserWebsiteSubmissionCreateDTO createDTO, Long submitterId) {
         validateCategoryForSubmission(createDTO.getCategoryId());
         validateSensitiveFields(createDTO);
 
@@ -174,7 +186,7 @@ public class UserWebsiteSubmissionServiceImpl implements UserWebsiteSubmissionSe
         website.setIsRecommend(BOOLEAN_NO);
         website.setStatus(OFFLINE_STATUS);
         website.setSource(USER_SOURCE);
-        website.setSubmitterId(userId);
+        website.setSubmitterId(submitterId);
         website.setAuditStatus(AUDIT_PENDING_STATUS);
         website.setAuditRemark("");
         website.setAuditAdminId(DEFAULT_AUDIT_ADMIN_ID);

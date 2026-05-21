@@ -27,6 +27,15 @@
         />
       </div>
 
+      <!-- 工具补全卡片 -->
+      <AgentToolCompletionCard
+        v-if="msg.role === 'assistant' && msg.toolIncomplete && !isStreaming"
+        :data="msg.toolIncomplete"
+        class="mt-2"
+        @submit="handleCompletionSubmit"
+        @close="handleCompletionClose"
+      />
+
       <!-- Action bar (AI 已完成且有内容) -->
       <div
         v-if="msg.role === 'assistant' && !isStreaming && msg.content"
@@ -87,6 +96,7 @@ import { Copy, Check, RotateCcw, ThumbsUp, ThumbsDown, Pencil } from 'lucide-vue
 import MarkdownRender from 'markstream-vue'
 import type { AgentMessage } from '@/types/agent'
 import AgentThinkingSteps from '@/components/agent/AgentThinkingSteps.vue'
+import AgentToolCompletionCard from '@/components/agent/AgentToolCompletionCard.vue'
 
 defineOptions({ name: 'AgentMessageBubble' })
 
@@ -98,6 +108,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   regenerate: []
   editResend: [msgId: string, newContent: string]
+  completionSubmit: [message: string]
 }>()
 
 const feedback = ref<'like' | 'dislike' | null>(null)
@@ -140,6 +151,16 @@ function confirmEdit() {
   if (!editContent.value.trim()) return
   emit('editResend', props.msg.id, editContent.value.trim())
   isEditing.value = false
+}
+
+function handleCompletionSubmit(message: string) {
+  emit('completionSubmit', message)
+}
+
+function handleCompletionClose() {
+  if (props.msg.toolIncomplete) {
+    props.msg.toolIncomplete = undefined
+  }
 }
 </script>
 

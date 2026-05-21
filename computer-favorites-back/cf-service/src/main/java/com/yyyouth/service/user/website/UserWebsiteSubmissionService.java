@@ -39,6 +39,15 @@ public interface UserWebsiteSubmissionService {
     Long submitWebsite(UserWebsiteSubmissionCreateDTO createDTO);
 
     /**
+     * 提交网站投稿（显式传递 userId，供 Agent tool 等非 HTTP 线程调用）
+     *
+     * @param createDTO 投稿参数
+     * @param submitterId 提交用户ID
+     * @return 网站ID
+     */
+    Long submitWebsite(UserWebsiteSubmissionCreateDTO createDTO, Long submitterId);
+
+    /**
      * 查询我的投稿分页
      *
      * @param queryDTO 查询参数

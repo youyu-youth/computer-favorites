@@ -40,6 +40,8 @@ export interface AgentMessage {
   plan?: AgentPlan
   /** 点赞/踩 */
   feedback?: 'like' | 'dislike' | null
+  /** 工具 incomplete 补全数据（仅 assistant 消息，流完成后由 done 事件注入） */
+  toolIncomplete?: ToolIncompleteData
 }
 
 /** 执行计划（需确认的高风险操作） */
@@ -77,4 +79,25 @@ export interface AgentChatVO {
 export interface AgentSkill {
   skillCode: string
   name: string
+}
+
+/** 工具 incomplete 数据（由 done 事件的 pendingToolResult 携带） */
+export interface ToolIncompleteData {
+  status: 'incomplete'
+  collected: Record<string, any>
+  missing: MissingField[]
+  message: string
+}
+
+export interface MissingField {
+  field: string
+  label: string
+  type: 'text' | 'select'
+  required: boolean
+  suggestions: Suggestion[]
+}
+
+export interface Suggestion {
+  value: any
+  label: string
 }
